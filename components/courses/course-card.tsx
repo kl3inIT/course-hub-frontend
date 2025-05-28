@@ -23,8 +23,8 @@ export function CourseCard({ courseId }: CourseCardProps) {
 
   return (
     <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 bg-white rounded-2xl">
-      {/* Image Section */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Image Section - Commented due to hydration issues */}
+      {/* <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
         <img
           src={course.image || "/placeholder.svg?height=200&width=320"}
           alt={course.title}
@@ -34,14 +34,12 @@ export function CourseCard({ courseId }: CourseCardProps) {
           }}
         />
 
-        {/* Overlay with Play Button */}
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 transform scale-75 group-hover:scale-100 transition-transform duration-300">
             <Play className="h-6 w-6 text-blue-600 fill-blue-600" />
           </div>
         </div>
 
-        {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
           {discountPercentage > 0 && (
             <Badge className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
@@ -56,12 +54,35 @@ export function CourseCard({ courseId }: CourseCardProps) {
           </Badge>
         </div>
 
-        {/* Category Badge */}
         <div className="absolute top-3 right-3">
           <Badge
             variant="outline"
             className="bg-white/90 backdrop-blur-sm border-white/50 text-gray-700 text-xs font-medium px-2 py-1 rounded-full"
           >
+            {course.category}
+          </Badge>
+        </div>
+      </div> */}
+
+      {/* Simplified Image Section */}
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <img
+          src={course.image || "/placeholder.svg?height=200&width=320"}
+          alt={course.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute top-3 left-3 flex gap-2">
+          {discountPercentage > 0 && (
+            <Badge className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+              {discountPercentage}% OFF
+            </Badge>
+          )}
+          <Badge variant="secondary" className="text-xs font-medium px-2 py-1 rounded-full">
+            {course.level}
+          </Badge>
+        </div>
+        <div className="absolute top-3 right-3">
+          <Badge variant="outline" className="text-xs font-medium px-2 py-1 rounded-full">
             {course.category}
           </Badge>
         </div>

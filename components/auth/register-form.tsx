@@ -79,23 +79,34 @@ export function RegisterForm() {
       return
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: formData.email,
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/register/init', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name,
-          role: "student",
-          emailVerified: false,
+          email: formData.email,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
         }),
-      )
+      });
 
-      // Redirect to OTP verification instead of dashboard
-      const otpUrl = `/verify-otp?type=email-verification&destination=${encodeURIComponent(formData.email)}&redirect=/dashboard`
-      window.location.href = otpUrl
-      setIsLoading(false)
-    }, 1000)
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Redirect to OTP verification
+      const otpUrl = `/verify-otp?type=email-verification&destination=${encodeURIComponent(formData.email)}&redirect=/login`;
+      window.location.href = otpUrl;
+    } catch (err: any) {
+      setError(err.message || 'Failed to register. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

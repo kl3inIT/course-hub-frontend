@@ -9,6 +9,21 @@ interface CourseCardProps {
   courseId: number
 }
 
+interface Course {
+  id: number
+  title: string
+  description: string
+  image?: string
+  instructor: string
+  level: string
+  category: string
+  rating: number
+  students: number
+  duration?: string
+  price: number
+  originalPrice?: number
+}
+
 export function CourseCard({ courseId }: CourseCardProps) {
   const { courses, updateCourse } = useCourseContext()
   const course = courses.find((c) => c.id === courseId)

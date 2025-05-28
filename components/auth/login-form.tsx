@@ -34,28 +34,48 @@ export function LoginForm() {
     setError("")
 
     try {
-      const success = await login(formData.email, formData.password)
-      if (success) {
-        // Role-based redirection
-        const role = formData.email.includes("admin")
-          ? "admin"
-          : formData.email.includes("manager")
-            ? "manager"
-            : "learner"
-        if (role === "admin") {
-          router.push("/admin")
-        } else if (role === "manager") {
-          router.push("/manager")
-        } else {
-          router.push("/dashboard")
-        }
-      } else {
-        setError("Invalid email or password")
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Invalid credentials');
       }
-    } catch (err) {
-      setError("An error occurred during login")
+
+      // Lưu token vào localStorage
+      localStorage.setItem('accessToken', data.token);
+      
+      // Cập nhật context với thông tin user từ payload
+      const userInfo = {
+        email: data.sub,
+        name: data.name,
+        role: data.scope
+      };
+      
+      await login(formData.email, formData.password);
+
+      // Điều hướng dựa trên role
+      if (data.scope === "ADMIN") {
+        router.push("/admin");
+      } else if (data.scope === "MANAGER") {
+        router.push("/manager");
+      } else {
+        router.push("/");
+      }
+
+    } catch (err: any) {
+      setError(err.message || "An error occurred during login");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 

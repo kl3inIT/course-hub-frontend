@@ -48,7 +48,7 @@ export default function HomePage() {
         <section className="relative h-[600px] md:h-[700px] overflow-hidden">
           <div className="absolute inset-0">
             <img
-              src="https://cdn.tgdd.vn/Files/2021/08/21/1376834/Nhung-cach-giup-ban-hoc-online-hieu-qua-652x367.jpg"
+              src="https://img.freepik.com/free-photo/elevated-view-laptop-stationeries-blue-backdrop_23-2147880457.jpg?semt=ais_items_boosted&w=740"
               alt="Students learning together"
               className="w-full h-full object-cover"
             />

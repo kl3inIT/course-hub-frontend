@@ -159,6 +159,40 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
     setError("")
     setAttempts((prev) => prev + 1)
 
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/register/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: destination,
+          otp: code,
+    
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Verification failed');
+      }
+
+      setSuccess(true)
+      setTimeout(() => {
+        onSuccess(data)
+      }, 1500)
+
+    } catch (error: any) {
+      setError(error.message || "Error validating verification code. Please try again.")
+      if (attempts >= maxAttempts - 1) {
+        setError("Too many failed attempts. Please request a new verification code.")
+      }
+    }
+
+    setIsLoading(false)
+
+    /* Original localStorage implementation
     // Get stored OTP data
     const storedData = localStorage.getItem(`otp_${destination}`)
 
@@ -211,6 +245,7 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
     }
 
     setIsLoading(false)
+    */
   }
 
   const handleResend = async () => {
@@ -218,8 +253,37 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
 
     setIsResending(true)
     setError("")
-    setAttempts(0) // Reset attempts on resend
+    setAttempts(0)
 
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/register/re-send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: destination,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to resend code');
+      }
+
+      setResendCooldown(cooldownTime)
+      // Clear current OTP
+      setOtp(["", "", "", "", "", ""])
+      inputRefs.current[0]?.focus()
+
+    } catch (error: any) {
+      setError(error.message || "Failed to resend verification code")
+    } finally {
+      setIsResending(false)
+    }
+
+    /* Original localStorage implementation
     // For password reset, we need to regenerate and "send" a new OTP
     if (type === "password-reset") {
       // Generate new OTP
@@ -269,6 +333,7 @@ This OTP will expire in 10 minutes.
       setOtp(["", "", "", "", "", ""])
       inputRefs.current[0]?.focus()
     }, 1000)
+    */
   }
 
   const clearOtp = () => {

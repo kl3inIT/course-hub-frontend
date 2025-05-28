@@ -138,7 +138,7 @@ export function Navbar() {
                                 .split(" ")
                                 .map((n: string) => n[0])
                                 .join("")
-                            : user.email[0].toUpperCase()}
+                            : user.email && user.email[0] ? user.email[0].toUpperCase() : "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -262,7 +262,7 @@ export function Navbar() {
                                     .split(" ")
                                     .map((n: string) => n[0])
                                     .join("")
-                                : user.email[0].toUpperCase()}
+                                : user.email && user.email[0] ? user.email[0].toUpperCase() : "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div>

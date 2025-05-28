@@ -80,12 +80,14 @@ export function ManagerSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <BookOpen className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Manager Panel</span>
-                <span className="truncate text-xs">Course Management</span>
+              <div className="flex items-center gap-2">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <BookOpen className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Manager Panel</span>
+                  <span className="truncate text-xs">Course Management</span>
+                </div>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -108,10 +110,12 @@ export function ManagerSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href={item.url} className="flex items-center">
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </Button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

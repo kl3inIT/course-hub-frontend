@@ -34,44 +34,49 @@ interface CourseProviderProps {
 export const CourseProvider: React.FC<CourseProviderProps> = ({ children }) => {
   const [courses, setCourses] = useState<Course[]>(() => {
     // Initialize from localStorage or default data
-    const storedCourses = localStorage.getItem("courses")
-    return storedCourses
-      ? JSON.parse(storedCourses)
-      : [
-          {
-            id: 1,
-            title: "React.js Fundamentals",
-            description: "Learn the basics of React.js and build modern web applications",
-            instructor: "John Doe",
-            price: 99,
-            originalPrice: 149,
-            rating: 4.8,
-            students: 1234,
-            duration: "8 hours",
-            category: "Web Development",
-            level: "Beginner",
-            image: "/placeholder.svg?height=200&width=300",
-          },
-          {
-            id: 2,
-            title: "Advanced JavaScript",
-            description: "Master advanced JavaScript concepts and ES6+ features",
-            instructor: "Jane Smith",
-            price: 149,
-            originalPrice: 199,
-            rating: 4.9,
-            students: 856,
-            duration: "12 hours",
-            category: "Programming",
-            level: "Advanced",
-            image: "/placeholder.svg?height=200&width=300",
-          },
-        ]
+    if (typeof window !== 'undefined') {
+      const storedCourses = localStorage.getItem("courses")
+      return storedCourses
+        ? JSON.parse(storedCourses)
+        : [
+            {
+              id: 1,
+              title: "React.js Fundamentals",
+              description: "Learn the basics of React.js and build modern web applications",
+              instructor: "John Doe",
+              price: 99,
+              originalPrice: 149,
+              rating: 4.8,
+              students: 1234,
+              duration: "8 hours",
+              category: "Web Development",
+              level: "Beginner",
+              image: "/placeholder.svg?height=200&width=300",
+            },
+            {
+              id: 2,
+              title: "Advanced JavaScript",
+              description: "Master advanced JavaScript concepts and ES6+ features",
+              instructor: "Jane Smith",
+              price: 149,
+              originalPrice: 199,
+              rating: 4.9,
+              students: 856,
+              duration: "12 hours",
+              category: "Programming",
+              level: "Advanced",
+              image: "/placeholder.svg?height=200&width=300",
+            },
+          ]
+    }
+    return []
   })
 
   useEffect(() => {
     // Persist to localStorage
-    localStorage.setItem("courses", JSON.stringify(courses))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("courses", JSON.stringify(courses))
+    }
   }, [courses])
 
   const updateCourse = (courseId: number, updatedCourse: Course) => {

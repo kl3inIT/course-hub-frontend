@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Shield, Save, Camera } from "lucide-react"
 import { RoleBadge } from "@/components/ui/role-badge"
+import { PaymentHistory } from "@/components/profile/payment-history"
 
 export function ProfileSettings() {
   const { user, updateUser } = useAuth()
@@ -58,6 +59,7 @@ export function ProfileSettings() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="payments">Payment History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
@@ -243,6 +245,10 @@ export function ProfileSettings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <PaymentHistory />
         </TabsContent>
       </Tabs>
     </div>

@@ -271,24 +271,7 @@ export function RegisterForm() {
             </div>
           </div>
 
-          <div className="flex items-start space-x-2">
-            <input
-              id="terms"
-              type="checkbox"
-              required
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-0.5"
-            />
-            <Label htmlFor="terms" className="text-sm font-normal leading-5">
-              I agree to the{" "}
-              <Link href="/terms" className="text-primary hover:underline">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-primary hover:underline">
-                Privacy Policy
-              </Link>
-            </Label>
-          </div>
+         
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create Account"}

@@ -17,8 +17,8 @@ export interface User {
 
 interface AuthContextType {
   user: User | null | undefined
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => void
+  login: (userData: User, token: string) => Promise<boolean>
+  logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => void
   hasPermission: (permission: string) => boolean
   isRole: (role: UserRole) => boolean
@@ -195,71 +195,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsInitialized(true)
   }, [syncUserToCookie])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (userData: User, token: string): Promise<boolean> => {
     try {
-      // Simulate API call with demo accounts
-      let userData: User | null = null
-
-      if (email === "admin@example.com" && password.length >= 3) {
-        userData = {
-          id: "admin-1",
-          email: "admin@example.com",
-          name: "System Administrator",
-          role: "admin",
-          joinDate: "2024-01-01",
-          permissions: PERMISSIONS.admin,
-        }
-      } else if (email === "manager@example.com" && password.length >= 3) {
-        userData = {
-          id: "manager-1",
-          email: "manager@example.com",
-          name: "Content Manager",
-          role: "manager",
-          joinDate: "2024-01-15",
-          permissions: PERMISSIONS.manager,
-        }
-      } else if (email === "learner@example.com" && password.length >= 3) {
-        userData = {
-          id: "learner-1",
-          email: "learner@example.com",
-          name: "John Learner",
-          role: "learner",
-          joinDate: "2024-02-01",
-          permissions: PERMISSIONS.learner,
-        }
-      } else if (email.includes("@") && password.length >= 3) {
-        // Default to learner for any other valid email
-        userData = {
-          id: `learner-${Date.now()}`,
-          email: email,
-          name: email.split("@")[0],
-          role: "learner",
-          joinDate: new Date().toISOString().split("T")[0],
-          permissions: PERMISSIONS.learner,
-        }
-      }
-
-      if (userData) {
-        setUser(userData)
-        localStorage.setItem("user", JSON.stringify(userData))
-        syncUserToCookie(userData)
-        return true
-      }
-
-      return false
+      setUser(userData)
+      localStorage.setItem("user", JSON.stringify(userData))
+      localStorage.setItem("accessToken", token)
+      syncUserToCookie(userData)
+      return true
     } catch (error) {
       console.error("Login error:", error)
       return false
     }
   }
 
-  const logout = () => {
+const logout = async () => {
+  try {
+    const token = localStorage.getItem("accessToken")
+    if (token) {
+      const response = await fetch('http://localhost:8080/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token })  // Gửi token trong body
+      });
+
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
     setUser(null)
     localStorage.removeItem("user")
+    localStorage.removeItem("accessToken")
     localStorage.removeItem("enrolledCourses")
     localStorage.removeItem("courseProgress")
     syncUserToCookie(null)
   }
+}
+
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {

@@ -50,12 +50,6 @@ export default function VerifyPhonePage() {
   }
 
   const handleVerificationSuccess = () => {
-    // Mark phone as verified
-    const user = JSON.parse(localStorage.getItem("user") || "{}")
-    user.phoneNumber = phoneNumber
-    user.phoneVerified = true
-    localStorage.setItem("user", JSON.stringify(user))
-
     // Redirect to profile or dashboard
     window.location.href = "/profile?phone=verified"
   }

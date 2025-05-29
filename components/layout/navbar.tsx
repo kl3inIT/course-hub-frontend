@@ -24,7 +24,7 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout()
-    window.location.href = "/"
+    window.location.href = "/login"
   }
 
   const navigationLinks = [
@@ -126,12 +126,16 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             {/* Desktop User Menu */}
             {user ? (
-              <div className="hidden lg:block">
+              <div className="hidden lg:flex items-center gap-4">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Hello, </span>
+                  <span className="font-medium">{user.name}</span>
+                </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full ml-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="/placeholder.svg?height=32&width=32" />
+                        <AvatarImage src={user.avatar || "/assets/default-avatar.svg"} alt={user.name || "User avatar"} />
                         <AvatarFallback>
                           {user.name
                             ? user.name
@@ -255,7 +259,7 @@ export function Navbar() {
                       <div className="border-t pt-4 space-y-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src="/placeholder.svg?height=40&width=40" />
+                            <AvatarImage src={user.avatar || "/assets/default-avatar.svg"} alt={user.name || "User avatar"} />
                             <AvatarFallback>
                               {user.name
                                 ? user.name
@@ -266,7 +270,7 @@ export function Navbar() {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{user.name || user.email}</p>
+                            <p className="font-medium">Hello, {user.name}</p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                             <RoleBadge role={user.role} size="sm" />
                           </div>

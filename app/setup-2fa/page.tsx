@@ -41,12 +41,6 @@ export default function Setup2FAPage() {
   }
 
   const handleVerificationSuccess = () => {
-    // Enable 2FA for user
-    const user = JSON.parse(localStorage.getItem("user") || "{}")
-    user.twoFactorEnabled = true
-    user.twoFactorMethod = method
-    localStorage.setItem("user", JSON.stringify(user))
-
     // Redirect to dashboard or profile
     window.location.href = "/dashboard?2fa=enabled"
   }

@@ -8,14 +8,14 @@ import { Navbar } from "@/components/layout/navbar"
 export default function VerifyOTPPage() {
   const searchParams = useSearchParams()
   const [otpData, setOtpData] = useState({
-    type: "email-verification" as const,
+    type: "email-verification" as "email-verification" | "password-reset" | "two-factor" | "phone-verification",
     destination: "",
     redirectTo: "/dashboard",
   })
 
   useEffect(() => {
     // Get parameters from URL
-    const type = searchParams.get("type") as any
+    const type = searchParams.get("type") as "email-verification" | "password-reset" | "two-factor" | "phone-verification"
     const destination = searchParams.get("destination") || ""
     const redirectTo = searchParams.get("redirect") || "/dashboard"
 
@@ -30,31 +30,18 @@ export default function VerifyOTPPage() {
     // Handle different success scenarios based on type
     switch (otpData.type) {
       case "email-verification":
-        // Mark email as verified
-        const user = JSON.parse(localStorage.getItem("user") || "{}")
-        user.emailVerified = true
-        localStorage.setItem("user", JSON.stringify(user))
         window.location.href = otpData.redirectTo
         break
 
       case "password-reset":
-        // Redirect to password reset form
         window.location.href = `/reset-password?token=${data.code}&verified=true`
         break
 
       case "two-factor":
-        // Complete 2FA login
-        const currentUser = JSON.parse(localStorage.getItem("user") || "{}")
-        currentUser.twoFactorVerified = true
-        localStorage.setItem("user", JSON.stringify(currentUser))
         window.location.href = otpData.redirectTo
         break
 
       case "phone-verification":
-        // Mark phone as verified
-        const phoneUser = JSON.parse(localStorage.getItem("user") || "{}")
-        phoneUser.phoneVerified = true
-        localStorage.setItem("user", JSON.stringify(phoneUser))
         window.location.href = otpData.redirectTo
         break
 

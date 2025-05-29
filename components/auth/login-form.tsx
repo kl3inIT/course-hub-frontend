@@ -14,7 +14,18 @@ import Link from "next/link"
 import { GoogleSignInButton } from "./google-signin-button"
 import { ForgotPasswordModal } from "./forgot-password-modal"
 import { useAuth } from "@/context/auth-context"
+import type { User, UserRole } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
+
+// Function to decode JWT token
+function parseJwt(token: string) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+}
 
 export function LoginForm() {
   const { login } = useAuth()
@@ -46,27 +57,33 @@ export function LoginForm() {
       });
 
       const data = await response.json();
-
+      console.log(data.data)
       if (!response.ok) {
         throw new Error(data.message || 'Invalid credentials');
       }
 
       // Lưu token vào localStorage
-      localStorage.setItem('accessToken', data.token);
+      const token = data.data.token;
+      
+      // Giải mã token để lấy thông tin user
+      const decodedToken = parseJwt(token);
+      console.log('Decoded token:', decodedToken);
       
       // Cập nhật context với thông tin user từ payload
-      const userInfo = {
-        email: data.sub,
-        name: data.name,
-        role: data.scope
-      };
-      
-      await login(formData.email, formData.password);
+      const userInfo: User = {
+        id: decodedToken.jti,
+        email: decodedToken.sub,
+        name: decodedToken.name,
+        role: decodedToken.scope.toLowerCase() as UserRole,
+        joinDate: new Date().toISOString()
+      }
+      console.log(userInfo)
+      await login(userInfo, token);
 
       // Điều hướng dựa trên role
-      if (data.scope === "ADMIN") {
+      if (decodedToken.scope === "ADMIN") {
         router.push("/admin");
-      } else if (data.scope === "MANAGER") {
+      } else if (decodedToken.scope === "MANAGER") {
         router.push("/manager");
       } else {
         router.push("/");
@@ -113,6 +130,7 @@ export function LoginForm() {
               onChange={handleChange}
               required
               disabled={isLoading}
+              autoComplete="email"
             />
           </div>
 
@@ -128,6 +146,8 @@ export function LoginForm() {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
+                autoComplete="new-password"
+                aria-autocomplete="none"
               />
               <Button
                 type="button"
@@ -168,17 +188,6 @@ export function LoginForm() {
 
         <GoogleSignInButton />
 
-        <div className="text-center text-sm text-muted-foreground">
-          Demo accounts:
-          <br />
-          Learner: learner@example.com
-          <br />
-          Manager: manager@example.com
-          <br />
-          Admin: admin@example.com
-          <br />
-          Password: any (3+ chars)
-        </div>
       </CardContent>
       <CardFooter>
         <div className="text-center text-sm text-muted-foreground w-full">

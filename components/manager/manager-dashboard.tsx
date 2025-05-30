@@ -14,6 +14,9 @@ import {
   Activity,
   Clock,
   Target,
+  Home,
+  Settings,
+  Tags,
 } from "lucide-react"
 
 export function ManagerDashboard() {
@@ -63,6 +66,13 @@ export function ManagerDashboard() {
       icon: PlusCircle,
       onClick: () => router.push("/manager/create"),
       variant: "default" as const,
+    },
+    {
+      title: "Manage Categories",
+      description: "Organize course categories",
+      icon: Tags,
+      onClick: () => router.push("/manager/categories"),
+      variant: "outline" as const,
     },
     {
       title: "Manage Courses",

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,9 +27,32 @@ import { CourseCard } from "@/components/courses/course-card"
 import { TestimonialsSection } from "@/components/testimonials/testimonials-section"
 import { Footer } from "@/components/layout/footer"
 import { CourseProvider } from "@/context/course-context"
+import { categoryAPI, CategoryResponseDTO } from "@/api/category"
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const response = await categoryAPI.getAllCategories({ page: 0, size: 6 })
+        
+        // Sort by courseCount descending
+        const sortedCategories = response.data.content.sort((a, b) => b.courseCount - a.courseCount)
+        setCategories(sortedCategories)
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,7 +160,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Course Categories */}
+        {/* Course Categories - Updated with real API data */}
         <section className="py-16 px-4 bg-muted/50">
           <div className="container mx-auto space-y-8">
             <div className="text-center space-y-4">
@@ -147,71 +170,57 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  name: "Web Development",
-                  description: "Build modern websites and web applications",
-                  icon: Code,
-                  courses: 245,
-                  color: "bg-blue-500",
-                },
-                {
-                  name: "Design",
-                  description: "UI/UX design and graphic design courses",
-                  icon: Palette,
-                  courses: 128,
-                  color: "bg-purple-500",
-                },
-                {
-                  name: "Data Science",
-                  description: "Analytics, machine learning, and AI",
-                  icon: Brain,
-                  courses: 89,
-                  color: "bg-green-500",
-                },
-                {
-                  name: "Mobile Development",
-                  description: "iOS and Android app development",
-                  icon: Smartphone,
-                  courses: 156,
-                  color: "bg-orange-500",
-                },
-                {
-                  name: "Backend Development",
-                  description: "Server-side programming and databases",
-                  icon: Database,
-                  courses: 203,
-                  color: "bg-red-500",
-                },
-                {
-                  name: "Business",
-                  description: "Marketing, entrepreneurship, and management",
-                  icon: TrendingUp,
-                  courses: 167,
-                  color: "bg-indigo-500",
-                },
-              ].map((category) => {
-                const IconComponent = category.icon
-                return (
-                  <Card key={category.name} className="hover:shadow-lg transition-shadow cursor-pointer">
+            {loadingCategories ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card key={i} className="animate-pulse">
                     <CardHeader>
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-lg ${category.color} text-white`}>
-                          <IconComponent className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{category.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{category.courses} courses</p>
+                        <div className="w-12 h-12 bg-muted rounded-lg"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-muted rounded w-24"></div>
+                          <div className="h-3 bg-muted rounded w-16"></div>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">{category.description}</p>
+                      <div className="h-4 bg-muted rounded w-full"></div>
                     </CardContent>
                   </Card>
-                )
-              })}
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {categories.map((category) => (
+                  <Link key={category.id} href={`/courses?category=${encodeURIComponent(category.name)}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                      <CardHeader>
+                        <div className="space-y-2">
+                          <CardTitle className="text-lg">{category.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{category.courseCount} courses</p>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">{category.description}</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {!loadingCategories && categories.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No categories available at the moment.</p>
+              </div>
+            )}
+
+            <div className="text-center">
+              <Link href="/courses">
+                <Button variant="outline" size="lg">
+                  View All Courses
+                </Button>
+              </Link>
             </div>
           </div>
         </section>

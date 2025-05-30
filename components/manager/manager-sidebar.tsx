@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, BookOpen, Users, BarChart3, PlusCircle, Settings, LogOut, Star } from "lucide-react"
+import { Home, BookOpen, Users, BarChart3, PlusCircle, Settings, LogOut, Star, Tags } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -43,6 +43,11 @@ const navigationItems = [
     title: "Create Course",
     url: "/manager/create",
     icon: PlusCircle,
+  },
+  {
+    title: "Categories",
+    url: "/manager/categories",
+    icon: Tags,
   },
   {
     title: "Students",

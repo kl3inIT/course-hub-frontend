@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { format } from "date-fns";
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -53,56 +54,26 @@ import {
 } from "lucide-react"
 import { RoleBadge } from "@/components/ui/role-badge"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/context/auth-context"
 
-// Mock user data with more comprehensive information
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "learner",
-    status: "active",
-    joinDate: "2024-01-15",
-    lastActive: "2024-01-20",
-    coursesEnrolled: 3,
-    totalSpent: 299.97,
-    permissions: ["view_courses", "enroll_courses"],
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.manager@example.com",
-    role: "manager",
-    status: "active",
-    joinDate: "2024-01-10",
-    lastActive: "2024-01-20",
-    coursesCreated: 5,
-    totalRevenue: 2499.95,
-    permissions: ["create_courses", "edit_courses", "view_analytics"],
-  },
-  {
-    id: "3",
-    name: "Admin User",
-    email: "admin@example.com",
-    role: "admin",
-    status: "active",
-    joinDate: "2024-01-01",
-    lastActive: "2024-01-20",
-    permissions: ["all"],
-  },
-  {
-    id: "4",
-    name: "Bob Wilson",
-    email: "bob@example.com",
-    role: "learner",
-    status: "suspended",
-    joinDate: "2024-01-12",
-    lastActive: "2024-01-18",
-    coursesEnrolled: 1,
-    totalSpent: 99.99,
-    permissions: [],
-  },
-]
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: "active" | "inactive";
+  avatar?: string;
+  joinDate?: string;
+  lastActive?: string;
+  permissions?: string[];
+  coursesEnrolled?: number;
+  coursesCreated?: number;
+  totalSpent?: number;
+  totalRevenue?: number;
+  _originalRole?: string; // For tracking role changes
+}
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
 const availablePermissions = [
   { id: "view_courses", label: "View Courses", category: "courses" },
@@ -116,20 +87,208 @@ const availablePermissions = [
 ]
 
 export function UserManagement() {
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "learner",
+    role: "learner" as string,
     permissions: [] as string[],
   })
   const { toast } = useToast()
+  const { getToken } = useAuth()
+
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch users")
+      }
+
+      const data = await response.json()
+      console.log("Users data:", data)
+      setUsers(data)
+    } catch (error) {
+      console.error("Error fetching users:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load users",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreateUser = async () => {
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newUser),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create user")
+      }
+
+      const createdUser = await response.json()
+      setUsers([...users, createdUser])
+      setNewUser({ name: "", email: "", role: "learner", permissions: [] })
+      setIsCreateDialogOpen(false)
+      toast({
+        title: "User Created",
+        description: `${createdUser.name} has been successfully created.`,
+      })
+    } catch (error) {
+      console.error("Error creating user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create user",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      // Update role if changed
+      if (selectedUser.role !== selectedUser._originalRole) {
+        await fetch(`${BACKEND_URL}/api/admin/users/${selectedUser.id}/role`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: new URLSearchParams({ role: selectedUser.role }),
+        })
+      }
+
+      setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
+      setIsEditDialogOpen(false)
+      setSelectedUser(null)
+      toast({
+        title: "User Updated",
+        description: "User information has been successfully updated.",
+      })
+    } catch (error) {
+      console.error("Error updating user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete user")
+      }
+
+      const user = users.find((u) => u.id === userId)
+      setUsers(users.filter((u) => u.id !== userId))
+      toast({
+        title: "User Deleted",
+        description: `${user?.name} has been removed from the system.`,
+        variant: "destructive",
+      })
+    } catch (error) {
+      console.error("Error deleting user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSuspendUser = async (userId: string) => {
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const user = users.find((u) => u.id === userId)
+      const newStatus = user?.status === "inactive" ? "active" : "inactive"
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}/status`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: new URLSearchParams({ status: newStatus }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update user status")
+      }
+
+      setUsers(
+        users.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)),
+      )
+      toast({
+        title: newStatus === "inactive" ? "User Inactivated" : "User Activated",
+        description: `${user?.name} has been ${newStatus}.`,
+      })
+    } catch (error) {
+      console.error("Error updating user status:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update user status",
+        variant: "destructive",
+      })
+    }
+  }
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -143,63 +302,15 @@ export function UserManagement() {
   const getUserStats = () => {
     const total = users.length
     const active = users.filter((u) => u.status === "active").length
-    const suspended = users.filter((u) => u.status === "suspended").length
+    const inactive = users.filter((u) => u.status === "inactive").length
     const admins = users.filter((u) => u.role === "admin").length
     const managers = users.filter((u) => u.role === "manager").length
     const learners = users.filter((u) => u.role === "learner").length
 
-    return { total, active, suspended, admins, managers, learners }
+    return { total, active, inactive, admins, managers, learners }
   }
 
   const stats = getUserStats()
-
-  const handleCreateUser = () => {
-    const user = {
-      id: Date.now().toString(),
-      ...newUser,
-      status: "active",
-      joinDate: new Date().toISOString().split("T")[0],
-      lastActive: new Date().toISOString().split("T")[0],
-    }
-    setUsers([...users, user])
-    setNewUser({ name: "", email: "", role: "learner", permissions: [] })
-    setIsCreateDialogOpen(false)
-    toast({
-      title: "User Created",
-      description: `${user.name} has been successfully created.`,
-    })
-  }
-
-  const handleEditUser = () => {
-    setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
-    setIsEditDialogOpen(false)
-    setSelectedUser(null)
-    toast({
-      title: "User Updated",
-      description: "User information has been successfully updated.",
-    })
-  }
-
-  const handleDeleteUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId)
-    setUsers(users.filter((u) => u.id !== userId))
-    toast({
-      title: "User Deleted",
-      description: `${user?.name} has been removed from the system.`,
-      variant: "destructive",
-    })
-  }
-
-  const handleSuspendUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId)
-    setUsers(
-      users.map((u) => (u.id === userId ? { ...u, status: u.status === "suspended" ? "active" : "suspended" } : u)),
-    )
-    toast({
-      title: user?.status === "suspended" ? "User Activated" : "User Suspended",
-      description: `${user?.name} has been ${user?.status === "suspended" ? "activated" : "suspended"}.`,
-    })
-  }
 
   return (
     <div className="space-y-6">
@@ -225,11 +336,11 @@ export function UserManagement() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Suspended</CardTitle>
+            <CardTitle className="text-sm font-medium">Inactive</CardTitle>
             <Ban className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.suspended}</div>
+            <div className="text-2xl font-bold">{stats.inactive}</div>
           </CardContent>
         </Card>
         <Card>
@@ -311,7 +422,7 @@ export function UserManagement() {
                     <Label htmlFor="role" className="text-right">
                       Role
                     </Label>
-                    <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                    <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as string })}>
                       <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
@@ -387,7 +498,7 @@ export function UserManagement() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -430,8 +541,12 @@ export function UserManagement() {
                   <TableCell>
                     <Badge variant={user.status === "active" ? "default" : "destructive"}>{user.status}</Badge>
                   </TableCell>
-                  <TableCell>{user.joinDate}</TableCell>
-                  <TableCell>{user.lastActive}</TableCell>
+                  <TableCell>
+                    {user.joinDate ? format(new Date(user.joinDate), "yyyy-MM-dd") : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {user.lastActive ? format(new Date(user.lastActive), "yyyy-MM-dd") : "-"}
+                  </TableCell>
                   <TableCell>
                     {user.role === "learner" && user.coursesEnrolled && (
                       <span className="text-sm text-muted-foreground">{user.coursesEnrolled} courses enrolled</span>
@@ -467,7 +582,7 @@ export function UserManagement() {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleSuspendUser(user.id)}>
                           <Ban className="mr-2 h-4 w-4" />
-                          {user.status === "suspended" ? "Activate" : "Suspend"}
+                          {user.status === "inactive" ? "Activate" : "Inactivate"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialog>
@@ -539,7 +654,7 @@ export function UserManagement() {
                 </Label>
                 <Select
                   value={selectedUser.role}
-                  onValueChange={(value) => setSelectedUser({ ...selectedUser, role: value })}
+                  onValueChange={(value) => setSelectedUser({ ...selectedUser, role: value as string })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select role" />

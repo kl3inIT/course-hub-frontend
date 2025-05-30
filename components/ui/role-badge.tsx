@@ -1,15 +1,14 @@
 import { Badge } from "@/components/ui/badge"
-import type { UserRole } from "@/context/auth-context"
 import { Shield, Users, GraduationCap } from "lucide-react"
 
 interface RoleBadgeProps {
-  role: UserRole
+  role: string
   size?: "sm" | "md" | "lg"
   showIcon?: boolean
 }
 
 export function RoleBadge({ role, size = "md", showIcon = true }: RoleBadgeProps) {
-  const getRoleConfig = (role: UserRole) => {
+  const getRoleConfig = (role: string) => {
     switch (role) {
       case "admin":
         return {

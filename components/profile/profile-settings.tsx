@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,17 +13,275 @@ import { Separator } from "@/components/ui/separator"
 import { Shield, Save, Camera } from "lucide-react"
 import { RoleBadge } from "@/components/ui/role-badge"
 import { PaymentHistory } from "@/components/profile/payment-history"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const BACKEND_URL = "http://localhost:8080"
+
+interface ProfileData {
+  name: string;
+  email: string;
+  bio: string;
+  phone: string;
+  address: string;
+  avatar: string;
+  dateOfBirth: string;
+  gender: string;
+}
+
+// Thêm hàm format date
+const formatDateForInput = (dateString: string | null): string => {
+  if (!dateString) return '';
+  
+  try {
+    // Nếu date string có chứa time
+    if (dateString.includes('T')) {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return ''; // Return empty string if invalid date
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    // Nếu date string đã ở dạng YYYY-MM-DD
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateString;
+    }
+    
+    // Thử parse date string và format lại
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return ''; // Return empty string if invalid date
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return '';
+  }
+};
 
 export function ProfileSettings() {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, getToken } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>("")
+  const [profileData, setProfileData] = useState<ProfileData>({
+    name: "",
+    email: "",
     bio: "",
     phone: "",
-    location: "",
+    address: "",
+    avatar: "",
+    dateOfBirth: "",
+    gender: ""
   })
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return
+      
+      try {
+        console.log("Fetching profile data...")
+        const token = getToken()
+        if (!token) {
+          throw new Error("No auth token")
+        }
+
+        const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile")
+        }
+
+        const result = await response.json()
+        console.log("Profile data result:", result)
+        if (result.message === "Success" && result.data) {
+          setProfileData({
+            name: result.data.name || "",
+            email: result.data.email || "",
+            bio: result.data.bio || "",
+            phone: result.data.phone || "",
+            address: result.data.address || "",
+            avatar: result.data.avatar || "",
+            dateOfBirth: formatDateForInput(result.data.dateOfBirth),
+            gender: result.data.gender || ""
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error)
+        setError("Failed to load profile data")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user, getToken])
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Kiểm tra kích thước file (giới hạn 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError("File size must be less than 2MB")
+      return
+    }
+
+    // Kiểm tra định dạng file
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      setError("File must be JPEG, PNG or GIF")
+      return
+    }
+
+    // Tạo preview URL
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    const newPreviewUrl = URL.createObjectURL(file)
+    setPreviewUrl(newPreviewUrl)
+    setSelectedFile(file)
+  }
+
+  const uploadAvatar = async () => {
+    if (!selectedFile) return null
+
+    try {
+      const formData = new FormData()
+      formData.append('avatar', selectedFile)
+
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/users/avatar`, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to upload avatar")
+      }
+
+      const result = await response.json()
+      if (result.message === "Success" && result.data?.avatar) {
+        return result.data.avatar
+      }
+      return null
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      throw new Error("Failed to upload avatar")
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      setError("")
+      setValidationErrors([])
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      // Create FormData with all profile fields and avatar
+      const formData = new FormData()
+      
+      // Add profile data fields
+      formData.append('name', profileData.name)
+      formData.append('email', profileData.email)
+      formData.append('bio', profileData.bio || '')
+      formData.append('phone', profileData.phone || '')
+      formData.append('address', profileData.address || '')
+      formData.append('dateOfBirth', profileData.dateOfBirth || '')
+      formData.append('gender', profileData.gender || '')
+
+      // Add avatar file if selected
+      if (selectedFile) {
+        formData.append('avatar', selectedFile)
+      }
+
+      console.log("Sending profile update request...")
+
+      const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log("Error response from server:", errorData)
+        if (errorData.message === "Validation Error" && Array.isArray(errorData.data)) {
+          setValidationErrors(errorData.data)
+          return
+        }
+        throw new Error(errorData.message || "Failed to update profile")
+      }
+
+      const result = await response.json()
+      if (result.message === "Success") {
+        // Update local state and user context with new data
+        const updatedProfile = result.data
+        setProfileData(prev => ({
+          ...prev,
+          ...updatedProfile,
+          // Ensure dateOfBirth is formatted correctly for input
+          dateOfBirth: formatDateForInput(updatedProfile.dateOfBirth)
+        }))
+        
+        // Update user context
+        updateUser({
+          ...user,
+          name: updatedProfile.name,
+          email: updatedProfile.email,
+          avatar: updatedProfile.avatar
+        })
+
+        setIsEditing(false)
+        
+        // Clear selected file and preview
+        setSelectedFile(null)
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl)
+          setPreviewUrl("")
+        }
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      setError(error instanceof Error ? error.message : "Failed to update profile")
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [field]: value }))
+  }
 
   if (!user) {
     return (
@@ -33,16 +291,12 @@ export function ProfileSettings() {
     )
   }
 
-  const handleSave = () => {
-    updateUser({
-      name: formData.name,
-      email: formData.email,
-    })
-    setIsEditing(false)
-  }
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p>Loading profile...</p>
+      </div>
+    )
   }
 
   return (
@@ -71,22 +325,36 @@ export function ProfileSettings() {
             <CardContent className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src="/placeholder.svg?height=80&width=80" />
+                  <AvatarImage src={previewUrl || profileData.avatar || "/placeholder.svg"} />
                   <AvatarFallback className="text-lg">
-                    {user.name
-                      ? user.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                      : user.email[0].toUpperCase()}
+                    {profileData.name ? profileData.name[0].toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <Button variant="outline" size="sm">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Change Photo
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif"
+                      onChange={handleAvatarSelect}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={!isEditing}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Change Photo
+                    </Button>
+                  </div>
                   <p className="text-sm text-muted-foreground">JPG, PNG or GIF. Max size 2MB.</p>
+                  {selectedFile && (
+                    <p className="text-sm text-blue-500">
+                      Click "Save Changes" to upload.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -97,7 +365,7 @@ export function ProfileSettings() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={isEditing ? formData.name : user.name}
+                    value={profileData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     disabled={!isEditing}
                   />
@@ -107,7 +375,7 @@ export function ProfileSettings() {
                   <Input
                     id="email"
                     type="email"
-                    value={isEditing ? formData.email : user.email}
+                    value={profileData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     disabled={!isEditing}
                   />
@@ -116,21 +384,49 @@ export function ProfileSettings() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    value={formData.phone}
+                    value={profileData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     disabled={!isEditing}
                     placeholder="Enter your phone number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
+                  <Label htmlFor="address">Address</Label>
                   <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    id="address"
+                    value={profileData.address}
+                    onChange={(e) => handleInputChange("address", e.target.value)}
                     disabled={!isEditing}
-                    placeholder="Enter your location"
+                    placeholder="Enter your address"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={profileData.dateOfBirth}
+                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                    disabled={!isEditing}
+                    max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={profileData.gender}
+                    onValueChange={(value) => handleInputChange("gender", value)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Select your gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -138,7 +434,7 @@ export function ProfileSettings() {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  value={formData.bio}
+                  value={profileData.bio}
                   onChange={(e) => handleInputChange("bio", e.target.value)}
                   disabled={!isEditing}
                   placeholder="Tell us about yourself..."
@@ -174,6 +470,24 @@ export function ProfileSettings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Display error and validation errors */}
+
+        {error && (
+        <div className="bg-red-50 text-red-500 p-4 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {validationErrors.length > 0 && (
+        <div className="bg-red-50 p-4 rounded-lg space-y-2">
+          <ul className="list-disc list-inside text-red-500">
+            {validationErrors.map((err, index) => (
+              <li key={index}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
         <TabsContent value="security" className="space-y-6">
           <Card>

@@ -160,7 +160,20 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
     setAttempts((prev) => prev + 1)
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/verify', {
+      let endpoint = '';
+      
+      switch (type) {
+        case 'email-verification':
+          endpoint = 'http://localhost:8080/api/auth/register/verify';
+          break;
+        case 'password-reset':
+          endpoint = 'http://localhost:8080/api/auth/forgot-password/verify-otp';
+          break;
+        default:
+          throw new Error('Invalid verification type');
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -168,14 +181,13 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
         body: JSON.stringify({
           email: destination,
           otp: code,
-    
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Verification failed');
+        throw new Error(data.data || 'Verification failed');
       }
 
       setSuccess(true)
@@ -191,61 +203,6 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
     }
 
     setIsLoading(false)
-
-    /* Original localStorage implementation
-    // Get stored OTP data
-    const storedData = localStorage.getItem(`otp_${destination}`)
-
-    if (!storedData) {
-      setError("No verification code found. Please request a new one.")
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const { otp: storedOTP, expiry, attempts: storedAttempts, email, type: otpType } = JSON.parse(storedData)
-
-      // Check if OTP has expired
-      if (Date.now() > expiry) {
-        setError("Verification code has expired. Please request a new one.")
-        localStorage.removeItem(`otp_${destination}`)
-        setIsLoading(false)
-        return
-      }
-
-      // Check attempt limits
-      if (storedAttempts >= 3) {
-        setError("Too many failed attempts. Please request a new verification code.")
-        localStorage.removeItem(`otp_${destination}`)
-        setIsLoading(false)
-        return
-      }
-
-      // Verify OTP
-      if (code === storedOTP) {
-        setSuccess(true)
-        setTimeout(() => {
-          onSuccess({ code, type: otpType, email })
-        }, 1500)
-      } else {
-        // Update attempts in storage
-        const updatedData = { ...JSON.parse(storedData), attempts: storedAttempts + 1 }
-        localStorage.setItem(`otp_${destination}`, JSON.stringify(updatedData))
-
-        const remainingAttempts = 3 - storedAttempts - 1
-        if (remainingAttempts <= 0) {
-          setError("Too many failed attempts. Please request a new verification code.")
-          localStorage.removeItem(`otp_${destination}`)
-        } else {
-          setError(`Invalid verification code. ${remainingAttempts} attempts remaining.`)
-        }
-      }
-    } catch (error) {
-      setError("Error validating verification code. Please try again.")
-    }
-
-    setIsLoading(false)
-    */
   }
 
   const handleResend = async () => {
@@ -256,14 +213,32 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
     setAttempts(0)
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/re-send-otp', {
+      let endpoint = '';
+      type PayloadType = {
+        email?: string;
+        phone?: string;
+      }
+      let payload: PayloadType = {};
+
+      switch (type) {
+        case 'email-verification':
+          endpoint = 'http://localhost:8080/api/auth/register/re-send-otp';
+          payload = { email: destination };
+          break;
+        case 'password-reset':
+          endpoint = 'http://localhost:8080/api/auth/forgot-password/send-otp';
+          payload = { email: destination };
+          break;
+        default:
+          throw new Error('Invalid OTP type');
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: destination,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();

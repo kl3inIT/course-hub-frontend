@@ -32,86 +32,27 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
-  const [token, setToken] = useState("")
   const [email, setEmail] = useState("")
-  const [isValidToken, setIsValidToken] = useState(false)
-  const [isCheckingToken, setIsCheckingToken] = useState(true)
-  const [tokenExpiry, setTokenExpiry] = useState<number | null>(null)
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
-    length: false,
-    uppercase: false,
-    lowercase: false,
-    number: false,
-    special: false,
-    score: 0,
-  })
 
   useEffect(() => {
-    const urlToken = searchParams.get("token")
-    const urlEmail = searchParams.get("email")
-
-    if (urlToken && urlEmail) {
-      setToken(urlToken)
-      setEmail(urlEmail)
-      validateToken(urlToken, urlEmail)
+    // Lấy email từ localStorage
+    const savedEmail = localStorage.getItem('reset_password_email');
+    
+    if (savedEmail) {
+      setEmail(savedEmail); // Set email vào state
     } else {
-      setError("Invalid or missing reset token. Please request a new password reset.")
-      setIsCheckingToken(false)
+      setError("Please complete the email verification process first.");
+      router.push('/forgot-password');
+      return;
     }
-  }, [searchParams])
 
-  useEffect(() => {
-    if (tokenExpiry) {
-      const timer = setInterval(() => {
-        const remaining = Math.max(0, tokenExpiry - Date.now())
-        setTimeRemaining(Math.floor(remaining / 1000))
-
-        if (remaining <= 0) {
-          setError("Reset token has expired. Please request a new password reset.")
-          setIsValidToken(false)
-          clearInterval(timer)
-        }
-      }, 1000)
-
-      return () => clearInterval(timer)
-    }
-  }, [tokenExpiry])
-
-  const validateToken = (token: string, email: string) => {
-    setIsCheckingToken(true)
-
-    // Simulate token validation
-    setTimeout(() => {
-      const storedData = localStorage.getItem(`reset_token_${email}`)
-
-      if (storedData) {
-        try {
-          const { token: storedToken, expiry, attempts, verified } = JSON.parse(storedData)
-
-          if (storedToken === token && Date.now() < expiry && attempts < 3 && verified) {
-            setIsValidToken(true)
-            setTokenExpiry(expiry)
-            setTimeRemaining(Math.floor((expiry - Date.now()) / 1000))
-          } else if (!verified) {
-            setError("Invalid reset token. Please complete the email verification process first.")
-          } else if (Date.now() >= expiry) {
-            setError("Reset token has expired. Please request a new password reset.")
-          } else if (attempts >= 3) {
-            setError("Reset token has been used too many times. Please request a new password reset.")
-          } else {
-            setError("Invalid reset token. Please request a new password reset.")
-          }
-        } catch (error) {
-          setError("Invalid token format. Please request a new password reset.")
-        }
-      } else {
-        setError("Reset token not found. Please request a new password reset.")
+    // Cleanup: xóa email khỏi localStorage khi reset password thành công
+    return () => {
+      if (isSuccess) {
+        localStorage.removeItem('reset_password_email');
       }
-
-      setIsCheckingToken(false)
-    }, 1000)
-  }
+    }
+  }, [router, isSuccess]);
 
   const checkPasswordStrength = (password: string): PasswordStrength => {
     const strength: PasswordStrength = {
@@ -146,7 +87,6 @@ export default function ResetPasswordPage() {
 
   const handlePasswordChange = (value: string) => {
     setPassword(value)
-    setPasswordStrength(checkPasswordStrength(value))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +94,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
     setError("")
 
-    // Enhanced password validation
+    // Validate password strength
     if (passwordStrength.score < 4) {
       setError(
         "Password does not meet security requirements. Please ensure it contains at least 8 characters, including uppercase, lowercase, numbers, and special characters.",
@@ -169,28 +109,13 @@ export default function ResetPasswordPage() {
       return
     }
 
-    // Check for common passwords (expanded list)
+    // Check for common passwords
     const commonPasswords = [
-      "password",
-      "123456",
-      "123456789",
-      "qwerty",
-      "abc123",
-      "password123",
-      "admin",
-      "letmein",
-      "welcome",
-      "monkey",
-      "1234567890",
-      "password1",
-      "123123",
-      "12345678",
-      "qwerty123",
-      "1q2w3e4r",
-      "admin123",
+      "password", "123456", "123456789", "qwerty", "abc123",
+      "password123", "admin", "letmein", "welcome", "monkey"
     ]
     if (commonPasswords.some((common) => password.toLowerCase().includes(common.toLowerCase()))) {
-      setError("Password is too common or contains dictionary words. Please choose a more secure password.")
+      setError("Password is too common. Please choose a more secure password.")
       setIsLoading(false)
       return
     }
@@ -203,87 +128,33 @@ export default function ResetPasswordPage() {
       return
     }
 
-    // Simulate API call to reset password
-    setTimeout(() => {
-      // Increment token usage attempts
-      const storedData = localStorage.getItem(`reset_token_${email}`)
-      if (storedData) {
-        try {
-          const data = JSON.parse(storedData)
-          data.attempts = (data.attempts || 0) + 1
-          localStorage.setItem(`reset_token_${email}`, JSON.stringify(data))
-        } catch (error) {
-          console.error("Error updating token attempts:", error)
-        }
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/forgot-password/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email:email,
+          password: password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reset password');
       }
 
-      // Clear the reset token after successful use
-      localStorage.removeItem(`reset_token_${email}`)
-
-      setIsLoading(false)
-      setIsSuccess(true)
-    }, 2000)
+      setIsSuccess(true);
+    } catch (error: any) {
+      setError(error.message || "Failed to reset password");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
-
-  if (isCheckingToken) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <Card className="w-full max-w-md mx-auto">
-            <CardContent className="text-center space-y-6 p-8">
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-              <div>
-                <CardTitle className="text-xl mb-2">Validating Reset Token</CardTitle>
-                <CardDescription>Please wait while we verify your reset token...</CardDescription>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isValidToken) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <Card className="w-full max-w-md mx-auto">
-            <CardContent className="text-center space-y-6 p-8">
-              <div className="flex justify-center">
-                <div className="rounded-full bg-red-100 p-3">
-                  <X className="h-8 w-8 text-red-600" />
-                </div>
-              </div>
-              <div>
-                <CardTitle className="text-xl mb-2">Invalid Reset Token</CardTitle>
-                <CardDescription>{error}</CardDescription>
-              </div>
-              <div className="space-y-2">
-                <Link href="/forgot-password">
-                  <Button className="w-full">Request New Reset Link</Button>
-                </Link>
-                <Link href="/login">
-                  <Button variant="outline" className="w-full">
-                    Back to Sign In
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
+  const passwordStrength = checkPasswordStrength(password)
 
   if (isSuccess) {
     return (
@@ -331,13 +202,9 @@ export default function ResetPasswordPage() {
               <Shield className="h-5 w-5" />
               Reset Your Password
             </CardTitle>
-            <CardDescription>Create a new secure password for your account</CardDescription>
-            {timeRemaining > 0 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>Token expires in: {formatTime(timeRemaining)}</span>
-              </div>
-            )}
+            <CardDescription className="card-description">
+              {email ? `Reset password for ${email}` : 'Create a new secure password for your account'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

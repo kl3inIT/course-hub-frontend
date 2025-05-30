@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,49 +21,9 @@ export default function ForgotPasswordPage() {
   const [attempts, setAttempts] = useState(0)
   const [isRateLimited, setIsRateLimited] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
-  const [generatedOTP, setGeneratedOTP] = useState("")
 
   const MAX_ATTEMPTS = 3
-  const RATE_LIMIT_DURATION = 300 // 5 minutes in seconds
-
-  const generateSecureOTP = (): string => {
-    // Generate a 6-digit OTP
-    return Math.floor(100000 + Math.random() * 900000).toString()
-  }
-
-  const simulateEmailSending = (email: string, otp: string) => {
-    // In a real application, this would send an actual email
-    console.log(`
-=== EMAIL SIMULATION ===
-To: ${email}
-Subject: Password Reset OTP - Learning Platform
-
-Dear User,
-
-You have requested to reset your password for your Learning Platform account.
-
-Your One-Time Password (OTP) is: ${otp}
-
-This OTP will expire in 10 minutes for security reasons.
-
-If you did not request this password reset, please ignore this email.
-
-Best regards,
-Learning Platform Team
-========================
-    `)
-
-    // Store the email details for demo purposes
-    localStorage.setItem(
-      "demo_email",
-      JSON.stringify({
-        to: email,
-        otp: otp,
-        timestamp: Date.now(),
-        subject: "Password Reset OTP",
-      }),
-    )
-  }
+  const RATE_LIMIT_DURATION = 300 // 5 minutes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,7 +36,6 @@ Learning Platform Team
     setIsLoading(true)
     setError("")
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address")
@@ -85,42 +43,20 @@ Learning Platform Team
       return
     }
 
-    // Check if email exists in our system (simulate)
-    const validEmails = ["admin@example.com", "manager@example.com", "learner@example.com"]
-    const emailExists = validEmails.includes(email) || email.includes("@")
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/forgot-password/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setIsLoading(false)
+      const data = await response.json();
 
-      if (emailExists) {
-        // Generate OTP and store it
-        const otp = generateSecureOTP()
-        const expiryTime = Date.now() + 10 * 60 * 1000 // 10 minutes
-
-        // Store OTP data
-        localStorage.setItem(
-          `otp_${email}`,
-          JSON.stringify({
-            otp: otp,
-            expiry: expiryTime,
-            attempts: 0,
-            email: email,
-            type: "password-reset",
-          }),
-        )
-
-        // Simulate sending email
-        simulateEmailSending(email, otp)
-        setGeneratedOTP(otp)
-        setShowOTPInput(true)
-      } else {
-        // Even for non-existent emails, show success to prevent email enumeration
-        // But don't actually generate an OTP
-        setShowOTPInput(true)
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send verification code');
       }
 
-      // Track attempts for rate limiting
+      setShowOTPInput(true)
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
 
@@ -128,7 +64,6 @@ Learning Platform Team
         setIsRateLimited(true)
         setTimeRemaining(RATE_LIMIT_DURATION)
 
-        // Start countdown timer
         const timer = setInterval(() => {
           setTimeRemaining((prev) => {
             if (prev <= 1) {
@@ -141,42 +76,31 @@ Learning Platform Team
           })
         }, 1000)
       }
-    }, 2000)
+    } catch (error: any) {
+      setError(error.message || "Failed to send verification code")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleOTPSuccess = (data: any) => {
-    // Clear the OTP data
-    localStorage.removeItem(`otp_${email}`)
-
-    // Redirect to reset password page with verified token
-    const resetToken = generateSecureToken()
-    const expiryTime = Date.now() + 15 * 60 * 1000 // 15 minutes
-
-    localStorage.setItem(
-      `reset_token_${email}`,
-      JSON.stringify({
-        token: resetToken,
-        expiry: expiryTime,
-        attempts: 0,
-        verified: true,
-      }),
-    )
-
-    router.push(`/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`)
+  // Hàm xử lý khi OTP xác thực thành công
+  const handleOTPSuccess = async (data: any) => {
+    try {
+      // Lưu email vào localStorage trước khi chuyển trang
+      localStorage.setItem('reset_password_email', email);
+      // Chuyển trang không cần param
+      router.push('/reset-password');
+    } catch (error: any) {
+      setError(error.message || "Failed to proceed to reset password");
+    }
   }
 
+  // Hàm xử lý khi người dùng muốn quay lại nhập email
   const handleBackToEmail = () => {
     setShowOTPInput(false)
-    setEmail("")
-    setError("")
-    setGeneratedOTP("")
+    // Hoặc reset trạng thái, chuyển về bước nhập email,...
   }
 
-  const generateSecureToken = (): string => {
-    const array = new Uint8Array(32)
-    crypto.getRandomValues(array)
-    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
-  }
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60)
@@ -197,27 +121,6 @@ Learning Platform Team
             title="Verify Reset Code"
             description={`We've sent a 6-digit verification code to ${email}`}
           />
-
-          {/* Demo Information */}
-          {generatedOTP && (
-            <Card className="w-full max-w-md mx-auto mt-6">
-              <CardContent className="p-4">
-                <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
-                  <p className="font-medium mb-2 text-blue-800">📧 Demo Email Sent:</p>
-                  <p className="mb-1">
-                    <strong>To:</strong> {email}
-                  </p>
-                  <p className="mb-1">
-                    <strong>OTP:</strong> <code className="bg-blue-100 px-1 rounded text-blue-800">{generatedOTP}</code>
-                  </p>
-                  <p className="mb-2">
-                    <strong>Expires:</strong> 10 minutes
-                  </p>
-                  <p className="text-xs text-blue-600">In a real application, this would be sent via email service.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     )

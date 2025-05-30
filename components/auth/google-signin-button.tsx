@@ -15,31 +15,31 @@ export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonPro
     setIsLoading(true)
 
     try {
-      // Simulate Google OAuth flow
-      setTimeout(() => {
-        // Simulate successful Google sign-in
-        const mockGoogleUser = {
-          email: "user@gmail.com",
-          name: "Google User",
-          role: "student",
-          provider: "google",
-          avatar: "/placeholder.svg?height=40&width=40",
+      // Gọi API để lấy URL đăng nhập Google
+      const response = await fetch('http://localhost:8080/api/auth/google-login-url', {
+        method: 'GET',  // Thường là GET request để lấy URL
+        headers: {
+          'Content-Type': 'application/json'
         }
+      });
 
-        localStorage.setItem("user", JSON.stringify(mockGoogleUser))
-        setIsLoading(false)
+      const data = await response.json();
 
-        if (onSuccess) {
-          onSuccess(mockGoogleUser)
-        } else {
-          window.location.href = "/dashboard"
-        }
-      }, 1500)
-    } catch (error) {
-      setIsLoading(false)
-      const errorMessage = "Failed to sign in with Google. Please try again."
+      if (!response.ok) {
+        throw new Error(data.data || 'Failed to get Google login URL');
+      }
+
+      // Chuyển hướng đến URL đăng nhập Google
+      window.location.href = data.data;  // Giả sử backend trả về { url: "..." }
+
+    } catch (error: any) {
+      setIsLoading(false);
+      const errorMessage = error.message || "Failed to sign in with Google. Please try again.";
+      
       if (onError) {
-        onError(errorMessage)
+        onError(errorMessage);
+      } else {
+        console.error("Google sign in error:", error);
       }
     }
   }
@@ -70,7 +70,7 @@ export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonPro
           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         />
       </svg>
-      {isLoading ? "Signing in..." : "Continue with Google"}
+      {isLoading ? "Redirecting to Google..." : "Continue with Google"}
     </Button>
   )
 }

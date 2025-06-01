@@ -1,5 +1,6 @@
 "use client"
 
+
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
@@ -15,9 +16,11 @@ import { RoleBadge } from "@/components/ui/role-badge"
 import { PaymentHistory } from "@/components/profile/payment-history"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast, Toaster } from "sonner"
-import { ResponseGeneral } from "@/types/User"
+
+
 
 const BACKEND_URL = "http://localhost:8080"
+
 
 interface ProfileData {
   name: string;
@@ -30,42 +33,44 @@ interface ProfileData {
   gender: string;
 }
 
+
 // Thêm hàm format date
 const formatDateForInput = (dateString: string | null): string => {
   if (!dateString) return '';
-  
+ 
   try {
     // Nếu date string có chứa time
     if (dateString.includes('T')) {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return ''; // Return empty string if invalid date
-      
+     
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      
+     
       return `${year}-${month}-${day}`;
     }
-    
+   
     // Nếu date string đã ở dạng YYYY-MM-DD
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       return dateString;
     }
-    
+   
     // Thử parse date string và format lại
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return ''; // Return empty string if invalid date
-    
+   
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+   
     return `${year}-${month}-${day}`;
   } catch (error) {
     console.error("Error formatting date:", error);
     return '';
   }
 };
+
 
 export function ProfileSettings() {
   const { user, updateUser, getToken } = useAuth()
@@ -92,11 +97,13 @@ export function ProfileSettings() {
     confirmPassword: ""
   })
   const [passwordError, setPasswordError] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return
-      
+     
       try {
         console.log("Fetching profile data...")
         const token = getToken()
@@ -104,15 +111,18 @@ export function ProfileSettings() {
           throw new Error("No auth token")
         }
 
+
         const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
         })
 
+
         if (!response.ok) {
           throw new Error("Failed to fetch profile")
         }
+
 
         const result = await response.json()
         console.log("Profile data result:", result)
@@ -136,8 +146,10 @@ export function ProfileSettings() {
       }
     }
 
+
     fetchProfile()
   }, [user, getToken])
+
 
   // Cleanup preview URL when component unmounts
   useEffect(() => {
@@ -148,9 +160,11 @@ export function ProfileSettings() {
     }
   }, [previewUrl])
 
+
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
 
     // Kiểm tra kích thước file (giới hạn 2MB)
     if (file.size > 2 * 1024 * 1024) {
@@ -158,11 +172,13 @@ export function ProfileSettings() {
       return
     }
 
+
     // Kiểm tra định dạng file
     if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
       setError("File must be JPEG, PNG or GIF")
       return
     }
+
 
     // Tạo preview URL
     if (previewUrl) {
@@ -173,17 +189,21 @@ export function ProfileSettings() {
     setSelectedFile(file)
   }
 
+
   const uploadAvatar = async () => {
     if (!selectedFile) return null
+
 
     try {
       const formData = new FormData()
       formData.append('avatar', selectedFile)
 
+
       const token = getToken()
       if (!token) {
         throw new Error("No auth token")
       }
+
 
       const response = await fetch(`${BACKEND_URL}/api/users/avatar`, {
         method: 'POST',
@@ -193,9 +213,11 @@ export function ProfileSettings() {
         body: formData
       })
 
+
       if (!response.ok) {
         throw new Error("Failed to upload avatar")
       }
+
 
       const result = await response.json()
       if (result.message === "Success" && result.data?.avatar) {
@@ -208,6 +230,7 @@ export function ProfileSettings() {
     }
   }
 
+
   const handleSave = async () => {
     try {
       setError("")
@@ -217,9 +240,10 @@ export function ProfileSettings() {
         throw new Error("No auth token")
       }
 
+
       // Create FormData with all profile fields and avatar
       const formData = new FormData()
-      
+     
       // Add profile data fields
       formData.append('name', profileData.name)
       formData.append('email', profileData.email)
@@ -229,12 +253,15 @@ export function ProfileSettings() {
       formData.append('dateOfBirth', profileData.dateOfBirth || '')
       formData.append('gender', profileData.gender || '')
 
+
       // Add avatar file if selected
       if (selectedFile) {
         formData.append('avatar', selectedFile)
       }
 
+
       console.log("Sending profile update request...")
+
 
       const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
         method: "PUT",
@@ -243,6 +270,7 @@ export function ProfileSettings() {
         },
         body: formData
       })
+
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -254,6 +282,7 @@ export function ProfileSettings() {
         throw new Error(errorData.message || "Failed to update profile")
       }
 
+
       const result = await response.json()
       if (result.message === "Success") {
         // Update local state and user context with new data
@@ -264,7 +293,7 @@ export function ProfileSettings() {
           // Ensure dateOfBirth is formatted correctly for input
           dateOfBirth: formatDateForInput(updatedProfile.dateOfBirth)
         }))
-        
+       
         // Update user context
         updateUser({
           ...user,
@@ -273,8 +302,9 @@ export function ProfileSettings() {
           avatar: updatedProfile.avatar
         })
 
+
         setIsEditing(false)
-        
+       
         // Clear selected file and preview
         setSelectedFile(null)
         if (previewUrl) {
@@ -288,11 +318,17 @@ export function ProfileSettings() {
     }
   }
 
+
   const handleInputChange = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
 
+
   const handlePasswordChange = async () => {
+    // Prevent multiple calls
+    if (isProcessing) return
+    setIsProcessing(true)
+    
     try {
       setPasswordError("")
       
@@ -305,8 +341,9 @@ export function ProfileSettings() {
 
       const token = getToken()
       if (!token) {
+        setPasswordError("No auth token")
         toast.error("No auth token")
-        throw new Error("No auth token")
+        return
       }
 
       const response = await fetch(`${BACKEND_URL}/api/users/change-password`, {
@@ -362,12 +399,14 @@ export function ProfileSettings() {
       }, 1000)
 
     } catch (error) {
-      console.error("Error changing password:", error)
-      const errorMessage = error instanceof Error ? error.message : "Failed to change password"
-      setPasswordError(errorMessage)
-      toast.error(errorMessage)
+      console.error("Network error changing password:", error)
+      setPasswordError("Network error. Please try again.")
+      toast.error("Network error. Please try again.")
+    } finally {
+      setIsProcessing(false)
     }
   }
+
 
   if (!user) {
     return (
@@ -377,6 +416,7 @@ export function ProfileSettings() {
     )
   }
 
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -385,10 +425,11 @@ export function ProfileSettings() {
     )
   }
 
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Toaster position="top-center" richColors />
-      
+     
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Profile Settings</h1>
@@ -396,12 +437,14 @@ export function ProfileSettings() {
         </div>
       </div>
 
+
       <Tabs defaultValue="general" className="space-y-6">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="payments">Payment History</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="general" className="space-y-6">
           <Card>
@@ -426,8 +469,8 @@ export function ProfileSettings() {
                       className="hidden"
                       id="avatar-upload"
                     />
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => document.getElementById('avatar-upload')?.click()}
                       disabled={!isEditing}
@@ -445,7 +488,9 @@ export function ProfileSettings() {
                 </div>
               </div>
 
+
               <Separator />
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -507,6 +552,7 @@ export function ProfileSettings() {
                 </div>
               </div>
 
+
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
@@ -518,6 +564,7 @@ export function ProfileSettings() {
                   rows={4}
                 />
               </div>
+
 
               <div className="flex items-center justify-between pt-4">
                 <div className="space-y-1">
@@ -547,6 +594,7 @@ export function ProfileSettings() {
             </CardContent>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="security" className="space-y-6">
           <Card>
@@ -595,7 +643,7 @@ export function ProfileSettings() {
                         onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       />
                     </div>
-                  
+                 
                     <div className="flex gap-2 justify-end pt-2">
                       <Button variant="outline" onClick={() => {
                         setIsChangingPassword(false)
@@ -619,6 +667,7 @@ export function ProfileSettings() {
           </Card>
         </TabsContent>
 
+
         <TabsContent value="payments" className="space-y-6">
           <PaymentHistory />
         </TabsContent>
@@ -626,3 +675,6 @@ export function ProfileSettings() {
     </div>
   )
 }
+
+
+

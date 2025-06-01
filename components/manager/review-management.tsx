@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,77 +18,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Star, MessageSquare, ThumbsUp, Flag, Search, RefreshCw } from "lucide-react"
-
-interface Review {
-  id: string
-  studentName: string
-  studentAvatar: string
-  courseName: string
-  rating: number
-  content: string
-  date: string
-  hasResponse: boolean
-  response?: string
-  helpful: number
-  reported: boolean
-}
-
-const mockReviews: Review[] = [
-  {
-    id: "1",
-    studentName: "Alice Johnson",
-    studentAvatar: "/placeholder.svg?height=40&width=40",
-    courseName: "React Fundamentals",
-    rating: 5,
-    content:
-      "Excellent course! The instructor explains concepts clearly and the hands-on projects were really helpful for understanding React.",
-    date: "2024-01-25",
-    hasResponse: false,
-    helpful: 12,
-    reported: false,
-  },
-  {
-    id: "2",
-    studentName: "Bob Smith",
-    studentAvatar: "/placeholder.svg?height=40&width=40",
-    courseName: "Advanced JavaScript",
-    rating: 4,
-    content: "Great course content, but I wish there were more practical exercises. The theory is solid though.",
-    date: "2024-01-24",
-    hasResponse: true,
-    response: "Thank you for the feedback! I'll be adding more practical exercises in the next update.",
-    helpful: 8,
-    reported: false,
-  },
-  {
-    id: "3",
-    studentName: "Carol Davis",
-    studentAvatar: "/placeholder.svg?height=40&width=40",
-    courseName: "CSS Mastery",
-    rating: 3,
-    content: "The course is okay, but some topics feel rushed. More time on flexbox and grid would be helpful.",
-    date: "2024-01-23",
-    hasResponse: false,
-    helpful: 3,
-    reported: false,
-  },
-  {
-    id: "4",
-    studentName: "David Wilson",
-    studentAvatar: "/placeholder.svg?height=40&width=40",
-    courseName: "Node.js Backend",
-    rating: 5,
-    content: "Outstanding course! Comprehensive coverage of Node.js and practical examples. Highly recommended!",
-    date: "2024-01-22",
-    hasResponse: true,
-    response: "Thank you so much for the kind words! I'm glad you found the course helpful.",
-    helpful: 15,
-    reported: false,
-  },
-]
+import { reviewService, Review } from "@/app/services/reviewService"
+import { categoryAPI, CategoryResponseDTO } from "@/api/category"
 
 export function ReviewManagement() {
-  const [reviews, setReviews] = useState<Review[]>(mockReviews)
+  const PAGE_SIZE = 5;
+  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [searchTerm, setSearchTerm] = useState("")
   const [ratingFilter, setRatingFilter] = useState<string>("all")
   const [courseFilter, setCourseFilter] = useState<string>("all")
@@ -96,32 +32,75 @@ export function ReviewManagement() {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
   const [responseText, setResponseText] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
+  const [categories, setCategories] = useState<CategoryResponseDTO[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      setIsRefreshing(true);
+      // Lấy toàn bộ review, không phân trang ở API
+      const data = await reviewService.getReviews(0, 10000, 'modifiedDate', 'DESC');
+      setAllReviews(data.content);
+      setIsRefreshing(false);
+    };
+    fetchReviews();
+  }, []);
+
+  useEffect(() => {
+    // Lấy danh sách category
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryAPI.getAllCategories({ size: 100 });
+        setCategories(res.data.content);
+      } catch (e) {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Filter và phân trang lại trên FE
+  useEffect(() => {
+    let filtered = allReviews.filter((review) => {
+      const matchesSearch =
+        review.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.comment.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRating = ratingFilter === "all" || review.star.toString() === ratingFilter;
+      const matchesCategory = categoryFilter === "all" || categories.find(c => c.id === review.courseId?.toString())?.id === categoryFilter;
+      let matchesResponse = true;
+      if (responseFilter === "responded") {
+        matchesResponse = Boolean(review.modifiedDate && review.modifiedDate !== review.createdDate);
+      }
+      return matchesSearch && matchesRating && matchesCategory && matchesResponse;
+    });
+    setTotalReviews(filtered.length);
+    const pages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    setTotalPages(pages);
+    // Nếu page vượt quá số trang mới, reset về 0
+    if (page >= pages) setPage(0);
+    // Lấy review cho trang hiện tại
+    setReviews(filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE));
+  }, [allReviews, searchTerm, ratingFilter, categoryFilter, responseFilter, page]);
+
+  // Khi filter thay đổi, reset về page 0
+  useEffect(() => {
+    setPage(0);
+  }, [searchTerm, ratingFilter, categoryFilter, responseFilter]);
 
   const handleRefresh = () => {
     setIsRefreshing(true)
     setTimeout(() => setIsRefreshing(false), 1000)
   }
 
-  const filteredReviews = reviews.filter((review) => {
-    const matchesSearch =
-      review.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.content.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRating = ratingFilter === "all" || review.rating.toString() === ratingFilter
-    const matchesCourse = courseFilter === "all" || review.courseName === courseFilter
-    const matchesResponse =
-      responseFilter === "all" ||
-      (responseFilter === "responded" && review.hasResponse) ||
-      (responseFilter === "pending" && !review.hasResponse)
-
-    return matchesSearch && matchesRating && matchesCourse && matchesResponse
-  })
-
   const handleSubmitResponse = () => {
     if (selectedReview && responseText.trim()) {
       setReviews((prev) =>
         prev.map((review) =>
-          review.id === selectedReview.id ? { ...review, hasResponse: true, response: responseText } : review,
+          review.id === selectedReview.id ? { ...review, modifiedDate: new Date().toISOString() } : review,
         ),
       )
       setResponseText("")
@@ -135,11 +114,17 @@ export function ReviewManagement() {
     ))
   }
 
-  const totalReviews = reviews.length
-  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-  const pendingResponses = reviews.filter((r) => !r.hasResponse).length
+  const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.star, 0) / reviews.length : 0
+  const pendingResponses = reviews.filter((r) => !r.modifiedDate).length
+  const respondedCount = reviews.filter(r => r.modifiedDate && r.modifiedDate !== r.createdDate).length
 
   const uniqueCourses = [...new Set(reviews.map((r) => r.courseName))]
+
+  const displayDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+  };
 
   return (
     <div className="space-y-6">
@@ -180,12 +165,12 @@ export function ReviewManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Responses</CardTitle>
+            <CardTitle className="text-sm font-medium">Responses Sent</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingResponses}</div>
-            <p className="text-xs text-muted-foreground">Need your response</p>
+            <div className="text-2xl font-bold">{respondedCount}</div>
+            <p className="text-xs text-muted-foreground">Responses sent</p>
           </CardContent>
         </Card>
       </div>
@@ -216,16 +201,14 @@ export function ReviewManagement() {
           </SelectContent>
         </Select>
 
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Course" />
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            {uniqueCourses.map((course) => (
-              <SelectItem key={course} value={course}>
-                {course}
-              </SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -236,7 +219,6 @@ export function ReviewManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Reviews</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="responded">Responded</SelectItem>
           </SelectContent>
         </Select>
@@ -244,46 +226,39 @@ export function ReviewManagement() {
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {filteredReviews.map((review) => (
+        {reviews.map((review) => (
           <Card key={review.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar>
-                    <AvatarImage src={review.studentAvatar || "/placeholder.svg"} />
+                    <AvatarImage src={review.userAvatar || "/placeholder.svg"} />
                     <AvatarFallback>
-                      {review.studentName
+                      {review.userName
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-medium">{review.studentName}</h3>
+                    <h3 className="font-medium">{review.userName}</h3>
                     <p className="text-sm text-muted-foreground">{review.courseName}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="flex">{renderStars(review.rating)}</div>
-                  <span className="text-sm text-muted-foreground">{new Date(review.date).toLocaleDateString()}</span>
+                  <div className="flex">{renderStars(review.star)}</div>
+                  <span className="text-sm text-muted-foreground">{displayDate(review.modifiedDate)}</span>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm mb-4">{review.content}</p>
-
-              {review.hasResponse && review.response && (
-                <div className="bg-muted p-3 rounded-lg mb-4">
-                  <p className="text-sm font-medium mb-1">Your Response:</p>
-                  <p className="text-sm">{review.response}</p>
-                </div>
-              )}
+              <p className="text-sm mb-4">{review.comment}</p>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <Button variant="ghost" size="sm">
                     <ThumbsUp className="mr-1 h-3 w-3" />
-                    {review.helpful} Helpful
+                    Like
                   </Button>
                   <Button variant="ghost" size="sm">
                     <Flag className="mr-1 h-3 w-3" />
@@ -292,34 +267,28 @@ export function ReviewManagement() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {review.hasResponse ? (
-                    <Badge variant="secondary">Responded</Badge>
-                  ) : (
-                    <Badge variant="outline">Pending Response</Badge>
-                  )}
-
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" onClick={() => setSelectedReview(review)}>
                         <MessageSquare className="mr-1 h-3 w-3" />
-                        {review.hasResponse ? "Update Response" : "Respond"}
+                        Response
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Respond to Review</DialogTitle>
                         <DialogDescription>
-                          Respond to {review.studentName}'s review for {review.courseName}
+                          Respond to {review.userName}'s review for {review.courseName}
                         </DialogDescription>
                       </DialogHeader>
 
                       <div className="space-y-4">
                         <div className="bg-muted p-3 rounded-lg">
                           <div className="flex items-center space-x-2 mb-2">
-                            <div className="flex">{renderStars(review.rating)}</div>
-                            <span className="text-sm font-medium">{review.studentName}</span>
+                            <div className="flex">{renderStars(review.star)}</div>
+                            <span className="text-sm font-medium">{review.userName}</span>
                           </div>
-                          <p className="text-sm">{review.content}</p>
+                          <p className="text-sm">{review.comment}</p>
                         </div>
 
                         <Textarea
@@ -335,7 +304,7 @@ export function ReviewManagement() {
                           Cancel
                         </Button>
                         <Button onClick={handleSubmitResponse}>
-                          {review.hasResponse ? "Update Response" : "Send Response"}
+                          Response
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -347,7 +316,18 @@ export function ReviewManagement() {
         ))}
       </div>
 
-      {filteredReviews.length === 0 && (
+      {/* Pagination */}
+      <div className="flex justify-center items-center gap-4 mt-6">
+        <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 0}>
+          Previous
+        </Button>
+        <span>Page {page + 1} of {totalPages}</span>
+        <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages - 1}>
+          Next
+        </Button>
+      </div>
+
+      {reviews.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
             <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />

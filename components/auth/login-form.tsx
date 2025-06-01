@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { GoogleSignInButton } from "./google-signin-button"
+import { FacebookSignInButton } from "./facebook-signin-button"
 import { ForgotPasswordModal } from "./forgot-password-modal"
 import { useAuth } from "@/context/auth-context"
 import type { User, UserRole } from "@/context/auth-context"
@@ -52,7 +53,7 @@ export function LoginForm() {
         },
         body: JSON.stringify({
           email: formData.email,
-          password: formData.password,
+          password: formData.password
         }),
       });
 
@@ -70,15 +71,17 @@ export function LoginForm() {
       console.log('Decoded token:', decodedToken);
       
       // Cập nhật context với thông tin user từ payload
-      const userInfo: User = {
+      const user = {
         id: decodedToken.jti,
         email: decodedToken.sub,
         name: decodedToken.name,
-        role: decodedToken.scope.toLowerCase() as UserRole,
-        joinDate: new Date().toISOString()
-      }
-      console.log(userInfo)
-      await login(userInfo, token);
+        avatar: decodedToken.avatar,
+        role: decodedToken.scope.toLowerCase(),
+        joinDate: new Date().toISOString(),
+      };
+
+      console.log(user)
+      await login(user, token);
 
       // Điều hướng dựa trên role
       if (decodedToken.scope === "ADMIN") {
@@ -186,7 +189,10 @@ export function LoginForm() {
           </div>
         </div>
 
-        <GoogleSignInButton />
+        <div className="space-y-2">
+          <GoogleSignInButton />
+
+        </div>
 
       </CardContent>
       <CardFooter>

@@ -35,7 +35,7 @@ const navigationItems = [
     icon: BarChart3,
   },
   {
-    title: "My Courses",
+    title: "Courses List",
     url: "/manager/courses",
     icon: BookOpen,
   },

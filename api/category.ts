@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/types/api'
+import { ApiResponse } from '@/api/api'
 
 export interface Category {
   id: string
@@ -15,12 +15,13 @@ export interface CategoryRequestDTO {
 }
 
 export interface CategoryResponseDTO {
-  id: string
+  id: number
   name: string
-  description: string
-  courseCount: number
-  createdAt: string
-  updatedAt: string
+  description?: string
+  isActive: boolean
+  courseCount?: number
+  createdDate?: string
+  modifiedDate?: string
 }
 
 export interface CategoryStats {
@@ -49,13 +50,42 @@ export interface PaginationParams {
   sort?: string;
 }
 
-export interface CategoryResponseDTO {
-  id: string
-  name: string
-  description: string
-  courseCount: number
-  createdDate: string
-  modifiedDate: string
+// Spring Page interface structure for categories
+export interface PagedCategoryResponse {
+  content: CategoryResponseDTO[]
+  pageable: {
+    pageNumber: number
+    pageSize: number
+    sort: {
+      empty: boolean
+      sorted: boolean
+      unsorted: boolean
+    }
+    offset: number
+    paged: boolean
+    unpaged: boolean
+  }
+  last: boolean
+  totalPages: number
+  totalElements: number
+  size: number
+  number: number
+  sort: {
+    empty: boolean
+    sorted: boolean
+    unsorted: boolean
+  }
+  first: boolean
+  numberOfElements: number
+  empty: boolean
+}
+
+export interface CategorySearchParams {
+  page?: number;
+  size?: number;
+  sort?: string;
+  name?: string;
+  isActive?: boolean;
 }
 
 class CategoryAPI {
@@ -68,32 +98,28 @@ class CategoryAPI {
     }
   }
 
-  async getAllCategories(
-    pagination: PaginationParams = {},
-    filters: CategoryFilters = {}
-  ): Promise<ApiResponse<PaginatedResponse<CategoryResponseDTO>>> {
+  async getAllCategories(params?: CategorySearchParams): Promise<ApiResponse<PagedCategoryResponse>> {
     try {
-      const {
-        page = 0,
-        size = 10,
-        sort = 'name,asc'
-      } = pagination;
+      const searchParams = new URLSearchParams({
+        page: (params?.page ?? 0).toString(),
+        size: (params?.size ?? 100).toString(),
+      })
+      
+      if (params?.name) {
+        searchParams.append('name', params.name)
+      }
+      
+      if (params?.sort) {
+        searchParams.append('sort', params.sort)
+      }
+      
+      if (params?.isActive !== undefined) {
+        searchParams.append('isActive', params.isActive.toString())
+      }
 
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: size.toString(),
-        sort
-      });
-
-      // Add filters if provided
-      if (filters.name) params.append('name', filters.name);
-
-      console.log('Fetching categories with URL:', `${this.baseUrl}/api/categories?${params}`);
-
-      const response = await fetch(`${this.baseUrl}/api/categories?${params}`, {
+      const response = await fetch(`${this.baseUrl}/api/categories?${searchParams}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           ...this.getAuthHeaders(),
         },
       })
@@ -104,11 +130,15 @@ class CategoryAPI {
         throw new Error(responseData.detail || responseData.message || `HTTP error! status: ${response.status}`)
       }
 
-      return responseData as ApiResponse<PaginatedResponse<CategoryResponseDTO>>
+      return responseData as ApiResponse<PagedCategoryResponse>
     } catch (error) {
-      console.error('Get categories error:', error)
+      console.error('Get all categories error:', error)
       throw error
     }
+  }
+
+  async searchCategories(params: CategorySearchParams): Promise<ApiResponse<PagedCategoryResponse>> {
+    return this.getAllCategories(params)
   }
 
   async getCategoryById(categoryId: string): Promise<ApiResponse<CategoryResponseDTO>> {
@@ -136,8 +166,6 @@ class CategoryAPI {
 
   async createCategory(categoryData: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> {
     try {
-      console.log('Creating category:', categoryData);
-
       const response = await fetch(`${this.baseUrl}/api/categories`, {
         method: 'POST',
         headers: {
@@ -160,11 +188,9 @@ class CategoryAPI {
     }
   }
 
-  async updateCategory(categoryId: string, categoryData: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> {
+  async updateCategory(id: number, categoryData: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> {
     try {
-      console.log('Updating category:', categoryId, categoryData);
-
-      const response = await fetch(`${this.baseUrl}/api/categories/${categoryId}`, {
+      const response = await fetch(`${this.baseUrl}/api/categories/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -186,14 +212,11 @@ class CategoryAPI {
     }
   }
 
-  async deleteCategory(categoryId: string): Promise<ApiResponse<void>> {
+  async deleteCategory(id: number): Promise<ApiResponse<void>> {
     try {
-      console.log('Deleting category:', categoryId);
-
-      const response = await fetch(`${this.baseUrl}/api/categories/${categoryId}`, {
+      const response = await fetch(`${this.baseUrl}/api/categories/${id}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           ...this.getAuthHeaders(),
         },
       })

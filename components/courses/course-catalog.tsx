@@ -1,154 +1,19 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Search, Star, Clock, Users, X, SlidersHorizontal } from "lucide-react"
+import { Search, X, SlidersHorizontal, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
-import Link from "next/link"
+import { courseAPI, CourseResponseDTO } from "@/api/course"
+import { categoryAPI, CategoryResponseDTO } from "@/api/category"
+import { CourseCard } from "./course-card"
 
-const courses = [
-  {
-    id: 1,
-    title: "React.js Fundamentals",
-    description:
-      "Learn the basics of React.js and build modern web applications with hooks, components, and state management",
-    instructor: "John Doe",
-    price: 99,
-    originalPrice: 149,
-    rating: 4.8,
-    students: 1234,
-    duration: "8 hours",
-    category: "Programming",
-    level: "Beginner",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["react", "javascript", "frontend", "web development", "hooks"],
-    popularity: 95,
-    isFree: false,
-  },
-  {
-    id: 2,
-    title: "Advanced JavaScript ES6+",
-    description:
-      "Master advanced JavaScript concepts, ES6+ features, async programming, and modern development patterns",
-    instructor: "Jane Smith",
-    price: 149,
-    rating: 4.9,
-    students: 856,
-    duration: "12 hours",
-    category: "Programming",
-    level: "Advanced",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["javascript", "es6", "async", "promises", "advanced"],
-    popularity: 88,
-    isFree: false,
-  },
-  {
-    id: 3,
-    title: "UI/UX Design Principles",
-    description: "Learn design thinking, user research, wireframing, and create beautiful user interfaces",
-    instructor: "Mike Johnson",
-    price: 79,
-    originalPrice: 99,
-    rating: 4.7,
-    students: 2341,
-    duration: "6 hours",
-    category: "Design",
-    level: "Beginner",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["design", "ui", "ux", "wireframing", "user research"],
-    popularity: 92,
-    isFree: false,
-  },
-  {
-    id: 4,
-    title: "Node.js Backend Development",
-    description: "Build scalable backend applications with Node.js, Express, databases, and API development",
-    instructor: "Sarah Wilson",
-    price: 129,
-    rating: 4.6,
-    students: 567,
-    duration: "10 hours",
-    category: "Programming",
-    level: "Intermediate",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["nodejs", "backend", "express", "api", "database"],
-    popularity: 75,
-    isFree: false,
-  },
-  {
-    id: 5,
-    title: "Digital Marketing Fundamentals",
-    description: "Learn SEO, social media marketing, content strategy, and analytics to grow your business online",
-    instructor: "Emily Davis",
-    price: 0,
-    rating: 4.5,
-    students: 3456,
-    duration: "4 hours",
-    category: "Business",
-    level: "Beginner",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["marketing", "seo", "social media", "analytics", "business"],
-    popularity: 89,
-    isFree: true,
-  },
-  {
-    id: 6,
-    title: "Python Data Science",
-    description: "Master data analysis, visualization, and machine learning with Python, pandas, and scikit-learn",
-    instructor: "David Chen",
-    price: 199,
-    rating: 4.8,
-    students: 1876,
-    duration: "15 hours",
-    category: "Programming",
-    level: "Intermediate",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["python", "data science", "machine learning", "pandas", "analysis"],
-    popularity: 91,
-    isFree: false,
-  },
-  {
-    id: 7,
-    title: "Graphic Design Mastery",
-    description: "Create stunning visual designs using Adobe Creative Suite, typography, and color theory",
-    instructor: "Lisa Rodriguez",
-    price: 89,
-    rating: 4.6,
-    students: 987,
-    duration: "9 hours",
-    category: "Design",
-    level: "Intermediate",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["graphic design", "adobe", "typography", "color theory", "visual"],
-    popularity: 78,
-    isFree: false,
-  },
-  {
-    id: 8,
-    title: "Business Strategy & Leadership",
-    description: "Develop strategic thinking, leadership skills, and learn to make data-driven business decisions",
-    instructor: "Robert Taylor",
-    price: 0,
-    rating: 4.4,
-    students: 2134,
-    duration: "7 hours",
-    category: "Business",
-    level: "Advanced",
-    image: "/placeholder.svg?height=200&width=300",
-    keywords: ["business", "strategy", "leadership", "management", "decisions"],
-    popularity: 82,
-    isFree: true,
-  },
-]
-
-const categories = ["Programming", "Design", "Business"]
-const levels = ["Beginner", "Intermediate", "Advanced"]
+const levels = ["BEGINNER", "INTERMEDIATE", "ADVANCED"]
 const sortOptions = [
   { value: "relevance", label: "Relevance" },
   { value: "popularity", label: "Popularity" },
@@ -166,6 +31,109 @@ export function CourseCatalog() {
   const [priceRange, setPriceRange] = useState([0, 200])
   const [sortBy, setSortBy] = useState("relevance")
   const [showFilters, setShowFilters] = useState(false)
+  
+  const [courses, setCourses] = useState<CourseResponseDTO[]>([])
+  const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize] = useState(6)
+  const [loadingPage, setLoadingPage] = useState(false)
+
+  // Load categories once
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesResponse = await categoryAPI.getAllCategories({ 
+          page: 0, 
+          size: 100,
+          isActive: true 
+        })
+        
+        if (categoriesResponse.data?.content) {
+          setCategories(categoriesResponse.data.content)
+        }
+      } catch (err) {
+        console.error('Error loading categories:', err)
+      }
+    }
+
+    loadCategories()
+  }, [])
+
+  // Load courses based on filters and pagination
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        setLoadingPage(currentPage > 0)
+        setLoading(currentPage === 0)
+        setError(null)
+        
+        const coursesResponse = await courseAPI.getAllCourses({
+          page: currentPage,
+          size: pageSize
+        })
+        
+        let filteredCourses = coursesResponse.data?.content || []
+
+        if (searchTerm) {
+          filteredCourses = filteredCourses.filter(course => 
+            course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        }
+
+        if (selectedCategories.length > 0) {
+          filteredCourses = filteredCourses.filter(course => 
+            selectedCategories.includes(course.category.name)
+          )
+        }
+
+        if (selectedLevels.length > 0) {
+          filteredCourses = filteredCourses.filter(course => 
+            selectedLevels.includes(course.level)
+          )
+        }
+
+        if (priceFilter === "free") {
+          filteredCourses = filteredCourses.filter(course => course.finalPrice === 0)
+        } else if (priceFilter === "paid") {
+          filteredCourses = filteredCourses.filter(course => course.finalPrice > 0)
+        }
+
+        if (priceFilter !== "free") {
+          if (priceRange[0] > 0) filteredCourses = filteredCourses.filter(course => course.finalPrice >= priceRange[0])
+          if (priceRange[1] < 200) filteredCourses = filteredCourses.filter(course => course.finalPrice <= priceRange[1])
+        }
+
+        // Add sorting
+        if (sortBy === "price-low") filteredCourses = filteredCourses.sort((a, b) => a.finalPrice - b.finalPrice)
+        else if (sortBy === "price-high") filteredCourses = filteredCourses.sort((a, b) => b.finalPrice - a.finalPrice)
+        else if (sortBy === "rating") filteredCourses = filteredCourses.sort((a, b) => b.averageRating - a.averageRating)
+        else if (sortBy === "newest") filteredCourses = filteredCourses.sort((a, b) => b.id - a.id)
+        
+        setCourses(filteredCourses)
+        setTotalPages(coursesResponse.data.totalPages)
+        setTotalElements(coursesResponse.data.totalElements)
+      } catch (err) {
+        console.error('Error loading courses:', err)
+        setError('Failed to load courses. Please try again later.')
+      } finally {
+        setLoading(false)
+        setLoadingPage(false)
+      }
+    }
+
+    loadCourses()
+  }, [currentPage, pageSize, searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
 
   const handleCategoryChange = (category: string, checked: boolean) => {
     if (checked) {
@@ -190,72 +158,106 @@ export function CourseCatalog() {
     setPriceFilter("all")
     setPriceRange([0, 200])
     setSortBy("relevance")
+    setCurrentPage(0)
   }
 
-  const filteredAndSortedCourses = useMemo(() => {
-    const filtered = courses.filter((course) => {
-      // Search functionality
-      const searchLower = searchTerm.toLowerCase()
-      const matchesSearch =
-        searchTerm === "" ||
-        course.title.toLowerCase().includes(searchLower) ||
-        course.description.toLowerCase().includes(searchLower) ||
-        course.instructor.toLowerCase().includes(searchLower) ||
-        course.keywords.some((keyword) => keyword.toLowerCase().includes(searchLower))
+  const activeFiltersCount = selectedCategories.length + selectedLevels.length + 
+    (priceFilter !== "all" ? 1 : 0) + (searchTerm ? 1 : 0)
 
-      // Category filter
-      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(course.category)
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setCurrentPage(newPage)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
-      // Level filter
-      const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes(course.level)
+  const renderPagination = () => {
+    if (totalPages <= 1) return null
 
-      // Price filter
-      const matchesPrice = (() => {
-        if (priceFilter === "free") return course.isFree
-        if (priceFilter === "paid") return !course.isFree
-        return true
-      })()
+    const showPages = 5
+    const startPage = Math.max(0, currentPage - Math.floor(showPages / 2))
+    const endPage = Math.min(totalPages - 1, startPage + showPages - 1)
 
-      // Price range filter
-      const matchesPriceRange = course.price >= priceRange[0] && course.price <= priceRange[1]
+    return (
+      <div className="flex items-center justify-center space-x-2 mt-8">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 0 || loadingPage}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </Button>
 
-      return matchesSearch && matchesCategory && matchesLevel && matchesPrice && matchesPriceRange
-    })
+        {startPage > 0 && (
+          <>
+            <Button variant="outline" size="sm" onClick={() => handlePageChange(0)} disabled={loadingPage}>
+              1
+            </Button>
+            {startPage > 1 && <span className="px-2">...</span>}
+          </>
+        )}
 
-    // Sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "popularity":
-          return b.popularity - a.popularity
-        case "rating":
-          return b.rating - a.rating
-        case "price-low":
-          return a.price - b.price
-        case "price-high":
-          return b.price - a.price
-        case "newest":
-          return b.id - a.id
-        case "relevance":
-        default:
-          // Simple relevance based on search term match and popularity
-          if (searchTerm) {
-            const aRelevance =
-              (a.title.toLowerCase().includes(searchTerm.toLowerCase()) ? 2 : 0) +
-              (a.keywords.some((k) => k.toLowerCase().includes(searchTerm.toLowerCase())) ? 1 : 0)
-            const bRelevance =
-              (b.title.toLowerCase().includes(searchTerm.toLowerCase()) ? 2 : 0) +
-              (b.keywords.some((k) => k.toLowerCase().includes(searchTerm.toLowerCase())) ? 1 : 0)
-            if (aRelevance !== bRelevance) return bRelevance - aRelevance
-          }
-          return b.popularity - a.popularity
-      }
-    })
+        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
+          <Button
+            key={page}
+            variant={page === currentPage ? "default" : "outline"}
+            size="sm"
+            onClick={() => handlePageChange(page)}
+            disabled={loadingPage}
+          >
+            {page + 1}
+          </Button>
+        ))}
 
-    return filtered
-  }, [searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
+        {endPage < totalPages - 1 && (
+          <>
+            {endPage < totalPages - 2 && <span className="px-2">...</span>}
+            <Button variant="outline" size="sm" onClick={() => handlePageChange(totalPages - 1)} disabled={loadingPage}>
+              {totalPages}
+            </Button>
+          </>
+        )}
 
-  const activeFiltersCount =
-    selectedCategories.length + selectedLevels.length + (priceFilter !== "all" ? 1 : 0) + (searchTerm ? 1 : 0)
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages - 1 || loadingPage}
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground">Loading courses...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">⚠️</div>
+          <h3 className="text-xl font-semibold">Error Loading Courses</h3>
+          <p className="text-muted-foreground max-w-md mx-auto">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -298,10 +300,15 @@ export function CourseCatalog() {
       {/* Results Summary */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing {filteredAndSortedCourses.length} of {courses.length} courses
+          Showing {courses.length} of {totalElements} courses
           {searchTerm && (
             <span className="ml-1">
               for "<span className="font-medium text-foreground">{searchTerm}</span>"
+            </span>
+          )}
+          {totalPages > 1 && (
+            <span className="ml-1">
+              (Page {currentPage + 1} of {totalPages})
             </span>
           )}
         </div>
@@ -358,18 +365,22 @@ export function CourseCatalog() {
               {/* Category Filter */}
               <div className="space-y-3">
                 <h4 className="font-medium">Category</h4>
-                {categories.map((category) => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={category}
-                      checked={selectedCategories.includes(category)}
-                      onCheckedChange={(checked) => handleCategoryChange(category, checked as boolean)}
-                    />
-                    <label htmlFor={category} className="text-sm cursor-pointer">
-                      {category}
-                    </label>
-                  </div>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={category.name}
+                        checked={selectedCategories.includes(category.name)}
+                        onCheckedChange={(checked) => handleCategoryChange(category.name, checked as boolean)}
+                      />
+                      <label htmlFor={category.name} className="text-sm cursor-pointer">
+                        {category.name} {category.courseCount && `(${category.courseCount})`}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No categories available</p>
+                )}
               </div>
 
               {/* Level Filter */}
@@ -430,76 +441,29 @@ export function CourseCatalog() {
 
         {/* Course Grid */}
         <div className="flex-1">
-          {filteredAndSortedCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredAndSortedCourses.map((course) => (
-                <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video bg-muted relative">
-                    <img
-                      src={course.image || "/placeholder.svg"}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg?height=200&width=300"
-                      }}
-                    />
-                    {course.isFree && <Badge className="absolute top-2 left-2 bg-green-500 text-white">FREE</Badge>}
-                    {course.originalPrice && course.originalPrice > course.price && (
-                      <Badge className="absolute top-2 right-2 bg-red-500 text-white">
-                        {Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)}% OFF
-                      </Badge>
-                    )}
-                  </div>
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge variant="secondary">{course.category}</Badge>
-                      <Badge variant="outline">{course.level}</Badge>
-                    </div>
-                    <CardTitle className="line-clamp-2">{course.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">by {course.instructor}</p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span>{course.rating}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4" />
-                          <span>{course.students.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{course.duration}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          {course.isFree ? (
-                            <span className="text-2xl font-bold text-green-600">Free</span>
-                          ) : course.originalPrice && course.originalPrice > course.price ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg text-muted-foreground line-through">
-                                ${course.originalPrice}
-                              </span>
-                              <span className="text-2xl font-bold text-green-600">${course.price}</span>
-                            </div>
-                          ) : (
-                            <span className="text-2xl font-bold">${course.price}</span>
-                          )}
-                        </div>
-                        <Link href={`/courses/${course.id}`}>
-                          <Button>View Course</Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          {loadingPage && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <span className="text-muted-foreground">Loading page {currentPage + 1}...</span>
             </div>
-          ) : (
+          )}
+          
+          {!loadingPage && courses.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {courses.map((course) => (
+                  <CourseCard 
+                    key={course.id} 
+                    course={course}
+                    variant="default"
+                    showInstructor={true}
+                  />
+                ))}
+              </div>
+              
+              {renderPagination()}
+            </>
+          ) : !loadingPage && (
             <div className="text-center py-12">
               <div className="space-y-4">
                 <div className="text-6xl">🔍</div>

@@ -117,7 +117,7 @@ class CategoryAPI {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...this.getAuthHeaders(),
+          // ...this.getAuthHeaders(),
         },
       })
 

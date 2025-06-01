@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreVertical, Edit, Trash2, Tags, BookOpen, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { categoryAPI, PaginatedResponse, CategoryFilters, PaginationParams, CategoryResponseDTO } from "@/api/category"
+import { categoryAPI, PaginatedResponse, CategoryFilters, PaginationParams, CategoryResponseDTO, CategoryRequestDTO } from "@/api/category"
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
@@ -60,6 +60,10 @@ export function CategoryManagement() {
     name: "",
     description: "",
   })
+  const [nameError, setNameError] = useState("")
+  const [descriptionError, setDescriptionError] = useState("")
+  const [nameTouched, setNameTouched] = useState(false)
+  const [descriptionTouched, setDescriptionTouched] = useState(false)
 
   // Fetch categories from API
   const fetchCategories = async (paginationParams: PaginationParams = {}, filters: CategoryFilters = {}) => {
@@ -113,26 +117,30 @@ export function CategoryManagement() {
   }
 
   const handleCreateCategory = async () => {
+    let hasError = false
     if (!newCategory.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Category name is required",
-        variant: "destructive",
-      })
-      return
+      setNameError("Please enter a category name")
+      hasError = true
+    } else {
+      setNameError("")
     }
-
+    if (!newCategory.description.trim()) {
+      setDescriptionError("Please enter a category description")
+      hasError = true
+    } else {
+      setDescriptionError("")
+    }
+    if (hasError) return
     try {
       await categoryAPI.createCategory(newCategory)
       setNewCategory({ name: "", description: "" })
       setIsCreateDialogOpen(false)
-      
+      setNameError("")
+      setDescriptionError("")
       toast({
-        title: "Category Created",
-        description: `${newCategory.name} has been created successfully.`,
+        title: "Success",
+        description: `Category ${newCategory.name} has been created successfully.`,
       })
-
-      // Refresh the list
       fetchCategories(
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
@@ -277,7 +285,21 @@ export function CategoryManagement() {
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+            setIsCreateDialogOpen(open)
+            if (open) {
+              setNameError("")
+              setDescriptionError("")
+              setNameTouched(false)
+              setDescriptionTouched(false)
+            } else {
+              setNameError("")
+              setDescriptionError("")
+              setNewCategory({ name: "", description: "" })
+              setNameTouched(false)
+              setDescriptionTouched(false)
+            }
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -298,8 +320,16 @@ export function CategoryManagement() {
                     id="category-name"
                     placeholder="Enter category name"
                     value={newCategory.name}
-                    onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                    onChange={(e) => {
+                      setNewCategory({ ...newCategory, name: e.target.value })
+                      if (e.target.value.trim()) setNameError("")
+                    }}
+                    onBlur={() => {
+                      setNameTouched(true)
+                      if (!newCategory.name.trim()) setNameError("Please enter a category name")
+                    }}
                   />
+                  {nameTouched && nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category-description">Description</Label>
@@ -307,16 +337,26 @@ export function CategoryManagement() {
                     id="category-description"
                     placeholder="Enter category description"
                     value={newCategory.description}
-                    onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                    onChange={(e) => {
+                      setNewCategory({ ...newCategory, description: e.target.value })
+                      if (e.target.value.trim()) setDescriptionError("")
+                    }}
+                    onBlur={() => {
+                      setDescriptionTouched(true)
+                      if (!newCategory.description.trim()) setDescriptionError("Please enter a category description")
+                    }}
                     rows={3}
                   />
+                  {descriptionTouched && descriptionError && <p className="text-red-500 text-xs mt-1">{descriptionError}</p>}
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateCategory}>Create Category</Button>
+                <Button onClick={handleCreateCategory} disabled={!newCategory.name.trim() || !newCategory.description.trim()}>
+                  Create Category
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -562,11 +602,11 @@ export function CategoryManagement() {
             <AlertDialogAction
               onClick={handleDeleteCategory}
               className={`${
-                categoryToDelete && categoryToDelete.courseCount > 0 
+                !!categoryToDelete && categoryToDelete.courseCount > 0 
                   ? "bg-gray-400 hover:bg-gray-500 cursor-not-allowed" 
                   : "bg-red-600 hover:bg-red-700"
               }`}
-              disabled={categoryToDelete && categoryToDelete.courseCount > 0}
+              disabled={!!categoryToDelete && categoryToDelete.courseCount > 0}
             >
               {categoryToDelete && categoryToDelete.courseCount > 0 ? "Cannot Delete" : "Delete"}
             </AlertDialogAction>

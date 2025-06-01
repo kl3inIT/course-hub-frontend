@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Star, MessageSquare, ThumbsUp, Flag, Search, RefreshCw } from "lucide-react"
-import { reviewService, Review } from "@/app/services/reviewService"
+import { reviewService, Review } from "@/api/review"
 import { categoryAPI, CategoryResponseDTO } from "@/api/category"
 
 export function ReviewManagement() {

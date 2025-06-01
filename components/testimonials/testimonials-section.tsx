@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star } from "lucide-react"
-import { Review, reviewService } from "@/app/services/reviewService"
+import { Review, review } from "@/api/review"
 
 export function TestimonialsSection() {
   const [reviews, setReviews] = useState<Review[]>([])
@@ -13,7 +13,7 @@ export function TestimonialsSection() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const data = await reviewService.getTopReviews()
+        const data = await review.getTopReviews()
         setReviews(data)
       } catch (error) {
         console.error("Error fetching reviews:", error)

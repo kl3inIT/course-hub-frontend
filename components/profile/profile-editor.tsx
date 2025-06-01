@@ -39,30 +39,26 @@ import {
 
 interface ProfileData {
   id: string
-  firstName: string
-  lastName: string
+  name: string
   email: string
   phone: string
   dateOfBirth: string
   gender: string
-  location: string
+  address: string
   bio: string
-  website: string
-  linkedin: string
-  twitter: string
   profilePicture: File | null
   avatar?: string
-  createdAt: string
-  updatedAt: string
 }
 
 interface ValidationErrors {
   [key: string]: string
 }
 
+const BACKEND_URL = "http://localhost:8080"
+
 export function ProfileEditor() {
   const router = useRouter()
-  const { user, updateUser, logout } = useAuth()
+  const { user, updateUser, logout, getToken } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [errors, setErrors] = useState<ValidationErrors>({})
@@ -73,53 +69,56 @@ export function ProfileEditor() {
 
   const [formData, setFormData] = useState<ProfileData>({
     id: user?.id || "",
-    firstName: "",
-    lastName: "",
+    name: "",
     email: user?.email || "",
     phone: "",
     dateOfBirth: "",
     gender: "",
-    location: "",
+    address: "",
     bio: "",
-    website: "",
-    linkedin: "",
-    twitter: "",
     profilePicture: null,
     avatar: user?.avatar,
-    createdAt: "",
-    updatedAt: "",
   })
 
   useEffect(() => {
-    // Load existing profile data
-    if (user?.id) {
-      const savedProfile = localStorage.getItem(`profile-${user.id}`)
-      if (savedProfile) {
-        try {
-          const profileData = JSON.parse(savedProfile)
-          setFormData(profileData)
-          if (profileData.avatar) {
-            setPreviewUrl(profileData.avatar)
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
+          headers: {
+            "Authorization": `Bearer ${getToken()}`
           }
-        } catch (error) {
-          console.error("Error loading profile data:", error)
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile")
         }
-      } else {
-        // Initialize with user data if no profile exists
-        const nameParts = user.name?.split(" ") || ["", ""]
-        setFormData((prev) => ({
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.message)
+        }
+
+        // Update form data with fetched profile
+        setFormData(prev => ({
           ...prev,
-          firstName: nameParts[0] || "",
-          lastName: nameParts.slice(1).join(" ") || "",
-          email: user.email,
-          avatar: user.avatar,
+          ...result.data,
+          profilePicture: null // Reset profile picture since we don't get it from API
         }))
-        if (user.avatar) {
-          setPreviewUrl(user.avatar)
+
+        // Set preview URL if avatar exists
+        if (result.data.avatar) {
+          setPreviewUrl(result.data.avatar)
         }
+      } catch (error) {
+        console.error("Error fetching profile:", error)
+        setErrors({ submit: "Failed to load profile data" })
       }
     }
-  }, [user])
+
+    if (user?.id) {
+      fetchProfile()
+    }
+  }, [user, getToken])
 
   useEffect(() => {
     // Warn user about unsaved changes
@@ -138,16 +137,16 @@ export function ProfileEditor() {
     const newErrors: ValidationErrors = {}
 
     // Required fields validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required"
-    } else if (formData.firstName.length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters"
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required"
+    } else if (formData.name.length < 2) {
+      newErrors.name = "Name must be at least 2 characters"
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required"
-    } else if (formData.lastName.length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters"
+    if (!formData.address.trim()) {
+      newErrors.address = "Address is required"
+    } else if (formData.address.length < 2) {
+      newErrors.address = "Address must be at least 2 characters"
     }
 
     // Email validation
@@ -176,11 +175,6 @@ export function ProfileEditor() {
     // Bio length validation
     if (formData.bio && formData.bio.length > 500) {
       newErrors.bio = "Bio must be less than 500 characters"
-    }
-
-    // URL validation for website
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
-      newErrors.website = "Please enter a valid URL (starting with http:// or https://)"
     }
 
     setErrors(newErrors)
@@ -245,27 +239,69 @@ export function ProfileEditor() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Upload avatar if changed
+      if (formData.profilePicture) {
+        const form = new FormData()
+        form.append("file", formData.profilePicture)
+        
+        const avatarResponse = await fetch(`${BACKEND_URL}/api/users/avatar`, {
+          method: "POST",
+          body: form,
+          headers: {
+            "Authorization": `Bearer ${getToken()}`
+          }
+        })
+        
+        if (!avatarResponse.ok) {
+          throw new Error("Failed to upload avatar")
+        }
+        
+        const avatarResult = await avatarResponse.json()
+        if (!avatarResult.success) {
+          throw new Error(avatarResult.message)
+        }
 
-      // Update user context
-      updateUser({
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        avatar: previewUrl || undefined,
+        // Update preview URL with new avatar
+        if (avatarResult.data?.avatar) {
+          setPreviewUrl(avatarResult.data.avatar)
+        }
+      }
+
+      // Update profile
+      const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          dateOfBirth: formData.dateOfBirth,
+          gender: formData.gender,
+          address: formData.address,
+          bio: formData.bio
+        })
       })
 
-      // Store profile data
-      const updatedProfile = {
-        ...formData,
-        avatar: previewUrl,
-        updatedAt: new Date().toISOString(),
+      if (!response.ok) {
+        throw new Error("Failed to update profile")
       }
-      localStorage.setItem(`profile-${user?.id}`, JSON.stringify(updatedProfile))
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.message)
+      }
+
+      // Update user context with new data
+      updateUser({
+        name: formData.name,
+        email: formData.email,
+        avatar: result.data.avatar
+      })
 
       setHasUnsavedChanges(false)
-
-      // Redirect to profile view
       router.push("/profile")
     } catch (error) {
       console.error("Profile update error:", error)
@@ -284,14 +320,24 @@ export function ProfileEditor() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${getToken()}`
+        }
+      })
 
-      // Remove profile data
-      localStorage.removeItem(`profile-${user?.id}`)
+      if (!response.ok) {
+        throw new Error("Failed to delete profile")
+      }
 
-      // Logout user
-      logout()
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.message)
+      }
+
+      // Logout user after successful deletion
+      await logout()
 
       // Redirect to home
       router.push("/")
@@ -306,13 +352,12 @@ export function ProfileEditor() {
 
   const completionPercentage = () => {
     const fields = [
-      formData.firstName,
-      formData.lastName,
+      formData.name,
       formData.email,
       formData.phone,
       formData.dateOfBirth,
       formData.gender,
-      formData.location,
+      formData.address,
       formData.bio,
       previewUrl,
     ]
@@ -415,8 +460,8 @@ export function ProfileEditor() {
               <Avatar className="h-24 w-24">
                 <AvatarImage src={previewUrl || "/placeholder.svg"} />
                 <AvatarFallback className="text-lg">
-                  {formData.firstName && formData.lastName ? (
-                    `${formData.firstName[0]}${formData.lastName[0]}`
+                  {formData.name ? (
+                    `${formData.name[0]}`
                   ) : (
                     <User className="h-8 w-8" />
                   )}
@@ -462,24 +507,24 @@ export function ProfileEditor() {
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
                 <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
-                  placeholder="Enter your first name"
-                  className={errors.firstName ? "border-red-500" : ""}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  placeholder="Enter your name"
+                  className={errors.name ? "border-red-500" : ""}
                 />
-                {errors.firstName && <p className="text-sm text-red-500">{errors.firstName}</p>}
+                {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name *</Label>
                 <Input
                   id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
-                  placeholder="Enter your last name"
-                  className={errors.lastName ? "border-red-500" : ""}
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  placeholder="Enter your address"
+                  className={errors.address ? "border-red-500" : ""}
                 />
-                {errors.lastName && <p className="text-sm text-red-500">{errors.lastName}</p>}
+                {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
               </div>
             </div>
 
@@ -552,8 +597,8 @@ export function ProfileEditor() {
                 </Label>
                 <Input
                   id="location"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
                   placeholder="City, Country"
                 />
               </div>
@@ -581,39 +626,6 @@ export function ProfileEditor() {
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>{errors.bio && <span className="text-red-500">{errors.bio}</span>}</span>
                 <span>{formData.bio.length}/500</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={formData.website}
-                onChange={(e) => handleInputChange("website", e.target.value)}
-                placeholder="https://yourwebsite.com"
-                className={errors.website ? "border-red-500" : ""}
-              />
-              {errors.website && <p className="text-sm text-red-500">{errors.website}</p>}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="linkedin">LinkedIn</Label>
-                <Input
-                  id="linkedin"
-                  value={formData.linkedin}
-                  onChange={(e) => handleInputChange("linkedin", e.target.value)}
-                  placeholder="https://linkedin.com/in/username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="twitter">Twitter</Label>
-                <Input
-                  id="twitter"
-                  value={formData.twitter}
-                  onChange={(e) => handleInputChange("twitter", e.target.value)}
-                  placeholder="https://twitter.com/username"
-                />
               </div>
             </div>
           </CardContent>

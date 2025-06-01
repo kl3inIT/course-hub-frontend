@@ -15,8 +15,6 @@ import {
   MapPin,
   Calendar,
   Globe,
-  Linkedin,
-  Twitter,
   Edit,
   Shield,
   BookOpen,
@@ -27,17 +25,13 @@ import { RoleBadge } from "@/components/ui/role-badge"
 
 interface ProfileData {
   id: string
-  firstName: string
-  lastName: string
+  name: string
   email: string
   phone: string
   dateOfBirth: string
   gender: string
-  location: string
+  address: string
   bio: string
-  website: string
-  linkedin: string
-  twitter: string
   avatar?: string
   createdAt: string
   updatedAt: string
@@ -47,64 +41,52 @@ interface ProfileViewerProps {
   userId?: string
 }
 
+const BACKEND_URL = "http://localhost:8080"
+
 export function ProfileViewer({ userId }: ProfileViewerProps) {
   const router = useRouter()
-  const { user, hasPermission } = useAuth()
-  const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const { user, hasPermission, getToken } = useAuth()
+  const [profile, setProfile] = useState<ProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    const loadProfile = async () => {
-      setIsLoading(true)
-
+    const fetchProfile = async () => {
       try {
-        // Determine which profile to load
-        const targetUserId = userId || user?.id
-        const isOwn = !userId || userId === user?.id
-        setIsOwnProfile(isOwn)
-
-        if (!targetUserId) {
-          setIsLoading(false)
-          return
-        }
-
-        // Load profile data
-        const savedProfile = localStorage.getItem(`profile-${targetUserId}`)
-        if (savedProfile) {
-          const profile = JSON.parse(savedProfile)
-          setProfileData(profile)
-        } else if (isOwn && user) {
-          // Create basic profile from user data if none exists
-          const nameParts = user.name?.split(" ") || ["", ""]
-          const basicProfile: ProfileData = {
-            id: user.id,
-            firstName: nameParts[0] || "",
-            lastName: nameParts.slice(1).join(" ") || "",
-            email: user.email,
-            phone: "",
-            dateOfBirth: "",
-            gender: "",
-            location: "",
-            bio: "",
-            website: "",
-            linkedin: "",
-            twitter: "",
-            avatar: user.avatar,
-            createdAt: user.joinDate || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+        console.log("Fetching profile...");
+        console.log("Token:", getToken());
+        
+        const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
+          headers: {
+            "Authorization": `Bearer ${getToken()}`
           }
-          setProfileData(basicProfile)
+        })
+
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile")
         }
+
+        const result = await response.json()
+        console.log("Profile data:", result);
+        
+        if (!result.success) {
+          throw new Error(result.message)
+        }
+
+        setProfile(result.data)
       } catch (error) {
-        console.error("Error loading profile:", error)
+        console.error("Error fetching profile:", error)
+        setError("Failed to load profile data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    loadProfile()
-  }, [userId, user])
+    fetchProfile()
+  }, [getToken])
 
   if (isLoading) {
     return (
@@ -114,14 +96,14 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
     )
   }
 
-  if (!profileData && !user) {
+  if (error) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <User className="h-16 w-16 mx-auto text-muted-foreground" />
           <div>
-            <h3 className="text-lg font-semibold">Please log in</h3>
-            <p className="text-muted-foreground">You need to be logged in to view profiles.</p>
+            <h3 className="text-lg font-semibold">Error</h3>
+            <p className="text-muted-foreground">{error}</p>
           </div>
           <Button onClick={() => router.push("/login")}>Log In</Button>
         </div>
@@ -129,13 +111,13 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
     )
   }
 
-  if (!profileData) {
+  if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <User className="h-16 w-16 mx-auto text-muted-foreground" />
           <div>
-            <h3 className="text-lg font-semibold">Profile not found</h3>
+            <h3 className="text-lg font-semibold">No profile data found</h3>
             <p className="text-muted-foreground">
               {isOwnProfile ? "You haven't created a profile yet." : "This user's profile is not available."}
             </p>
@@ -147,9 +129,9 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
   }
 
   const canEdit = isOwnProfile || hasPermission("edit_user_accounts")
-  const fullName = `${profileData.firstName} ${profileData.lastName}`.trim()
-  const joinDate = new Date(profileData.createdAt).toLocaleDateString()
-  const lastUpdated = new Date(profileData.updatedAt).toLocaleDateString()
+  const fullName = `${profile.name}`.trim()
+  const joinDate = new Date(profile.createdAt).toLocaleDateString()
+  const lastUpdated = new Date(profile.updatedAt).toLocaleDateString()
 
   // Mock data for demonstration
   const mockStats = {
@@ -182,10 +164,10 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             <Avatar className="h-32 w-32 mx-auto md:mx-0">
-              <AvatarImage src={profileData.avatar || "/placeholder.svg"} />
+              <AvatarImage src={profile.avatar || "/placeholder.svg"} />
               <AvatarFallback className="text-2xl">
-                {profileData.firstName && profileData.lastName ? (
-                  `${profileData.firstName[0]}${profileData.lastName[0]}`
+                {profile.name ? (
+                  `${profile.name[0]}`
                 ) : (
                   <User className="h-12 w-12" />
                 )}
@@ -201,7 +183,7 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
                 </div>
               </div>
 
-              {profileData.bio && <p className="text-muted-foreground text-center md:text-left">{profileData.bio}</p>}
+              {profile.bio && <p className="text-muted-foreground text-center md:text-left">{profile.bio}</p>}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                 <div>
@@ -247,31 +229,18 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{profileData.email}</span>
+                  <span>{profile.email}</span>
                 </div>
-                {profileData.phone && (
+                {profile.phone && (
                   <div className="flex items-center gap-3">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{profileData.phone}</span>
+                    <span>{profile.phone}</span>
                   </div>
                 )}
-                {profileData.location && (
+                {profile.address && (
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{profileData.location}</span>
-                  </div>
-                )}
-                {profileData.website && (
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a
-                      href={profileData.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {profileData.website}
-                    </a>
+                    <span>{profile.address}</span>
                   </div>
                 )}
               </CardContent>
@@ -286,16 +255,16 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {profileData.dateOfBirth && (
+                {profile.dateOfBirth && (
                   <div className="flex items-center gap-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Born {new Date(profileData.dateOfBirth).toLocaleDateString()}</span>
+                    <span>Born {new Date(profile.dateOfBirth).toLocaleDateString()}</span>
                   </div>
                 )}
-                {profileData.gender && (
+                {profile.gender && (
                   <div className="flex items-center gap-3">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="capitalize">{profileData.gender}</span>
+                    <span className="capitalize">{profile.gender}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
@@ -311,39 +280,6 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
           </div>
 
           {/* Social Links */}
-          {(profileData.linkedin || profileData.twitter) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Social Links</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4">
-                  {profileData.linkedin && (
-                    <a
-                      href={profileData.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <Linkedin className="h-4 w-4" />
-                      LinkedIn
-                    </a>
-                  )}
-                  {profileData.twitter && (
-                    <a
-                      href={profileData.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <Twitter className="h-4 w-4" />
-                      Twitter
-                    </a>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">

@@ -22,6 +22,7 @@ interface AuthContextType {
   updateUser: (userData: Partial<User>) => void
   hasPermission: (permission: string) => boolean
   isRole: (role: UserRole) => boolean
+  getToken: () => string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -208,35 +209,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-const logout = async () => {
-  try {
-    const token = localStorage.getItem("accessToken")
-    if (token) {
-      const response = await fetch('http://localhost:8080/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token })  // Gửi token trong body
-      });
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem("accessToken")
+      if (token) {
+        const response = await fetch('http://localhost:8080/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token })  // Gửi token trong body
+        });
 
-      if (!response.ok) {
-        throw new Error('Logout failed');
+        if (!response.ok) {
+          throw new Error('Logout failed');
+        }
       }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null)
+      localStorage.removeItem("user")
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("enrolledCourses")
+      localStorage.removeItem("courseProgress")
+      syncUserToCookie(null)
     }
-  } catch (error) {
-    console.error('Logout error:', error);
-  } finally {
-    setUser(null)
-    localStorage.removeItem("user")
-    localStorage.removeItem("accessToken")
-    localStorage.removeItem("enrolledCourses")
-    localStorage.removeItem("courseProgress")
-    syncUserToCookie(null)
   }
-}
-
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
@@ -257,6 +257,10 @@ const logout = async () => {
     return user?.role === role
   }
 
+  const getToken = (): string | null => {
+    return localStorage.getItem("accessToken")
+  }
+
   const value: AuthContextType = {
     user: isInitialized ? user : undefined, // Return undefined during initialization
     login,
@@ -264,6 +268,7 @@ const logout = async () => {
     updateUser,
     hasPermission,
     isRole,
+    getToken
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

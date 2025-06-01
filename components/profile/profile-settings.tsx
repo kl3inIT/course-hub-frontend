@@ -14,6 +14,8 @@ import { Shield, Save, Camera } from "lucide-react"
 import { RoleBadge } from "@/components/ui/role-badge"
 import { PaymentHistory } from "@/components/profile/payment-history"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast, Toaster } from "sonner"
+import { ResponseGeneral } from "@/types/User"
 
 const BACKEND_URL = "http://localhost:8080"
 
@@ -83,6 +85,13 @@ export function ProfileSettings() {
     dateOfBirth: "",
     gender: ""
   })
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [passwordError, setPasswordError] = useState("")
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -283,6 +292,83 @@ export function ProfileSettings() {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handlePasswordChange = async () => {
+    try {
+      setPasswordError("")
+      
+      // Validate passwords match
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        setPasswordError("New passwords do not match")
+        toast.error("New passwords do not match")
+        return
+      }
+
+      const token = getToken()
+      if (!token) {
+        toast.error("No auth token")
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/users/change-password`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      })
+
+      const errorData = await response.json()
+      
+      if (!response.ok) {
+        let errorMessage = "Failed to change password"
+        
+        if (errorData.message) {
+          if (errorData.message.includes("Current password is incorrect")) {
+            errorMessage = "Current password is incorrect"
+          } else if (errorData.message.includes("must be different")) {
+            errorMessage = "New password must be different from current password"
+          } else {
+            errorMessage = errorData.message
+          }
+        }
+        
+        setPasswordError(errorMessage)
+        toast.error(errorMessage)
+        return
+      }
+
+      // Reset form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      })
+      setIsChangingPassword(false)
+      
+      // Chuyển về tab General
+      const tabsElement = document.querySelector('[role="tablist"]') as HTMLElement
+      const generalTab = tabsElement?.querySelector('[value="general"]') as HTMLElement
+      if (generalTab) {
+        generalTab.click()
+      }
+
+      // Đợi một chút để tab switch hoàn tất rồi mới hiển thị toast
+      setTimeout(() => {
+        toast.success("Password changed successfully")
+      }, 1000)
+
+    } catch (error) {
+      console.error("Error changing password:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to change password"
+      setPasswordError(errorMessage)
+      toast.error(errorMessage)
+    }
+  }
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -301,6 +387,8 @@ export function ProfileSettings() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <Toaster position="top-center" richColors />
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Profile Settings</h1>
@@ -312,7 +400,6 @@ export function ProfileSettings() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="payments">Payment History</TabsTrigger>
         </TabsList>
 
@@ -367,16 +454,6 @@ export function ProfileSettings() {
                     id="name"
                     value={profileData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
                     disabled={!isEditing}
                   />
                 </div>
@@ -471,91 +548,72 @@ export function ProfileSettings() {
           </Card>
         </TabsContent>
 
-        {/* Display error and validation errors */}
-
-        {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {validationErrors.length > 0 && (
-        <div className="bg-red-50 p-4 rounded-lg space-y-2">
-          <ul className="list-disc list-inside text-red-500">
-            {validationErrors.map((err, index) => (
-              <li key={index}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Manage your account security and authentication</CardDescription>
+              <CardDescription>Manage your account security</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Password</h4>
-                    <p className="text-sm text-muted-foreground">Last changed 30 days ago</p>
+                {!isChangingPassword ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Password</h4>
+                      <p className="text-sm text-muted-foreground">Change your account password</p>
+                    </div>
+                    <Button variant="outline" onClick={() => setIsChangingPassword(true)}>
+                      Change Password
+                    </Button>
                   </div>
-                  <Button variant="outline">Change Password</Button>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Two-Factor Authentication</h4>
-                    <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      />
+                    </div>
+                  
+                    <div className="flex gap-2 justify-end pt-2">
+                      <Button variant="outline" onClick={() => {
+                        setIsChangingPassword(false)
+                        setPasswordData({
+                          currentPassword: "",
+                          newPassword: "",
+                          confirmPassword: ""
+                        })
+                        setPasswordError("")
+                      }}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handlePasswordChange}>
+                        Save Password
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="outline">Enable 2FA</Button>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Login Sessions</h4>
-                    <p className="text-sm text-muted-foreground">Manage your active sessions</p>
-                  </div>
-                  <Button variant="outline">View Sessions</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="preferences" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-              <CardDescription>Customize your learning experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Email Notifications</h4>
-                    <p className="text-sm text-muted-foreground">Receive updates about your courses</p>
-                  </div>
-                  <Button variant="outline">Configure</Button>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Language</h4>
-                    <p className="text-sm text-muted-foreground">Choose your preferred language</p>
-                  </div>
-                  <Button variant="outline">English</Button>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Theme</h4>
-                    <p className="text-sm text-muted-foreground">Customize your interface appearance</p>
-                  </div>
-                  <Button variant="outline">System</Button>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>

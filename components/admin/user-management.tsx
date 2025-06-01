@@ -17,15 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,14 +29,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Search,
   MoreHorizontal,
-  UserPlus,
-  Edit,
   Trash2,
-  Shield,
   Users,
   GraduationCap,
   Eye,
@@ -55,211 +42,229 @@ import {
 import { RoleBadge } from "@/components/ui/role-badge"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
+import { useRouter } from "next/navigation"
+import { Toaster } from "@/components/ui/toaster"
+import { ResponseGeneral, Page, User } from "@/types/User"
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive";
-  avatar?: string;
-  joinDate?: string;
-  lastActive?: string;
-  permissions?: string[];
-  coursesEnrolled?: number;
-  coursesCreated?: number;
-  totalSpent?: number;
-  totalRevenue?: number;
-  _originalRole?: string; // For tracking role changes
-}
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-
-const availablePermissions = [
-  { id: "view_courses", label: "View Courses", category: "courses" },
-  { id: "enroll_courses", label: "Enroll in Courses", category: "courses" },
-  { id: "create_courses", label: "Create Courses", category: "courses" },
-  { id: "edit_courses", label: "Edit Courses", category: "courses" },
-  { id: "delete_courses", label: "Delete Courses", category: "courses" },
-  { id: "view_analytics", label: "View Analytics", category: "analytics" },
-  { id: "manage_users", label: "Manage Users", category: "users" },
-  { id: "system_settings", label: "System Settings", category: "system" },
-]
+const BACKEND_URL = "http://localhost:8080"
 
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
   const [selectedStatus, setSelectedStatus] = useState("all")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
-    role: "learner" as string,
-    permissions: [] as string[],
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    pageSize: 10
   })
   const { toast } = useToast()
   const { getToken } = useAuth()
+  const router = useRouter()
 
-  // Fetch users on component mount
+  // Xử lý thay đổi role và status
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: 0 // Reset về trang đầu tiên khi thay đổi bộ lọc
+    }))
+    fetchUsers()
+  }, [selectedRole, selectedStatus])
+
+  // Xử lý thay đổi trang và kích thước trang
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [pagination.currentPage, pagination.pageSize])
 
   const fetchUsers = async () => {
     try {
       const token = getToken()
       if (!token) {
-        throw new Error("No auth token")
+        toast({
+          title: "Error",
+          description: "No auth token",
+          variant: "destructive",
+        });
+        return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
+      const queryParams = new URLSearchParams({
+        pageSize: pagination.pageSize.toString(),
+        pageNo: pagination.currentPage.toString(),
+        role: selectedRole !== "all" ? selectedRole : "",
+        status: selectedStatus !== "all" ? selectedStatus : "",
+      })
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users?${queryParams}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch users")
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to fetch users")
       }
 
-      const data = await response.json()
-      console.log("Users data:", data)
-      setUsers(data)
-    } catch (error) {
+      const responseData: ResponseGeneral<Page<User>> = await response.json()
+
+      if (responseData.status === "error") {
+        throw new Error(responseData.message)
+      }
+
+      const data = responseData.data
+      setUsers(data.content || [])
+      setPagination(prev => ({
+        ...prev,
+        totalElements: data.totalElements || 0,
+        totalPages: data.totalPages || 0
+      }))
+    } catch (error: any) {
       console.error("Error fetching users:", error)
       toast({
         title: "Error",
-        description: "Failed to load users",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       })
+      setUsers([])
+      setPagination(prev => ({
+        ...prev,
+        totalElements: 0,
+        totalPages: 0
+      }))
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCreateUser = async () => {
-    try {
-      const token = getToken()
-      if (!token) {
-        throw new Error("No auth token")
-      }
+  // Lọc users theo searchTerm trên frontend
+  const filteredUsers = Array.isArray(users) ? users.filter(user => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower)
+    );
+  }) : [];
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newUser),
-      })
+  // Cập nhật lại số trang dựa trên kết quả tìm kiếm
+  useEffect(() => {
+    setPagination(prev => ({
+      ...prev,
+      totalElements: filteredUsers.length,
+      totalPages: Math.ceil(filteredUsers.length / prev.pageSize)
+    }));
+  }, [filteredUsers.length, pagination.pageSize]);
 
-      if (!response.ok) {
-        throw new Error("Failed to create user")
-      }
+  const getCurrentPageUsers = () => {
+    const start = pagination.currentPage * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    return filteredUsers.slice(start, end);
+  };
 
-      const createdUser = await response.json()
-      setUsers([...users, createdUser])
-      setNewUser({ name: "", email: "", role: "learner", permissions: [] })
-      setIsCreateDialogOpen(false)
-      toast({
-        title: "User Created",
-        description: `${createdUser.name} has been successfully created.`,
-      })
-    } catch (error) {
-      console.error("Error creating user:", error)
-      toast({
-        title: "Error",
-        description: "Failed to create user",
-        variant: "destructive",
-      })
-    }
+  const displayedUsers = getCurrentPageUsers();
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: newPage
+    }))
   }
 
-  const handleEditUser = async () => {
-    if (!selectedUser) return;
-
-    try {
-      const token = getToken()
-      if (!token) {
-        throw new Error("No auth token")
-      }
-
-      // Update role if changed
-      if (selectedUser.role !== selectedUser._originalRole) {
-        await fetch(`${BACKEND_URL}/api/admin/users/${selectedUser.id}/role`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: new URLSearchParams({ role: selectedUser.role }),
-        })
-      }
-
-      setUsers(users.map((user) => (user.id === selectedUser.id ? selectedUser : user)))
-      setIsEditDialogOpen(false)
-      setSelectedUser(null)
-      toast({
-        title: "User Updated",
-        description: "User information has been successfully updated.",
-      })
-    } catch (error) {
-      console.error("Error updating user:", error)
-      toast({
-        title: "Error",
-        description: "Failed to update user",
-        variant: "destructive",
-      })
-    }
+  const handlePageSizeChange = (newSize: number) => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize: newSize,
+      currentPage: 0
+    }))
   }
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      // Tìm user cần xóa trong state
+      const userToDelete = users.find(u => u.id === userId);
+      if (!userToDelete) {
+        throw new Error("User not found");
+      }
+
+      // Kiểm tra nếu user có khóa học đã đăng ký
+      if (userToDelete.enrolledCourses && userToDelete.enrolledCourses > 0) {
+        toast({
+          title: "Cannot Delete User",
+          description: "User has enrolled courses and cannot be deleted",
+          variant: "destructive",
+        });
+        return; // Dừng việc xóa nếu user có khóa học
+      }
+
       const token = getToken()
       if (!token) {
-        throw new Error("No auth token")
+        toast({
+          title: "Error",
+          description: "No auth token",
+          variant: "destructive",
+        });
+        return;
       }
 
       const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         },
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to delete user")
+      let responseData
+      try {
+        const textResponse = await response.text()
+        responseData = JSON.parse(textResponse)
+      } catch (parseError) {
+        toast({
+          title: "Error",
+          description: "Failed to parse server response",
+          variant: "destructive",
+        });
+        return;
       }
 
-      const user = users.find((u) => u.id === userId)
+      if (!response.ok) {
+        toast({
+          title: "Cannot Delete User",
+          description: responseData.detail || responseData.message || "Failed to delete user",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Chỉ xóa user khỏi state nếu API call thành công
       setUsers(users.filter((u) => u.id !== userId))
+      
       toast({
-        title: "User Deleted",
-        description: `${user?.name} has been removed from the system.`,
-        variant: "destructive",
+        description: responseData.message || "User deleted successfully",
       })
-    } catch (error) {
-      console.error("Error deleting user:", error)
+
+      // Refresh danh sách users sau khi xóa
+      fetchUsers()
+    } catch (error: any) {
+      console.error("Error in handleDeleteUser:", error)
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       })
     }
   }
 
-  const handleSuspendUser = async (userId: string) => {
+  const handleUpdateUserStatus = async (userId: string, newStatus: string) => {
     try {
       const token = getToken()
       if (!token) {
         throw new Error("No auth token")
       }
-
-      const user = users.find((u) => u.id === userId)
-      const newStatus = user?.status === "inactive" ? "active" : "inactive"
 
       const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}/status`, {
         method: "PUT",
@@ -269,53 +274,80 @@ export function UserManagement() {
         body: new URLSearchParams({ status: newStatus }),
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to update user status")
+      const responseData: ResponseGeneral<void> = await response.json()
+
+      if (responseData.status === "error" || !response.ok) {
+        throw new Error(responseData.message || "Failed to update user status")
       }
 
-      setUsers(
-        users.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)),
-      )
-      toast({
-        title: newStatus === "inactive" ? "User Inactivated" : "User Activated",
-        description: `${user?.name} has been ${newStatus}.`,
-      })
-    } catch (error) {
-      console.error("Error updating user status:", error)
+      setUsers(users.map((u) => 
+        u.id === userId ? { ...u, status: newStatus as "active" | "inactive" } : u
+      ))
+    } catch (error: any) {
+      console.error("Error updating status:", error)
       toast({
         title: "Error",
-        description: "Failed to update user status",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       })
     }
   }
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = selectedRole === "all" || user.role === selectedRole
-    const matchesStatus = selectedStatus === "all" || user.status === selectedStatus
-    return matchesSearch && matchesRole && matchesStatus
-  })
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const token = getToken()
+      if (!token) {
+        throw new Error("No auth token")
+      }
+
+      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}/role`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: new URLSearchParams({ role: newRole }),
+      })
+
+      const responseData: ResponseGeneral<void> = await response.json()
+
+      if (responseData.status === "error" || !response.ok) {
+        throw new Error(responseData.message || "Failed to update user role")
+      }
+
+      setUsers(users.map((u) => 
+        u.id === userId ? { ...u, role: newRole } : u
+      ))
+    } catch (error: any) {
+      console.error("Error updating role:", error)
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      })
+    }
+  }
 
   const getUserStats = () => {
-    const total = users.length
-    const active = users.filter((u) => u.status === "active").length
-    const inactive = users.filter((u) => u.status === "inactive").length
-    const admins = users.filter((u) => u.role === "admin").length
-    const managers = users.filter((u) => u.role === "manager").length
-    const learners = users.filter((u) => u.role === "learner").length
+    const total = users?.length || 0
+    const active = users?.filter((u) => u.status === "active").length || 0
+    const inactive = users?.filter((u) => u.status === "inactive").length || 0
+    const managers = users?.filter((u) => u.role === "manager").length || 0
+    const learners = users?.filter((u) => u.role === "learner").length || 0
 
-    return { total, active, inactive, admins, managers, learners }
+    return { total, active, inactive, managers, learners }
   }
 
   const stats = getUserStats()
 
+  const canDeleteUser = (user: User): boolean => {
+    return !user.enrolledCourses || user.enrolledCourses === 0;
+  }
+
   return (
     <div className="space-y-6">
+      <Toaster />
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -341,15 +373,6 @@ export function UserManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.inactive}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <Shield className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.admins}</div>
           </CardContent>
         </Card>
         <Card>
@@ -380,93 +403,6 @@ export function UserManagement() {
               <CardTitle>User Management</CardTitle>
               <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Create New User</DialogTitle>
-                  <DialogDescription>
-                    Add a new user to the platform with specific roles and permissions
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
-                      Role
-                    </Label>
-                    <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value as string })}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="learner">Learner</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label className="text-right">Permissions</Label>
-                    <div className="col-span-3 space-y-2">
-                      {availablePermissions.map((permission) => (
-                        <div key={permission.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={permission.id}
-                            checked={newUser.permissions.includes(permission.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setNewUser({ ...newUser, permissions: [...newUser.permissions, permission.id] })
-                              } else {
-                                setNewUser({
-                                  ...newUser,
-                                  permissions: newUser.permissions.filter((p) => p !== permission.id),
-                                })
-                              }
-                            }}
-                          />
-                          <Label htmlFor={permission.id} className="text-sm">
-                            {permission.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleCreateUser}>
-                    Create User
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -480,18 +416,27 @@ export function UserManagement() {
                 className="pl-8"
               />
             </div>
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <Select 
+              value={selectedRole} 
+              onValueChange={(value) => {
+                setSelectedRole(value)
+              }}
+            >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="learner">Learner</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select 
+              value={selectedStatus} 
+              onValueChange={(value) => {
+                setSelectedStatus(value)
+              }}
+            >
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -510,18 +455,17 @@ export function UserManagement() {
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Join Date</TableHead>
-                <TableHead>Last Active</TableHead>
-                <TableHead>Activity</TableHead>
+                <TableHead>Enrolled Courses</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {displayedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="/placeholder.svg?height=32&width=32" />
+                        <AvatarImage src={user.avatar || "/placeholder.svg?height=32&width=32"} />
                         <AvatarFallback>
                           {user.name
                             .split(" ")
@@ -536,27 +480,56 @@ export function UserManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <RoleBadge role={user.role} />
+                    <Select
+                      value={user.role}
+                      onValueChange={async (newRole) => {
+                        await handleUpdateUserRole(user.id, newRole)
+                      }}
+                    >
+                      <SelectTrigger className="p-0 h-auto w-auto border-0 bg-transparent hover:bg-accent hover:text-accent-foreground [&>span]:flex [&>span]:items-center">
+                        <SelectValue>
+                          <RoleBadge role={user.role} />
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manager">
+                          <RoleBadge role="manager" />
+                        </SelectItem>
+                        <SelectItem value="learner">
+                          <RoleBadge role="learner" />
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={user.status === "active" ? "default" : "destructive"}>{user.status}</Badge>
+                    <Select
+                      value={user.status}
+                      onValueChange={async (newStatus) => {
+                        await handleUpdateUserStatus(user.id, newStatus)
+                      }}
+                    >
+                      <SelectTrigger className="p-0 h-auto w-auto border-0 bg-transparent hover:bg-accent hover:text-accent-foreground [&>span]:flex [&>span]:items-center">
+                        <SelectValue>
+                          <Badge variant={user.status === "active" ? "default" : "destructive"}>
+                            {user.status === "active" ? "Active" : "Inactive"}
+                          </Badge>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">
+                          <Badge variant="default">Active</Badge>
+                        </SelectItem>
+                        <SelectItem value="inactive">
+                          <Badge variant="destructive">Inactive</Badge>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     {user.joinDate ? format(new Date(user.joinDate), "yyyy-MM-dd") : "-"}
                   </TableCell>
                   <TableCell>
-                    {user.lastActive ? format(new Date(user.lastActive), "yyyy-MM-dd") : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {user.role === "learner" && user.coursesEnrolled && (
-                      <span className="text-sm text-muted-foreground">{user.coursesEnrolled} courses enrolled</span>
-                    )}
-                    {user.role === "manager" && user.coursesCreated && (
-                      <span className="text-sm text-muted-foreground">{user.coursesCreated} courses created</span>
-                    )}
-                    {user.role === "admin" && (
-                      <span className="text-sm text-muted-foreground">System administrator</span>
-                    )}
+                    {user.enrolledCourses || 0}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -567,42 +540,51 @@ export function UserManagement() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/users/${user.id}`)}>
                           <Eye className="mr-2 h-4 w-4" />
                           View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedUser(user)
-                            setIsEditDialogOpen(true)
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSuspendUser(user.id)}>
-                          <Ban className="mr-2 h-4 w-4" />
-                          {user.status === "inactive" ? "Activate" : "Inactivate"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                            <DropdownMenuItem 
+                              onSelect={(e) => e.preventDefault()} 
+                              className={canDeleteUser(user)
+                                ? "text-red-600 cursor-pointer"
+                                : "text-muted cursor-not-allowed"
+                              }
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
+                              {canDeleteUser(user)
+                                ? "Delete User"
+                                : "Cannot Delete - Has Courses"
+                              }
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the user account and remove
-                                all associated data from our servers.
+                                This action cannot be undone. This will permanently delete the user account
+                                and remove all associated data from our servers.
+                                <br /><br />
+                                <span className="font-medium text-destructive">
+                                  Important: Users who have enrolled in courses cannot be deleted.
+                                </span>
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>Delete</AlertDialogAction>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={!canDeleteUser(user)}
+                              >
+                                {canDeleteUser(user)
+                                  ? "Delete Permanently"
+                                  : "Cannot Delete - Has Enrolled Courses"
+                                }
+                              </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -613,98 +595,59 @@ export function UserManagement() {
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between space-x-2 py-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+              {filteredUsers.length > 0 ? (
+                `Showing ${pagination.currentPage * pagination.pageSize + 1} to ${Math.min(
+                  (pagination.currentPage + 1) * pagination.pageSize,
+                  filteredUsers.length
+                )} of ${filteredUsers.length} users`
+              ) : (
+                "No users found"
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 0 || filteredUsers.length === 0}
+              >
+                Previous
+              </Button>
+              {filteredUsers.length > 0 && (
+                <div className="flex items-center justify-center text-sm font-medium">
+                  Page {pagination.currentPage + 1} of {pagination.totalPages}
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage >= pagination.totalPages - 1 || filteredUsers.length === 0}
+              >
+                Next
+              </Button>
+              <Select 
+                value={pagination.pageSize.toString()} 
+                onValueChange={(value) => handlePageSizeChange(Number(value))}
+              >
+                <SelectTrigger className="w-[110px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 / page</SelectItem>
+                  <SelectItem value="10">10 / page</SelectItem>
+                  <SelectItem value="20">20 / page</SelectItem>
+                  <SelectItem value="50">50 / page</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user information, role, and permissions</DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="edit-name"
-                  value={selectedUser.name}
-                  onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={selectedUser.email}
-                  onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-role" className="text-right">
-                  Role
-                </Label>
-                <Select
-                  value={selectedUser.role}
-                  onValueChange={(value) => setSelectedUser({ ...selectedUser, role: value as string })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="learner">Learner</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right">Permissions</Label>
-                <div className="col-span-3 space-y-2">
-                  {availablePermissions.map((permission) => (
-                    <div key={permission.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`edit-${permission.id}`}
-                        checked={selectedUser.permissions?.includes(permission.id) || false}
-                        onCheckedChange={(checked) => {
-                          const currentPermissions = selectedUser.permissions || []
-                          if (checked) {
-                            setSelectedUser({
-                              ...selectedUser,
-                              permissions: [...currentPermissions, permission.id],
-                            })
-                          } else {
-                            setSelectedUser({
-                              ...selectedUser,
-                              permissions: currentPermissions.filter((p) => p !== permission.id),
-                            })
-                          }
-                        }}
-                      />
-                      <Label htmlFor={`edit-${permission.id}`} className="text-sm">
-                        {permission.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button type="submit" onClick={handleEditUser}>
-              Update User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -31,3 +31,4 @@ Continue building your app on:
 
 ## Run 
 npm install swiper@^11.0.0
+pnpm add -D @tailwindcss/line-clamp

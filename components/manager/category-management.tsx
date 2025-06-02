@@ -49,6 +49,7 @@ export function CategoryManagement() {
     first: true,
     last: true,
   })
+  const [totalCourses, setTotalCourses] = useState(0)
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -64,6 +65,17 @@ export function CategoryManagement() {
   const [descriptionError, setDescriptionError] = useState("")
   const [nameTouched, setNameTouched] = useState(false)
   const [descriptionTouched, setDescriptionTouched] = useState(false)
+
+  // Fetch total courses count
+  const fetchTotalCourses = async () => {
+    try {
+      const response = await categoryAPI.getAllCategories({ size: 10000 }) // Lấy tất cả categories
+      const totalCoursesCount = response.data.content.reduce((sum, c) => sum + c.courseCount, 0)
+      setTotalCourses(totalCoursesCount)
+    } catch (error) {
+      console.error('Failed to fetch total courses:', error)
+    }
+  }
 
   // Fetch categories from API
   const fetchCategories = async (paginationParams: PaginationParams = {}, filters: CategoryFilters = {}) => {
@@ -95,6 +107,7 @@ export function CategoryManagement() {
   // Load initial data
   useEffect(() => {
     fetchCategories()
+    fetchTotalCourses()
   }, [])
 
   // Handle search
@@ -145,6 +158,7 @@ export function CategoryManagement() {
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
       )
+      fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
       toast({
         title: "Error",
@@ -180,6 +194,7 @@ export function CategoryManagement() {
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
       )
+      fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
       toast({
         title: "Error",
@@ -216,6 +231,7 @@ export function CategoryManagement() {
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
       )
+      fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error: any) {
       console.error('Delete category error:', error)
       
@@ -263,8 +279,6 @@ export function CategoryManagement() {
 
   const getCategoryStats = () => {
     const total = pagination.totalElements
-    const totalCourses = categories.reduce((sum, c) => sum + c.courseCount, 0)
-    
     return { total, totalCourses }
   }
 

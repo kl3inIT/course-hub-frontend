@@ -114,7 +114,7 @@ export function ReviewManagement() {
     ))
   }
 
-  const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.star, 0) / reviews.length : 0
+  const averageRating = allReviews.length > 0 ? allReviews.reduce((sum, review) => sum + review.star, 0) / allReviews.length : 0
   const pendingResponses = reviews.filter((r) => !r.modifiedDate).length
   const respondedCount = reviews.filter(r => r.modifiedDate && r.modifiedDate !== r.createdDate).length
 

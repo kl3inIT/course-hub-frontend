@@ -36,8 +36,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreVertical, Edit, Trash2, Tags, BookOpen, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { categoryAPI, PaginatedResponse, CategoryFilters, PaginationParams, CategoryResponseDTO, CategoryRequestDTO } from "@/api/category"
+import { useRouter } from "next/navigation"
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
@@ -65,15 +66,22 @@ export function CategoryManagement() {
   const [descriptionError, setDescriptionError] = useState("")
   const [nameTouched, setNameTouched] = useState(false)
   const [descriptionTouched, setDescriptionTouched] = useState(false)
+  const [editNameError, setEditNameError] = useState("")
+  const [editDescriptionError, setEditDescriptionError] = useState("")
+  const [editNameTouched, setEditNameTouched] = useState(false)
+  const [editDescriptionTouched, setEditDescriptionTouched] = useState(false)
+
+  const router = useRouter()
 
   // Fetch total courses count
   const fetchTotalCourses = async () => {
     try {
-      const response = await categoryAPI.getAllCategories({ size: 10000 }) // Lấy tất cả categories
+      const response = await categoryAPI.getAllCategories({ size: 100 }) // Giảm size xuống để tránh quá tải
       const totalCoursesCount = response.data.content.reduce((sum, c) => sum + c.courseCount, 0)
       setTotalCourses(totalCoursesCount)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch total courses:', error)
+      toast("Lỗi", { description: `Không thể tải dữ liệu: ${error.message || 'Lỗi không xác định'}` })
     }
   }
 
@@ -94,11 +102,7 @@ export function CategoryManagement() {
       })
     } catch (error) {
       console.error('Failed to fetch categories:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch categories. Please try again.",
-        variant: "destructive",
-      })
+      toast("Error", { description: "Failed to fetch categories. Please try again." })
     } finally {
       setLoading(false)
     }
@@ -150,110 +154,99 @@ export function CategoryManagement() {
       setIsCreateDialogOpen(false)
       setNameError("")
       setDescriptionError("")
-      toast({
-        title: "Success",
-        description: `Category ${newCategory.name} has been created successfully.`,
-      })
+      toast("✅ Category created successfully.", { description: `Category ${newCategory.name} has been created successfully.` })
       fetchCategories(
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
       )
       fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create category. Please try again.",
-        variant: "destructive",
-      })
+      toast("Error", { description: "Failed to create category. Please try again." })
     }
   }
 
   const handleEditCategory = async () => {
-    if (!selectedCategory || !newCategory.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Category name is required",
-        variant: "destructive",
-      })
-      return
+    let hasError = false
+    if (!newCategory.name.trim()) {
+      setEditNameError("Please enter category name")
+      hasError = true
+    } else {
+      setEditNameError("")
     }
-
+    if (!newCategory.description.trim()) {
+      setEditDescriptionError("Please enter category description")
+      hasError = true
+    } else {
+      setEditDescriptionError("")
+    }
+    if (hasError) return
+    if (!selectedCategory) return
     try {
       await categoryAPI.updateCategory(selectedCategory.id, newCategory)
       setNewCategory({ name: "", description: "" })
       setSelectedCategory(null)
       setIsEditDialogOpen(false)
-      
-      toast({
-        title: "Category Updated",
-        description: `Category has been updated successfully.`,
-      })
-
-      // Refresh the list
+      setEditNameError("")
+      setEditDescriptionError("")
+      setEditNameTouched(false)
+      setEditDescriptionTouched(false)
+      toast("✅ Category updated successfully!", { description: `Category ${selectedCategory.name} has been updated successfully!` })
       fetchCategories(
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
       )
-      fetchTotalCourses() // Cập nhật tổng số khóa học
+      fetchTotalCourses()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update category. Please try again.",
-        variant: "destructive",
-      })
+      toast("Error", { description: "Failed to update category. Please try again." })
     }
   }
 
   const handleDeleteCategory = async () => {
-    if (!categoryToDelete) return
-
+    if (!categoryToDelete) return;
     if (categoryToDelete.courseCount > 0) {
-      toast({
-        title: "❌ Cannot Delete Category",
-        description: `Category "${categoryToDelete.name}" has ${categoryToDelete.courseCount} course(s). Please reassign or remove courses first.`,
-        variant: "destructive",
-      })
-      setIsDeleteDialogOpen(false)
-      setCategoryToDelete(null)
-      return
+      toast("❌ Không thể xoá danh mục", { description: `Danh mục "${categoryToDelete.name}" đang có ${categoryToDelete.courseCount} khoá học. Hãy chuyển hoặc xoá các khoá học trước!` })
+      setIsDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+      return;
     }
-
     try {
-      await categoryAPI.deleteCategory(categoryToDelete.id)
-      
-      toast({
-        title: "✅ Category Deleted",
-        description: `${categoryToDelete.name} has been deleted successfully.`,
-      })
-      
-      // Refresh the list
+      await categoryAPI.deleteCategory(categoryToDelete.id);
+      toast("✅ Category deleted", {
+        description: (
+          <span>
+            Category&nbsp;
+            <span
+              className="inline-block max-w-[200px] align-middle truncate"
+              title={categoryToDelete.name}
+              style={{ verticalAlign: "middle" }}
+            >
+              "{categoryToDelete.name}"
+            </span>
+            &nbsp;has been deleted successfully!
+          </span>
+        ),
+      });
       fetchCategories(
         { page: pagination.number, size: pagination.size },
         { name: searchTerm || undefined }
-      )
-      fetchTotalCourses() // Cập nhật tổng số khóa học
+      );
+      fetchTotalCourses();
+      setIsDeleteDialogOpen(false);
+      setCategoryToDelete(null);
     } catch (error: any) {
-      console.error('Delete category error:', error)
-      
-      let errorMessage = "Failed to delete category. Please try again."
-      
+      console.error('Delete category error:', error);
+      let errorMessage = "Không thể xoá danh mục. Vui lòng thử lại.";
       if (error.message?.includes("being used by courses") || 
           error.message?.includes("CategoryInUseException")) {
-        errorMessage = `Cannot delete "${categoryToDelete.name}" because it is still being used by courses. Please remove or reassign the courses first.`
+        errorMessage = `Không thể xoá "${categoryToDelete.name}" vì vẫn còn khoá học sử dụng. Hãy chuyển hoặc xoá các khoá học trước!`;
       } else if (error.message?.includes("not found")) {
-        errorMessage = `Category "${categoryToDelete.name}" not found. It may have been already deleted.`
+        errorMessage = `Danh mục "${categoryToDelete.name}" không tồn tại. Có thể đã bị xoá trước đó.`;
       }
-      
-      toast({
-        title: "❌ Delete Failed",
-        description: errorMessage,
-        variant: "destructive",
-      })
-    } finally {
-      setIsDeleteDialogOpen(false)
-      setCategoryToDelete(null)
+      toast.error("❌ Xoá thất bại", { description: errorMessage })
+      setIsDeleteDialogOpen(false);
+      setCategoryToDelete(null);
     }
-  }
+  };
 
   const openEditDialog = (category: CategoryResponseDTO) => {
     setSelectedCategory(category)
@@ -261,6 +254,10 @@ export function CategoryManagement() {
       name: category.name,
       description: category.description,
     })
+    setEditNameError("")
+    setEditDescriptionError("")
+    setEditNameTouched(false)
+    setEditDescriptionTouched(false)
     setIsEditDialogOpen(true)
   }
 
@@ -285,7 +282,7 @@ export function CategoryManagement() {
   const stats = getCategoryStats()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen">
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
@@ -378,8 +375,8 @@ export function CategoryManagement() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 grid-cols-2">
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
             <Tags className="h-4 w-4 text-muted-foreground" />
@@ -388,7 +385,7 @@ export function CategoryManagement() {
             <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -422,18 +419,18 @@ export function CategoryManagement() {
           </div>
 
           {/* Categories Table */}
-          <Table>
+          <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Courses</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[22%] truncate">Name</TableHead>
+                <TableHead className="w-[33%] truncate">Description</TableHead>
+                <TableHead className="w-[12%] text-center">Courses</TableHead>
+                <TableHead className="w-[13%] text-center">Created</TableHead>
+                <TableHead className="w-[10%] text-center">Last Updated</TableHead>
+                <TableHead className="w-[10%] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="min-h-[300px]">
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
@@ -449,52 +446,58 @@ export function CategoryManagement() {
                 </TableRow>
               ) : (
                 categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">
-                      {category.name}
-                      {category.courseCount > 0 && (
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          In Use
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{category.description}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={category.courseCount > 0 ? "default" : "secondary"}
-                        className={category.courseCount > 0 ? "bg-blue-100 text-blue-800" : ""}
+                  <TableRow
+                    key={category.id}
+                    className="cursor-pointer hover:bg-gray-50 transition group"
+                    onClick={() => router.push(`/categories/${category.id}/courses`)}
+                  >
+                    <TableCell className="font-medium w-[22%] truncate">{category.name}{category.courseCount > 0 && (<Badge variant="outline" className="ml-2 text-xs">In Use</Badge>)}</TableCell>
+                    <TableCell className="w-[33%] truncate">{category.description}</TableCell>
+                    <TableCell className="w-[12%] text-center">
+                      <Badge
+                        className={
+                          category.courseCount > 0
+                            ? "bg-blue-50 text-blue-500 border border-blue-200 font-semibold group-hover:text-blue-400"
+                            : "bg-gray-50 text-gray-500 border border-gray-200 font-semibold group-hover:text-gray-400"
+                        }
                       >
                         {category.courseCount} courses
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(category.createdDate)}</TableCell>
-                    <TableCell>{formatDate(category.modifiedDate)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(category)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => openDeleteDialog(category)}
-                            className={
-                              category.courseCount > 0 
-                                ? "text-gray-400 cursor-not-allowed" 
-                                : "text-red-600 focus:text-red-600"
-                            }
-                            disabled={category.courseCount > 0}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            {category.courseCount > 0 ? "Cannot Delete" : "Delete"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="w-[13%] text-center">{formatDate(category.createdDate)}</TableCell>
+                    <TableCell className="w-[10%] text-center">{formatDate(category.modifiedDate)}</TableCell>
+                    <TableCell className="w-[10%] text-center">
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(category);
+                          }}
+                          title="Edit"
+                          className="hover:bg-blue-100 hover:text-blue-600"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteDialog(category);
+                          }}
+                          title="Delete"
+                          disabled={category.courseCount > 0}
+                          className={`${
+                            category.courseCount > 0
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "hover:bg-red-100 hover:text-red-600 text-red-600"
+                          }`}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -503,12 +506,10 @@ export function CategoryManagement() {
           </Table>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
+          {pagination.totalPages >= 1 && (
             <div className="flex items-center justify-between mt-6">
               <p className="text-sm text-muted-foreground">
-                Showing {pagination.number * pagination.size + 1} to{" "}
-                {Math.min((pagination.number + 1) * pagination.size, pagination.totalElements)} of{" "}
-                {pagination.totalElements} categories
+                Showing {pagination.number * pagination.size + 1} to {Math.min((pagination.number + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements} categories
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -554,8 +555,16 @@ export function CategoryManagement() {
                 id="edit-category-name"
                 placeholder="Enter category name"
                 value={newCategory.name}
-                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                onChange={(e) => {
+                  setNewCategory({ ...newCategory, name: e.target.value })
+                  if (e.target.value.trim()) setEditNameError("")
+                }}
+                onBlur={() => {
+                  setEditNameTouched(true)
+                  if (!newCategory.name.trim()) setEditNameError("Please enter category name")
+                }}
               />
+              {editNameTouched && editNameError && <p className="text-red-500 text-xs mt-1">{editNameError}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-category-description">Description</Label>
@@ -563,9 +572,17 @@ export function CategoryManagement() {
                 id="edit-category-description"
                 placeholder="Enter category description"
                 value={newCategory.description}
-                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                onChange={(e) => {
+                  setNewCategory({ ...newCategory, description: e.target.value })
+                  if (e.target.value.trim()) setEditDescriptionError("")
+                }}
+                onBlur={() => {
+                  setEditDescriptionTouched(true)
+                  if (!newCategory.description.trim()) setEditDescriptionError("Please enter category description")
+                }}
                 rows={3}
               />
+              {editDescriptionTouched && editDescriptionError && <p className="text-red-500 text-xs mt-1">{editDescriptionError}</p>}
             </div>
           </div>
           <DialogFooter>
@@ -575,11 +592,17 @@ export function CategoryManagement() {
                 setIsEditDialogOpen(false)
                 setSelectedCategory(null)
                 setNewCategory({ name: "", description: "" })
+                setEditNameError("")
+                setEditDescriptionError("")
+                setEditNameTouched(false)
+                setEditDescriptionTouched(false)
               }}
             >
               Cancel
             </Button>
-            <Button onClick={handleEditCategory}>Update Category</Button>
+            <Button onClick={handleEditCategory} disabled={!newCategory.name.trim() || !newCategory.description.trim()}>
+              Update Category
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -590,8 +613,12 @@ export function CategoryManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>This action cannot be undone. This will permanently delete the category "{categoryToDelete?.name}".</p>
-              
+              <p>
+                This action cannot be undone. This will permanently delete the category
+                <span className="inline-block max-w-[250px] align-middle ml-1 truncate" title={categoryToDelete?.name}>
+                  "{categoryToDelete?.name}"
+                </span>.
+              </p>
               {categoryToDelete && categoryToDelete.courseCount > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-3">
                   <p className="text-red-800 font-medium">

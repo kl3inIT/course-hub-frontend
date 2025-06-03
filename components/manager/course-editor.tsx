@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CourseBuilder } from "./course-builder"
+import { CourseBuilder } from "../courses/course-builder"
 import {
   Save,
   Eye,

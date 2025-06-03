@@ -4,17 +4,22 @@ import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star } from "lucide-react"
-import { Review, review } from "@/api/review"
+import { ReviewResponseDTO } from "@/types/review"
+import { reviewApi } from "@/api/review-api"
 
 export function TestimonialsSection() {
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const data = await review.getTopReviews()
-        setReviews(data)
+        const response = await reviewApi.getAllReviews({ 
+          size: 3,
+          sortBy: 'star',
+          direction: 'DESC'
+        })
+        setReviews(response.data.content)
       } catch (error) {
         console.error("Error fetching reviews:", error)
       } finally {
@@ -61,7 +66,7 @@ export function TestimonialsSection() {
                       <AvatarFallback>
                         {review.userName
                           .split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("")}
                       </AvatarFallback>
                     </Avatar>

@@ -15,19 +15,15 @@ import {
   Play,
   CheckCircle,
   Search,
-  Code,
-  Palette,
-  Database,
-  Smartphone,
-  Brain,
-  TrendingUp,
 } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { CourseCard } from "@/components/courses/course-card"
 import { TestimonialsSection } from "@/components/testimonials/testimonials-section"
 import { Footer } from "@/components/layout/footer"
-import { categoryAPI, CategoryResponseDTO } from "@/api/category"
-import { courseAPI, CourseResponseDTO } from "@/api/course"
+import { categoryApi } from "@/api/category-api"
+import { courseApi } from "@/api/course-api"
+import { CategoryResponseDTO } from "@/types/category"
+import { CourseResponseDTO } from "@/types/course"
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -41,7 +37,7 @@ export default function HomePage() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        const response = await categoryAPI.getAllCategories({ page: 0, size: 6 })
+        const response = await categoryApi.getAllCategories({ page: 0, size: 6 })
         
         // Sort by courseCount descending if available
         const sortedCategories = response.data.content.sort((a, b) => {
@@ -65,7 +61,7 @@ export default function HomePage() {
     const fetchFeaturedCourses = async () => {
       try {
         setLoadingFeaturedCourses(true)
-        const response = await courseAPI.getFeaturedCourses({ page: 0, size: 6 })
+        const response = await courseApi.getFeaturedCourses({ page: 0, size: 6 })
         setFeaturedCourses(response.data)
       } catch (error) {
         console.error('Failed to fetch featured courses:', error)

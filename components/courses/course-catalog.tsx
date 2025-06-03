@@ -9,9 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { Search, X, SlidersHorizontal, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
-import { courseAPI, CourseResponseDTO } from "@/api/course"
-import { categoryAPI, CategoryResponseDTO } from "@/api/category"
+import { courseApi } from "@/api/course-api"
+import { categoryApi } from "@/api/category-api"
 import { CourseCard } from "./course-card"
+import { useSearchParams } from "next/navigation"
+import { CourseResponseDTO } from "@/types/course"
+import { CategoryResponseDTO } from "@/types/category"
 
 const levels = ["BEGINNER", "INTERMEDIATE", "ADVANCED"]
 const sortOptions = [
@@ -24,6 +27,7 @@ const sortOptions = [
 ]
 
 export function CourseCatalog() {
+  const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedLevels, setSelectedLevels] = useState<string[]>([])
@@ -47,10 +51,9 @@ export function CourseCatalog() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categoriesResponse = await categoryAPI.getAllCategories({ 
+        const categoriesResponse = await categoryApi.getAllCategories({ 
           page: 0, 
-          size: 100,
-          isActive: true 
+          size: 100
         })
         
         if (categoriesResponse.data?.content) {
@@ -64,6 +67,14 @@ export function CourseCatalog() {
     loadCategories()
   }, [])
 
+  // Handle initial category from URL
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category')
+    if (categoryFromUrl) {
+      setSelectedCategories([categoryFromUrl])
+    }
+  }, [searchParams])
+
   // Load courses based on filters and pagination
   useEffect(() => {
     const loadCourses = async () => {
@@ -72,52 +83,52 @@ export function CourseCatalog() {
         setLoading(currentPage === 0)
         setError(null)
         
-        const coursesResponse = await courseAPI.getAllCourses({
+        // Build search parameters for server-side filtering
+        const searchParams: any = {
           page: currentPage,
-          size: pageSize
-        })
+          size: pageSize,
+        }
+
+        if (searchTerm) searchParams.search = searchTerm
         
-        let filteredCourses = coursesResponse.data?.content || []
-
-        if (searchTerm) {
-          filteredCourses = filteredCourses.filter(course => 
-            course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            course.description?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        }
-
+        // Convert category name to ID for backend
         if (selectedCategories.length > 0) {
-          filteredCourses = filteredCourses.filter(course => 
-            selectedCategories.includes(course.category.name)
-          )
+          const selectedCategory = categories.find(cat => cat.name === selectedCategories[0])
+          if (selectedCategory) {
+            searchParams.category = selectedCategory.id
+          }
         }
-
-        if (selectedLevels.length > 0) {
-          filteredCourses = filteredCourses.filter(course => 
-            selectedLevels.includes(course.level)
-          )
-        }
-
+        
+        if (selectedLevels.length > 0) searchParams.level = selectedLevels[0]
+        
+        // Handle price filters
         if (priceFilter === "free") {
-          filteredCourses = filteredCourses.filter(course => course.finalPrice === 0)
+          searchParams.maxPrice = 0
         } else if (priceFilter === "paid") {
-          filteredCourses = filteredCourses.filter(course => course.finalPrice > 0)
+          searchParams.minPrice = 0.01
         }
 
         if (priceFilter !== "free") {
-          if (priceRange[0] > 0) filteredCourses = filteredCourses.filter(course => course.finalPrice >= priceRange[0])
-          if (priceRange[1] < 200) filteredCourses = filteredCourses.filter(course => course.finalPrice <= priceRange[1])
+          if (priceRange[0] > 0) searchParams.minPrice = priceRange[0]
+          if (priceRange[1] < 1000) searchParams.maxPrice = priceRange[1]
         }
 
         // Add sorting
-        if (sortBy === "price-low") filteredCourses = filteredCourses.sort((a, b) => a.finalPrice - b.finalPrice)
-        else if (sortBy === "price-high") filteredCourses = filteredCourses.sort((a, b) => b.finalPrice - a.finalPrice)
-        else if (sortBy === "rating") filteredCourses = filteredCourses.sort((a, b) => b.averageRating - a.averageRating)
-        else if (sortBy === "newest") filteredCourses = filteredCourses.sort((a, b) => b.id - a.id)
+        if (sortBy === "price-low") searchParams.sort = "price,asc"
+        else if (sortBy === "price-high") searchParams.sort = "price,desc"
+        else if (sortBy === "newest") searchParams.sort = "id,desc"
+        else if (sortBy === "popularity") searchParams.sort = "totalStudents,desc"
         
-        setCourses(filteredCourses)
-        setTotalPages(coursesResponse.data.totalPages)
-        setTotalElements(coursesResponse.data.totalElements)
+        console.log('Search params being sent:', searchParams)
+        
+        // Use searchCourses instead of getAllCourses for server-side filtering
+        const coursesResponse = await courseApi.searchCourses(searchParams)
+        
+        if (coursesResponse.data?.content) {
+          setCourses(coursesResponse.data.content)
+          setTotalPages(coursesResponse.data.totalPages)
+          setTotalElements(coursesResponse.data.totalElements)
+        }
       } catch (err) {
         console.error('Error loading courses:', err)
         setError('Failed to load courses. Please try again later.')
@@ -128,7 +139,7 @@ export function CourseCatalog() {
     }
 
     loadCourses()
-  }, [currentPage, pageSize, searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
+  }, [currentPage, pageSize, searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy, categories])
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -273,15 +284,6 @@ export function CourseCatalog() {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {activeFiltersCount}
-              </Badge>
-            )}
-          </Button>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Sort by" />
@@ -351,93 +353,84 @@ export function CourseCatalog() {
       )}
 
       <div className="flex gap-6">
-        {/* Filters Sidebar */}
-        <Collapsible open={showFilters} onOpenChange={setShowFilters}>
-          <CollapsibleContent className="lg:block">
-            <div className="w-full lg:w-64 space-y-6 p-4 border rounded-lg bg-card">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Filters</h3>
-                <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)} className="lg:hidden">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+        {/* Fixed Filters Sidebar */}
+        <div className="hidden lg:block w-64 space-y-6 p-4 border rounded-lg bg-card">
+          <h3 className="font-semibold">Filters</h3>
 
-              {/* Category Filter */}
-              <div className="space-y-3">
-                <h4 className="font-medium">Category</h4>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <div key={category.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={category.name}
-                        checked={selectedCategories.includes(category.name)}
-                        onCheckedChange={(checked) => handleCategoryChange(category.name, checked as boolean)}
-                      />
-                      <label htmlFor={category.name} className="text-sm cursor-pointer">
-                        {category.name} {category.courseCount && `(${category.courseCount})`}
-                      </label>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No categories available</p>
-                )}
-              </div>
-
-              {/* Level Filter */}
-              <div className="space-y-3">
-                <h4 className="font-medium">Skill Level</h4>
-                {levels.map((level) => (
-                  <div key={level} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={level}
-                      checked={selectedLevels.includes(level)}
-                      onCheckedChange={(checked) => handleLevelChange(level, checked as boolean)}
-                    />
-                    <label htmlFor={level} className="text-sm cursor-pointer">
-                      {level}
-                    </label>
-                  </div>
-                ))}
-              </div>
-
-              {/* Price Filter */}
-              <div className="space-y-3">
-                <h4 className="font-medium">Price</h4>
-                <Select value={priceFilter} onValueChange={setPriceFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Courses</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Price Range */}
-              {priceFilter !== "free" && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">Price Range</h4>
-                  <div className="px-2">
-                    <Slider
-                      value={priceRange}
-                      onValueChange={setPriceRange}
-                      max={200}
-                      min={0}
-                      step={10}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>${priceRange[0]}</span>
-                      <span>${priceRange[1]}</span>
-                    </div>
-                  </div>
+          {/* Category Filter */}
+          <div className="space-y-3">
+            <h4 className="font-medium">Category</h4>
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <div key={category.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={category.name}
+                    checked={selectedCategories.includes(category.name)}
+                    onCheckedChange={(checked) => handleCategoryChange(category.name, checked as boolean)}
+                  />
+                  <label htmlFor={category.name} className="text-sm cursor-pointer">
+                    {category.name} {category.courseCount && `(${category.courseCount})`}
+                  </label>
                 </div>
-              )}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No categories available</p>
+            )}
+          </div>
+
+          {/* Level Filter */}
+          <div className="space-y-3">
+            <h4 className="font-medium">Skill Level</h4>
+            {levels.map((level) => (
+              <div key={level} className="flex items-center space-x-2">
+                <Checkbox
+                  id={level}
+                  checked={selectedLevels.includes(level)}
+                  onCheckedChange={(checked) => handleLevelChange(level, checked as boolean)}
+                />
+                <label htmlFor={level} className="text-sm cursor-pointer">
+                  {level}
+                </label>
+              </div>
+            ))}
+          </div>
+
+          {/* Price Filter */}
+          <div className="space-y-3">
+            <h4 className="font-medium">Price</h4>
+            <Select value={priceFilter} onValueChange={setPriceFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Price Range */}
+          {priceFilter !== "free" && (
+            <div className="space-y-3">
+              <h4 className="font-medium">Price Range</h4>
+              <div className="px-2">
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={200}
+                  min={0}
+                  step={10}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>${priceRange[0]}</span>
+                  <span>${priceRange[1]}</span>
+                </div>
+              </div>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          )}
+        </div>
 
         {/* Course Grid */}
         <div className="flex-1">

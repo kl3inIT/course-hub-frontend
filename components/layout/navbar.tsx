@@ -24,7 +24,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { BookOpen, LogOut, Settings, Menu, GraduationCap, Users, Shield, ChevronDown } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { RoleBadge } from "@/components/ui/role-badge"
-import { categoryAPI } from "@/api/category"
+import { categoryApi } from "@/api/category-api"
+import { CategoryResponseDTO } from "@/types/category"
 
 export function Navbar() {
   const { user, logout } = useAuth()
@@ -38,7 +39,7 @@ export function Navbar() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        const response = await categoryAPI.getAllCategories({ page: 0, size: 6 })
+        const response = await categoryApi.getAllCategories({ page: 0, size: 6 })
         setCategories(response.data.content)
       } catch (error) {
         console.error('Failed to fetch categories:', error)
@@ -55,38 +56,6 @@ export function Navbar() {
     window.location.href = "/login"
   }
 
-  const getUserLinks = () => {
-    if (!user) return []
-
-    const links = []
-
-    // Learner links
-    if (user.role === "learner") {
-      links.push({ href: "/dashboard", label: "My Learning", show: true })
-    }
-
-    // Manager links
-    if (user.role === "manager") {
-      links.push(
-        { href: "/dashboard", label: "My Learning", show: true },
-        { href: "/manager", label: "Course Management", show: true },
-      )
-    }
-
-    // Admin links
-    if (user.role === "admin") {
-      links.push(
-        { href: "/dashboard", label: "My Learning", show: true },
-        { href: "/manager", label: "Course Management", show: true },
-        { href: "/admin", label: "Admin Panel", show: true },
-      )
-    }
-
-    return links
-  }
-
-  const userLinks = getUserLinks()
-
   const isActiveLink = (href: string) => {
     if (href === "/") {
       return pathname === "/"
@@ -101,7 +70,7 @@ export function Navbar() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <BookOpen className="h-6 w-6" />
-              <span className="font-bold text-xl">LearnHub</span>
+              <span className="font-bold text-xl">CourseHub</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -121,7 +90,7 @@ export function Navbar() {
                 ></span>
               </Link>
 
-              {/* Courses Dropdown - FIX: Remove duplicate chevron */}
+              {/* Courses Dropdown */}
               <NavigationMenu>
                 <NavigationMenuList>
                   <NavigationMenuItem>
@@ -215,30 +184,28 @@ export function Navbar() {
                 ></span>
               </Link>
 
-              {userLinks.map((link) =>
-                link.show ? (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`text-sm font-medium transition-colors relative group ${
-                      isActiveLink(link.href) ? "text-primary" : "text-muted-foreground hover:text-primary"
+              {/* Only show "My Learning" link for authenticated users */}
+              {user && (
+                <Link
+                  href="/dashboard"
+                  className={`text-sm font-medium transition-colors relative group ${
+                    isActiveLink("/dashboard") ? "text-primary" : "text-muted-foreground hover:text-primary"
+                  }`}
+                >
+                  My Learning
+                  <span
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all ${
+                      isActiveLink("/dashboard") ? "w-full" : "w-0 group-hover:w-full"
                     }`}
-                  >
-                    {link.label}
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all ${
-                        isActiveLink(link.href) ? "w-full" : "w-0 group-hover:w-full"
-                      }`}
-                    ></span>
-                  </Link>
-                ) : null,
+                  ></span>
+                </Link>
               )}
             </div>
           </div>
 
           {/* Right Side - Auth & Mobile Menu */}
           <div className="flex items-center gap-4">
-            {/* Desktop User Menu */}
+            {/* Desktop User Menu - Keep avatar dropdown with Course Management and Admin Panel */}
             {user ? (
               <div className="hidden lg:flex items-center gap-4">
                 <div className="text-sm">
@@ -276,36 +243,32 @@ export function Navbar() {
                         My Learning
                       </Link>
                     </DropdownMenuItem>
-                    {user.role === "manager" && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/manager">
-                          <Users className="mr-2 h-4 w-4" />
-                          Course Management
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    {user.role === "admin" && (
-                      <>
-                        <DropdownMenuItem asChild>
-                          <Link href="/manager">
-                            <Users className="mr-2 h-4 w-4" />
-                            Course Management
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin">
-                            <Shield className="mr-2 h-4 w-4" />
-                            Admin Panel
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/profile">
                         <Settings className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
+                    
+                    {/* Role-based panels */}
+                    {(user.role === "manager" || user.role === "admin") && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/manager">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Manager Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {user.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
@@ -337,7 +300,7 @@ export function Navbar() {
                   <div className="flex flex-col gap-6 mt-6">
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-6 w-6" />
-                      <span className="font-bold text-xl">LearnHub</span>
+                      <span className="font-bold text-xl">CourseHub</span>
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -396,19 +359,17 @@ export function Navbar() {
                         Contact
                       </Link>
 
-                      {userLinks.map((link) =>
-                        link.show ? (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`text-lg font-medium transition-colors py-2 ${
-                              isActiveLink(link.href) ? "text-primary" : "hover:text-primary"
-                            }`}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            {link.label}
-                          </Link>
-                        ) : null,
+                      {/* Only show "My Learning" link for authenticated users in mobile */}
+                      {user && (
+                        <Link
+                          href="/dashboard"
+                          className={`text-lg font-medium transition-colors py-2 ${
+                            isActiveLink("/dashboard") ? "text-primary" : "hover:text-primary"
+                          }`}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          My Learning
+                        </Link>
                       )}
                     </div>
 
@@ -441,6 +402,30 @@ export function Navbar() {
                             <Settings className="h-4 w-4" />
                             Profile
                           </Link>
+                          
+                          {/* Role-based panels for mobile */}
+                          {(user.role === "manager" || user.role === "admin") && (
+                            <Link
+                              href="/course-management"
+                              className="flex items-center gap-2 text-sm py-2 hover:text-primary"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              <BookOpen className="h-4 w-4" />
+                              Course Management
+                            </Link>
+                          )}
+                          
+                          {user.role === "admin" && (
+                            <Link
+                              href="/admin"
+                              className="flex items-center gap-2 text-sm py-2 hover:text-primary"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              <Shield className="h-4 w-4" />
+                              Admin Panel
+                            </Link>
+                          )}
+                          
                           <Button
                             onClick={() => {
                               handleLogout()

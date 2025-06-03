@@ -18,93 +18,109 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Star, MessageSquare, ThumbsUp, Flag, Search, RefreshCw } from "lucide-react"
-import { reviewService, Review } from "@/api/review"
-import { categoryAPI, CategoryResponseDTO } from "@/api/category"
+import { reviewApi } from "@/api/review-api"
+import { categoryApi } from "@/api/category-api"
+import { ReviewResponseDTO, ReviewSearchParams } from "@/types/review"
+import { CategoryResponseDTO } from "@/types/category"
+import { Page } from "@/types/common"
+import { toast } from "@/hooks/use-toast"
 
 export function ReviewManagement() {
-  const PAGE_SIZE = 5;
-  const [allReviews, setAllReviews] = useState<Review[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
+  const [pagination, setPagination] = useState<Page<ReviewResponseDTO>>({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    size: 5,
+    number: 0
+  })
   const [searchTerm, setSearchTerm] = useState("")
   const [ratingFilter, setRatingFilter] = useState<string>("all")
-  const [courseFilter, setCourseFilter] = useState<string>("all")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [responseFilter, setResponseFilter] = useState<string>("all")
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null)
+  const [selectedReview, setSelectedReview] = useState<ReviewResponseDTO | null>(null)
   const [responseText, setResponseText] = useState("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [totalReviews, setTotalReviews] = useState(0)
-  const [categories, setCategories] = useState<CategoryResponseDTO[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(false)
+  const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      setIsRefreshing(true);
-      // Lấy toàn bộ review, không phân trang ở API
-      const data = await reviewService.getReviews(0, 10000, 'modifiedDate', 'DESC');
-      setAllReviews(data.content);
-      setIsRefreshing(false);
-    };
-    fetchReviews();
-  }, []);
-
-  useEffect(() => {
-    // Lấy danh sách category
-    const fetchCategories = async () => {
-      try {
-        const res = await categoryAPI.getAllCategories({ size: 100 });
-        setCategories(res.data.content);
-      } catch (e) {
-        setCategories([]);
+  // Fetch reviews
+  const fetchReviews = async (page: number = 0, size: number = 5) => {
+    try {
+      setLoading(true)
+      const params: ReviewSearchParams = {
+        page,
+        size,
+        sortBy: 'modifiedDate',
+        direction: 'DESC',
+        star: ratingFilter !== 'all' ? parseInt(ratingFilter) : undefined,
+        courseId: categoryFilter !== 'all' ? parseInt(categoryFilter) : undefined
       }
-    };
-    fetchCategories();
-  }, []);
-
-  // Filter và phân trang lại trên FE
-  useEffect(() => {
-    let filtered = allReviews.filter((review) => {
-      const matchesSearch =
-        review.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.comment.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRating = ratingFilter === "all" || review.star.toString() === ratingFilter;
-      const matchesCategory = categoryFilter === "all" || categories.find(c => c.id === review.courseId?.toString())?.id === categoryFilter;
-      let matchesResponse = true;
-      if (responseFilter === "responded") {
-        matchesResponse = Boolean(review.modifiedDate && review.modifiedDate !== review.createdDate);
-      }
-      return matchesSearch && matchesRating && matchesCategory && matchesResponse;
-    });
-    setTotalReviews(filtered.length);
-    const pages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    setTotalPages(pages);
-    // Nếu page vượt quá số trang mới, reset về 0
-    if (page >= pages) setPage(0);
-    // Lấy review cho trang hiện tại
-    setReviews(filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE));
-  }, [allReviews, searchTerm, ratingFilter, categoryFilter, responseFilter, page]);
-
-  // Khi filter thay đổi, reset về page 0
-  useEffect(() => {
-    setPage(0);
-  }, [searchTerm, ratingFilter, categoryFilter, responseFilter]);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    setTimeout(() => setIsRefreshing(false), 1000)
+      const response = await reviewApi.getAllReviews(params)
+      setReviews(response.data.content)
+      setPagination(response.data)
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch reviews. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSubmitResponse = () => {
-    if (selectedReview && responseText.trim()) {
-      setReviews((prev) =>
-        prev.map((review) =>
-          review.id === selectedReview.id ? { ...review, modifiedDate: new Date().toISOString() } : review,
-        ),
-      )
+  // Load initial data
+  useEffect(() => {
+    fetchReviews()
+  }, [])
+
+  // Load categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAllCategories({ size: 100 })
+        setCategories(response.data.content)
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  // Handle filters
+  useEffect(() => {
+    fetchReviews(0, pagination.size)
+  }, [ratingFilter, categoryFilter])
+
+  const handleRefresh = () => {
+    fetchReviews(pagination.number, pagination.size)
+  }
+
+  const handleSubmitResponse = async () => {
+    if (!selectedReview || !responseText.trim()) return
+
+    try {
+      await reviewApi.updateReview(selectedReview.id, {
+        courseId: selectedReview.courseId,
+        star: selectedReview.star,
+        comment: responseText.trim()
+      })
+      
+      toast({
+        title: "Success",
+        description: "Response submitted successfully",
+      })
+      
       setResponseText("")
       setSelectedReview(null)
+      fetchReviews(pagination.number, pagination.size)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit response. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -115,16 +131,13 @@ export function ReviewManagement() {
   }
 
   const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.star, 0) / reviews.length : 0
-  const pendingResponses = reviews.filter((r) => !r.modifiedDate).length
   const respondedCount = reviews.filter(r => r.modifiedDate && r.modifiedDate !== r.createdDate).length
 
-  const uniqueCourses = [...new Set(reviews.map((r) => r.courseName))]
-
   const displayDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
-  };
+    if (!dateStr) return ""
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? "" : d.toLocaleDateString()
+  }
 
   return (
     <div className="space-y-6">
@@ -133,8 +146,8 @@ export function ReviewManagement() {
           <h1 className="text-3xl font-bold">Review Management</h1>
           <p className="text-muted-foreground">Manage student feedback and responses</p>
         </div>
-        <Button onClick={handleRefresh} disabled={isRefreshing}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        <Button onClick={handleRefresh} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
@@ -147,7 +160,7 @@ export function ReviewManagement() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalReviews}</div>
+            <div className="text-2xl font-bold">{pagination.totalElements}</div>
             <p className="text-xs text-muted-foreground">Across all courses</p>
           </CardContent>
         </Card>
@@ -208,18 +221,8 @@ export function ReviewManagement() {
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={responseFilter} onValueChange={setResponseFilter}>
-          <SelectTrigger className="w-full md:w-[140px]">
-            <SelectValue placeholder="Response" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Reviews</SelectItem>
-            <SelectItem value="responded">Responded</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -232,7 +235,6 @@ export function ReviewManagement() {
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                   <Avatar>
-                    <AvatarImage src={review.userAvatar || "/placeholder.svg"} />
                     <AvatarFallback>
                       {review.userName
                         .split(" ")
@@ -304,7 +306,7 @@ export function ReviewManagement() {
                           Cancel
                         </Button>
                         <Button onClick={handleSubmitResponse}>
-                          Response
+                          Submit Response
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -318,11 +320,21 @@ export function ReviewManagement() {
 
       {/* Pagination */}
       <div className="flex justify-center items-center gap-4 mt-6">
-        <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 0}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => fetchReviews(pagination.number - 1, pagination.size)} 
+          disabled={pagination.number === 0}
+        >
           Previous
         </Button>
-        <span>Page {page + 1} of {totalPages}</span>
-        <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages - 1}>
+        <span>Page {pagination.number + 1} of {pagination.totalPages}</span>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => fetchReviews(pagination.number + 1, pagination.size)} 
+          disabled={pagination.number === pagination.totalPages - 1}
+        >
           Next
         </Button>
       </div>

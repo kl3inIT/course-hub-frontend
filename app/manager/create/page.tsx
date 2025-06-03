@@ -1,4 +1,4 @@
-import { CourseCreationForm } from "@/components/courses/course-creation-form"
+import { CourseCreationForm } from "@/components/manager/course-creation-form"
 import { ManagerSidebar } from "@/components/manager/manager-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { RoleGuard } from "@/components/auth/role-guard"

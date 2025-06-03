@@ -37,17 +37,18 @@ import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreVertical, Edit, Trash2, Tags, BookOpen, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { categoryAPI, PaginatedResponse, CategoryFilters, PaginationParams, CategoryResponseDTO, CategoryRequestDTO } from "@/api/category"
+import { categoryApi } from "@/api/category-api"
+import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@/types/category"
+import { Page } from "@/types/common"
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<Page<CategoryResponseDTO>>({
+    content: [],
     totalElements: 0,
     totalPages: 0,
     size: 6,
-    number: 0,
-    first: true,
-    last: true,
+    number: 0
   })
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -66,20 +67,18 @@ export function CategoryManagement() {
   const [descriptionTouched, setDescriptionTouched] = useState(false)
 
   // Fetch categories from API
-  const fetchCategories = async (paginationParams: PaginationParams = {}, filters: CategoryFilters = {}) => {
+  const fetchCategories = async (page: number = 0, size: number = 6, searchName?: string) => {
     try {
       setLoading(true)
-      const response = await categoryAPI.getAllCategories(paginationParams, filters)
+      const params: CategorySearchParams = {
+        page,
+        size,
+        name: searchName
+      }
+      const response = await categoryApi.getAllCategories(params)
       
       setCategories(response.data.content)
-      setPagination({
-        totalElements: response.data.totalElements,
-        totalPages: response.data.totalPages,
-        size: response.data.size,
-        number: response.data.number,
-        first: response.data.first,
-        last: response.data.last,
-      })
+      setPagination(response.data)
     } catch (error) {
       console.error('Failed to fetch categories:', error)
       toast({
@@ -100,20 +99,14 @@ export function CategoryManagement() {
   // Handle search
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
-      fetchCategories(
-        { page: 0, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(0, pagination.size, searchTerm || undefined)
     }, 500)
 
     return () => clearTimeout(delayedSearch)
   }, [searchTerm])
 
   const handlePageChange = (newPage: number) => {
-    fetchCategories(
-      { page: newPage, size: pagination.size },
-      { name: searchTerm || undefined }
-    )
+    fetchCategories(newPage, pagination.size, searchTerm || undefined)
   }
 
   const handleCreateCategory = async () => {
@@ -132,7 +125,7 @@ export function CategoryManagement() {
     }
     if (hasError) return
     try {
-      await categoryAPI.createCategory(newCategory)
+      await categoryApi.createCategory(newCategory)
       setNewCategory({ name: "", description: "" })
       setIsCreateDialogOpen(false)
       setNameError("")
@@ -141,10 +134,7 @@ export function CategoryManagement() {
         title: "Success",
         description: `Category ${newCategory.name} has been created successfully.`,
       })
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined)
     } catch (error) {
       toast({
         title: "Error",
@@ -165,7 +155,7 @@ export function CategoryManagement() {
     }
 
     try {
-      await categoryAPI.updateCategory(selectedCategory.id, newCategory)
+      await categoryApi.updateCategory(selectedCategory.id.toString(), newCategory)
       setNewCategory({ name: "", description: "" })
       setSelectedCategory(null)
       setIsEditDialogOpen(false)
@@ -176,10 +166,7 @@ export function CategoryManagement() {
       })
 
       // Refresh the list
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined)
     } catch (error) {
       toast({
         title: "Error",
@@ -204,7 +191,7 @@ export function CategoryManagement() {
     }
 
     try {
-      await categoryAPI.deleteCategory(categoryToDelete.id)
+      await categoryApi.deleteCategory(categoryToDelete.id.toString())
       
       toast({
         title: "✅ Category Deleted",
@@ -212,10 +199,7 @@ export function CategoryManagement() {
       })
       
       // Refresh the list
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined)
     } catch (error: any) {
       console.error('Delete category error:', error)
       
@@ -501,7 +485,7 @@ export function CategoryManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(pagination.number - 1)}
-                  disabled={pagination.first}
+                  disabled={pagination.number === 0}
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -513,7 +497,7 @@ export function CategoryManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(pagination.number + 1)}
-                  disabled={pagination.last}
+                  disabled={pagination.number === pagination.totalPages - 1}
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

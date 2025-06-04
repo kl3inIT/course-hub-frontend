@@ -37,7 +37,9 @@ import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, Search, MoreVertical, Edit, Trash2, Tags, BookOpen, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
-import { categoryAPI, PaginatedResponse, CategoryFilters, PaginationParams, CategoryResponseDTO, CategoryRequestDTO } from "@/api/category"
+import { categoryApi } from "@/api/category-api"
+import { Page } from "@/types/common"
+import { CategorySearchParams, CategoryResponseDTO, CategoryRequestDTO } from "@/types/category"
 import { useRouter } from "next/navigation"
 
 export function CategoryManagement() {
@@ -75,7 +77,7 @@ export function CategoryManagement() {
   // Fetch total courses count
   const fetchTotalCourses = async () => {
     try {
-      const response = await categoryAPI.getAllCategories({ size: 100 }) // Giảm size xuống để tránh quá tải
+      const response = await categoryApi.getAllCategories({ size: 100 }) // Giảm size xuống để tránh quá tải
       const totalCoursesCount = response.data.content.reduce((sum, c) => sum + c.courseCount, 0)
       setTotalCourses(totalCoursesCount)
     } catch (error: any) {
@@ -146,10 +148,7 @@ export function CategoryManagement() {
       setNameError("")
       setDescriptionError("")
       toast("✅ Category created successfully.", { description: `Category ${newCategory.name} has been created successfully.` })
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined)
       fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
       toast("Error", { description: "Failed to create category. Please try again." })
@@ -182,10 +181,7 @@ export function CategoryManagement() {
       setEditNameTouched(false)
       setEditDescriptionTouched(false)
       toast("✅ Category updated successfully!", { description: `Category ${selectedCategory.name} has been updated successfully!` })
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      )
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined)
       fetchTotalCourses()
     } catch (error) {
       toast("Error", { description: "Failed to update category. Please try again." })
@@ -201,7 +197,7 @@ export function CategoryManagement() {
       return;
     }
     try {
-      await categoryAPI.deleteCategory(categoryToDelete.id);
+      await categoryApi.deleteCategory(categoryToDelete.id.toString());
       toast("✅ Category deleted", {
         description: (
           <span>
@@ -217,10 +213,7 @@ export function CategoryManagement() {
           </span>
         ),
       });
-      fetchCategories(
-        { page: pagination.number, size: pagination.size },
-        { name: searchTerm || undefined }
-      );
+      fetchCategories(pagination.number, pagination.size, searchTerm || undefined);
       fetchTotalCourses();
       setIsDeleteDialogOpen(false);
       setCategoryToDelete(null);

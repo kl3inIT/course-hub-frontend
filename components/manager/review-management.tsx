@@ -23,7 +23,7 @@ import { categoryApi } from "@/api/category-api"
 import { ReviewResponseDTO, ReviewSearchParams } from "@/types/review"
 import { CategoryResponseDTO } from "@/types/category"
 import { Page } from "@/types/common"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 export function ReviewManagement() {
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
@@ -53,18 +53,13 @@ export function ReviewManagement() {
         sortBy: 'modifiedDate',
         direction: 'DESC',
         star: ratingFilter !== 'all' ? parseInt(ratingFilter) : undefined,
-        courseId: categoryFilter !== 'all' ? parseInt(categoryFilter) : undefined
+        courseId: categoryFilter !== 'all' ? Number(categoryFilter) : undefined
       }
       const response = await reviewApi.getAllReviews(params)
       setReviews(response.data.content)
       setPagination(response.data)
     } catch (error) {
-      console.error('Failed to fetch reviews:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch reviews. Please try again.",
-        variant: "destructive",
-      })
+      toast("Failed to load reviews. Please try again!")
     } finally {
       setLoading(false)
     }
@@ -107,20 +102,13 @@ export function ReviewManagement() {
         comment: responseText.trim()
       })
       
-      toast({
-        title: "Success",
-        description: "Response submitted successfully",
-      })
+      toast("Response submitted successfully!")
       
       setResponseText("")
       setSelectedReview(null)
       fetchReviews(pagination.number, pagination.size)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit response. Please try again.",
-        variant: "destructive",
-      })
+      toast("Failed to submit response. Please try again!")
     }
   }
 
@@ -130,7 +118,7 @@ export function ReviewManagement() {
     ))
   }
 
-  const averageRating = allReviews.length > 0 ? allReviews.reduce((sum, review) => sum + review.star, 0) / allReviews.length : 0
+  const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.star, 0) / reviews.length : 0
   const pendingResponses = reviews.filter((r) => !r.modifiedDate).length
   const respondedCount = reviews.filter(r => r.modifiedDate && r.modifiedDate !== r.createdDate).length
 

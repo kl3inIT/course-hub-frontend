@@ -46,7 +46,7 @@ import { CourseRequestDTO, CourseResponseDTO } from "@/types/course"
 import { CategoryResponseDTO } from "@/types/category"
 import { toast } from "sonner"
 import { ModuleRequestDTO } from "@/types/module"
-import { LessonPreparedUploadRequestDTO, LessonConfirmCreationRequestDTO } from "@/types/lesson"
+import { LessonUploadRequestDTO, LessonConfirmRequestDTO } from "@/types/lesson"
 
 interface FormData {
   title: string
@@ -392,7 +392,7 @@ export function CourseCreationForm() {
         for (const lesson of module.lessons) {
           // Chỉ cho phép video
           if (lesson.videoFile) {
-            const prepareUploadData: LessonPreparedUploadRequestDTO = {
+            const prepareUploadData: LessonUploadRequestDTO = {
               title: lesson.title,
               fileName: lesson.videoFile.name,
               fileType: lesson.videoFile.type
@@ -406,7 +406,7 @@ export function CourseCreationForm() {
                 'Content-Type': lesson.videoFile.type
               }
             })
-            const completeData: LessonConfirmCreationRequestDTO = {
+            const completeData: LessonConfirmRequestDTO = {
               duration: lesson.duration
             }
             const completeResponse = await lessonApi.completeUpload(lessonId.toString(), completeData)

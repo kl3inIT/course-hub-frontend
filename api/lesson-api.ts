@@ -1,8 +1,8 @@
 import { httpClient } from "@/api/http-client"
 import { ApiResponse, Page } from "@/types/common"
 import { 
-  LessonPreparedUploadRequestDTO,
-  LessonConfirmCreationRequestDTO,
+  LessonUploadRequestDTO,
+  LessonConfirmRequestDTO,
   LessonResponseDTO,
   LessonUploadResponseDTO
 } from "@/types/lesson"
@@ -12,7 +12,7 @@ export const lessonApi = {
   // Chuẩn bị upload video
   prepareUpload: async (
     moduleId: string, 
-    data: LessonPreparedUploadRequestDTO
+    data: LessonUploadRequestDTO
   ): Promise<ApiResponse<LessonUploadResponseDTO>> => {
     const response = await httpClient.post(`lessons/${moduleId}/prepare-upload`, data)
     return response.data
@@ -21,7 +21,7 @@ export const lessonApi = {
   // Hoàn thành upload video
   completeUpload: async (
     lessonId: string, 
-    data: LessonConfirmCreationRequestDTO
+    data: LessonConfirmRequestDTO
   ): Promise<ApiResponse<LessonResponseDTO>> => {
     const response = await httpClient.post(`lessons/${lessonId}/complete-upload`, data)
     return response.data

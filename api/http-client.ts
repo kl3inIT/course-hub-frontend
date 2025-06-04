@@ -10,7 +10,9 @@ const PUBLIC_ENDPOINTS = [
   '/courses/search',
   '/categories',
   '/reviews',
-  '/courses/featured'
+  '/courses/featured',
+  '/categories/chart',
+  '/categories/details'
 ]
 
 export const httpClient = axios.create({
@@ -30,7 +32,7 @@ httpClient.interceptors.request.use(
 
     // Only add token if it's not a public endpoint
     if (!isPublicEndpoint) {
-      const token = localStorage.getItem("token")
+      const token = localStorage.getItem("accessToken")
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -48,7 +50,7 @@ httpClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem("token")
+      localStorage.removeItem("accessToken")
       window.location.href = "/login"
     }
     return Promise.reject(error)

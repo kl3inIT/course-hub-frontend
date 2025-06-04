@@ -1,6 +1,6 @@
 import { httpClient } from "@/api/http-client"
 import { ApiResponse, Page } from "@/types/common"
-import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@/types/category"
+import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams, CategoryChartDTO, CategoryDetailDTO } from "@/types/category"
 
 export const categoryApi = {
   getAllCategories: async (params?: CategorySearchParams): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
@@ -30,5 +30,15 @@ export const categoryApi = {
   deleteCategory: async (id: string): Promise<ApiResponse<void>> => {
     const response = await httpClient.delete(`/categories/${id}`)
     return response.data
+  },
+
+  getCategoryChart: async (): Promise<CategoryChartDTO[]> => {
+    const res = await httpClient.get("/categories/chart")
+    return res.data
+  },
+
+  getCategoryDetails: async (): Promise<CategoryDetailDTO[]> => {
+    const res = await httpClient.get("/categories/details")
+    return res.data
   }
 } 

@@ -130,7 +130,8 @@ export function ReviewManagement() {
     ))
   }
 
-  const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.star, 0) / reviews.length : 0
+  const averageRating = allReviews.length > 0 ? allReviews.reduce((sum, review) => sum + review.star, 0) / allReviews.length : 0
+  const pendingResponses = reviews.filter((r) => !r.modifiedDate).length
   const respondedCount = reviews.filter(r => r.modifiedDate && r.modifiedDate !== r.createdDate).length
 
   const displayDate = (dateStr: string) => {
@@ -140,7 +141,7 @@ export function ReviewManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Review Management</h1>
@@ -254,64 +255,12 @@ export function ReviewManagement() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm mb-4">{review.comment}</p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Button variant="ghost" size="sm">
-                    <ThumbsUp className="mr-1 h-3 w-3" />
-                    Like
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Flag className="mr-1 h-3 w-3" />
-                    Report
-                  </Button>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setSelectedReview(review)}>
-                        <MessageSquare className="mr-1 h-3 w-3" />
-                        Response
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Respond to Review</DialogTitle>
-                        <DialogDescription>
-                          Respond to {review.userName}'s review for {review.courseName}
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="space-y-4">
-                        <div className="bg-muted p-3 rounded-lg">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <div className="flex">{renderStars(review.star)}</div>
-                            <span className="text-sm font-medium">{review.userName}</span>
-                          </div>
-                          <p className="text-sm">{review.comment}</p>
-                        </div>
-
-                        <Textarea
-                          placeholder="Write your response..."
-                          value={responseText}
-                          onChange={(e) => setResponseText(e.target.value)}
-                          rows={4}
-                        />
-                      </div>
-
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setSelectedReview(null)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleSubmitResponse}>
-                          Submit Response
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm mb-4 mr-4">{review.comment}</p>
+                <Button variant="ghost" size="sm">
+                  <Flag className="mr-1 h-3 w-3" />
+                  Report
+                </Button>
               </div>
             </CardContent>
           </Card>

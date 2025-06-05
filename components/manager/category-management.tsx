@@ -433,7 +433,7 @@ export function CategoryManagement() {
                   <TableRow
                     key={category.id}
                     className="cursor-pointer hover:bg-gray-50 transition group"
-                    onClick={() => router.push(`/categories/${category.id}/courses`)}
+                    onClick={() => router.push(`/courses?category=${encodeURIComponent(category.name)}&categoryName=${encodeURIComponent(category.name)}`)}
                   >
                     <TableCell className="font-medium w-[22%] truncate">{category.name}{category.courseCount > 0 && (<Badge variant="outline" className="ml-2 text-xs">In Use</Badge>)}</TableCell>
                     <TableCell className="w-[33%] truncate">{category.description}</TableCell>

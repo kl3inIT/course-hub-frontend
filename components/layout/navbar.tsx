@@ -39,8 +39,11 @@ export function Navbar() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        const response = await categoryApi.getAllCategories({ page: 0, size: 6 })
-        setCategories(response.data.content)
+        const response = await categoryApi.getAllCategories({ page: 0, size: 100 })
+        const sortedCategories = response.data.content
+          .sort((a, b) => (b.courseCount || 0) - (a.courseCount || 0))
+          .slice(0, 6)
+        setCategories(sortedCategories)
       } catch (error) {
         console.error('Failed to fetch categories:', error)
       } finally {

@@ -92,3 +92,13 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Scrollbar hide utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

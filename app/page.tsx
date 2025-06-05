@@ -20,31 +20,25 @@ import { Navbar } from "@/components/layout/navbar"
 import { CourseCard } from "@/components/courses/course-card"
 import { TestimonialsSection } from "@/components/testimonials/testimonials-section"
 import { Footer } from "@/components/layout/footer"
+import { UserEnrolledCourses } from "@/components/courses/user-enrolled-courses"
 import { categoryApi } from "@/api/category-api"
-import { courseApi } from "@/api/course-api"
 import { CategoryResponseDTO } from "@/types/category"
-import { CourseResponseDTO } from "@/types/course"
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
-  const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
-  const [loadingFeaturedCourses, setLoadingFeaturedCourses] = useState(false)
 
   // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        const response = await categoryApi.getAllCategories({ page: 0, size: 6 })
-        
-        // Sort by courseCount descending if available
-        const sortedCategories = response.data.content.sort((a, b) => {
-          const aCount = a.courseCount || 0
-          const bCount = b.courseCount || 0
-          return bCount - aCount
-        })
+        const response = await categoryApi.getAllCategories({ page: 0, size: 100 })
+        // Sort by courseCount descending if available, lấy top 6
+        const sortedCategories = response.data.content
+          .sort((a, b) => (b.courseCount || 0) - (a.courseCount || 0))
+          .slice(0, 6)
         setCategories(sortedCategories)
       } catch (error) {
         console.error('Failed to fetch categories:', error)
@@ -52,25 +46,7 @@ export default function HomePage() {
         setLoadingCategories(false)
       }
     }
-
     fetchCategories()
-  }, [])
-
-  // Fetch featured courses from API
-  useEffect(() => {
-    const fetchFeaturedCourses = async () => {
-      try {
-        setLoadingFeaturedCourses(true)
-        const response = await courseApi.getFeaturedCourses({ page: 0, size: 6 })
-        setFeaturedCourses(response.data)
-      } catch (error) {
-        console.error('Failed to fetch featured courses:', error)
-      } finally {
-        setLoadingFeaturedCourses(false)
-      }
-    }
-
-    fetchFeaturedCourses()
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -152,62 +128,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Featured Courses</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover our most popular courses taught by industry experts
-            </p>
-          </div>
-
-          {loadingFeaturedCourses ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <div className="aspect-video bg-muted rounded-lg mb-4"></div>
-                  <CardHeader>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-muted rounded w-full"></div>
-                      <div className="h-3 bg-muted rounded w-2/3"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : featuredCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard 
-                  key={course.id} 
-                  course={course}
-                  variant="default"
-                  showInstructor={true}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No featured courses available at the moment.</p>
-            </div>
-          )}
-
-          <div className="text-center">
-            <Link href="/courses">
-              <Button variant="outline" size="lg">
-                View All Courses
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* User Enrolled Courses */}
+      <UserEnrolledCourses />
 
       {/* Course Categories - Updated with real API data */}
       <section className="py-16 px-4 bg-muted/50">

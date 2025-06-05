@@ -6,6 +6,7 @@ const PROTECTED_ROUTES = {
   "/admin": ["admin"],
   "/manager": ["manager", "admin"],
   "/create-course": ["manager", "admin"],
+  "/courses-catalog": ["manager", "admin"],
   "/profile/edit": ["learner", "manager", "admin"],
   "/profile/create": ["learner", "manager", "admin"],
 } as const

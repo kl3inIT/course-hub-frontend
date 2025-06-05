@@ -597,7 +597,21 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         </TabsContent>
       </Tabs>
 
-      <PaymentModal isOpen={showPayment} onClose={() => setShowPayment(false)} course={course} />
+      <PaymentModal 
+        isOpen={showPayment} 
+        onClose={() => setShowPayment(false)} 
+        course={{
+          id: course.id,
+          title: course.title,
+          price: course.price,
+          discountedPrice: course.finalPrice,
+          thumbnail: course.thumbnailUrl,
+          duration: parseInt(course.duration), // Convert "X hours" to number
+          totalVideos: totalVideos,
+          rating: course.averageRating,
+          totalStudents: course.totalStudents
+        }} 
+      />
     </div>
   )
 }

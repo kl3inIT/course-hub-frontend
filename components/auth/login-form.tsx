@@ -12,11 +12,10 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { GoogleSignInButton } from "./google-signin-button"
-import { FacebookSignInButton } from "./facebook-signin-button"
 import { ForgotPasswordModal } from "./forgot-password-modal"
 import { useAuth } from "@/context/auth-context"
 import type { User, UserRole } from "@/context/auth-context"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 // Function to decode JWT token
 function parseJwt(token: string) {
@@ -31,6 +30,9 @@ function parseJwt(token: string) {
 export function LoginForm() {
   const { login } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnUrl = searchParams.get('returnUrl')
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -83,13 +85,18 @@ export function LoginForm() {
       console.log(user)
       await login(user, token);
 
-      // Điều hướng dựa trên role
+      // Điều hướng dựa trên role hoặc returnUrl
       if (decodedToken.scope === "ADMIN") {
-        router.push("/admin");
+        window.location.href = "/admin";
       } else if (decodedToken.scope === "MANAGER") {
-        router.push("/manager");
+        window.location.href = "/manager";
       } else {
-        router.push("/");
+        // Nếu có returnUrl và không phải admin/manager, chuyển về trang trước đó
+        if (returnUrl) {
+          window.location.href = returnUrl;
+        } else {
+          window.location.href = "/";
+        }
       }
 
     } catch (err: any) {
@@ -191,7 +198,6 @@ export function LoginForm() {
 
         <div className="space-y-2">
           <GoogleSignInButton />
-
         </div>
 
       </CardContent>

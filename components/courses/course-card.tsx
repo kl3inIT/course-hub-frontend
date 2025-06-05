@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Star, Users, Clock } from "lucide-react"
-import { CourseResponseDTO } from "@/api/course-api"
+import { CourseResponseDTO } from "@/types/course"
 
 interface CourseCardProps {
   course: CourseResponseDTO

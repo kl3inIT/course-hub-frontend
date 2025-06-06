@@ -5,9 +5,12 @@ export interface ModuleRequestDTO {
 }
 
 export interface ModuleResponseDTO extends BaseResponse {
-  title: string
-  courseId: string
-  lessonCount?: number
+  id: number;
+  title: string;
+  orderNumber: number;
+  totalLessons: number;
+  totalDuration: number;
+  courseId: number;
 }
 
 export interface ModuleCreationRequest {

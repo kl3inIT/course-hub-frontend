@@ -15,6 +15,7 @@ import { CourseCard } from "./course-card"
 import { useSearchParams } from "next/navigation"
 import { CourseResponseDTO } from "@/types/course"
 import { CategoryResponseDTO } from "@/types/category"
+import { useDebounce } from "@/hooks/use-debounce"
 
 const levels = ["BEGINNER", "INTERMEDIATE", "ADVANCED"]
 const sortOptions = [
@@ -46,6 +47,17 @@ export function CourseCatalog() {
   const [totalElements, setTotalElements] = useState(0)
   const [pageSize] = useState(6)
   const [loadingPage, setLoadingPage] = useState(false)
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 1000)
+
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
+    }
+    // chỉ chạy 1 lần khi mount
+    // eslint-disable-next-line
+  }, []);
 
   // Load categories once
   useEffect(() => {
@@ -89,7 +101,7 @@ export function CourseCatalog() {
           size: pageSize,
         }
 
-        if (searchTerm) searchParams.search = searchTerm
+        if (debouncedSearchTerm) searchParams.search = debouncedSearchTerm
         
         // Convert category name to ID for backend
         if (selectedCategories.length > 0) {
@@ -139,12 +151,12 @@ export function CourseCatalog() {
     }
 
     loadCourses()
-  }, [currentPage, pageSize, searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy, categories])
+  }, [currentPage, pageSize, debouncedSearchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy, categories])
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
+  }, [debouncedSearchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
 
   const handleCategoryChange = (category: string, checked: boolean) => {
     if (checked) {

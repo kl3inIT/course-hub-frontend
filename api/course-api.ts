@@ -3,14 +3,9 @@ import { ApiResponse, Page } from "@/types/common"
 import { 
   CourseRequestDTO, 
   CourseResponseDTO, 
-  CourseUpdateStatusAndLevelRequestDTO,
-  CourseSearchParams 
+  CourseSearchParams,
+  CourseDetailsResponseDTO 
 } from "@/types/course"
-import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@/types/category"
-
-export interface CourseUpdateStatusRequestDTO {
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'OPEN_FOR_ENROLLMENT' | 'CLOSED_FOR_ENROLLMENT'
-}
 
 export const courseApi = {
   getAllCourses: async (params?: CourseSearchParams): Promise<ApiResponse<Page<CourseResponseDTO>>> => {
@@ -53,7 +48,7 @@ export const courseApi = {
     return response.data
   },
 
-  uploadThumbnail: async (courseId: number, thumbnailFile: File) => {
+  uploadThumbnail: async (courseId: string, thumbnailFile: File) => {
     const formData = new FormData()
     formData.append('thumbnail', thumbnailFile)
     const response = await httpClient.post<ApiResponse<string>>(`/courses/${courseId}/thumbnail`, formData, {
@@ -64,12 +59,7 @@ export const courseApi = {
     return response.data
   },
 
-  updateCourseStatusAndLevel: async (courseId: number, updateData: CourseUpdateStatusAndLevelRequestDTO) => {
-    const response = await httpClient.put<ApiResponse<CourseResponseDTO>>(`/courses/${courseId}/status`, updateData)
-    return response.data
-  },
-
-  getCoursesByCategory: async (categoryId: number) => {
+  getCoursesByCategory: async (categoryId: string) => {
     const response = await httpClient.get<ApiResponse<CourseResponseDTO[]>>(`/courses/categories/${categoryId}`)
     return response.data
   },
@@ -100,32 +90,11 @@ export const courseApi = {
     })
     return response.data
   },
+
+  getCourseDetails: async (courseId: string) => {
+    const response = await httpClient.get<ApiResponse<CourseDetailsResponseDTO>>(`/courses/${courseId}/details`)
+    return response.data
+  },
 }
 
-export const categoryAPI = {
-  getAllCategories: async (paginationParams: { page?: number; size?: number } = {}, filters: CategorySearchParams = {}): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
-    const params = { ...paginationParams, ...filters }
-    const response = await httpClient.get("/categories", { params })
-    return response.data
-  },
 
-  getCategoryById: async (id: string): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.get(`/categories/${id}`)
-    return response.data
-  },
-
-  createCategory: async (data: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.post("/categories", data)
-    return response.data
-  },
-
-  updateCategory: async (id: string, data: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.put(`/categories/${id}`, data)
-    return response.data
-  },
-
-  deleteCategory: async (id: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/categories/${id}`)
-    return response.data
-  }
-}

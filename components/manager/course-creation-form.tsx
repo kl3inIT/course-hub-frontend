@@ -113,6 +113,9 @@ export function CourseCreationForm() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // State lưu tiến trình upload cho từng lesson
+  const [lessonUploadProgress, setLessonUploadProgress] = useState<Record<string, number>>({});
+
   // Load categories on component mount
   useEffect(() => {
     const loadCategories = async () => {
@@ -390,22 +393,37 @@ export function CourseCreationForm() {
         module.moduleId = createdModule.id.toString()
         // Create lessons
         for (const lesson of module.lessons) {
-          // Chỉ cho phép video
           if (lesson.videoFile) {
             const prepareUploadData: LessonUploadRequestDTO = {
               title: lesson.title,
-              fileName: lesson.videoFile.name,
-              fileType: lesson.videoFile.type
+              fileName: lesson.videoFile?.name ?? '',
+              fileType: lesson.videoFile?.type ?? ''
             }
             const prepareResponse = await lessonApi.prepareUpload(createdModule.id.toString(), prepareUploadData)
             const { preSignedPutUrl, lessonId } = prepareResponse.data
-            await fetch(preSignedPutUrl, {
-              method: 'PUT',
-              body: lesson.videoFile,
-              headers: {
-                'Content-Type': lesson.videoFile.type
-              }
-            })
+
+            // Upload video with progress
+            await new Promise<void>((resolve, reject) => {
+              if (!lesson.videoFile) return reject(new Error('No video file'));
+              const xhr = new XMLHttpRequest();
+              xhr.open('PUT', preSignedPutUrl, true);
+              xhr.setRequestHeader('Content-Type', lesson.videoFile.type);
+              xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                  setLessonUploadProgress(prev => ({ ...prev, [lesson.id]: Math.round((event.loaded / event.total) * 100) }));
+                }
+              };
+              xhr.onload = () => {
+                setLessonUploadProgress(prev => ({ ...prev, [lesson.id]: 100 }));
+                resolve();
+              };
+              xhr.onerror = () => {
+                setLessonUploadProgress(prev => ({ ...prev, [lesson.id]: 0 }));
+                reject(new Error('Upload failed'));
+              };
+              xhr.send(lesson.videoFile);
+            });
+
             const completeData: LessonConfirmRequestDTO = {
               duration: lesson.duration
             }
@@ -423,6 +441,7 @@ export function CourseCreationForm() {
       toast.error('Failed to save course structure')
     } finally {
       setIsSubmitting(false)
+      setLessonUploadProgress({});
     }
   }
 
@@ -471,6 +490,16 @@ export function CourseCreationForm() {
   }
 
   const handleVideoUpload = (moduleId: string, lessonId: string, file: File) => {
+    // Giới hạn 100MB
+    const MAX_SIZE_MB = 100;
+    if (!file.type.startsWith('video/')) {
+      toast.error("Only video files are allowed");
+      return;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error("Video file size must be less than 100MB");
+      return;
+    }
     const module = modules.find(m => m.id === moduleId)
     if (!module) return
     const lesson = module.lessons.find(l => l.id === lessonId)
@@ -478,10 +507,17 @@ export function CourseCreationForm() {
     const video = document.createElement('video')
     video.preload = 'metadata'
     video.onloadedmetadata = () => {
-      const durationInMinutes = Math.ceil(video.duration / 60)
-      updateLesson(moduleId, lessonId, { videoFile: file, duration: durationInMinutes })
+      const durationInSeconds = Math.round(video.duration)
+      updateLesson(moduleId, lessonId, { videoFile: file, duration: durationInSeconds })
     }
     video.src = URL.createObjectURL(file)
+  }
+
+  function formatDuration(seconds: number) {
+    if (!seconds && seconds !== 0) return '';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
   return (
@@ -993,10 +1029,24 @@ Prerequisites:
                                                       }
                                                     }}
                                                   />
+                                                  <p className="text-sm text-muted-foreground">
+                                                    Supported formats: MP4, WebM, MOV (max 100MB)
+                                                  </p>
                                                   {lesson.videoFile && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                      Selected: {lesson.videoFile.name} (Duration: {lesson.duration} min)
-                                                    </p>
+                                                    <>
+                                                      <p className="text-sm text-muted-foreground">
+                                                        Selected: {lesson.videoFile.name} (Duration: {formatDuration(lesson.duration)})
+                                                      </p>
+                                                      {lessonUploadProgress[lesson.id] !== undefined && lessonUploadProgress[lesson.id] < 100 && (
+                                                        <div className="w-full mt-1">
+                                                          <Progress value={lessonUploadProgress[lesson.id]} className="h-2" />
+                                                          <span className="text-xs text-muted-foreground">Uploading: {lessonUploadProgress[lesson.id]}%</span>
+                                                        </div>
+                                                      )}
+                                                      {lessonUploadProgress[lesson.id] === 100 && (
+                                                        <span className="text-xs text-green-600">Upload complete!</span>
+                                                      )}
+                                                    </>
                                                   )}
                                                 </div>
                                                 <div className="flex gap-2">

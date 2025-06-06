@@ -13,16 +13,12 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CreditCard, Lock, CheckCircle, AlertCircle, ArrowLeft, Loader2, Shield, Smartphone, Globe } from "lucide-react"
 import { VNPayPayment } from "./vnpay-payment"
+import { CourseDetailsResponseDTO } from "@/types/course"
 
 interface PaymentModalProps {
   isOpen: boolean
   onClose: () => void
-  course: {
-    id: number
-    title: string
-    price: number
-    instructor: { name: string }
-  }
+  course: CourseDetailsResponseDTO
 }
 
 type PaymentStep = "method-selection" | "card-payment" | "vnpay-payment" | "processing" | "success" | "error"
@@ -382,7 +378,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">{course.title}</CardTitle>
-                <CardDescription>by {course.instructor.name}</CardDescription>
+                <CardDescription>by {course.instructorName}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">

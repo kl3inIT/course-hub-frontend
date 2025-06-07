@@ -164,10 +164,10 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
       
       switch (type) {
         case 'email-verification':
-          endpoint = 'http://localhost:8080/api/auth/register/verify';
+          endpoint = 'https://api.coursehub.io.vn/api/auth/register/verify';
           break;
         case 'password-reset':
-          endpoint = 'http://localhost:8080/api/auth/forgot-password/verify-otp';
+          endpoint = 'https://api.coursehub.io.vn/api/auth/forgot-password/verify-otp';
           break;
         default:
           throw new Error('Invalid verification type');
@@ -222,11 +222,11 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
 
       switch (type) {
         case 'email-verification':
-          endpoint = 'http://localhost:8080/api/auth/register/re-send-otp';
+          endpoint = 'https://api.coursehub.io.vn/api/auth/register/re-send-otp';
           payload = { email: destination };
           break;
         case 'password-reset':
-          endpoint = 'http://localhost:8080/api/auth/forgot-password/send-otp';
+          endpoint = 'https://api.coursehub.io.vn/api/auth/forgot-password/send-otp';
           payload = { email: destination };
           break;
         default:

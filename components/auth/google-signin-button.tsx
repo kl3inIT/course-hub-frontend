@@ -16,7 +16,7 @@ export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonPro
 
     try {
       // Gọi API để lấy URL đăng nhập Google
-      const response = await fetch('http://localhost:8080/api/auth/google-login-url', {
+      const response = await fetch('http://3.105.176.236:8080/api/auth/google-login-url', {
         method: 'GET',  // Thường là GET request để lấy URL
         headers: {
           'Content-Type': 'application/json'

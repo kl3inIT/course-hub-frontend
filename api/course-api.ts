@@ -1,10 +1,10 @@
 import { httpClient } from "@/api/http-client"
 import { ApiResponse, Page } from "@/types/common"
-import { 
-  CourseRequestDTO, 
-  CourseResponseDTO, 
+import {
+  CourseRequestDTO,
+  CourseResponseDTO,
   CourseUpdateStatusAndLevelRequestDTO,
-  CourseSearchParams 
+  CourseSearchParams
 } from "@/types/course"
 import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@/types/category"
 

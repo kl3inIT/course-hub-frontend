@@ -114,63 +114,6 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
     setSuccessfulCode("")
   }
 
-  const checkPaymentStatus = async (transactionCode: string) => {
-    try {
-      const response = await paymentApi.checkPaymentStatus(transactionCode)
-      console.log(response.data.isPaid)
-      return response.data.isPaid
-    } catch (error) {
-      console.error('Error checking payment status:', error)
-      return false
-    }
-  }
-
-  const startPaymentStatusPolling = async (transactionCode: string) => {
-    // Check if payment was already completed or expired
-    const existingStatus = paymentStorage.getStatus(transactionCode)
-    if (existingStatus === 'success') {
-      toast.success("You have already completed this payment!")
-      return
-    } else if (existingStatus === 'expired') {
-      toast.error("This payment has expired. Please try again.")
-      router.push('/courses')
-      return
-    }
-
-    const startTime = Date.now()
-    
-    const pollStatus = async () => {
-      // Check if payment timeout has been reached
-      if (Date.now() - startTime >= PAYMENT_TIMEOUT) {
-        // Payment timeout reached, update status to failed
-        try {
-          await paymentApi.updatePaymentStatus(transactionCode)
-          setPaymentStatus(transactionCode, 'expired')
-          toast.error("Payment timeout. Please try again.")
-          router.push('/courses')
-        } catch (error) {
-          console.error('Error updating payment status:', error)
-        }
-        return
-      }
-
-      const isPaid = await checkPaymentStatus(transactionCode)
-      
-      if (isPaid) {
-        // Payment successful
-        setPaymentStatus(transactionCode, 'success')
-        toast.success("Payment successful!")
-        router.push('/dashboard')
-      } else {
-        // Continue polling after interval
-        setTimeout(() => pollStatus(), POLLING_INTERVAL)
-      }
-    }
-
-    // Start polling
-    pollStatus()
-  }
-
   const handlePayment = async () => {
     if (!checkAuth()) return
     
@@ -191,8 +134,8 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
       if (response.data) {
         // Store payment response data in localStorage
         localStorage.setItem('paymentData', JSON.stringify(response.data))
-        // Start polling for payment status
-        startPaymentStatusPolling(response.data.transactionCode)
+        // Set initial payment status as pending
+        paymentStorage.setStatus(response.data.transactionCode, 'pending')
         // Redirect to QR payment page
         router.push('/payment/qr')
         onClose()

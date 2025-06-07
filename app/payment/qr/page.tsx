@@ -51,13 +51,6 @@ export default function QRPaymentPage() {
     }
 
     initializePaymentData()
-
-    // Cleanup function that runs when component unmounts
-    return () => {
-      if (paymentData) {
-        localStorage.removeItem('paymentData')
-      }
-    }
   }, []) // Empty dependency array means this effect runs once on mount
 
   // Add debug render to check current state

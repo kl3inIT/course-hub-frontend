@@ -3,7 +3,7 @@ const PAYMENT_STATUS_PREFIX = 'payment_status_'
 
 export const paymentStorage = {
   // Set payment status for a transaction
-  setStatus: (transactionCode: string, status: 'success' | 'expired') => {
+  setStatus: (transactionCode: string, status: 'success' | 'expired' | 'pending') => {
     localStorage.setItem(`${PAYMENT_STATUS_PREFIX}${transactionCode}`, status)
   },
 

@@ -6,6 +6,8 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { paymentStorage } from '@/utils/payment'
+import { paymentApi } from '@/api/payment-api'
+import { toast } from '@/hooks/use-toast'
 
 interface PaymentResponseDTO {
   transactionCode: string
@@ -27,23 +29,130 @@ const BANK_NAMES: { [key: string]: string } = {
   // Add more banks as needed
 }
 
+const PAYMENT_TIMEOUT = 1 * 60 * 1000; // 1 minute in milliseconds
+const POLLING_INTERVAL = 3000; // 3 seconds
+
 export function QRPayment({ paymentData }: QRPaymentProps) {
   const [timeLeft, setTimeLeft] = useState(60) // 1 minute in seconds
   const [qrUrl, setQrUrl] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'expired' | 'success'>('pending')
   const router = useRouter()
 
+  // Check payment status and start polling
   useEffect(() => {
-    // Check payment status from localStorage
-    const status = paymentStorage.getStatus(paymentData.transactionCode)
-    if (status === 'expired') {
-      setPaymentStatus('expired')
-    } else if (status === 'success') {
-      setPaymentStatus('success')
+    let isSubscribed = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+    let pollTimeoutId: NodeJS.Timeout | null = null;
+
+    const startPaymentStatusPolling = async () => {
+      // Check if payment was already completed or expired
+      const existingStatus = paymentStorage.getStatus(paymentData.transactionCode)
+      if (existingStatus === 'success') {
+        setPaymentStatus('success')
+        toast({
+          title: "Success",
+          description: "You have already completed this payment!",
+        })
+        return
+      } else if (existingStatus === 'expired') {
+        setPaymentStatus('expired')
+        toast({
+          title: "Error",
+          description: "This payment has expired. Please try again.",
+        })
+        return
+      }
+
+      const startTime = Date.now()
+      
+      const pollStatus = async () => {
+        if (!isSubscribed) return;
+
+        // Check if payment timeout has been reached
+        if (Date.now() - startTime >= PAYMENT_TIMEOUT) {
+          // Payment timeout reached, update status to failed
+          try {
+            if (!isSubscribed) return;
+            await paymentApi.updatePaymentStatus(paymentData.transactionCode)
+            paymentStorage.setStatus(paymentData.transactionCode, 'expired')
+            setPaymentStatus('expired')
+            toast({
+              title: "Error",
+              description: "Payment timeout. Please try again.",
+            })
+          } catch (error) {
+            console.error('Error updating payment status:', error)
+          }
+          return
+        }
+
+        try {
+          if (!isSubscribed) return;
+          const response = await paymentApi.checkPaymentStatus(paymentData.transactionCode)
+          
+          if (response.data.isPaid) {
+            // Payment successful
+            paymentStorage.setStatus(paymentData.transactionCode, 'success')
+            setPaymentStatus('success')
+            toast({
+              title: "Success",
+              description: "Payment successful!",
+            })
+            router.push('/dashboard')
+          } else if (isSubscribed) {
+            // Continue polling after interval
+            pollTimeoutId = setTimeout(() => pollStatus(), POLLING_INTERVAL)
+          }
+        } catch (error) {
+          console.error('Error checking payment status:', error)
+          if (isSubscribed) {
+            pollTimeoutId = setTimeout(() => pollStatus(), POLLING_INTERVAL)
+          }
+        }
+      }
+
+      // Start polling
+      pollStatus()
+
+      // Set timeout for payment expiration
+      timeoutId = setTimeout(async () => {
+        if (isSubscribed) {
+          try {
+            await paymentApi.updatePaymentStatus(paymentData.transactionCode)
+            paymentStorage.setStatus(paymentData.transactionCode, 'expired')
+            setPaymentStatus('expired')
+          } catch (error) {
+            console.error('Error updating payment status:', error)
+          }
+        }
+      }, PAYMENT_TIMEOUT)
+    }
+
+    startPaymentStatusPolling()
+
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (pollTimeoutId) clearTimeout(pollTimeoutId);
+      
+      // Only update status to expired if we're navigating away and status is still pending
+      if (window.location.pathname !== '/payment/qr') {
+        const currentStatus = paymentStorage.getStatus(paymentData.transactionCode)
+        if (currentStatus === 'pending') {
+          paymentApi.updatePaymentStatus(paymentData.transactionCode)
+            .then(() => {
+              paymentStorage.setStatus(paymentData.transactionCode, 'expired')
+            })
+            .catch((error) => {
+              console.error('Error updating payment status during cleanup:', error)
+            })
+        }
+      }
     }
   }, [paymentData.transactionCode])
 
-  // Only start countdown if payment is still pending
+  // Countdown timer effect
   useEffect(() => {
     if (paymentStatus !== 'pending') return
 
@@ -59,6 +168,7 @@ export function QRPayment({ paymentData }: QRPaymentProps) {
     return () => clearInterval(timer)
   }, [paymentStatus])
 
+  // Generate QR code URL effect
   useEffect(() => {
     // Generate QR code URL with rounded amount
     const roundedAmount = Math.floor(paymentData.amount)

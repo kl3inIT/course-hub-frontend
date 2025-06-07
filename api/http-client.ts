@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const BASE_URL = "http://3.105.176.236:8080/api"
+const BASE_URL = "https://api.coursehub.io.vn/api"
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [

@@ -33,7 +33,7 @@ export default function GoogleCallbackPage() {
 
     const handleGoogleCallback = async () => {
       try {
-        const response = await fetch('http://3.105.176.236:8080/api/auth/google/callback', {
+        const response = await fetch('https://api.coursehub.io.vn/api/auth/google/callback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),

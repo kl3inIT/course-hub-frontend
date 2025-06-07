@@ -80,7 +80,7 @@ export function RegisterForm() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/init', {
+      const response = await fetch('https://api.coursehub.io.vn/api/auth/register/init', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

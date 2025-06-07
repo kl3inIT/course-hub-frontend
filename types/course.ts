@@ -55,7 +55,7 @@ export interface CourseSearchParams {
   size?: number;
   sort?: string;
   search?: string;
-  category?: string;
+  category?: number;
   level?: string;
   minPrice?: number;
   maxPrice?: number;

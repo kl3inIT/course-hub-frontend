@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://3.105.176.236:8080/api"
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [

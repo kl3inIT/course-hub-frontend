@@ -38,19 +38,10 @@ export function QRPayment({ paymentData }: QRPaymentProps) {
     const status = paymentStorage.getStatus(paymentData.transactionCode)
     if (status === 'expired') {
       setPaymentStatus('expired')
-      // Clean up after displaying expired status
-      setTimeout(() => {
-        paymentStorage.removeStatus(paymentData.transactionCode)
-      }, 1000)
     } else if (status === 'success') {
       setPaymentStatus('success')
-      // Clean up after displaying success status
-      setTimeout(() => {
-        paymentStorage.removeStatus(paymentData.transactionCode)
-      }, 1000)
-      router.push('/dashboard')
     }
-  }, [paymentData.transactionCode, router])
+  }, [paymentData.transactionCode])
 
   // Only start countdown if payment is still pending
   useEffect(() => {
@@ -91,8 +82,21 @@ export function QRPayment({ paymentData }: QRPaymentProps) {
   }
 
   const handleReturnToCourses = () => {
-    paymentStorage.removeStatus(paymentData.transactionCode)
     router.push('/courses')
+  }
+
+  if (paymentStatus === 'success') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-4">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Completed</h2>
+          <p className="text-gray-600">You have already completed this payment successfully.</p>
+        </div>
+        <Button onClick={() => router.push('/dashboard')} className="mt-4">
+          Return to Dashboard
+        </Button>
+      </div>
+    )
   }
 
   if (paymentStatus === 'expired') {

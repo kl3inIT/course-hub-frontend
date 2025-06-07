@@ -130,7 +130,6 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
     const existingStatus = paymentStorage.getStatus(transactionCode)
     if (existingStatus === 'success') {
       toast.success("You have already completed this payment!")
-      router.push('/dashboard')
       return
     } else if (existingStatus === 'expired') {
       toast.error("This payment has expired. Please try again.")
@@ -158,7 +157,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
       const isPaid = await checkPaymentStatus(transactionCode)
       
       if (isPaid) {
-        // Payment successful, redirect to dashboard
+        // Payment successful
         setPaymentStatus(transactionCode, 'success')
         toast.success("Payment successful!")
         router.push('/dashboard')

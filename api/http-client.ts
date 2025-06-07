@@ -15,6 +15,7 @@ const PUBLIC_ENDPOINTS = [
 
 export const httpClient = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },

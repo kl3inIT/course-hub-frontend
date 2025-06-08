@@ -26,7 +26,6 @@ import { useToast } from "@/hooks/use-toast"
 import { CourseDetailsResponseDTO } from "@/types/course"
 import { ModuleResponseDTO } from "@/types/module"
 import { LessonResponseDTO } from "@/types/lesson"
-import Image from "next/image"
 
 interface CourseDetailProps {
   courseId: string
@@ -52,6 +51,23 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [moduleLessons, setModuleLessons] = useState<Record<number, LessonResponseDTO[]>>({})
   const [loadingLessons, setLoadingLessons] = useState<Record<number, boolean>>({})
   const { toast } = useToast()
+
+  // Calculate course statistics
+  const totalLessons = course?.modules.reduce((total, module) => 
+    total + (module.lessons?.length || 0), 0) || 0
+
+  const totalVideos = course?.modules.reduce((total, module) => 
+    total + (module.lessons?.filter(lesson => lesson.type === 'VIDEO').length || 0), 0) || 0
+
+  const totalDocuments = course?.modules.reduce((total, module) => 
+    total + (module.lessons?.filter(lesson => lesson.type === 'DOCUMENT').length || 0), 0) || 0
+
+  const totalAssignments = course?.modules.reduce((total, module) => 
+    total + (module.lessons?.filter(lesson => lesson.type === 'ASSIGNMENT').length || 0), 0) || 0
+
+  const totalDuration = course?.modules.reduce((total, module) => 
+    total + (module.lessons?.reduce((moduleTotal, lesson) => 
+      moduleTotal + (lesson.duration || 0), 0) || 0), 0) || 0
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -157,135 +173,213 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
   console.log('Current Course State:', course) // Debug log
 
-  const totalLessons = course?.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
-  const totalVideos = course?.modules?.reduce((total, module) => 
-    total + (module.lessons?.filter((lesson: LessonResponseDTO) => lesson.type === 'VIDEO').length || 0), 0) || 0;
-  const totalDocuments = course?.modules?.reduce((total, module) => 
-    total + (module.lessons?.filter((lesson: LessonResponseDTO) => lesson.type === 'DOCUMENT').length || 0), 0) || 0;
-  const totalAssignments = course?.modules?.reduce((total, module) => 
-    total + (module.lessons?.filter((lesson: LessonResponseDTO) => lesson.type === 'ASSIGNMENT').length || 0), 0) || 0;
-
-  // Calculate total duration in minutes
-  const totalDuration = course?.modules?.reduce((total, module) => 
-    total + (module.lessons?.reduce((moduleTotal: number, lesson: LessonResponseDTO) => 
-      moduleTotal + (lesson.duration || 0), 0) || 0), 0) || 0;
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Course Header */}
-        <div className="relative">
-          <div className="aspect-video w-full overflow-hidden rounded-lg">
-            <Image
-              src={course?.thumbnail || '/placeholder-course.jpg'}
-              alt={course?.title || 'Course thumbnail'}
-              fill
-              className="object-cover"
-              priority
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Hero Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl overflow-hidden relative group">
+            <img
+              src={course.thumbnailUrl || "/placeholder.svg?height=400&width=600"}
+              alt={course.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder.svg?height=400&width=600"
+              }}
             />
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="lg" className="rounded-full h-16 w-16">
+                <Play className="h-6 w-6" />
+              </Button>
+            </div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-            <h1 className="text-3xl font-bold">{course?.title}</h1>
-            <p className="mt-2 text-sm text-gray-200">{course?.description}</p>
+
+          <div>
+            <div className="flex gap-2 mb-4">
+              <Badge variant="secondary">{course.category}</Badge>
+              <Badge variant="outline">{course.level}</Badge>
+            </div>
+            <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
+            <p className="text-xl text-muted-foreground mb-6">{course.description}</p>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-lg font-medium">By:</span>
+              <span className="text-lg text-primary font-semibold">{course.instructorName}</span>
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-muted-foreground mb-6">
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-medium">{course.averageRating?.toFixed(1) || '0.0'}</span>
+                <span>({course.totalReviews.toLocaleString()} reviews)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>{formatDuration(course.totalDuration)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <PlayCircle className="h-4 w-4" />
+                <span>{course.totalLessons} lessons</span>
+              </div>
+            </div>
+
+            <div className="text-sm text-muted-foreground">Last updated: {course.updatedAt}</div>
           </div>
         </div>
 
-        {/* Course Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-card p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Total Lessons</p>
-            <p className="text-2xl font-bold">{totalLessons}</p>
-          </div>
-          <div className="bg-card p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Videos</p>
-            <p className="text-2xl font-bold">{totalVideos}</p>
-          </div>
-          <div className="bg-card p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Documents</p>
-            <p className="text-2xl font-bold">{totalDocuments}</p>
-          </div>
-          <div className="bg-card p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Assignments</p>
-            <p className="text-2xl font-bold">{totalAssignments}</p>
-          </div>
-        </div>
-
-        {/* Course Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Course Description */}
-            <div className="bg-card p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">About This Course</h2>
-              <div className="prose prose-sm max-w-none">
-                <p>{course?.description}</p>
+        {/* Enrollment Card */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-3xl font-bold">${course.finalPrice.toFixed(2)}</span>
+                {course.discount && course.discount > 0 && (
+                  <span className="text-lg text-muted-foreground line-through">
+                    ${(course.finalPrice / (1 - course.discount / 100)).toFixed(2)}
+                  </span>
+                )}
+                {course.discount && course.discount > 0 && (
+                  <Badge variant="destructive" className="ml-auto">
+                    {course.discount}% OFF
+                  </Badge>
+                )}
               </div>
-            </div>
+              <CardDescription>Full lifetime access</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button onClick={handleEnroll} className="w-full" size="lg">
+                Enroll Now
+              </Button>
 
-            {/* Course Modules */}
-            <div className="bg-card p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">Course Content</h2>
-              <div className="space-y-4">
-                {course?.modules?.map((module) => (
-                  <div key={module.id} className="border rounded-lg p-4">
-                    <h3 className="font-medium">{module.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                    <div className="mt-4 space-y-2">
-                      {module.lessons?.map((lesson) => (
-                        <div key={lesson.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{lesson.title}</span>
-                            {lesson.type === 'VIDEO' && <span className="text-xs text-muted-foreground">({lesson.duration} min)</span>}
-                          </div>
-                          <span className="text-xs text-muted-foreground">{lesson.type}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Course Info Card */}
-            <div className="bg-card p-6 rounded-lg">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="text-2xl font-bold">${course?.price || 0}</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>30-day money-back guarantee</span>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="text-lg">{totalDuration} minutes</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Level</p>
-                  <p className="text-lg capitalize">{course?.level?.toLowerCase()}</p>
-                </div>
-                <Button className="w-full" onClick={handleEnroll}>
-                  {/* Replace with actual enrollment logic */}
-                  Enroll Now
-                </Button>
-              </div>
-            </div>
-
-            {/* Instructor Info */}
-            <div className="bg-card p-6 rounded-lg">
-              <h3 className="font-semibold mb-4">Instructor</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-muted" />
-                <div>
-                  <p className="font-medium">{course?.instructor?.name}</p>
-                  <p className="text-sm text-muted-foreground">{course?.instructor?.email}</p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Certificate of completion</span>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Course Content Tabs */}
+      <Tabs defaultValue="curriculum" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="curriculum" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-semibold">Course Content</h3>
+            <div className="text-sm text-muted-foreground">
+              {course?.totalModules} modules • {course?.totalLessons} lessons • {formatDuration(course?.totalDuration || 0)}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {course?.modules && course.modules.length > 0 ? (
+              course.modules.map((module: ModuleResponseDTO) => {
+                return (
+                  <Card key={module.id} className="overflow-hidden">
+                    <Collapsible open={expandedModules.includes(module.id)} onOpenChange={() => toggleModule(module.id)}>
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {expandedModules.includes(module.id) ? (
+                                <ChevronDown className="h-5 w-5" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5" />
+                              )}
+                              <div>
+                                <CardTitle className="text-lg">{module.title}</CardTitle>
+                                <CardDescription>Module {module.orderNumber}</CardDescription>
+                              </div>
+                            </div>
+                            <div className="text-right text-sm text-muted-foreground">
+                              <div>{module.totalLessons} lessons</div>
+                              <div>{formatDuration(module.totalDuration)}</div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          {loadingLessons[module.id] ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              <span className="text-muted-foreground">Loading lessons...</span>
+                            </div>
+                          ) : moduleLessons[module.id] ? (
+                            <div className="space-y-2">
+                              {moduleLessons[module.id].map((lesson) => (
+                                <div
+                                  key={lesson.id}
+                                  className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <PlayCircle className="h-4 w-4 text-muted-foreground" />
+                                    <span>{lesson.title}</span>
+                                    {lesson.isPreview && (
+                                      <Badge variant="secondary" className="text-xs">Preview</Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    {lesson.duration && (
+                                      <span>{formatDuration(lesson.duration)}</span>
+                                    )}
+                                    {!lesson.isPreview && (
+                                      <Lock className="h-4 w-4" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center py-4 text-muted-foreground">
+                              No lessons available
+                            </div>
+                          )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                )
+              })
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No modules available for this course.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reviews" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-semibold">Student Reviews</h3>
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <span className="text-xl font-semibold">{course.averageRating?.toFixed(1) || '0.0'}</span>
+              <span className="text-muted-foreground">({course.totalReviews} reviews)</span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center text-muted-foreground">
+                  No reviews yet. Be the first to review this course!
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <PaymentModal 
         isOpen={showPayment} 

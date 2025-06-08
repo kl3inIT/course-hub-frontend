@@ -29,20 +29,25 @@ export interface CourseResponseDTO {
 }
 
 export interface CourseDetailsResponseDTO {
-  id: string;
+  id: number;
   title: string;
   description: string;
   price: number;
+  discount: number | null;
+  thumbnailUrl: string | null;
+  category: string;
   level: string;
-  thumbnail: string;
-  instructor: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  modules: ModuleResponseDTO[];
-  createdAt: string;
+  finalPrice: number;
+  status: string;
+  instructorName: string;
+  averageRating: number | null;
+  totalReviews: number;
+  totalStudents: number;
+  totalLessons: number;
   updatedAt: string;
+  totalModules: number;
+  totalDuration: number;
+  modules: ModuleResponseDTO[];
 }
 
 export interface CourseSearchParams {

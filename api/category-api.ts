@@ -31,4 +31,6 @@ export const categoryApi = {
     const response = await httpClient.delete(`/categories/${id}`)
     return response.data
   }
+
+  
 } 

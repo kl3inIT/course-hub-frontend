@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useSearchParams } from "next/navigation"
 
 interface GoogleSignInButtonProps {
   onSuccess?: (user: any) => void
@@ -10,6 +11,8 @@ interface GoogleSignInButtonProps {
 
 export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const returnUrl = searchParams.get('returnUrl')
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -17,7 +20,7 @@ export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonPro
     try {
       // Gọi API để lấy URL đăng nhập Google
       const response = await fetch('http://localhost:8080/api/auth/google-login-url', {
-        method: 'GET',  // Thường là GET request để lấy URL
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -29,8 +32,14 @@ export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonPro
         throw new Error(data.data || 'Failed to get Google login URL');
       }
 
+      // Thêm returnUrl vào state parameter nếu có
+      const googleLoginUrl = new URL(data.data);
+      if (returnUrl) {
+        googleLoginUrl.searchParams.set('state', returnUrl);
+      }
+
       // Chuyển hướng đến URL đăng nhập Google
-      window.location.href = data.data;  // Giả sử backend trả về { url: "..." }
+      window.location.href = googleLoginUrl.toString();
 
     } catch (error: any) {
       setIsLoading(false);

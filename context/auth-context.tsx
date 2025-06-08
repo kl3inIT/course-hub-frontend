@@ -225,6 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok) {
           throw new Error('Logout failed');
         }
+        localStorage.clear();
       }
     } catch (error) {
       console.error('Logout error:', error);

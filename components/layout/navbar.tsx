@@ -184,6 +184,20 @@ export function Navbar() {
                 ></span>
               </Link>
 
+              <Link
+                href="/coupons"
+                className={`text-sm font-medium transition-colors relative group ${
+                  isActiveLink("/coupons") ? "text-primary" : "text-muted-foreground hover:text-primary"
+                }`}
+              >
+                Coupons
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-primary transition-all ${
+                    isActiveLink("/coupons") ? "w-full" : "w-0 group-hover:w-full"
+                  }`}
+                ></span>
+              </Link>
+
               {/* Only show "My Learning" link for authenticated users */}
               {user && (
                 <Link

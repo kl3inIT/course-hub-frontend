@@ -26,6 +26,8 @@ export default function GoogleCallbackPage() {
     hasHandled.current = true;
 
     const code = searchParams.get('code');
+    const returnUrl = searchParams.get('state'); // Google OAuth state parameter contains returnUrl
+    
     if (!code) {
       router.push('/login?error=No code received from Google');
       return;
@@ -58,17 +60,20 @@ export default function GoogleCallbackPage() {
 
         await login(user, token);
 
-        // Điều hướng theo role
+        // Điều hướng theo role hoặc returnUrl
         if (decodedToken.scope === "ADMIN") {
-          router.push("/admin");
+          window.location.href = "/admin";
         } else if (decodedToken.scope === "MANAGER") {
-          router.push("/manager");
+          window.location.href = "/manager";
+        } else if (returnUrl) {
+          // Nếu có returnUrl (từ state parameter), sử dụng nó
+          window.location.href = decodeURIComponent(returnUrl);
         } else {
-          router.push("/");
+          window.location.href = "/";
         }
       } catch (error: any) {
         console.error('Google callback error:', error);
-        router.push(`/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`);
+        window.location.href = `/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`;
       }
     };
 

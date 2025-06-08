@@ -1,16 +1,21 @@
 import { BaseResponse } from "./common"
+import { LessonResponseDTO } from "./lesson"
 
 export interface ModuleRequestDTO {
   title: string
+  description: string
+  orderNumber: number
 }
 
-export interface ModuleResponseDTO extends BaseResponse {
-  id: number;
-  title: string;
-  orderNumber: number;
-  totalLessons: number;
-  totalDuration: number;
-  courseId: number;
+export interface ModuleResponseDTO {
+  id: string
+  title: string
+  description: string
+  orderNumber: number
+  courseId: string
+  lessons?: LessonResponseDTO[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ModuleCreationRequest {

@@ -10,7 +10,19 @@ const PUBLIC_ENDPOINTS = [
   '/api/courses/search',
   '/api/categories',
   '/api/reviews',
-  '/api/courses/featured'
+  '/api/courses/featured',
+  '/api/auth/google-login-url',
+  '/api/auth/logout',
+  '/api/auth/register/init',
+  '/api/auth/register/re-send-otp',
+  '/api/auth/forgot-password/send-otp',
+  '/api/auth/forgot-password/reset-password',
+  '/api/auth/forgot-password/verify-otp',
+  '/api/auth/verify-email',
+  '/api/auth/verify-email/resend-otp',
+  '/api/auth/verify-email/verify-otp',
+  '/api/auth/verify-email/reset-password',
+  '/api/auth/verify-email/verify-email',
 ]
 
 export const httpClient = axios.create({

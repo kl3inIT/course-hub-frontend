@@ -1,41 +1,41 @@
 // types/lesson.ts
 export interface LessonRequestDTO {
     title: string;
-    description?: string;
+    description: string;
+    type: 'VIDEO' | 'DOCUMENT' | 'ASSIGNMENT';
     duration?: number;
-    orderNumber?: number;
-    isPreview?: boolean;
-  }
-  
-  export interface LessonResponseDTO {
-    id: number;
-    title: string;
-    description?: string;
-    videoUrl?: string;
-    duration?: number;
+    content?: string;
     orderNumber: number;
-    isPreview: boolean;
-    isActive: boolean;
-    moduleId: number;
+}
+
+export interface LessonResponseDTO {
+    id: string;
+    title: string;
+    description: string;
+    type: 'VIDEO' | 'DOCUMENT' | 'ASSIGNMENT';
+    duration?: number;
+    content?: string;
+    orderNumber: number;
+    moduleId: string;
     createdAt: string;
     updatedAt: string;
-  }
-  
-  export interface LessonUploadRequestDTO {
+}
+
+export interface LessonUploadRequestDTO {
     title: string;
     fileName: string;
     fileType: string;
-  }
-  
-  export interface LessonUploadResponseDTO {
+}
+
+export interface LessonUploadResponseDTO {
     lessonId: number;
     preSignedPutUrl: string;
     s3Key: string;
-  }
-  
-  export interface LessonConfirmRequestDTO {
+}
+
+export interface LessonConfirmRequestDTO {
     description?: string;
     duration?: number;
     orderNumber?: number;
     isPreview?: boolean;
-  }
+}

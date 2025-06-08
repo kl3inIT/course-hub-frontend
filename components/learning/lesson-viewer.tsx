@@ -785,7 +785,8 @@ export default function LessonViewer({ courseId, moduleId, lessonId }: LessonVie
       if (e.key === "Escape" && isFullscreen) {
         setIsFullscreen(false)
       }
-      if (e.key === " " && document.activeElement?.tagName !== "INPUT") {
+      const activeElement = document.activeElement?.tagName
+      if (e.key === " " && activeElement !== "INPUT" && activeElement !== "TEXTAREA") {
         e.preventDefault()
         togglePlayPause()
       }

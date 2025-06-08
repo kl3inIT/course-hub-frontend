@@ -1,48 +1,34 @@
-"use client"
+import { UserDetail } from "@/components/profile/user-detail"
+import { Suspense, use } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
-import UserProfile from "@/components/profile/user-profile"
-
-const hardcodedUser = {
-  id: "1",
-  name: "Phan Tín",
-  username: "tin-phan-1",
-  avatar: "https://github.com/shadcn.png",
-  joinDate: "2020-03-15",
-  enrolledCourses: [
-    {
-      id: "1",
-      title: "App \"Đừng Chạm Tay Lên Mặt\"",
-      thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2070&auto=format&fit=crop",
-      progress: 65,
-      enrolledStudents: 10885,
-      duration: "1h34p",
-      isFree: true
-    },
-    {
-      id: "2",
-      title: "Làm việc với Terminal & Ubuntu",
-      thumbnail: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=2074&auto=format&fit=crop",
-      progress: 45,
-      enrolledStudents: 20684,
-      duration: "4h59p",
-      isFree: true
-    },
-    {
-      id: "3",
-      title: "Xây Dựng Website với ReactJS",
-      thumbnail: "https://images.unsplash.com/photo-1648737963540-306235c8170e?q=80&w=2070&auto=format&fit=crop",
-      progress: 30,
-      enrolledStudents: 75774,
-      duration: "27h32p",
-      isFree: true
-    }
-  ]
+interface UserPageProps {
+  params: Promise<{
+    id: string
+  }>
 }
 
-export default function UserProfilePage() {
+export default function UserPage({ params }: UserPageProps) {
+  const resolvedParams = use(params)
+  const userId = resolvedParams.id
+
   return (
-    <div>
-      <UserProfile />
+    <div className="container py-6">
+      <Suspense fallback={<UserDetailSkeleton />}>
+        <UserDetail userId={userId} />
+      </Suspense>
+    </div>
+  )
+}
+
+function UserDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-[200px] rounded-lg bg-muted animate-pulse" />
+      <div className="space-y-4">
+        <div className="h-4 w-[250px] bg-muted animate-pulse rounded" />
+        <div className="h-4 w-full bg-muted animate-pulse rounded" />
+      </div>
     </div>
   )
 }

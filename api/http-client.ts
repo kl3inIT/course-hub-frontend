@@ -15,9 +15,6 @@ const PUBLIC_ENDPOINTS = [
 
 export const httpClient = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 })
 
 // Add request interceptor for authentication
@@ -27,6 +24,13 @@ httpClient.interceptors.request.use(
     const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => 
       config.url?.includes(endpoint)
     )
+
+    // Set Content-Type header based on the request data type
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"] // Let axios set the correct boundary for FormData
+    } else {
+      config.headers["Content-Type"] = "application/json"
+    }
 
     // Only add token if it's not a public endpoint
     if (!isPublicEndpoint) {

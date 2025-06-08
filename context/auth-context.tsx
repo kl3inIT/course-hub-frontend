@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { httpClient } from "@/api/http-client"
 
 export type UserRole = "learner" | "manager" | "admin"
 
@@ -213,19 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem("accessToken")
       if (token) {
-        const response = await fetch('http://localhost:8080/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token })  // Gửi token trong body
-        });
-
-        if (!response.ok) {
-          throw new Error('Logout failed');
-        }
-        localStorage.clear();
+        await httpClient.post('/auth/logout', { token });
       }
     } catch (error) {
       console.error('Logout error:', error);

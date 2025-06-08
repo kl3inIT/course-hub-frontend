@@ -4,7 +4,7 @@ import { DiscountRequestDTO, DiscountResponseDTO, DiscountSearchParams } from "@
 
 export const discountApi = {
   validateDiscount: async (data: DiscountRequestDTO): Promise<ApiResponse<DiscountResponseDTO>> => {
-    const response = await httpClient.post("/discounts/verify", data)
+    const response = await httpClient.post("/api/discounts/verify", data)
     return response.data
   },
 

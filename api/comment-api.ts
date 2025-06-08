@@ -5,7 +5,7 @@ import { CommentRequestDTO, CommentResponseDTO } from "@/types/comment"
 export const commentApi = {
   // Get all comments for a lesson
   getCommentsByLesson: async (lessonId: string | number): Promise<ApiResponse<CommentResponseDTO[]>> => {
-    const response = await httpClient.get(`/comments/lesson/${lessonId}`)
+    const response = await httpClient.get(`/api/comments/lesson/${lessonId}`)
     return response.data
   },
 
@@ -14,7 +14,7 @@ export const commentApi = {
     lessonId: string | number, 
     data: CommentRequestDTO
   ): Promise<ApiResponse<CommentResponseDTO>> => {
-    const response = await httpClient.post(`/comments/lesson/${lessonId}`, data)
+    const response = await httpClient.post(`/api/comments/lesson/${lessonId}`, data)
     return response.data
   },
 
@@ -23,19 +23,19 @@ export const commentApi = {
     commentId: number, 
     data: CommentRequestDTO
   ): Promise<ApiResponse<CommentResponseDTO>> => {
-    const response = await httpClient.put(`/comments/${commentId}`, data)
+    const response = await httpClient.put(`/api/comments/${commentId}`, data)
     return response.data
   },
 
   // Delete a comment
   deleteComment: async (commentId: number): Promise<ApiResponse<string>> => {
-    const response = await httpClient.delete(`/comments/${commentId}`)
+    const response = await httpClient.delete(`/api/comments/${commentId}`)
     return response.data
   },
 
   // Toggle like on a comment
   toggleLike: async (commentId: number): Promise<ApiResponse<boolean>> => {
-    const response = await httpClient.put(`/comments/${commentId}/like`)
+    const response = await httpClient.put(`/api/comments/${commentId}/like`)
     return response.data
   },
 
@@ -45,7 +45,7 @@ export const commentApi = {
     reason: string, 
     description?: string
   ): Promise<ApiResponse<string>> => {
-    const response = await httpClient.post(`/comments/${commentId}/report`, {
+    const response = await httpClient.post(`/api/comments/${commentId}/report`, {
       reason,
       description
     })
@@ -56,7 +56,7 @@ export const commentApi = {
   admin: {
     // Hide a comment (admin/manager only)
     hideComment: async (commentId: number): Promise<ApiResponse<string>> => {
-      const response = await httpClient.patch(`/comments/${commentId}/hide`)
+      const response = await httpClient.patch(`/api/comments/${commentId}/hide`)
       return response.data
     }
   }

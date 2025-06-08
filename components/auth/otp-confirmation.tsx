@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, AlertCircle, Mail, MessageSquare, RefreshCw, ArrowLeft } from "lucide-react"
+import { httpClient } from "@/api/http-client"
 
 interface OTPConfirmationProps {
   type: "email-verification" | "password-reset" | "two-factor" | "phone-verification"
@@ -164,39 +165,27 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
       
       switch (type) {
         case 'email-verification':
-          endpoint = 'http://localhost:8080/api/auth/register/verify';
+          endpoint = '/api/auth/register/verify';
           break;
         case 'password-reset':
-          endpoint = 'http://localhost:8080/api/auth/forgot-password/verify-otp';
+          endpoint = '/api/auth/forgot-password/verify-otp';
           break;
         default:
           throw new Error('Invalid verification type');
       }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: destination,
-          otp: code,
-        }),
+      const response = await httpClient.post(endpoint, {
+        email: destination,
+        otp: code,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.data || 'Verification failed');
-      }
 
       setSuccess(true)
       setTimeout(() => {
-        onSuccess(data)
+        onSuccess(response.data)
       }, 1500)
 
     } catch (error: any) {
-      setError(error.message || "Error validating verification code. Please try again.")
+      setError(error.response?.data?.message || "Error validating verification code. Please try again.")
       if (attempts >= maxAttempts - 1) {
         setError("Too many failed attempts. Please request a new verification code.")
       }
@@ -214,38 +203,21 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
 
     try {
       let endpoint = '';
-      type PayloadType = {
-        email?: string;
-        phone?: string;
-      }
-      let payload: PayloadType = {};
-
+      
       switch (type) {
         case 'email-verification':
-          endpoint = 'http://localhost:8080/api/auth/register/re-send-otp';
-          payload = { email: destination };
+          endpoint = '/api/auth/register/re-send-otp';
           break;
         case 'password-reset':
-          endpoint = 'http://localhost:8080/api/auth/forgot-password/send-otp';
-          payload = { email: destination };
+          endpoint = '/api/auth/forgot-password/send-otp';
           break;
         default:
           throw new Error('Invalid OTP type');
       }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      await httpClient.post(endpoint, {
+        email: destination,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to resend code');
-      }
 
       setResendCooldown(cooldownTime)
       // Clear current OTP
@@ -253,62 +225,10 @@ export function OTPConfirmation({ type, destination, onSuccess, onBack, title, d
       inputRefs.current[0]?.focus()
 
     } catch (error: any) {
-      setError(error.message || "Failed to resend verification code")
+      setError(error.response?.data?.message || "Failed to resend verification code")
     } finally {
       setIsResending(false)
     }
-
-    /* Original localStorage implementation
-    // For password reset, we need to regenerate and "send" a new OTP
-    if (type === "password-reset") {
-      // Generate new OTP
-      const newOTP = Math.floor(100000 + Math.random() * 900000).toString()
-      const expiryTime = Date.now() + 10 * 60 * 1000 // 10 minutes
-
-      // Store new OTP
-      localStorage.setItem(
-        `otp_${destination}`,
-        JSON.stringify({
-          otp: newOTP,
-          expiry: expiryTime,
-          attempts: 0,
-          email: destination,
-          type: "password-reset",
-        }),
-      )
-
-      // Simulate sending new email
-      console.log(`
-=== NEW OTP EMAIL SIMULATION ===
-To: ${destination}
-Subject: New Password Reset OTP - Learning Platform
-
-Your new One-Time Password (OTP) is: ${newOTP}
-
-This OTP will expire in 10 minutes.
-================================
-    `)
-
-      // Store demo email info
-      localStorage.setItem(
-        "demo_email",
-        JSON.stringify({
-          to: destination,
-          otp: newOTP,
-          timestamp: Date.now(),
-          subject: "New Password Reset OTP",
-        }),
-      )
-    }
-
-    setTimeout(() => {
-      setIsResending(false)
-      setResendCooldown(cooldownTime)
-      // Clear current OTP
-      setOtp(["", "", "", "", "", ""])
-      inputRefs.current[0]?.focus()
-    }, 1000)
-    */
   }
 
   const clearOtp = () => {

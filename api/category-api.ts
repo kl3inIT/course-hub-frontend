@@ -4,7 +4,7 @@ import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@
 
 export const categoryApi = {
   getAllCategories: async (params?: CategorySearchParams): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
-    const response = await httpClient.get("/categories", { params })
+    const response = await httpClient.get("/api/categories", { params })
     return response.data
   },
 
@@ -13,24 +13,22 @@ export const categoryApi = {
   },
 
   getCategoryById: async (id: string): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.get(`/categories/${id}`)
+    const response = await httpClient.get(`/api/categories/${id}`)
     return response.data
   },
 
   createCategory: async (data: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.post("/categories", data)
+    const response = await httpClient.post("/api/categories", data)
     return response.data
   },
 
   updateCategory: async (id: string, data: CategoryRequestDTO): Promise<ApiResponse<CategoryResponseDTO>> => {
-    const response = await httpClient.put(`/categories/${id}`, data)
+    const response = await httpClient.put(`/api/categories/${id}`, data)
     return response.data
   },
 
   deleteCategory: async (id: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/categories/${id}`)
+    const response = await httpClient.delete(`/api/categories/${id}`)
     return response.data
   }
-
-  
 } 

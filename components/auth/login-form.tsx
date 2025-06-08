@@ -14,8 +14,8 @@ import Link from "next/link"
 import { GoogleSignInButton } from "./google-signin-button"
 import { ForgotPasswordModal } from "./forgot-password-modal"
 import { useAuth } from "@/context/auth-context"
-import type { User, UserRole } from "@/context/auth-context"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { httpClient } from "@/api/http-client"
 
 // Function to decode JWT token
 function parseJwt(token: string) {
@@ -30,9 +30,6 @@ function parseJwt(token: string) {
 export function LoginForm() {
   const { login } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const returnUrl = searchParams.get('returnUrl')
-  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -48,29 +45,18 @@ export function LoginForm() {
     setError("")
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }),
+      const response = await httpClient.post('/api/auth/login', {
+        email: formData.email,
+        password: formData.password
       });
 
-      const data = await response.json();
-      console.log(data.data)
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid credentials');
-      }
-
+      const { data } = response.data;
+      
       // Lưu token vào localStorage
-      const token = data.data.token;
+      const token = data.token;
       
       // Giải mã token để lấy thông tin user
       const decodedToken = parseJwt(token);
-      console.log('Decoded token:', decodedToken);
       
       // Cập nhật context với thông tin user từ payload
       const user = {
@@ -82,25 +68,19 @@ export function LoginForm() {
         joinDate: new Date().toISOString(),
       };
 
-      console.log(user)
       await login(user, token);
 
-      // Điều hướng dựa trên role hoặc returnUrl
+      // Điều hướng dựa trên role
       if (decodedToken.scope === "ADMIN") {
-        window.location.href = "/admin";
+        router.push("/admin");
       } else if (decodedToken.scope === "MANAGER") {
-        window.location.href = "/manager";
+        router.push("/manager");
       } else {
-        // Nếu có returnUrl và không phải admin/manager, chuyển về trang trước đó
-        if (returnUrl) {
-          window.location.href = returnUrl;
-        } else {
-          window.location.href = "/";
-        }
+        router.push("/");
       }
 
     } catch (err: any) {
-      setError(err.message || "An error occurred during login");
+      setError(err.response?.data?.message || "An error occurred during login");
     } finally {
       setIsLoading(false);
     }

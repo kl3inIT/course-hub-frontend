@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { useSearchParams } from "next/navigation"
+import { httpClient } from "@/api/http-client"
 
 interface GoogleSignInButtonProps {
   onSuccess?: (user: any) => void
@@ -11,39 +11,24 @@ interface GoogleSignInButtonProps {
 
 export function GoogleSignInButton({ onSuccess, onError }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const searchParams = useSearchParams()
-  const returnUrl = searchParams.get('returnUrl')
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
 
     try {
-      // Gọi API để lấy URL đăng nhập Google
-      const response = await fetch('http://localhost:8080/api/auth/google-login-url', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await httpClient.get('/api/auth/google-login-url');
+      const { data } = response.data;
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.data || 'Failed to get Google login URL');
+      if (!data) {
+        throw new Error('Failed to get Google login URL');
       }
 
-      // Thêm returnUrl vào state parameter nếu có
-      const googleLoginUrl = new URL(data.data);
-      if (returnUrl) {
-        googleLoginUrl.searchParams.set('state', returnUrl);
-      }
-
-      // Chuyển hướng đến URL đăng nhập Google
-      window.location.href = googleLoginUrl.toString();
+      // Redirect to Google login URL
+      window.location.href = data;
 
     } catch (error: any) {
       setIsLoading(false);
-      const errorMessage = error.message || "Failed to sign in with Google. Please try again.";
+      const errorMessage = error.response?.data?.message || "Failed to sign in with Google. Please try again.";
       
       if (onError) {
         onError(errorMessage);

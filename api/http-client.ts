@@ -1,20 +1,24 @@
 import axios from "axios"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://3.105.176.236:8080/api"
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
-  '/auth/login',
-  '/auth/register',
-  '/courses',
-  '/courses/search',
-  '/categories',
-  '/reviews',
-  '/courses/featured'
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/courses',
+  '/api/courses/search',
+  '/api/categories',
+  '/api/reviews',
+  '/api/courses/featured'
 ]
 
 export const httpClient = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 })
 
 // Add request interceptor for authentication

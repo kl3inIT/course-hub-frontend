@@ -30,17 +30,17 @@ interface PaymentStatusResponse {
 
 export const paymentApi = {
   createPayment: async (data: PaymentRequestDTO): Promise<ApiResponse<PaymentResponseDTO>> => {
-    const response = await httpClient.post("/payments/init", data)
+    const response = await httpClient.post("/api/payments/init", data)
     return response.data
   },
 
   checkPaymentStatus: async (transactionCode: string): Promise<PaymentStatusResponse> => {
-    const response = await httpClient.get(`/payments/${transactionCode}/payment-status`)
+    const response = await httpClient.get(`/api/payments/${transactionCode}/payment-status`)
     return response.data
   },
 
   updatePaymentStatus: async (transactionCode: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.patch(`/payments/${transactionCode}/expired`, {})
+    const response = await httpClient.patch(`/api/payments/${transactionCode}/expired`, {})
     return response.data
   }
 } 

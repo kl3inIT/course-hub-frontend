@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { GoogleSignInButton } from "./google-signin-button"
+import { httpClient } from "@/api/http-client"
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -80,30 +81,18 @@ export function RegisterForm() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/init', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-        }),
+      const response = await httpClient.post('/api/auth/register/init', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
 
       // Redirect to OTP verification
       const otpUrl = `/verify-otp?type=email-verification&destination=${encodeURIComponent(formData.email)}&redirect=/login`;
       window.location.href = otpUrl;
     } catch (err: any) {
-      setError(err.message || 'Failed to register. Please try again.');
+      setError(err.response?.data?.message || 'Failed to register. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -270,8 +259,6 @@ export function RegisterForm() {
               </Button>
             </div>
           </div>
-
-         
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create Account"}

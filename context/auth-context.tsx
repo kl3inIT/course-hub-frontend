@@ -172,8 +172,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const syncUserToCookie = useCallback((userData: User | null) => {
     if (typeof window !== "undefined") {
       if (userData) {
-        // Set cookie for middleware access
-        document.cookie = `user=${JSON.stringify(userData)}; path=/; max-age=86400; SameSite=Strict`
+        // Encode user data to avoid spaces and special characters
+        const encodedUserData = btoa(JSON.stringify(userData));
+        document.cookie = `user=${encodedUserData}; path=/; max-age=86400; SameSite=Strict`
       } else {
         // Clear cookie
         document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"

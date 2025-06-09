@@ -1,5 +1,5 @@
 import { ManagerCourseList } from "@/components/manager/manager-course-list"
-import { ManagerSidebar } from "@/components/manager/manager-sidebar"
+import { ManagerSidebar } from "@/components/layout/manager-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
 export default function ManagerCoursesPage() {

@@ -1,5 +1,5 @@
 import { CourseEditor } from "@/components/manager/course-editor"
-import { ManagerSidebar } from "@/components/manager/manager-sidebar"
+import { ManagerSidebar } from "@/components/layout/manager-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { RoleGuard } from "@/components/auth/role-guard"
 

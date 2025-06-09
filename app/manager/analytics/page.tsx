@@ -1,5 +1,5 @@
 import { ManagerAnalytics } from "@/components/manager/manager-analytics"
-import { ManagerSidebar } from "@/components/manager/manager-sidebar"
+import { ManagerSidebar } from "@/components/layout/manager-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
 export default function ManagerAnalyticsPage() {

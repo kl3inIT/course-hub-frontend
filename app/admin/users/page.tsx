@@ -1,5 +1,5 @@
 import { UserManagement } from "@/components/admin/user-management"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
 export default function AdminUsersPage() {

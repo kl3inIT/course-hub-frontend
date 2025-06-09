@@ -1,5 +1,5 @@
 import { AdminCourseManagement } from "@/components/admin/admin-course-management"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 
 export default function AdminCoursesPage() {

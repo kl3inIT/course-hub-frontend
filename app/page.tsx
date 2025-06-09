@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { Navbar } from "@/components/layout/navbar"
 import { CourseCard } from "@/components/courses/course-card"
-import { TestimonialsSection } from "@/components/testimonials/testimonials-section"
+import { TestimonialsSection } from "@/components/testimonials-section"
 import { Footer } from "@/components/layout/footer"
 import { categoryApi } from "@/api/category-api"
 import { courseApi } from "@/api/course-api"

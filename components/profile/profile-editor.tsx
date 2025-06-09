@@ -36,29 +36,22 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react"
-
-interface ProfileData {
-  id: string
-  name: string
-  email: string
-  phone: string
-  dateOfBirth: string
-  gender: string
-  address: string
-  bio: string
-  profilePicture: File | null
-  avatar?: string
-}
+import { httpClient } from "@/api/http-client"
+import { ApiResponse } from "@/types/common"
+import { ProfileData } from "@/types/User"
 
 interface ValidationErrors {
   [key: string]: string
 }
 
-const BACKEND_URL = "http://localhost:8080"
+interface ExtendedProfileData extends ProfileData {
+  id: string;
+  profilePicture: File | null;
+}
 
 export function ProfileEditor() {
   const router = useRouter()
-  const { user, updateUser, logout, getToken } = useAuth()
+  const { user, updateUser, logout } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [errors, setErrors] = useState<ValidationErrors>({})
@@ -67,7 +60,7 @@ export function ProfileEditor() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  const [formData, setFormData] = useState<ProfileData>({
+  const [formData, setFormData] = useState<ExtendedProfileData>({
     id: user?.id || "",
     name: "",
     email: user?.email || "",
@@ -77,37 +70,25 @@ export function ProfileEditor() {
     address: "",
     bio: "",
     profilePicture: null,
-    avatar: user?.avatar,
+    avatar: user?.avatar || "",
   })
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
-          headers: {
-            "Authorization": `Bearer ${getToken()}`
-          }
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile")
-        }
-
-        const result = await response.json()
-        if (!result.success) {
-          throw new Error(result.message)
-        }
+        const response = await httpClient.get<ApiResponse<ProfileData>>("/api/users/myInfo")
+        const apiResponse = response.data
 
         // Update form data with fetched profile
         setFormData(prev => ({
           ...prev,
-          ...result.data,
+          ...apiResponse.data,
           profilePicture: null // Reset profile picture since we don't get it from API
         }))
 
         // Set preview URL if avatar exists
-        if (result.data.avatar) {
-          setPreviewUrl(result.data.avatar)
+        if (apiResponse.data.avatar) {
+          setPreviewUrl(apiResponse.data.avatar)
         }
       } catch (error) {
         console.error("Error fetching profile:", error)
@@ -118,7 +99,7 @@ export function ProfileEditor() {
     if (user?.id) {
       fetchProfile()
     }
-  }, [user, getToken])
+  }, [user])
 
   useEffect(() => {
     // Warn user about unsaved changes
@@ -244,61 +225,32 @@ export function ProfileEditor() {
         const form = new FormData()
         form.append("file", formData.profilePicture)
         
-        const avatarResponse = await fetch(`${BACKEND_URL}/api/users/avatar`, {
-          method: "POST",
-          body: form,
-          headers: {
-            "Authorization": `Bearer ${getToken()}`
-          }
-        })
-        
-        if (!avatarResponse.ok) {
-          throw new Error("Failed to upload avatar")
-        }
-        
-        const avatarResult = await avatarResponse.json()
-        if (!avatarResult.success) {
-          throw new Error(avatarResult.message)
-        }
+        const avatarResponse = await httpClient.post<ApiResponse<{ avatar: string }>>("/api/users/avatar", form)
+        const avatarApiResponse = avatarResponse.data
 
         // Update preview URL with new avatar
-        if (avatarResult.data?.avatar) {
-          setPreviewUrl(avatarResult.data.avatar)
+        if (avatarApiResponse.data.avatar) {
+          setPreviewUrl(avatarApiResponse.data.avatar)
         }
       }
 
       // Update profile
-      const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          dateOfBirth: formData.dateOfBirth,
-          gender: formData.gender,
-          address: formData.address,
-          bio: formData.bio
-        })
+      const response = await httpClient.put<ApiResponse<ProfileData>>("/api/users/profile", {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: formData.address,
+        bio: formData.bio
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to update profile")
-      }
-
-      const result = await response.json()
-      if (!result.success) {
-        throw new Error(result.message)
-      }
+      const apiResponse = response.data
 
       // Update user context with new data
       updateUser({
         name: formData.name,
         email: formData.email,
-        avatar: result.data.avatar
+        avatar: apiResponse.data.avatar
       })
 
       setHasUnsavedChanges(false)
@@ -320,21 +272,7 @@ export function ProfileEditor() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${getToken()}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to delete profile")
-      }
-
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.message)
-      }
+      await httpClient.delete<ApiResponse<void>>("/api/users/profile")
 
       // Logout user after successful deletion
       await logout()

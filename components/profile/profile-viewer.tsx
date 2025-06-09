@@ -22,30 +22,17 @@ import {
   Clock,
 } from "lucide-react"
 import { RoleBadge } from "@/components/ui/role-badge"
-
-interface ProfileData {
-  id: string
-  name: string
-  email: string
-  phone: string
-  dateOfBirth: string
-  gender: string
-  address: string
-  bio: string
-  avatar?: string
-  createdAt: string
-  updatedAt: string
-}
+import { httpClient } from "@/api/http-client"
+import { ApiResponse } from "@/types/common"
+import { ProfileData } from "@/types/user"
 
 interface ProfileViewerProps {
   userId?: string
 }
 
-const BACKEND_URL = "http://localhost:8080"
-
 export function ProfileViewer({ userId }: ProfileViewerProps) {
   const router = useRouter()
-  const { user, hasPermission, getToken } = useAuth()
+  const { user, hasPermission } = useAuth()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
@@ -54,29 +41,8 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        console.log("Fetching profile...");
-        console.log("Token:", getToken());
-        
-        const response = await fetch(`${BACKEND_URL}/api/users/myInfo`, {
-          headers: {
-            "Authorization": `Bearer ${getToken()}`
-          }
-        })
-
-        console.log("Response status:", response.status);
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile")
-        }
-
-        const result = await response.json()
-        console.log("Profile data:", result);
-        
-        if (!result.success) {
-          throw new Error(result.message)
-        }
-
-        setProfile(result.data)
+        const response = await httpClient.get<ApiResponse<ProfileData>>("/api/users/myInfo")
+        setProfile(response.data.data)
       } catch (error) {
         console.error("Error fetching profile:", error)
         setError("Failed to load profile data")
@@ -86,7 +52,7 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
     }
 
     fetchProfile()
-  }, [getToken])
+  }, [])
 
   if (isLoading) {
     return (

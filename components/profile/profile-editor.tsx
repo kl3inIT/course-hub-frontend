@@ -38,7 +38,7 @@ import {
 } from "lucide-react"
 import { httpClient } from "@/api/http-client"
 import { ApiResponse } from "@/types/common"
-import { ProfileData } from "@/types/User"
+import { ProfileData } from "@/types/user"
 
 interface ValidationErrors {
   [key: string]: string

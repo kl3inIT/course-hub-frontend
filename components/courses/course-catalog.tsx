@@ -15,6 +15,7 @@ import { CourseCard } from "./course-card"
 import { useSearchParams } from "next/navigation"
 import { CourseResponseDTO } from "@/types/course"
 import { CategoryResponseDTO } from "@/types/category"
+import { useDebounce } from "@/hooks/use-debounce"
 
 const levels = ["BEGINNER", "INTERMEDIATE", "ADVANCED"]
 const sortOptions = [
@@ -47,15 +48,16 @@ export function CourseCatalog() {
   const [pageSize] = useState(6)
   const [loadingPage, setLoadingPage] = useState(false)
 
-  const [inputValue, setInputValue] = useState("")
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      setSearchTerm(inputValue)
+  const debouncedSearchTerm = useDebounce(searchTerm, 1000)
+
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
     }
-  }
-  const handleSearchClick = () => {
-    setSearchTerm(inputValue)
-  }
+    // chỉ chạy 1 lần khi mount
+    // eslint-disable-next-line
+  }, []);
 
   // Load categories once
   useEffect(() => {
@@ -99,7 +101,7 @@ export function CourseCatalog() {
           size: pageSize,
         }
 
-        if (searchTerm) searchParams.search = searchTerm
+        if (debouncedSearchTerm) searchParams.search = debouncedSearchTerm
         
         // Convert category name to ID for backend
         if (selectedCategories.length > 0) {
@@ -149,12 +151,12 @@ export function CourseCatalog() {
     }
 
     loadCourses()
-  }, [currentPage, pageSize, searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy, categories])
+  }, [currentPage, pageSize, debouncedSearchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy, categories])
 
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
+  }, [debouncedSearchTerm, selectedCategories, selectedLevels, priceFilter, priceRange, sortBy])
 
   const handleCategoryChange = (category: string, checked: boolean) => {
     if (checked) {
@@ -193,9 +195,11 @@ export function CourseCatalog() {
   }
 
   const renderPagination = () => {
-    const showPages = 5;
-    const startPage = Math.max(0, currentPage - Math.floor(showPages / 2));
-    const endPage = Math.min(totalPages - 1, startPage + showPages - 1);
+    if (totalPages <= 1) return null
+
+    const showPages = 5
+    const startPage = Math.max(0, currentPage - Math.floor(showPages / 2))
+    const endPage = Math.min(totalPages - 1, startPage + showPages - 1)
 
     return (
       <div className="flex items-center justify-center space-x-2 mt-8">
@@ -249,8 +253,8 @@ export function CourseCatalog() {
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-    );
-  };
+    )
+  }
 
   if (loading) {
     return (
@@ -286,19 +290,10 @@ export function CourseCatalog() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search courses, instructors, or keywords..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleInputKeyDown}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
-          <Button
-            className="absolute right-2 top-1/2 transform -translate-y-1/2"
-            size="icon"
-            variant="ghost"
-            onClick={handleSearchClick}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
         </div>
         <div className="flex gap-2">
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -377,21 +372,22 @@ export function CourseCatalog() {
           {/* Category Filter */}
           <div className="space-y-3">
             <h4 className="font-medium">Category</h4>
-            <div className="max-h-[264px] overflow-y-auto border rounded-md p-2">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2 mb-2">
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <div key={category.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={category.name}
                     checked={selectedCategories.includes(category.name)}
                     onCheckedChange={(checked) => handleCategoryChange(category.name, checked as boolean)}
                   />
                   <label htmlFor={category.name} className="text-sm cursor-pointer">
-                    {category.name}
-                    {category.courseCount > 0 ? ` (${category.courseCount})` : ""}
+                    {category.name} {category.courseCount && `(${category.courseCount})`}
                   </label>
                 </div>
-              ))}
-            </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No categories available</p>
+            )}
           </div>
 
           {/* Level Filter */}
@@ -438,7 +434,6 @@ export function CourseCatalog() {
                   min={0}
                   step={10}
                   className="w-full"
-                  minStepsBetweenThumbs={1}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
                   <span>${priceRange[0]}</span>

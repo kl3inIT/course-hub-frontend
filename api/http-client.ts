@@ -23,6 +23,15 @@ const PUBLIC_ENDPOINTS = [
   '/api/auth/verify-email/verify-otp',
   '/api/auth/verify-email/reset-password',
   '/api/auth/verify-email/verify-email',
+  '/auth/login',
+  '/auth/register',
+  '/courses',
+  '/courses/search',
+  '/categories',
+  '/reviews',
+  '/courses/featured',
+  '/categories/chart',
+  '/categories/details'
 ]
 
 export const httpClient = axios.create({

@@ -31,4 +31,22 @@ export interface CategorySearchParams {
   name?: string;
   page?: number;
   size?: number;
+}
+
+export interface CategoryChartDTO {
+  categoryName: string;
+  courseCount: number;
+  percentage: number;
+}
+
+export interface CategoryDetailDTO {
+  categoryId: number;
+  categoryName: string;
+  description: string;
+  courseCount: number;
+  averageRating: number;
+  totalStudents: number;
+  totalRevenue: number;
+  createdDate: string;
+  modifiedDate: string;
 } 

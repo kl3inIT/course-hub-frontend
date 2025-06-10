@@ -27,68 +27,9 @@ interface Student {
   location: string
 }
 
-const mockStudents: Student[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    email: "alice.johnson@email.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "active",
-    enrolledCourses: 3,
-    completedCourses: 1,
-    totalProgress: 67,
-    totalSpent: 299,
-    joinDate: "2024-01-15",
-    lastActive: "2024-01-25",
-    location: "New York, USA",
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    email: "bob.smith@email.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "active",
-    enrolledCourses: 2,
-    completedCourses: 2,
-    totalProgress: 100,
-    totalSpent: 198,
-    joinDate: "2023-12-10",
-    lastActive: "2024-01-24",
-    location: "London, UK",
-  },
-  {
-    id: "3",
-    name: "Carol Davis",
-    email: "carol.davis@email.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "inactive",
-    enrolledCourses: 1,
-    completedCourses: 0,
-    totalProgress: 23,
-    totalSpent: 99,
-    joinDate: "2024-01-20",
-    lastActive: "2024-01-22",
-    location: "Toronto, Canada",
-  },
-  {
-    id: "4",
-    name: "David Wilson",
-    email: "david.wilson@email.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "active",
-    enrolledCourses: 4,
-    completedCourses: 3,
-    totalProgress: 85,
-    totalSpent: 497,
-    joinDate: "2023-11-05",
-    lastActive: "2024-01-25",
-    location: "Sydney, Australia",
-  },
-]
-
 export function StudentManagement() {
   const router = useRouter()
-  const [students, setStudents] = useState<Student[]>(mockStudents)
+  const [students, setStudents] = useState<Student[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("name")
@@ -228,18 +169,6 @@ export function StudentManagement() {
             className="pl-10"
           />
         </div>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="suspended">Suspended</SelectItem>
-          </SelectContent>
-        </Select>
 
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-[180px]">

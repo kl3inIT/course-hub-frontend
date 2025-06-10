@@ -288,7 +288,7 @@ export function CourseCreationForm() {
         toast.info("Uploading thumbnail...")
         
         try {
-          const thumbnailResponse = await courseApi.uploadThumbnail(createdCourse.id, formData.thumbnail)
+          const thumbnailResponse = await courseApi.uploadThumbnail(createdCourse.id.toString(), formData.thumbnail)
           console.log('Thumbnail uploaded successfully:', thumbnailResponse)
           toast.success(thumbnailResponse.message || "Thumbnail uploaded successfully!")
         } catch (thumbnailError) {

@@ -42,7 +42,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
 import { Toaster } from "@/components/ui/toaster"
-import { User } from "@/types/user"
+import { User } from "@/types/User"
 import {
   Tabs,
   TabsContent,
@@ -503,7 +503,7 @@ export function UserManagement() {
       <Toaster />
       
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid gap-4 md:grid-cols-2 ${activeTab === "learner" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         {renderStatsCard(
           activeTab === "learner" ? "Total Learners" : "Total Managers",
           userStats.total,
@@ -514,7 +514,7 @@ export function UserManagement() {
           userStats.active,
           <CheckCircle className="h-4 w-4 text-green-600" />
         )}
-        {renderStatsCard(
+        {activeTab === "learner" && renderStatsCard(
           "Banned",
           userStats.banned,
           <Ban className="h-4 w-4 text-red-600" />
@@ -746,26 +746,9 @@ export function UserManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={user.status}
-                            onValueChange={(newStatus) => handleUpdateUserStatus(user.id, newStatus as "active" | "banned")}
-                    >
-                      <SelectTrigger className="p-0 h-auto w-auto border-0 bg-transparent hover:bg-accent hover:text-accent-foreground [&>span]:flex [&>span]:items-center">
-                        <SelectValue>
-                          <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                                  {user.status === "active" ? "Active" : "Banned"}
-                          </Badge>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">
-                          <Badge variant="default">Active</Badge>
-                        </SelectItem>
-                              <SelectItem value="banned">
-                                <Badge variant="destructive">Banned</Badge>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Badge variant={user.status === "active" ? "default" : "destructive"}>
+                      {user.status === "active" ? "Active" : "Banned"}
+                    </Badge>
                   </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
                         <TableCell>{user.enrolledcourses || 0}</TableCell>

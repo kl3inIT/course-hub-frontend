@@ -1,13 +1,19 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from '@/components/ui/alert-dialog'
 import {
   ArrowLeft,
   Edit,
@@ -34,9 +40,9 @@ import {
   Award,
   TrendingUp,
   AlertTriangle,
-} from "lucide-react"
-import Link from "next/link"
-import { toast } from "@/hooks/use-toast"
+} from 'lucide-react'
+import Link from 'next/link'
+import { toast } from '@/hooks/use-toast'
 
 interface CourseDetail {
   id: string
@@ -44,8 +50,8 @@ interface CourseDetail {
   description: string
   longDescription: string
   thumbnail: string
-  status: "published" | "draft" | "archived"
-  level: "beginner" | "intermediate" | "advanced"
+  status: 'published' | 'draft' | 'archived'
+  level: 'beginner' | 'intermediate' | 'advanced'
   category: string
   price: number
   originalPrice?: number
@@ -70,7 +76,7 @@ interface CourseDetail {
   materials: Array<{
     id: string
     name: string
-    type: "pdf" | "video" | "document" | "quiz"
+    type: 'pdf' | 'video' | 'document' | 'quiz'
     size?: string
     downloadCount: number
   }>
@@ -90,7 +96,7 @@ interface CourseDetail {
     enrolledAt: string
     progress: number
     lastActivity: string
-    status: "active" | "completed" | "inactive"
+    status: 'active' | 'completed' | 'inactive'
   }>
   analytics: {
     viewsThisMonth: number
@@ -104,24 +110,25 @@ interface CourseDetail {
 
 // Mock data for demonstration
 const mockCourseData: Record<string, CourseDetail> = {
-  "1": {
-    id: "1",
-    title: "React Fundamentals",
-    description: "Learn the basics of React including components, state, and props",
+  '1': {
+    id: '1',
+    title: 'React Fundamentals',
+    description:
+      'Learn the basics of React including components, state, and props',
     longDescription:
       "This comprehensive course covers everything you need to know about React.js from the ground up. You'll learn about components, state management, props, hooks, and modern React patterns. Perfect for beginners who want to start their journey in modern web development.",
-    thumbnail: "/placeholder.svg?height=300&width=400",
-    status: "published",
-    level: "beginner",
-    category: "Web Development",
+    thumbnail: '/placeholder.svg?height=300&width=400',
+    status: 'published',
+    level: 'beginner',
+    category: 'Web Development',
     price: 99,
     originalPrice: 149,
     instructor: {
-      id: "inst1",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@example.com",
-      avatar: "/placeholder.svg?height=100&width=100",
-      bio: "Senior Frontend Developer with 8+ years of experience in React and modern web technologies.",
+      id: 'inst1',
+      name: 'Sarah Johnson',
+      email: 'sarah.johnson@example.com',
+      avatar: '/placeholder.svg?height=100&width=100',
+      bio: 'Senior Frontend Developer with 8+ years of experience in React and modern web technologies.',
       rating: 4.9,
       totalStudents: 15420,
     },
@@ -130,80 +137,103 @@ const mockCourseData: Record<string, CourseDetail> = {
     rating: 4.8,
     reviews: 156,
     totalLessons: 42,
-    totalDuration: "8 hours 30 minutes",
+    totalDuration: '8 hours 30 minutes',
     completionRate: 78,
-    createdAt: "2023-10-15",
-    lastUpdated: "2024-01-15",
+    createdAt: '2023-10-15',
+    lastUpdated: '2024-01-15',
     materials: [
-      { id: "1", name: "React Cheat Sheet.pdf", type: "pdf", size: "2.5 MB", downloadCount: 892 },
-      { id: "2", name: "Project Source Code.zip", type: "document", size: "15.2 MB", downloadCount: 1156 },
-      { id: "3", name: "Final Project Demo", type: "video", size: "45.8 MB", downloadCount: 567 },
-      { id: "4", name: "Knowledge Check Quiz", type: "quiz", downloadCount: 1089 },
+      {
+        id: '1',
+        name: 'React Cheat Sheet.pdf',
+        type: 'pdf',
+        size: '2.5 MB',
+        downloadCount: 892,
+      },
+      {
+        id: '2',
+        name: 'Project Source Code.zip',
+        type: 'document',
+        size: '15.2 MB',
+        downloadCount: 1156,
+      },
+      {
+        id: '3',
+        name: 'Final Project Demo',
+        type: 'video',
+        size: '45.8 MB',
+        downloadCount: 567,
+      },
+      {
+        id: '4',
+        name: 'Knowledge Check Quiz',
+        type: 'quiz',
+        downloadCount: 1089,
+      },
     ],
     modules: [
       {
-        id: "1",
-        title: "Introduction to React",
-        description: "Getting started with React basics",
+        id: '1',
+        title: 'Introduction to React',
+        description: 'Getting started with React basics',
         lessons: 8,
-        duration: "2h 15m",
+        duration: '2h 15m',
         order: 1,
       },
       {
-        id: "2",
-        title: "Components and Props",
-        description: "Understanding React components",
+        id: '2',
+        title: 'Components and Props',
+        description: 'Understanding React components',
         lessons: 12,
-        duration: "3h 30m",
+        duration: '3h 30m',
         order: 2,
       },
       {
-        id: "3",
-        title: "State and Lifecycle",
-        description: "Managing component state",
+        id: '3',
+        title: 'State and Lifecycle',
+        description: 'Managing component state',
         lessons: 10,
-        duration: "2h 45m",
+        duration: '2h 45m',
         order: 3,
       },
       {
-        id: "4",
-        title: "Final Project",
-        description: "Build a complete React application",
+        id: '4',
+        title: 'Final Project',
+        description: 'Build a complete React application',
         lessons: 12,
-        duration: "4h 20m",
+        duration: '4h 20m',
         order: 4,
       },
     ],
     students: [
       {
-        id: "1",
-        name: "Alex Chen",
-        email: "alex.chen@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-        enrolledAt: "2024-01-10",
+        id: '1',
+        name: 'Alex Chen',
+        email: 'alex.chen@example.com',
+        avatar: '/placeholder.svg?height=40&width=40',
+        enrolledAt: '2024-01-10',
         progress: 85,
-        lastActivity: "2024-01-20",
-        status: "active",
+        lastActivity: '2024-01-20',
+        status: 'active',
       },
       {
-        id: "2",
-        name: "Maria Rodriguez",
-        email: "maria.rodriguez@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-        enrolledAt: "2024-01-08",
+        id: '2',
+        name: 'Maria Rodriguez',
+        email: 'maria.rodriguez@example.com',
+        avatar: '/placeholder.svg?height=40&width=40',
+        enrolledAt: '2024-01-08',
         progress: 100,
-        lastActivity: "2024-01-18",
-        status: "completed",
+        lastActivity: '2024-01-18',
+        status: 'completed',
       },
       {
-        id: "3",
-        name: "David Kim",
-        email: "david.kim@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-        enrolledAt: "2024-01-05",
+        id: '3',
+        name: 'David Kim',
+        email: 'david.kim@example.com',
+        avatar: '/placeholder.svg?height=40&width=40',
+        enrolledAt: '2024-01-05',
         progress: 45,
-        lastActivity: "2024-01-15",
-        status: "active",
+        lastActivity: '2024-01-15',
+        status: 'active',
       },
     ],
     analytics: {
@@ -232,17 +262,17 @@ export default function CourseDetailPage() {
       try {
         setLoading(true)
         // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
         const courseData = mockCourseData[courseId]
         if (!courseData) {
-          setError("Course not found")
+          setError('Course not found')
           return
         }
 
         setCourse(courseData)
       } catch (err) {
-        setError("Failed to load course details")
+        setError('Failed to load course details')
       } finally {
         setLoading(false)
       }
@@ -256,24 +286,25 @@ export default function CourseDetailPage() {
       setDeleting(true)
 
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 2000))
 
       // Simulate random failure for demo
       if (Math.random() < 0.1) {
-        throw new Error("Failed to delete course. Please try again.")
+        throw new Error('Failed to delete course. Please try again.')
       }
 
       toast({
-        title: "Course Deleted",
+        title: 'Course Deleted',
         description: `"${course?.title}" has been successfully deleted.`,
       })
 
-      router.push("/manager/courses")
+      router.push('/manager/courses')
     } catch (err) {
       toast({
-        title: "Deletion Failed",
-        description: err instanceof Error ? err.message : "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Deletion Failed',
+        description:
+          err instanceof Error ? err.message : 'An unexpected error occurred',
+        variant: 'destructive',
       })
     } finally {
       setDeleting(false)
@@ -282,10 +313,10 @@ export default function CourseDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading course details...</p>
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='text-center space-y-4'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
+          <p className='text-muted-foreground'>Loading course details...</p>
         </div>
       </div>
     )
@@ -293,14 +324,16 @@ export default function CourseDetailPage() {
 
   if (error || !course) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Course Not Found</h3>
-            <p className="text-muted-foreground mb-4">{error || "The requested course could not be found."}</p>
-            <Button onClick={() => router.push("/manager/courses")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <Card className='w-full max-w-md'>
+          <CardContent className='text-center py-8'>
+            <AlertTriangle className='mx-auto h-12 w-12 text-destructive mb-4' />
+            <h3 className='text-lg font-semibold mb-2'>Course Not Found</h3>
+            <p className='text-muted-foreground mb-4'>
+              {error || 'The requested course could not be found.'}
+            </p>
+            <Button onClick={() => router.push('/manager/courses')}>
+              <ArrowLeft className='mr-2 h-4 w-4' />
               Back to Courses
             </Button>
           </CardContent>
@@ -311,15 +344,15 @@ export default function CourseDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      published: "default",
-      draft: "secondary",
-      archived: "outline",
+      published: 'default',
+      draft: 'secondary',
+      archived: 'outline',
     } as const
 
     const colors = {
-      published: "bg-green-100 text-green-800",
-      draft: "bg-yellow-100 text-yellow-800",
-      archived: "bg-gray-100 text-gray-800",
+      published: 'bg-green-100 text-green-800',
+      draft: 'bg-yellow-100 text-yellow-800',
+      archived: 'bg-gray-100 text-gray-800',
     }
 
     return (
@@ -331,79 +364,89 @@ export default function CourseDetailPage() {
 
   const getLevelBadge = (level: string) => {
     const colors = {
-      beginner: "bg-green-100 text-green-800",
-      intermediate: "bg-yellow-100 text-yellow-800",
-      advanced: "bg-red-100 text-red-800",
+      beginner: 'bg-green-100 text-green-800',
+      intermediate: 'bg-yellow-100 text-yellow-800',
+      advanced: 'bg-red-100 text-red-800',
     }
 
-    return <Badge className={colors[level as keyof typeof colors]}>{level}</Badge>
+    return (
+      <Badge className={colors[level as keyof typeof colors]}>{level}</Badge>
+    )
   }
 
   const getStudentStatusBadge = (status: string) => {
     const colors = {
-      active: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      inactive: "bg-gray-100 text-gray-800",
+      active: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+      inactive: 'bg-gray-100 text-gray-800',
     }
 
-    return <Badge className={colors[status as keyof typeof colors]}>{status}</Badge>
+    return (
+      <Badge className={colors[status as keyof typeof colors]}>{status}</Badge>
+    )
   }
 
   const getMaterialIcon = (type: string) => {
     switch (type) {
-      case "pdf":
-        return <FileText className="h-4 w-4" />
-      case "video":
-        return <Play className="h-4 w-4" />
-      case "quiz":
-        return <Award className="h-4 w-4" />
+      case 'pdf':
+        return <FileText className='h-4 w-4' />
+      case 'video':
+        return <Play className='h-4 w-4' />
+      case 'quiz':
+        return <Award className='h-4 w-4' />
       default:
-        return <Download className="h-4 w-4" />
+        return <Download className='h-4 w-4' />
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => router.push("/manager/courses")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center space-x-4'>
+          <Button
+            variant='outline'
+            onClick={() => router.push('/manager/courses')}
+          >
+            <ArrowLeft className='mr-2 h-4 w-4' />
             Back to Courses
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{course.title}</h1>
-            <p className="text-muted-foreground">Course Management</p>
+            <h1 className='text-3xl font-bold'>{course.title}</h1>
+            <p className='text-muted-foreground'>Course Management</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
+        <div className='flex items-center space-x-2'>
+          <Button variant='outline' asChild>
             <Link href={`/courses/${course.id}`}>
-              <Eye className="mr-2 h-4 w-4" />
+              <Eye className='mr-2 h-4 w-4' />
               Preview Course
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant='outline' asChild>
             <Link href={`/manager/courses/${course.id}/edit`}>
-              <Edit className="mr-2 h-4 w-4" />
+              <Edit className='mr-2 h-4 w-4' />
               Edit Course
             </Link>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
+              <Button variant='destructive'>
+                <Trash2 className='mr-2 h-4 w-4' />
                 Delete Course
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <p>This action cannot be undone. This will permanently delete the course:</p>
-                  <p className="font-semibold">"{course.title}"</p>
+                <AlertDialogDescription className='space-y-2'>
+                  <p>
+                    This action cannot be undone. This will permanently delete
+                    the course:
+                  </p>
+                  <p className='font-semibold'>"{course.title}"</p>
                   <p>This will also:</p>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
+                  <ul className='list-disc list-inside space-y-1 text-sm'>
                     <li>Remove all course materials and content</li>
                     <li>Unenroll all {course.enrollments} students</li>
                     <li>Delete all student progress data</li>
@@ -416,9 +459,9 @@ export default function CourseDetailPage() {
                 <AlertDialogAction
                   onClick={handleDeleteCourse}
                   disabled={deleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                 >
-                  {deleting ? "Deleting..." : "Delete Course"}
+                  {deleting ? 'Deleting...' : 'Delete Course'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -427,43 +470,45 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Course Overview */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
+      <div className='grid gap-6 md:grid-cols-3'>
+        <div className='md:col-span-2'>
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
+              <div className='flex items-start justify-between'>
+                <div className='space-y-2'>
+                  <div className='flex items-center space-x-2'>
                     {getStatusBadge(course.status)}
                     {getLevelBadge(course.level)}
-                    <Badge variant="outline">{course.category}</Badge>
+                    <Badge variant='outline'>{course.category}</Badge>
                   </div>
-                  <CardTitle className="text-2xl">{course.title}</CardTitle>
+                  <CardTitle className='text-2xl'>{course.title}</CardTitle>
                   <CardDescription>{course.description}</CardDescription>
                 </div>
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={course.thumbnail || "/placeholder.svg"} />
+                <Avatar className='h-20 w-20'>
+                  <AvatarImage src={course.thumbnail || '/placeholder.svg'} />
                   <AvatarFallback>{course.title[0]}</AvatarFallback>
                 </Avatar>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-4">{course.longDescription}</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <p className='text-muted-foreground mb-4'>
+                {course.longDescription}
+              </p>
+              <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+                <div className='flex items-center space-x-2'>
+                  <BookOpen className='h-4 w-4 text-muted-foreground' />
                   <span>{course.totalLessons} lessons</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                <div className='flex items-center space-x-2'>
+                  <Clock className='h-4 w-4 text-muted-foreground' />
                   <span>{course.totalDuration}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                <div className='flex items-center space-x-2'>
+                  <Users className='h-4 w-4 text-muted-foreground' />
                   <span>{course.enrollments} students</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                <div className='flex items-center space-x-2'>
+                  <Star className='h-4 w-4 text-yellow-400 fill-current' />
                   <span>
                     {course.rating} ({course.reviews} reviews)
                   </span>
@@ -473,35 +518,43 @@ export default function CourseDetailPage() {
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {/* Revenue Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Revenue</CardTitle>
+              <CardTitle className='text-lg'>Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Revenue</span>
-                    <span className="font-semibold">${course.revenue.toLocaleString()}</span>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-muted-foreground'>
+                      Total Revenue
+                    </span>
+                    <span className='font-semibold'>
+                      ${course.revenue.toLocaleString()}
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">This Month</span>
-                    <span className="font-semibold text-green-600">
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-muted-foreground'>
+                      This Month
+                    </span>
+                    <span className='font-semibold text-green-600'>
                       +${course.analytics.revenueThisMonth.toLocaleString()}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Price</span>
-                    <div className="text-right">
-                      <span className="font-semibold">${course.price}</span>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-muted-foreground'>Price</span>
+                    <div className='text-right'>
+                      <span className='font-semibold'>${course.price}</span>
                       {course.originalPrice && (
-                        <span className="text-sm text-muted-foreground line-through ml-2">${course.originalPrice}</span>
+                        <span className='text-sm text-muted-foreground line-through ml-2'>
+                          ${course.originalPrice}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -513,26 +566,32 @@ export default function CourseDetailPage() {
           {/* Instructor Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Instructor</CardTitle>
+              <CardTitle className='text-lg'>Instructor</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-start space-x-3">
+              <div className='flex items-start space-x-3'>
                 <Avatar>
-                  <AvatarImage src={course.instructor.avatar || "/placeholder.svg"} />
+                  <AvatarImage
+                    src={course.instructor.avatar || '/placeholder.svg'}
+                  />
                   <AvatarFallback>{course.instructor.name[0]}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <h4 className="font-semibold">{course.instructor.name}</h4>
-                  <p className="text-sm text-muted-foreground">{course.instructor.email}</p>
-                  <p className="text-sm mt-2">{course.instructor.bio}</p>
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                <div className='flex-1'>
+                  <h4 className='font-semibold'>{course.instructor.name}</h4>
+                  <p className='text-sm text-muted-foreground'>
+                    {course.instructor.email}
+                  </p>
+                  <p className='text-sm mt-2'>{course.instructor.bio}</p>
+                  <div className='flex items-center space-x-4 mt-2 text-sm text-muted-foreground'>
+                    <div className='flex items-center space-x-1'>
+                      <Star className='h-3 w-3 text-yellow-400 fill-current' />
                       <span>{course.instructor.rating}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-3 w-3" />
-                      <span>{course.instructor.totalStudents.toLocaleString()}</span>
+                    <div className='flex items-center space-x-1'>
+                      <Users className='h-3 w-3' />
+                      <span>
+                        {course.instructor.totalStudents.toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -543,88 +602,113 @@ export default function CourseDetailPage() {
       </div>
 
       {/* Detailed Information Tabs */}
-      <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
+      <Tabs defaultValue='analytics' className='w-full'>
+        <TabsList className='grid w-full grid-cols-5'>
+          <TabsTrigger value='analytics'>Analytics</TabsTrigger>
+          <TabsTrigger value='students'>Students</TabsTrigger>
+          <TabsTrigger value='content'>Content</TabsTrigger>
+          <TabsTrigger value='materials'>Materials</TabsTrigger>
+          <TabsTrigger value='details'>Details</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
+        <TabsContent value='analytics' className='space-y-6'>
+          <div className='grid gap-4 md:grid-cols-3'>
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Views This Month</CardTitle>
-                <Eye className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Views This Month
+                </CardTitle>
+                <Eye className='h-4 w-4 text-muted-foreground' />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{course.analytics.viewsThisMonth.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                <div className='text-2xl font-bold'>
+                  {course.analytics.viewsThisMonth.toLocaleString()}
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  <TrendingUp className='inline h-3 w-3 mr-1' />
                   +12% from last month
                 </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">New Enrollments</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  New Enrollments
+                </CardTitle>
+                <Users className='h-4 w-4 text-muted-foreground' />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{course.analytics.enrollmentsThisMonth}</div>
-                <p className="text-xs text-muted-foreground">
-                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                <div className='text-2xl font-bold'>
+                  {course.analytics.enrollmentsThisMonth}
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  <TrendingUp className='inline h-3 w-3 mr-1' />
                   +8% from last month
                 </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Completion Rate
+                </CardTitle>
+                <Award className='h-4 w-4 text-muted-foreground' />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{course.analytics.completionRate}%</div>
-                <Progress value={course.analytics.completionRate} className="mt-2" />
+                <div className='text-2xl font-bold'>
+                  {course.analytics.completionRate}%
+                </div>
+                <Progress
+                  value={course.analytics.completionRate}
+                  className='mt-2'
+                />
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="students" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Enrolled Students ({course.students.length})</h3>
+        <TabsContent value='students' className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='text-lg font-semibold'>
+              Enrolled Students ({course.students.length})
+            </h3>
           </div>
-          <div className="space-y-4">
-            {course.students.map((student) => (
+          <div className='space-y-4'>
+            {course.students.map(student => (
               <Card key={student.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                <CardContent className='p-4'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center space-x-3'>
                       <Avatar>
-                        <AvatarImage src={student.avatar || "/placeholder.svg"} />
+                        <AvatarImage
+                          src={student.avatar || '/placeholder.svg'}
+                        />
                         <AvatarFallback>{student.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h4 className="font-semibold">{student.name}</h4>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Enrolled: {new Date(student.enrolledAt).toLocaleDateString()}
+                        <h4 className='font-semibold'>{student.name}</h4>
+                        <p className='text-sm text-muted-foreground'>
+                          {student.email}
+                        </p>
+                        <p className='text-xs text-muted-foreground'>
+                          Enrolled:{' '}
+                          {new Date(student.enrolledAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right space-y-2">
+                    <div className='text-right space-y-2'>
                       {getStudentStatusBadge(student.status)}
                       <div>
-                        <div className="text-sm font-medium">{student.progress}% Complete</div>
-                        <Progress value={student.progress} className="w-24" />
+                        <div className='text-sm font-medium'>
+                          {student.progress}% Complete
+                        </div>
+                        <Progress value={student.progress} className='w-24' />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Last active: {new Date(student.lastActivity).toLocaleDateString()}
+                      <p className='text-xs text-muted-foreground'>
+                        Last active:{' '}
+                        {new Date(student.lastActivity).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -634,20 +718,24 @@ export default function CourseDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="content" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Course Modules ({course.modules.length})</h3>
+        <TabsContent value='content' className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='text-lg font-semibold'>
+              Course Modules ({course.modules.length})
+            </h3>
           </div>
-          <div className="space-y-4">
-            {course.modules.map((module) => (
+          <div className='space-y-4'>
+            {course.modules.map(module => (
               <Card key={module.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                <CardContent className='p-4'>
+                  <div className='flex items-center justify-between'>
                     <div>
-                      <h4 className="font-semibold">{module.title}</h4>
-                      <p className="text-sm text-muted-foreground">{module.description}</p>
+                      <h4 className='font-semibold'>{module.title}</h4>
+                      <p className='text-sm text-muted-foreground'>
+                        {module.description}
+                      </p>
                     </div>
-                    <div className="text-right text-sm text-muted-foreground">
+                    <div className='text-right text-sm text-muted-foreground'>
                       <div>{module.lessons} lessons</div>
                       <div>{module.duration}</div>
                     </div>
@@ -658,27 +746,30 @@ export default function CourseDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="materials" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Course Materials ({course.materials.length})</h3>
+        <TabsContent value='materials' className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <h3 className='text-lg font-semibold'>
+              Course Materials ({course.materials.length})
+            </h3>
           </div>
-          <div className="space-y-4">
-            {course.materials.map((material) => (
+          <div className='space-y-4'>
+            {course.materials.map(material => (
               <Card key={material.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                <CardContent className='p-4'>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center space-x-3'>
                       {getMaterialIcon(material.type)}
                       <div>
-                        <h4 className="font-semibold">{material.name}</h4>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {material.type} {material.size && `• ${material.size}`}
+                        <h4 className='font-semibold'>{material.name}</h4>
+                        <p className='text-sm text-muted-foreground capitalize'>
+                          {material.type}{' '}
+                          {material.size && `• ${material.size}`}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <Download className="h-3 w-3" />
+                    <div className='text-right text-sm text-muted-foreground'>
+                      <div className='flex items-center space-x-1'>
+                        <Download className='h-3 w-3' />
                         <span>{material.downloadCount} downloads</span>
                       </div>
                     </div>
@@ -689,35 +780,47 @@ export default function CourseDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="details" className="space-y-4">
+        <TabsContent value='details' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle>Course Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Course ID</label>
-                  <p className="font-mono">{course.id}</p>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Course ID
+                  </label>
+                  <p className='font-mono'>{course.id}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Category</label>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Category
+                  </label>
                   <p>{course.category}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Level</label>
-                  <p className="capitalize">{course.level}</p>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Level
+                  </label>
+                  <p className='capitalize'>{course.level}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <p className="capitalize">{course.status}</p>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Status
+                  </label>
+                  <p className='capitalize'>{course.status}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Created</label>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Created
+                  </label>
                   <p>{new Date(course.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                  <label className='text-sm font-medium text-muted-foreground'>
+                    Last Updated
+                  </label>
                   <p>{new Date(course.lastUpdated).toLocaleDateString()}</p>
                 </div>
               </div>

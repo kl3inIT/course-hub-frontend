@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import type React from "react"
+import type React from 'react'
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   BookOpen,
   Users,
@@ -15,20 +15,22 @@ import {
   Play,
   CheckCircle,
   Search,
-} from "lucide-react"
-import { Navbar } from "@/components/layout/navbar"
-import { CourseCard } from "@/components/courses/course-card"
-import { TestimonialsSection } from "@/components/testimonials/testimonials-section"
-import { Footer } from "@/components/layout/footer"
-import { categoryApi } from "@/api/category-api"
-import { courseApi } from "@/api/course-api"
-import { CategoryResponseDTO } from "@/types/category"
-import { CourseResponseDTO } from "@/types/course"
+} from 'lucide-react'
+import { Navbar } from '@/components/layout/navbar'
+import { CourseCard } from '@/components/courses/course-card'
+import { TestimonialsSection } from '@/components/testimonials-section'
+import { Footer } from '@/components/layout/footer'
+import { categoryApi } from '@/api/category-api'
+import { courseApi } from '@/api/course-api'
+import { CategoryResponseDTO } from '@/types/category'
+import { CourseResponseDTO } from '@/types/course'
 
 export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
-  const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>([])
+  const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>(
+    []
+  )
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingFeaturedCourses, setLoadingFeaturedCourses] = useState(false)
 
@@ -37,8 +39,11 @@ export default function HomePage() {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        const response = await categoryApi.getAllCategories({ page: 0, size: 6 })
-        
+        const response = await categoryApi.getAllCategories({
+          page: 0,
+          size: 6,
+        })
+
         // Sort by courseCount descending if available
         const sortedCategories = response.data.content.sort((a, b) => {
           const aCount = a.courseCount || 0
@@ -61,7 +66,10 @@ export default function HomePage() {
     const fetchFeaturedCourses = async () => {
       try {
         setLoadingFeaturedCourses(true)
-        const response = await courseApi.getFeaturedCourses({ page: 0, size: 6 })
+        const response = await courseApi.getFeaturedCourses({
+          page: 0,
+          size: 6,
+        })
         setFeaturedCourses(response.data)
       } catch (error) {
         console.error('Failed to fetch featured courses:', error)
@@ -81,45 +89,49 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       {/* Header with Navigation */}
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative h-[600px] md:h-[700px] overflow-hidden">
-        <div className="absolute inset-0">
+      <section className='relative h-[600px] md:h-[700px] overflow-hidden'>
+        <div className='absolute inset-0'>
           <img
-            src="https://img.freepik.com/free-photo/elevated-view-laptop-stationeries-blue-backdrop_23-2147880457.jpg?semt=ais_items_boosted&w=740"
-            alt="Students learning together"
-            className="w-full h-full object-cover"
+            src='https://img.freepik.com/free-photo/elevated-view-laptop-stationeries-blue-backdrop_23-2147880457.jpg?semt=ais_items_boosted&w=740'
+            alt='Students learning together'
+            className='w-full h-full object-cover'
           />
-          <div className="absolute inset-0 bg-black/40"></div>
+          <div className='absolute inset-0 bg-black/40'></div>
         </div>
 
-        <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl text-white space-y-6">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
+        <div className='relative z-10 container mx-auto px-4 h-full flex items-center'>
+          <div className='max-w-2xl text-white space-y-6'>
+            <div className='inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium'>
               🚀 Join 50,000+ learners worldwide
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className='text-4xl md:text-5xl lg:text-6xl font-bold leading-tight'>
               Transform Your
-              <span className="block text-yellow-400">Career Today</span>
+              <span className='block text-yellow-400'>Career Today</span>
             </h1>
-            <p className="text-xl leading-relaxed opacity-90">
-              Access thousands of high-quality courses taught by industry experts. Learn at your own pace and advance
-              your skills with hands-on projects.
+            <p className='text-xl leading-relaxed opacity-90'>
+              Access thousands of high-quality courses taught by industry
+              experts. Learn at your own pace and advance your skills with
+              hands-on projects.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="/courses">
-                <Button size="lg" className="text-lg px-8 py-6 bg-primary hover:bg-primary/90">
+            <div className='flex flex-col sm:flex-row gap-4 pt-4'>
+              <Link href='/courses'>
+                <Button
+                  size='lg'
+                  className='text-lg px-8 py-6 bg-primary hover:bg-primary/90'
+                >
                   Start Learning Now
                 </Button>
               </Link>
-              <Link href="/register">
+              <Link href='/register'>
                 <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-lg px-8 py-6 border-white text-black hover:bg-white hover:text-black"
+                  size='lg'
+                  variant='outline'
+                  className='text-lg px-8 py-6 border-white text-black hover:bg-white hover:text-black'
                 >
                   Sign Up Free
                 </Button>
@@ -130,20 +142,23 @@ export default function HomePage() {
       </section>
 
       {/* Course Search Bar */}
-      <section className="py-12 px-4 bg-muted/50">
-        <div className="container mx-auto">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <h2 className="text-2xl font-bold">Find Your Perfect Course</h2>
-            <form onSubmit={handleSearch} className="relative">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+      <section className='py-12 px-4 bg-muted/50'>
+        <div className='container mx-auto'>
+          <div className='max-w-2xl mx-auto text-center space-y-6'>
+            <h2 className='text-2xl font-bold'>Find Your Perfect Course</h2>
+            <form onSubmit={handleSearch} className='relative'>
+              <div className='relative'>
+                <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5' />
                 <Input
-                  placeholder="Search for courses, skills, or topics..."
+                  placeholder='Search for courses, skills, or topics...'
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-24 h-14 text-lg"
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className='pl-12 pr-24 h-14 text-lg'
                 />
-                <Button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <Button
+                  type='submit'
+                  className='absolute right-2 top-1/2 transform -translate-y-1/2'
+                >
                   Search
                 </Button>
               </div>
@@ -153,55 +168,57 @@ export default function HomePage() {
       </section>
 
       {/* Featured Courses */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Featured Courses</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+      <section className='py-16 px-4'>
+        <div className='container mx-auto space-y-8'>
+          <div className='text-center space-y-4'>
+            <h2 className='text-3xl font-bold'>Featured Courses</h2>
+            <p className='text-muted-foreground max-w-2xl mx-auto'>
               Discover our most popular courses taught by industry experts
             </p>
           </div>
 
           {loadingFeaturedCourses ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <div className="aspect-video bg-muted rounded-lg mb-4"></div>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Card key={i} className='animate-pulse'>
+                  <div className='aspect-video bg-muted rounded-lg mb-4'></div>
                   <CardHeader>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className='space-y-2'>
+                      <div className='h-4 bg-muted rounded w-3/4'></div>
+                      <div className='h-3 bg-muted rounded w-1/2'></div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-muted rounded w-full"></div>
-                      <div className="h-3 bg-muted rounded w-2/3"></div>
+                    <div className='space-y-2'>
+                      <div className='h-3 bg-muted rounded w-full'></div>
+                      <div className='h-3 bg-muted rounded w-2/3'></div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : featuredCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredCourses.map((course) => (
-                <CourseCard 
-                  key={course.id} 
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {featuredCourses.map(course => (
+                <CourseCard
+                  key={course.id}
                   course={course}
-                  variant="default"
+                  variant='default'
                   showInstructor={true}
                 />
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No featured courses available at the moment.</p>
+            <div className='text-center py-12'>
+              <p className='text-muted-foreground'>
+                No featured courses available at the moment.
+              </p>
             </div>
           )}
 
-          <div className="text-center">
-            <Link href="/courses">
-              <Button variant="outline" size="lg">
+          <div className='text-center'>
+            <Link href='/courses'>
+              <Button variant='outline' size='lg'>
                 View All Courses
               </Button>
             </Link>
@@ -210,49 +227,57 @@ export default function HomePage() {
       </section>
 
       {/* Course Categories - Updated with real API data */}
-      <section className="py-16 px-4 bg-muted/50">
-        <div className="container mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Explore Categories</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose from a wide range of categories to find the perfect course for your goals
+      <section className='py-16 px-4 bg-muted/50'>
+        <div className='container mx-auto space-y-8'>
+          <div className='text-center space-y-4'>
+            <h2 className='text-3xl font-bold'>Explore Categories</h2>
+            <p className='text-muted-foreground max-w-2xl mx-auto'>
+              Choose from a wide range of categories to find the perfect course
+              for your goals
             </p>
           </div>
 
           {loadingCategories ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="animate-pulse">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Card key={i} className='animate-pulse'>
                   <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-muted rounded-lg"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 bg-muted rounded w-24"></div>
-                        <div className="h-3 bg-muted rounded w-16"></div>
+                    <div className='flex items-center gap-4'>
+                      <div className='w-12 h-12 bg-muted rounded-lg'></div>
+                      <div className='space-y-2'>
+                        <div className='h-4 bg-muted rounded w-24'></div>
+                        <div className='h-3 bg-muted rounded w-16'></div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-4 bg-muted rounded w-full"></div>
+                    <div className='h-4 bg-muted rounded w-full'></div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {categories.map((category) => (
-                <Link key={category.id} href={`/courses?category=${encodeURIComponent(category.name)}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {categories.map(category => (
+                <Link
+                  key={category.id}
+                  href={`/courses?category=${encodeURIComponent(category.name)}`}
+                >
+                  <Card className='hover:shadow-lg transition-shadow cursor-pointer h-full'>
                     <CardHeader>
-                      <div className="space-y-2">
-                        <CardTitle className="text-lg">{category.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
+                      <div className='space-y-2'>
+                        <CardTitle className='text-lg'>
+                          {category.name}
+                        </CardTitle>
+                        <p className='text-sm text-muted-foreground'>
                           {category.courseCount || 0} courses
                         </p>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">{category.description}</p>
+                      <p className='text-muted-foreground'>
+                        {category.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -261,14 +286,16 @@ export default function HomePage() {
           )}
 
           {!loadingCategories && categories.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No categories available at the moment.</p>
+            <div className='text-center py-12'>
+              <p className='text-muted-foreground'>
+                No categories available at the moment.
+              </p>
             </div>
           )}
 
-          <div className="text-center">
-            <Link href="/courses">
-              <Button variant="outline" size="lg">
+          <div className='text-center'>
+            <Link href='/courses'>
+              <Button variant='outline' size='lg'>
                 View All Courses
               </Button>
             </Link>
@@ -277,82 +304,89 @@ export default function HomePage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Why Choose LearnHub?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+      <section className='py-16 px-4'>
+        <div className='container mx-auto space-y-8'>
+          <div className='text-center space-y-4'>
+            <h2 className='text-3xl font-bold'>Why Choose LearnHub?</h2>
+            <p className='text-muted-foreground max-w-2xl mx-auto'>
               We provide the best learning experience with cutting-edge features
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
             <Card>
               <CardHeader>
-                <Play className="h-8 w-8 text-primary mb-2" />
+                <Play className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Interactive Learning</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Engage with interactive video lessons, quizzes, and hands-on projects
+                <p className='text-muted-foreground'>
+                  Engage with interactive video lessons, quizzes, and hands-on
+                  projects
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <Users className="h-8 w-8 text-primary mb-2" />
+                <Users className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Expert Instructors</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Learn from industry professionals with years of real-world experience
+                <p className='text-muted-foreground'>
+                  Learn from industry professionals with years of real-world
+                  experience
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CheckCircle className="h-8 w-8 text-primary mb-2" />
+                <CheckCircle className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Progress Tracking</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Monitor your learning progress and earn certificates upon completion
+                <p className='text-muted-foreground'>
+                  Monitor your learning progress and earn certificates upon
+                  completion
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <Award className="h-8 w-8 text-primary mb-2" />
+                <Award className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Certificates</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Earn industry-recognized certificates to boost your career prospects
+                <p className='text-muted-foreground'>
+                  Earn industry-recognized certificates to boost your career
+                  prospects
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <BookOpen className="h-8 w-8 text-primary mb-2" />
+                <BookOpen className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Lifetime Access</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Get lifetime access to course materials and updates</p>
+                <p className='text-muted-foreground'>
+                  Get lifetime access to course materials and updates
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <Star className="h-8 w-8 text-primary mb-2" />
+                <Star className='h-8 w-8 text-primary mb-2' />
                 <CardTitle>Community Support</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Join a vibrant community of learners and get help when you need it
+                <p className='text-muted-foreground'>
+                  Join a vibrant community of learners and get help when you
+                  need it
                 </p>
               </CardContent>
             </Card>
@@ -364,50 +398,50 @@ export default function HomePage() {
       <TestimonialsSection />
 
       {/* Stats Section */}
-      <section className="py-16 px-4 bg-muted/50">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            <div className="space-y-2">
-              <div className="flex justify-center">
-                <Users className="h-12 w-12 text-primary" />
+      <section className='py-16 px-4 bg-muted/50'>
+        <div className='container mx-auto'>
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-8 text-center'>
+            <div className='space-y-2'>
+              <div className='flex justify-center'>
+                <Users className='h-12 w-12 text-primary' />
               </div>
-              <h3 className="text-3xl font-bold">50,000+</h3>
-              <p className="text-muted-foreground">Active Students</p>
+              <h3 className='text-3xl font-bold'>50,000+</h3>
+              <p className='text-muted-foreground'>Active Students</p>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-center">
-                <BookOpen className="h-12 w-12 text-primary" />
+            <div className='space-y-2'>
+              <div className='flex justify-center'>
+                <BookOpen className='h-12 w-12 text-primary' />
               </div>
-              <h3 className="text-3xl font-bold">1,000+</h3>
-              <p className="text-muted-foreground">Online Courses</p>
+              <h3 className='text-3xl font-bold'>1,000+</h3>
+              <p className='text-muted-foreground'>Online Courses</p>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-center">
-                <Award className="h-12 w-12 text-primary" />
+            <div className='space-y-2'>
+              <div className='flex justify-center'>
+                <Award className='h-12 w-12 text-primary' />
               </div>
-              <h3 className="text-3xl font-bold">95%</h3>
-              <p className="text-muted-foreground">Success Rate</p>
+              <h3 className='text-3xl font-bold'>95%</h3>
+              <p className='text-muted-foreground'>Success Rate</p>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-center">
-                <Star className="h-12 w-12 text-primary" />
+            <div className='space-y-2'>
+              <div className='flex justify-center'>
+                <Star className='h-12 w-12 text-primary' />
               </div>
-              <h3 className="text-3xl font-bold">4.8/5</h3>
-              <p className="text-muted-foreground">Average Rating</p>
+              <h3 className='text-3xl font-bold'>4.8/5</h3>
+              <p className='text-muted-foreground'>Average Rating</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-primary text-primary-foreground">
-        <div className="container mx-auto text-center space-y-8">
-          <h2 className="text-3xl font-bold">Ready to Start Learning?</h2>
-          <p className="text-xl opacity-90 max-w-2xl mx-auto">
+      <section className='py-20 px-4 bg-primary text-primary-foreground'>
+        <div className='container mx-auto text-center space-y-8'>
+          <h2 className='text-3xl font-bold'>Ready to Start Learning?</h2>
+          <p className='text-xl opacity-90 max-w-2xl mx-auto'>
             Join thousands of students already learning on LearnHub
           </p>
-          <Link href="/register">
-            <Button size="lg" variant="secondary" className="text-lg px-8">
+          <Link href='/register'>
+            <Button size='lg' variant='secondary' className='text-lg px-8'>
               Get Started Today
             </Button>
           </Link>

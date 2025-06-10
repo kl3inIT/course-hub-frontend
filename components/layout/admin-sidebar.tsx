@@ -1,8 +1,16 @@
-"use client"
+'use client'
 
-import { Home, Settings, Shield, BarChart3, LogOut, Users, CreditCard } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import {
+  Home,
+  Settings,
+  Shield,
+  BarChart3,
+  LogOut,
+  Users,
+  CreditCard,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Sidebar,
   SidebarContent,
@@ -11,42 +19,42 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+  SidebarMenu,
+} from '@/components/ui/sidebar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/context/auth-context"
-import { RoleBadge } from "@/components/ui/role-badge"
+} from '@/components/ui/dropdown-menu'
+import { useAuth } from '@/context/auth-context'
+import { RoleBadge } from '@/components/ui/role-badge'
 
 const navigationItems = [
   {
-    title: "Overview",
-    url: "/admin",
+    title: 'Overview',
+    url: '/admin',
     icon: BarChart3,
   },
   {
-    title: "User Management",
-    url: "/admin/users",
+    title: 'User Management',
+    url: '/admin/users',
     icon: Users,
   },
   {
-    title: "Transaction Management",
-    url: "/admin/transactions",
+    title: 'Transaction Management',
+    url: '/admin/transactions',
     icon: CreditCard,
   },
   {
-    title: "System Settings",
-    url: "/admin/settings",
+    title: 'System Settings',
+    url: '/admin/settings',
     icon: Settings,
   },
 ]
@@ -57,26 +65,28 @@ export function AdminSidebar() {
 
   const handleLogout = () => {
     logout()
-    router.push("/")
+    router.push('/')
   }
 
   const handleHomeNavigation = () => {
-    router.push("/")
+    router.push('/')
   }
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant='inset'>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <div className="flex items-center gap-2">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Shield className="size-4" />
+            <SidebarMenuButton size='lg' asChild>
+              <div className='flex items-center gap-2'>
+                <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground'>
+                  <Shield className='size-4' />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Admin Panel</span>
-                  <span className="truncate text-xs">System Administration</span>
+                <div className='grid flex-1 text-left text-sm leading-tight'>
+                  <span className='truncate font-semibold'>Admin Panel</span>
+                  <span className='truncate text-xs'>
+                    System Administration
+                  </span>
                 </div>
               </div>
             </SidebarMenuButton>
@@ -91,8 +101,12 @@ export function AdminSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Button variant="ghost" onClick={handleHomeNavigation} className="w-full justify-start">
-                    <Home className="mr-2 h-4 w-4" />
+                  <Button
+                    variant='ghost'
+                    onClick={handleHomeNavigation}
+                    className='w-full justify-start'
+                  >
+                    <Home className='mr-2 h-4 w-4' />
                     Back to Home
                   </Button>
                 </SidebarMenuButton>
@@ -105,11 +119,11 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
+              {navigationItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url} className="flex items-center">
-                      <item.icon className="mr-2 h-4 w-4" />
+                    <Link href={item.url} className='flex items-center'>
+                      <item.icon className='mr-2 h-4 w-4' />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -126,44 +140,46 @@ export function AdminSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  size='lg'
+                  className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                    <AvatarFallback className="rounded-lg">
+                  <Avatar className='h-8 w-8 rounded-lg'>
+                    <AvatarImage src='/placeholder.svg?height=32&width=32' />
+                    <AvatarFallback className='rounded-lg'>
                       {user?.name
                         ? user.name
-                            .split(" ")
+                            .split(' ')
                             .map((n: string) => n[0])
-                            .join("")
+                            .join('')
                         : user?.email[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name || user?.email}</span>
-                    <span className="truncate text-xs">{user?.email}</span>
+                  <div className='grid flex-1 text-left text-sm leading-tight'>
+                    <span className='truncate font-semibold'>
+                      {user?.name || user?.email}
+                    </span>
+                    <span className='truncate text-xs'>{user?.email}</span>
                   </div>
-                  <div className="ml-auto">
-                    <RoleBadge role={user?.role || "admin"} size="sm" />
+                  <div className='ml-auto'>
+                    <RoleBadge role={user?.role || 'admin'} size='sm' />
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
+                className='w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg'
+                side='bottom'
+                align='end'
                 sideOffset={4}
               >
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <Settings className="mr-2 h-4 w-4" />
+                  <Link href='/profile'>
+                    <Settings className='mr-2 h-4 w-4' />
                     Profile Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOut className='mr-2 h-4 w-4' />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

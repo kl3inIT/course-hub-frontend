@@ -1,24 +1,30 @@
 'use client'
 
-<<<<<<< HEAD
-import { Home, BookOpen, Users, BarChart3, PlusCircle, Settings, LogOut, Star, Tags, DollarSign } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-=======
 import {
-  Home,
-  BookOpen,
-  Users,
   BarChart3,
+  BookOpen,
+  DollarSign,
+  Home,
+  LogOut,
   PlusCircle,
   Settings,
-  LogOut,
   Star,
   Tags,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
->>>>>>> 6db9cb2bbb689c9eab506c8cb9e745708d5148ab
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { RoleBadge } from '@/components/ui/role-badge'
 import {
   Sidebar,
   SidebarContent,
@@ -32,17 +38,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/context/auth-context'
-import { RoleBadge } from '@/components/ui/role-badge'
 
 const navigationItems = [
   {
@@ -91,8 +87,8 @@ export function ManagerSidebar() {
   const { user, logout } = useAuth()
   const router = useRouter()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     router.push('/')
   }
 

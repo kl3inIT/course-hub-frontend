@@ -74,7 +74,7 @@ httpClient.interceptors.request.use(
 httpClient.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !localStorage.getItem('isLoggingOut')) {
       // Handle unauthorized access
       localStorage.removeItem('accessToken')
       window.location.href = '/login'

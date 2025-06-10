@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { categoryApi } from '@/api/category-api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,25 +14,25 @@ import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
+  NavigationMenuTrigger
 } from '@/components/ui/navigation-menu'
+import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { useAuth } from '@/context/auth-context'
+import { CategoryResponseDTO } from '@/types/category'
 import {
   BookOpen,
-  LogOut,
-  Settings,
-  Menu,
-  GraduationCap,
-  Users,
-  Shield,
   ChevronDown,
+  GraduationCap,
+  LogOut,
+  Menu,
+  Settings,
+  Shield
 } from 'lucide-react'
-import { useAuth } from '@/context/auth-context'
-import { RoleBadge } from '@/components/ui/role-badge'
-import { categoryApi } from '@/api/category-api'
-import { CategoryResponseDTO } from '@/types/category'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export function Navbar() {
   const { user, logout } = useAuth()

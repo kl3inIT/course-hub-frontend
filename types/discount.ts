@@ -21,4 +21,4 @@ export interface DiscountSearchParams {
   sort?: string
   search?: string
   isValid?: boolean
-} 
+}

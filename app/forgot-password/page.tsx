@@ -1,22 +1,35 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Mail, CheckCircle, AlertCircle, Clock, RefreshCw } from "lucide-react"
-import Link from "next/link"
-import { Navbar } from "@/components/layout/navbar"
-import { OTPConfirmation } from "@/components/auth/otp-confirmation"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  ArrowLeft,
+  Mail,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  RefreshCw,
+} from 'lucide-react'
+import Link from 'next/link'
+import { Navbar } from '@/components/layout/navbar'
+import { OTPConfirmation } from '@/components/auth/otp-confirmation'
+import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [error, setError] = useState('')
   const [showOTPInput, setShowOTPInput] = useState(false)
   const [attempts, setAttempts] = useState(0)
   const [isRateLimited, setIsRateLimited] = useState(false)
@@ -29,31 +42,36 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
 
     if (isRateLimited) {
-      setError(`Too many attempts. Please wait ${Math.ceil(timeRemaining / 60)} minutes before trying again.`)
+      setError(
+        `Too many attempts. Please wait ${Math.ceil(timeRemaining / 60)} minutes before trying again.`
+      )
       return
     }
 
     setIsLoading(true)
-    setError("")
+    setError('')
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address")
+      setError('Please enter a valid email address')
       setIsLoading(false)
       return
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/forgot-password/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+      const response = await fetch(
+        'http://localhost:8080/api/auth/forgot-password/send-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      )
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send verification code');
+        throw new Error(data.message || 'Failed to send verification code')
       }
 
       setShowOTPInput(true)
@@ -65,7 +83,7 @@ export default function ForgotPasswordPage() {
         setTimeRemaining(RATE_LIMIT_DURATION)
 
         const timer = setInterval(() => {
-          setTimeRemaining((prev) => {
+          setTimeRemaining(prev => {
             if (prev <= 1) {
               clearInterval(timer)
               setIsRateLimited(false)
@@ -77,7 +95,7 @@ export default function ForgotPasswordPage() {
         }, 1000)
       }
     } catch (error: any) {
-      setError(error.message || "Failed to send verification code")
+      setError(error.message || 'Failed to send verification code')
     } finally {
       setIsLoading(false)
     }
@@ -87,11 +105,11 @@ export default function ForgotPasswordPage() {
   const handleOTPSuccess = async (data: any) => {
     try {
       // Lưu email vào localStorage trước khi chuyển trang
-      localStorage.setItem('reset_password_email', email);
+      localStorage.setItem('reset_password_email', email)
       // Chuyển trang không cần param
-      router.push('/reset-password');
+      router.push('/reset-password')
     } catch (error: any) {
-      setError(error.message || "Failed to proceed to reset password");
+      setError(error.message || 'Failed to proceed to reset password')
     }
   }
 
@@ -101,24 +119,23 @@ export default function ForgotPasswordPage() {
     // Hoặc reset trạng thái, chuyển về bước nhập email,...
   }
 
-
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
   if (showOTPInput) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className='min-h-screen bg-background'>
         <Navbar />
-        <div className="container mx-auto px-4 py-16">
+        <div className='container mx-auto px-4 py-16'>
           <OTPConfirmation
-            type="password-reset"
+            type='password-reset'
             destination={email}
             onSuccess={handleOTPSuccess}
             onBack={handleBackToEmail}
-            title="Verify Reset Code"
+            title='Verify Reset Code'
             description={`We've sent a 6-digit verification code to ${email}`}
           />
         </div>
@@ -127,99 +144,112 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       <Navbar />
-      <div className="container mx-auto px-4 py-16">
-        <Card className="w-full max-w-md mx-auto">
+      <div className='container mx-auto px-4 py-16'>
+        <Card className='w-full max-w-md mx-auto'>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
+            <CardTitle className='flex items-center gap-2'>
+              <Mail className='h-5 w-5' />
               Reset Your Password
             </CardTitle>
             <CardDescription>
-              Enter your email address and we'll send you a verification code to reset your password.
+              Enter your email address and we'll send you a verification code to
+              reset your password.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className='space-y-4'>
               {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
+                <Alert variant='destructive'>
+                  <AlertCircle className='h-4 w-4' />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               {isRateLimited && (
                 <Alert>
-                  <Clock className="h-4 w-4" />
-                  <AlertDescription>Rate limit active. Time remaining: {formatTime(timeRemaining)}</AlertDescription>
+                  <Clock className='h-4 w-4' />
+                  <AlertDescription>
+                    Rate limit active. Time remaining:{' '}
+                    {formatTime(timeRemaining)}
+                  </AlertDescription>
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+              <div className='space-y-2'>
+                <Label htmlFor='email'>Email Address</Label>
                 <Input
-                  id="email"
-                  type="email"
+                  id='email'
+                  type='email'
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder='Enter your email address'
                   required
                   disabled={isLoading || isRateLimited}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className='text-xs text-muted-foreground'>
                   We'll send a 6-digit verification code to this email address.
                 </p>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading || isRateLimited}>
+              <Button
+                type='submit'
+                className='w-full'
+                disabled={isLoading || isRateLimited}
+              >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
                     Sending Code...
                   </>
                 ) : (
-                  "Send Verification Code"
+                  'Send Verification Code'
                 )}
               </Button>
 
-              <div className="text-center text-sm text-muted-foreground">
+              <div className='text-center text-sm text-muted-foreground'>
                 Attempts remaining: {MAX_ATTEMPTS - attempts}
               </div>
             </form>
 
-            <div className="mt-6 space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
+            <div className='mt-6 space-y-4'>
+              <div className='relative'>
+                <div className='absolute inset-0 flex items-center'>
+                  <div className='w-full border-t' />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Security Information</span>
+                <div className='relative flex justify-center text-xs uppercase'>
+                  <span className='bg-background px-2 text-muted-foreground'>
+                    Security Information
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
+              <div className='space-y-2 text-xs text-muted-foreground'>
+                <div className='flex items-center gap-2'>
+                  <CheckCircle className='h-3 w-3 text-green-600' />
                   <span>OTP codes expire after 10 minutes</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
+                <div className='flex items-center gap-2'>
+                  <CheckCircle className='h-3 w-3 text-green-600' />
                   <span>Secure 6-digit verification codes</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
+                <div className='flex items-center gap-2'>
+                  <CheckCircle className='h-3 w-3 text-green-600' />
                   <span>Rate limiting prevents abuse</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-600" />
+                <div className='flex items-center gap-2'>
+                  <CheckCircle className='h-3 w-3 text-green-600' />
                   <span>Email enumeration protection</span>
                 </div>
               </div>
 
-              <div className="text-center">
-                <Link href="/login" className="text-sm text-primary hover:underline">
-                  <ArrowLeft className="h-3 w-3 inline mr-1" />
+              <div className='text-center'>
+                <Link
+                  href='/login'
+                  className='text-sm text-primary hover:underline'
+                >
+                  <ArrowLeft className='h-3 w-3 inline mr-1' />
                   Back to Sign In
                 </Link>
               </div>

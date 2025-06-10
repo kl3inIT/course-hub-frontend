@@ -1,13 +1,27 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { useState, useEffect, useCallback, memo } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { MessageSquare, ThumbsUp, Reply, Flag, Trash2, MoreVertical, Pencil } from "lucide-react"
+import type React from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import {
+  MessageSquare,
+  ThumbsUp,
+  Reply,
+  Flag,
+  Trash2,
+  MoreVertical,
+  Pencil,
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -15,18 +29,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { toast } from "sonner"
-import { commentApi } from "@/api/comment-api"
-import { CommentDisplayData, transformComment } from "@/types/comment"
+} from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { toast } from 'sonner'
+import { commentApi } from '@/api/comment-api'
+import { CommentDisplayData, transformComment } from '@/types/comment'
 
 interface DiscussionSectionProps {
   courseId: string
@@ -34,10 +48,10 @@ interface DiscussionSectionProps {
 }
 
 const reportReasons = [
-  { id: "spam", label: "Spam or advertising" },
-  { id: "inappropriate", label: "Inappropriate content" },
-  { id: "harassment", label: "Harassment or bullying" },
-  { id: "other", label: "Other reason" },
+  { id: 'spam', label: 'Spam or advertising' },
+  { id: 'inappropriate', label: 'Inappropriate content' },
+  { id: 'harassment', label: 'Harassment or bullying' },
+  { id: 'other', label: 'Other reason' },
 ]
 
 interface CommentComponentProps {
@@ -63,12 +77,12 @@ const CommentComponentBase = ({
   onDelete,
   onEdit,
   replyTo,
-  onSubmitReply
+  onSubmitReply,
 }: CommentComponentProps) => {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
-  const [reportReason, setReportReason] = useState("")
-  const [reportDescription, setReportDescription] = useState("")
-  const [localReplyContent, setLocalReplyContent] = useState("")
+  const [reportReason, setReportReason] = useState('')
+  const [reportDescription, setReportDescription] = useState('')
+  const [localReplyContent, setLocalReplyContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
@@ -76,8 +90,8 @@ const CommentComponentBase = ({
   const handleReportSubmit = useCallback(() => {
     onReport(comment.id, reportReason, reportDescription)
     setIsReportDialogOpen(false)
-    setReportReason("")
-    setReportDescription("")
+    setReportReason('')
+    setReportDescription('')
   }, [comment.id, reportReason, reportDescription, onReport])
 
   const handleLocalReplySubmit = async (e: React.FormEvent) => {
@@ -87,7 +101,7 @@ const CommentComponentBase = ({
     setIsSubmitting(true)
     try {
       await onSubmitReply(comment.id, localReplyContent)
-      setLocalReplyContent("")
+      setLocalReplyContent('')
     } finally {
       setIsSubmitting(false)
     }
@@ -102,7 +116,7 @@ const CommentComponentBase = ({
       await onEdit(comment.id, editContent)
       setIsEditing(false)
     } catch (error) {
-      console.error("Error editing comment:", error)
+      console.error('Error editing comment:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -110,18 +124,21 @@ const CommentComponentBase = ({
 
   if (comment.isHidden) {
     return (
-      <div className={`space-y-3 ${isReply ? "ml-8 border-l-2 border-muted pl-4" : ""}`}>
-        <div className="flex items-start gap-3">
-          <div className="h-8 w-8"></div>
-          <div className="flex-1 space-y-2">
-            <p className="text-sm text-muted-foreground italic">
-              This comment has been hidden due to violation of community guidelines.
+      <div
+        className={`space-y-3 ${isReply ? 'ml-8 border-l-2 border-muted pl-4' : ''}`}
+      >
+        <div className='flex items-start gap-3'>
+          <div className='h-8 w-8'></div>
+          <div className='flex-1 space-y-2'>
+            <p className='text-sm text-muted-foreground italic'>
+              This comment has been hidden due to violation of community
+              guidelines.
             </p>
           </div>
         </div>
         {comment.replies.length > 0 && (
-          <div className="space-y-3">
-            {comment.replies.map((reply) => (
+          <div className='space-y-3'>
+            {comment.replies.map(reply => (
               <CommentComponent
                 key={reply.id}
                 comment={reply}
@@ -142,54 +159,69 @@ const CommentComponentBase = ({
     )
   }
 
-  const isDescriptionRequired = reportReason === "other"
-  const isSubmitDisabled = !reportReason || (isDescriptionRequired && !reportDescription.trim())
+  const isDescriptionRequired = reportReason === 'other'
+  const isSubmitDisabled =
+    !reportReason || (isDescriptionRequired && !reportDescription.trim())
 
   return (
-    <div className={`space-y-3 ${isReply ? "ml-8 border-l-2 border-muted pl-4" : ""}`}>
-      <div className="flex items-start gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={comment.avatar || `/placeholder.svg?height=32&width=32`} />
+    <div
+      className={`space-y-3 ${isReply ? 'ml-8 border-l-2 border-muted pl-4' : ''}`}
+    >
+      <div className='flex items-start gap-3'>
+        <Avatar className='h-8 w-8'>
+          <AvatarImage
+            src={comment.avatar || `/placeholder.svg?height=32&width=32`}
+          />
           <AvatarFallback>
             {comment.author
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+              .split(' ')
+              .map(n => n[0])
+              .join('')}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-sm">{comment.author}</span>
+        <div className='flex-1 space-y-2'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <span className='font-medium text-sm'>{comment.author}</span>
               {comment.isManager && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant='secondary' className='text-xs'>
                   Manager
                 </Badge>
               )}
-              <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+              <span className='text-xs text-muted-foreground'>
+                {comment.timestamp}
+              </span>
             </div>
-            <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+            <Dialog
+              open={isReportDialogOpen}
+              onOpenChange={setIsReportDialogOpen}
+            >
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreVertical className="h-4 w-4" />
+                  <Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
+                    <MoreVertical className='h-4 w-4' />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align='end'>
                   {comment.owner ? (
                     <>
-                      <DropdownMenuItem onClick={() => onDelete(comment.id)} className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(comment.id)}
+                        className='text-destructive'
+                      >
+                        <Trash2 className='h-4 w-4 mr-2' />
                         Delete
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                        <Pencil className="h-4 w-4 mr-2" />
+                        <Pencil className='h-4 w-4 mr-2' />
                         Edit
                       </DropdownMenuItem>
                     </>
                   ) : (
-                    <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
-                      <Flag className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem
+                      onClick={() => setIsReportDialogOpen(true)}
+                    >
+                      <Flag className='h-4 w-4 mr-2' />
                       Report
                     </DropdownMenuItem>
                   )}
@@ -202,45 +234,66 @@ const CommentComponentBase = ({
                     Please let us know why you want to report this comment
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <RadioGroup value={reportReason} onValueChange={(value) => {
-                    setReportReason(value)
-                    if (value !== "other") {
-                      setReportDescription("")
-                    }
-                  }}>
-                    {reportReasons.map((reason) => (
-                      <div key={reason.id} className="flex items-center space-x-2">
+                <div className='space-y-4 py-4'>
+                  <RadioGroup
+                    value={reportReason}
+                    onValueChange={value => {
+                      setReportReason(value)
+                      if (value !== 'other') {
+                        setReportDescription('')
+                      }
+                    }}
+                  >
+                    {reportReasons.map(reason => (
+                      <div
+                        key={reason.id}
+                        className='flex items-center space-x-2'
+                      >
                         <RadioGroupItem value={reason.id} id={reason.id} />
                         <Label htmlFor={reason.id}>{reason.label}</Label>
                       </div>
                     ))}
                   </RadioGroup>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="description">
-                        Description {isDescriptionRequired ? "(required)" : "(optional)"}
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <Label htmlFor='description'>
+                        Description{' '}
+                        {isDescriptionRequired ? '(required)' : '(optional)'}
                       </Label>
                       {isDescriptionRequired && !reportDescription.trim() && (
-                        <span className="text-sm text-destructive">
+                        <span className='text-sm text-destructive'>
                           Please provide a detailed description
                         </span>
                       )}
                     </div>
                     <Textarea
-                      id="description"
+                      id='description'
                       value={reportDescription}
-                      onChange={(e) => setReportDescription(e.target.value)}
-                      placeholder={isDescriptionRequired ? "Please describe the reason for reporting in detail..." : "Add more details about the issue..."}
-                      className={isDescriptionRequired && !reportDescription.trim() ? "border-destructive" : ""}
+                      onChange={e => setReportDescription(e.target.value)}
+                      placeholder={
+                        isDescriptionRequired
+                          ? 'Please describe the reason for reporting in detail...'
+                          : 'Add more details about the issue...'
+                      }
+                      className={
+                        isDescriptionRequired && !reportDescription.trim()
+                          ? 'border-destructive'
+                          : ''
+                      }
                     />
                   </div>
                 </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>
+                <div className='flex justify-end gap-3'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setIsReportDialogOpen(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleReportSubmit} disabled={isSubmitDisabled}>
+                  <Button
+                    onClick={handleReportSubmit}
+                    disabled={isSubmitDisabled}
+                  >
                     Submit Report
                   </Button>
                 </div>
@@ -248,17 +301,17 @@ const CommentComponentBase = ({
             </Dialog>
           </div>
           {isEditing ? (
-            <form onSubmit={handleEditSubmit} className="space-y-2">
+            <form onSubmit={handleEditSubmit} className='space-y-2'>
               <Textarea
                 value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[100px]"
+                onChange={e => setEditContent(e.target.value)}
+                className='min-h-[100px]'
               />
-              <div className="flex justify-end gap-2">
+              <div className='flex justify-end gap-2'>
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
+                  type='button'
+                  variant='outline'
+                  size='sm'
                   onClick={() => {
                     setIsEditing(false)
                     setEditContent(comment.content)
@@ -268,67 +321,73 @@ const CommentComponentBase = ({
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
-                  size="sm"
+                  type='submit'
+                  size='sm'
                   disabled={!editContent.trim() || isSubmitting}
                 >
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </form>
           ) : (
-            <p className="text-sm">{comment.content}</p>
+            <p className='text-sm'>{comment.content}</p>
           )}
-          <div className="flex items-center gap-4">
+          <div className='flex items-center gap-4'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => onLike(comment.id)}
               className={`h-auto p-0 ${
-                comment.likedByCurrentUser 
-                  ? "text-blue-500 hover:text-blue-600" 
-                  : "text-muted-foreground hover:text-foreground"
+                comment.likedByCurrentUser
+                  ? 'text-blue-500 hover:text-blue-600'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <ThumbsUp className={`h-3 w-3 mr-1 ${
-                comment.likedByCurrentUser ? "fill-current" : ""
-              }`} />
+              <ThumbsUp
+                className={`h-3 w-3 mr-1 ${
+                  comment.likedByCurrentUser ? 'fill-current' : ''
+                }`}
+              />
               {comment.likeCount}
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => onReply(comment.id)}
-              className="h-auto p-0 text-muted-foreground hover:text-foreground"
+              className='h-auto p-0 text-muted-foreground hover:text-foreground'
             >
-              <Reply className="h-3 w-3 mr-1" />
+              <Reply className='h-3 w-3 mr-1' />
               Reply
             </Button>
           </div>
 
           {replyTo === comment.id && (
-            <form onSubmit={handleLocalReplySubmit} className="space-y-2">
+            <form onSubmit={handleLocalReplySubmit} className='space-y-2'>
               <Textarea
                 value={localReplyContent}
-                onChange={(e) => setLocalReplyContent(e.target.value)}
-                placeholder={isReply ? "Your reply will be added to the main thread" : "Write your reply..."}
+                onChange={e => setLocalReplyContent(e.target.value)}
+                placeholder={
+                  isReply
+                    ? 'Your reply will be added to the main thread'
+                    : 'Write your reply...'
+                }
               />
-              <div className="flex justify-end gap-2">
+              <div className='flex justify-end gap-2'>
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
+                  type='button'
+                  variant='outline'
+                  size='sm'
                   onClick={() => onReply(null)}
                   disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
-                  size="sm"
+                  type='submit'
+                  size='sm'
                   disabled={!localReplyContent.trim() || isSubmitting}
                 >
-                  {isSubmitting ? "Posting..." : "Post Reply"}
+                  {isSubmitting ? 'Posting...' : 'Post Reply'}
                 </Button>
               </div>
             </form>
@@ -337,8 +396,8 @@ const CommentComponentBase = ({
       </div>
 
       {comment.replies.length > 0 && (
-        <div className="space-y-3">
-          {comment.replies.map((reply) => (
+        <div className='space-y-3'>
+          {comment.replies.map(reply => (
             <CommentComponent
               key={reply.id}
               comment={reply}
@@ -361,15 +420,21 @@ const CommentComponentBase = ({
 
 const CommentComponent = memo(CommentComponentBase)
 
-export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps) {
+export function DiscussionSection({
+  courseId,
+  lessonId,
+}: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])
-  const [newComment, setNewComment] = useState("")
+  const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleCommentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewComment(e.target.value)
-  }, [])
+  const handleCommentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setNewComment(e.target.value)
+    },
+    []
+  )
 
   const loadComments = useCallback(async () => {
     try {
@@ -381,9 +446,9 @@ export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps
       }
     } catch (error: any) {
       if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || "Failed to load comments")
+        toast.error(error.response.data?.message || 'Failed to load comments')
       } else {
-        toast.error("Failed to load comments")
+        toast.error('Failed to load comments')
       }
       setComments([])
     } finally {
@@ -395,94 +460,112 @@ export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps
     loadComments()
   }, [loadComments])
 
-  const handleSubmitComment = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newComment.trim()) return
+  const handleSubmitComment = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!newComment.trim()) return
 
-    try {
-      setIsLoading(true)
-      const response = await commentApi.createComment(lessonId, { content: newComment })
-      if (response?.data) {
-        const newCommentData = transformComment(response.data)
-        setComments(prev => [newCommentData, ...prev])
-        setNewComment("")
-        toast.success("Comment posted successfully")
-      }
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || "Comment is too long or invalid")
-      } else {
-        toast.error("Failed to post comment")
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [lessonId, newComment])
-
-  const handleSubmitReply = useCallback(async (parentId: number, content: string) => {
-    try {
-      setIsLoading(true)
-      const response = await commentApi.createComment(lessonId, {
-        content: content,
-        parentId: parentId
-      })
-      
-      if (response?.data) {
-        const newReply = transformComment(response.data)
-        setComments(prev => {
-          return prev.map(comment => {
-            if (comment.id === parentId) {
-              return {
-                ...comment,
-                replies: [...comment.replies, newReply]
-              }
-            }
-            
-            const hasTargetReply = comment.replies.some(reply => reply.id === parentId)
-            if (hasTargetReply) {
-              return {
-                ...comment,
-                replies: [...comment.replies, newReply]
-              }
-            }
-            
-            return comment
-          })
+      try {
+        setIsLoading(true)
+        const response = await commentApi.createComment(lessonId, {
+          content: newComment,
         })
-        setReplyTo(null)
-        toast.success("Reply posted successfully")
+        if (response?.data) {
+          const newCommentData = transformComment(response.data)
+          setComments(prev => [newCommentData, ...prev])
+          setNewComment('')
+          toast.success('Comment posted successfully')
+        }
+      } catch (error: any) {
+        if (error.response?.status === 400) {
+          toast.error(
+            error.response.data?.message || 'Comment is too long or invalid'
+          )
+        } else {
+          toast.error('Failed to post comment')
+        }
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || "Reply is too long or invalid")
-      } else {
-        toast.error("Failed to post reply")
+    },
+    [lessonId, newComment]
+  )
+
+  const handleSubmitReply = useCallback(
+    async (parentId: number, content: string) => {
+      try {
+        setIsLoading(true)
+        const response = await commentApi.createComment(lessonId, {
+          content: content,
+          parentId: parentId,
+        })
+
+        if (response?.data) {
+          const newReply = transformComment(response.data)
+          setComments(prev => {
+            return prev.map(comment => {
+              if (comment.id === parentId) {
+                return {
+                  ...comment,
+                  replies: [...comment.replies, newReply],
+                }
+              }
+
+              const hasTargetReply = comment.replies.some(
+                reply => reply.id === parentId
+              )
+              if (hasTargetReply) {
+                return {
+                  ...comment,
+                  replies: [...comment.replies, newReply],
+                }
+              }
+
+              return comment
+            })
+          })
+          setReplyTo(null)
+          toast.success('Reply posted successfully')
+        }
+      } catch (error: any) {
+        if (error.response?.status === 400) {
+          toast.error(
+            error.response.data?.message || 'Reply is too long or invalid'
+          )
+        } else {
+          toast.error('Failed to post reply')
+        }
+      } finally {
+        setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [lessonId])
+    },
+    [lessonId]
+  )
 
   const handleLike = useCallback(async (commentId: number) => {
     try {
       const response = await commentApi.toggleLike(commentId)
       const isLiked = response.data
-      
+
       setComments(prev =>
         prev.map(comment => {
           if (comment.id === commentId) {
             return {
               ...comment,
-              likeCount: isLiked ? comment.likeCount + 1 : comment.likeCount - 1,
-              likedByCurrentUser: isLiked
+              likeCount: isLiked
+                ? comment.likeCount + 1
+                : comment.likeCount - 1,
+              likedByCurrentUser: isLiked,
             }
           }
           const updatedReplies = comment.replies.map(reply =>
             reply.id === commentId
               ? {
                   ...reply,
-                  likeCount: isLiked ? reply.likeCount + 1 : reply.likeCount - 1,
-                  likedByCurrentUser: isLiked
+                  likeCount: isLiked
+                    ? reply.likeCount + 1
+                    : reply.likeCount - 1,
+                  likedByCurrentUser: isLiked,
                 }
               : reply
           )
@@ -490,20 +573,23 @@ export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps
         })
       )
     } catch (error) {
-      console.error("Error toggling like:", error)
-      toast.error("Failed to update like status")
+      console.error('Error toggling like:', error)
+      toast.error('Failed to update like status')
     }
   }, [])
 
-  const handleReport = useCallback(async (commentId: number, reason: string, description?: string) => {
-    try {
-      await commentApi.reportComment(commentId, reason, description)
-      toast.success("Report submitted successfully")
-    } catch (error) {
-      console.error("Error reporting comment:", error)
-      toast.error("Failed to submit report")
-    }
-  }, [])
+  const handleReport = useCallback(
+    async (commentId: number, reason: string, description?: string) => {
+      try {
+        await commentApi.reportComment(commentId, reason, description)
+        toast.success('Report submitted successfully')
+      } catch (error) {
+        console.error('Error reporting comment:', error)
+        toast.error('Failed to submit report')
+      }
+    },
+    []
+  )
 
   const handleDelete = useCallback(async (commentId: number) => {
     try {
@@ -514,39 +600,42 @@ export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps
 
         return prev.map(comment => ({
           ...comment,
-          replies: comment.replies.filter(reply => reply.id !== commentId)
+          replies: comment.replies.filter(reply => reply.id !== commentId),
         }))
       })
-      toast.success("Comment deleted successfully")
+      toast.success('Comment deleted successfully')
     } catch (error) {
-      console.error("Error deleting comment:", error)
-      toast.error("Failed to delete comment")
+      console.error('Error deleting comment:', error)
+      toast.error('Failed to delete comment')
     }
   }, [])
 
-  const handleEdit = useCallback(async (commentId: number, newContent: string) => {
-    try {
-      const response = await commentApi.updateComment(commentId, { content: newContent })
-      const updatedComment = transformComment(response.data)
-      setComments(prev =>
-        prev.map(comment => {
-          if (comment.id === commentId) {
-            return { ...comment, content: newContent }
-          }
-          const updatedReplies = comment.replies.map(reply =>
-            reply.id === commentId
-              ? { ...reply, content: newContent }
-              : reply
-          )
-          return { ...comment, replies: updatedReplies }
+  const handleEdit = useCallback(
+    async (commentId: number, newContent: string) => {
+      try {
+        const response = await commentApi.updateComment(commentId, {
+          content: newContent,
         })
-      )
-      toast.success("Comment edited successfully")
-    } catch (error) {
-      console.error("Error editing comment:", error)
-      toast.error("Failed to edit comment")
-    }
-  }, [])
+        const updatedComment = transformComment(response.data)
+        setComments(prev =>
+          prev.map(comment => {
+            if (comment.id === commentId) {
+              return { ...comment, content: newContent }
+            }
+            const updatedReplies = comment.replies.map(reply =>
+              reply.id === commentId ? { ...reply, content: newContent } : reply
+            )
+            return { ...comment, replies: updatedReplies }
+          })
+        )
+        toast.success('Comment edited successfully')
+      } catch (error) {
+        console.error('Error editing comment:', error)
+        toast.error('Failed to edit comment')
+      }
+    },
+    []
+  )
 
   const handleReplyClick = useCallback((commentId: number | null) => {
     setReplyTo(commentId)
@@ -555,32 +644,34 @@ export function DiscussionSection({ courseId, lessonId }: DiscussionSectionProps
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
+        <CardTitle className='flex items-center gap-2'>
+          <MessageSquare className='h-5 w-5' />
           Discussion
         </CardTitle>
-        <CardDescription>Ask questions and discuss this lesson with other students</CardDescription>
+        <CardDescription>
+          Ask questions and discuss this lesson with other students
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <form onSubmit={handleSubmitComment} className="space-y-4">
+      <CardContent className='space-y-6'>
+        <form onSubmit={handleSubmitComment} className='space-y-4'>
           <Textarea
             value={newComment}
             onChange={handleCommentChange}
-            placeholder="Ask a question or share your thoughts..."
-            className="min-h-[100px]"
+            placeholder='Ask a question or share your thoughts...'
+            className='min-h-[100px]'
           />
-          <Button type="submit" disabled={isLoading || !newComment.trim()}>
+          <Button type='submit' disabled={isLoading || !newComment.trim()}>
             Post Comment
           </Button>
         </form>
 
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {isLoading && comments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className='text-center py-8 text-muted-foreground'>
               Loading comments...
             </div>
           ) : comments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className='text-center py-8 text-muted-foreground'>
               No comments yet. Be the first to start the discussion!
             </div>
           ) : (

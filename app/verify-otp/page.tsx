@@ -1,26 +1,34 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { OTPConfirmation } from "@/components/auth/otp-confirmation"
-import { Navbar } from "@/components/layout/navbar"
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { OTPConfirmation } from '@/components/auth/otp-confirmation'
+import { Navbar } from '@/components/layout/navbar'
 
 export default function VerifyOTPPage() {
   const searchParams = useSearchParams()
   const [otpData, setOtpData] = useState({
-    type: "email-verification" as "email-verification" | "password-reset" | "two-factor" | "phone-verification",
-    destination: "",
-    redirectTo: "/dashboard",
+    type: 'email-verification' as
+      | 'email-verification'
+      | 'password-reset'
+      | 'two-factor'
+      | 'phone-verification',
+    destination: '',
+    redirectTo: '/dashboard',
   })
 
   useEffect(() => {
     // Get parameters from URL
-    const type = searchParams.get("type") as "email-verification" | "password-reset" | "two-factor" | "phone-verification"
-    const destination = searchParams.get("destination") || ""
-    const redirectTo = searchParams.get("redirect") || "/dashboard"
+    const type = searchParams.get('type') as
+      | 'email-verification'
+      | 'password-reset'
+      | 'two-factor'
+      | 'phone-verification'
+    const destination = searchParams.get('destination') || ''
+    const redirectTo = searchParams.get('redirect') || '/dashboard'
 
     setOtpData({
-      type: type || "email-verification",
+      type: type || 'email-verification',
       destination: decodeURIComponent(destination),
       redirectTo,
     })
@@ -29,19 +37,19 @@ export default function VerifyOTPPage() {
   const handleSuccess = (data: any) => {
     // Handle different success scenarios based on type
     switch (otpData.type) {
-      case "email-verification":
+      case 'email-verification':
         window.location.href = otpData.redirectTo
         break
 
-      case "password-reset":
+      case 'password-reset':
         window.location.href = `/reset-password?token=${data.code}&verified=true`
         break
 
-      case "two-factor":
+      case 'two-factor':
         window.location.href = otpData.redirectTo
         break
 
-      case "phone-verification":
+      case 'phone-verification':
         window.location.href = otpData.redirectTo
         break
 
@@ -53,34 +61,37 @@ export default function VerifyOTPPage() {
   const handleBack = () => {
     // Navigate back based on type
     switch (otpData.type) {
-      case "email-verification":
-        window.location.href = "/register"
+      case 'email-verification':
+        window.location.href = '/register'
         break
-      case "password-reset":
-        window.location.href = "/login"
+      case 'password-reset':
+        window.location.href = '/login'
         break
-      case "two-factor":
-        window.location.href = "/login"
+      case 'two-factor':
+        window.location.href = '/login'
         break
-      case "phone-verification":
-        window.location.href = "/profile"
+      case 'phone-verification':
+        window.location.href = '/profile'
         break
       default:
-        window.location.href = "/"
+        window.location.href = '/'
     }
   }
 
   if (!otpData.destination) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className='min-h-screen bg-background'>
         <Navbar />
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Invalid Verification Request</h1>
-            <p className="text-muted-foreground mb-6">
-              This verification link is invalid or has expired. Please try again.
+        <div className='container mx-auto px-4 py-16'>
+          <div className='text-center'>
+            <h1 className='text-2xl font-bold mb-4'>
+              Invalid Verification Request
+            </h1>
+            <p className='text-muted-foreground mb-6'>
+              This verification link is invalid or has expired. Please try
+              again.
             </p>
-            <a href="/" className="text-primary hover:underline">
+            <a href='/' className='text-primary hover:underline'>
               Return to Home
             </a>
           </div>
@@ -90,9 +101,9 @@ export default function VerifyOTPPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       <Navbar />
-      <div className="container mx-auto px-4 py-16">
+      <div className='container mx-auto px-4 py-16'>
         <OTPConfirmation
           type={otpData.type}
           destination={otpData.destination}

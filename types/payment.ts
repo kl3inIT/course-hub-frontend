@@ -19,5 +19,5 @@ export interface PaymentResponseDTO extends BaseResponse {
 export enum PaymentStatus {
   PENDING = 'PENDING',
   COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
-} 
+  FAILED = 'FAILED',
+}

@@ -39,7 +39,7 @@ export function useTransactionCheck({
   paymentCode,
   onSuccess,
   onTimeout,
-  timeoutDuration = 60 // 1 minute in seconds
+  timeoutDuration = 60, // 1 minute in seconds
 }: UseTransactionCheckProps) {
   const [isChecking, setIsChecking] = useState(true)
   const [timeLeft, setTimeLeft] = useState(timeoutDuration)
@@ -66,7 +66,6 @@ export function useTransactionCheck({
       // If no matching transaction found
       console.log('No matching transaction found')
       return false
-
     } catch (error) {
       console.error('Error checking transaction:', error)
       return false
@@ -109,6 +108,6 @@ export function useTransactionCheck({
 
   return {
     isChecking,
-    timeLeft
+    timeLeft,
   }
-} 
+}

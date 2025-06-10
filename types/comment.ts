@@ -1,5 +1,5 @@
-import { User } from "./user"
-import { ApiResponse } from "./common"
+import { User } from './user'
+import { ApiResponse } from './common'
 
 export interface Comment {
   id: number
@@ -52,7 +52,9 @@ export type CommentResponse = ApiResponse<CommentResponseDTO>
 export type CommentsResponse = ApiResponse<CommentResponseDTO[]>
 
 // Helper function to transform API response to display data
-export const transformComment = (comment: CommentResponseDTO): CommentDisplayData => {
+export const transformComment = (
+  comment: CommentResponseDTO
+): CommentDisplayData => {
   const transformed = {
     id: comment.id,
     content: comment.content,
@@ -65,7 +67,9 @@ export const transformComment = (comment: CommentResponseDTO): CommentDisplayDat
     likedByCurrentUser: comment.likedByCurrentUser,
     userId: comment.userId,
     owner: comment.owner,
-    replies: Array.isArray(comment.replies) ? comment.replies.map(transformComment) : []
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.map(transformComment)
+      : [],
   }
   return transformed
-} 
+}

@@ -1,40 +1,54 @@
-import { httpClient } from "@/api/http-client"
-import { ApiResponse, Page } from "@/types/common"
-import { 
+import { httpClient } from '@/api/http-client'
+import { ApiResponse, Page } from '@/types/common'
+import {
   LessonUploadRequestDTO,
   LessonConfirmRequestDTO,
   LessonResponseDTO,
-  LessonUploadResponseDTO
-} from "@/types/lesson"
-import { CategoryRequestDTO, CategoryResponseDTO, CategorySearchParams } from "@/types/category"
+  LessonUploadResponseDTO,
+} from '@/types/lesson'
+import {
+  CategoryRequestDTO,
+  CategoryResponseDTO,
+  CategorySearchParams,
+} from '@/types/category'
 
 export const lessonApi = {
   // Chuẩn bị upload video
   prepareUpload: async (
-    moduleId: string, 
+    moduleId: string,
     data: LessonUploadRequestDTO
   ): Promise<ApiResponse<LessonUploadResponseDTO>> => {
-    const response = await httpClient.post(`/api/lessons/${moduleId}/prepare-upload`, data)
+    const response = await httpClient.post(
+      `/api/lessons/${moduleId}/prepare-upload`,
+      data
+    )
     return response.data
   },
 
   // Hoàn thành upload video
   completeUpload: async (
-    lessonId: string, 
+    lessonId: string,
     data: LessonConfirmRequestDTO
   ): Promise<ApiResponse<LessonResponseDTO>> => {
-    const response = await httpClient.post(`/api/lessons/${lessonId}/complete-upload`, data)
+    const response = await httpClient.post(
+      `/api/lessons/${lessonId}/complete-upload`,
+      data
+    )
     return response.data
   },
 
   // Lấy thông tin một bài học
-  getLessonById: async (lessonId: string): Promise<ApiResponse<LessonResponseDTO>> => {
+  getLessonById: async (
+    lessonId: string
+  ): Promise<ApiResponse<LessonResponseDTO>> => {
     const response = await httpClient.get(`/api/lessons/${lessonId}`)
     return response.data
   },
 
   // Lấy danh sách bài học của một module
-  getLessonsByModuleId: async (moduleId: string): Promise<ApiResponse<LessonResponseDTO[]>> => {
+  getLessonsByModuleId: async (
+    moduleId: string
+  ): Promise<ApiResponse<LessonResponseDTO[]>> => {
     const response = await httpClient.get(`/api/lessons/module/${moduleId}`)
     return response.data
   },
@@ -43,12 +57,14 @@ export const lessonApi = {
   deleteLesson: async (lessonId: string): Promise<ApiResponse<void>> => {
     const response = await httpClient.delete(`/api/lessons/${lessonId}`)
     return response.data
-  }
+  },
 }
 
 export const categoryApi = {
-  getAllCategories: async (params?: CategorySearchParams): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
-    const response = await httpClient.get("/api/categories", { params })
+  getAllCategories: async (
+    params?: CategorySearchParams
+  ): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
+    const response = await httpClient.get('/api/categories', { params })
     return response.data
   },
   // ... các hàm khác giữ nguyên

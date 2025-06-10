@@ -1,11 +1,13 @@
-"use client"
+'use client'
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { httpClient } from "@/api/http-client"
+import type React from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { httpClient } from '@/api/http-client'
 
-export type UserRole = "learner" | "manager" | "admin"
+// Định nghĩa các role có trong hệ thống
+export type UserRole = 'learner' | 'manager' | 'admin'
 
+// Interface cho thông tin user
 export interface User {
   id: string
   email: string
@@ -13,262 +15,118 @@ export interface User {
   role: UserRole
   avatar?: string
   joinDate?: string
-  permissions?: string[]
 }
 
+// Interface cho AuthContext
 interface AuthContextType {
-  user: User | null | undefined
-  login: (userData: User, token: string) => Promise<boolean>
+  user: User | null
+  isLoading: boolean
+  login: (userData: User, token: string) => Promise<void>
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => void
-  hasPermission: (permission: string) => boolean
   isRole: (role: UserRole) => boolean
   getToken: () => string | null
 }
 
+// Tạo context với giá trị mặc định là undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Comprehensive role-based permissions
-const PERMISSIONS = {
-  learner: [
-    "view_courses",
-    "enroll_courses",
-    "view_progress",
-    "access_learning_materials",
-    "submit_assignments",
-    "view_certificates",
-    "write_reviews",
-    "view_notifications",
-  ],
-  manager: [
-    // Course Management
-    "create_courses",
-    "edit_courses",
-    "delete_courses",
-    "manage_course_catalog",
-
-    // Content Management
-    "upload_content",
-    "manage_videos",
-    "manage_documents",
-    "manage_exercises",
-    "edit_course_content",
-
-    // Reporting
-    "view_course_reports",
-    "view_student_analytics",
-    "view_course_revenue",
-    "view_course_reviews",
-
-    // Promotions
-    "create_promotions",
-    "manage_discount_codes",
-    "edit_promotions",
-    "delete_promotions",
-
-    // Reviews
-    "approve_reviews",
-    "moderate_reviews",
-    "respond_to_reviews",
-
-    // Notifications
-    "create_notifications",
-    "manage_news",
-    "send_announcements",
-
-    // Basic learner permissions
-    "view_courses",
-    "access_learning_materials",
-
-    // Add to manager permissions array
-    "create_modules",
-    "edit_modules",
-    "delete_modules",
-    "create_lessons",
-    "edit_lessons",
-    "delete_lessons",
-    "upload_videos",
-    "manage_course_content",
-  ],
-  admin: [
-    // Account Management
-    "create_user_accounts",
-    "edit_user_accounts",
-    "delete_user_accounts",
-    "create_manager_accounts",
-    "edit_manager_accounts",
-    "delete_manager_accounts",
-    "assign_permissions",
-    "manage_user_roles",
-
-    // Payment Management
-    "view_transactions",
-    "process_refunds",
-    "manage_payment_methods",
-    "view_financial_reports",
-
-    // System Reporting
-    "view_overview_reports",
-    "view_revenue_reports",
-    "view_user_statistics",
-    "view_popular_courses",
-    "export_reports",
-
-    // System Configuration
-    "manage_website_settings",
-    "configure_system",
-    "manage_integrations",
-    "backup_system",
-
-    // Support
-    "handle_complaints",
-    "provide_technical_support",
-    "manage_support_tickets",
-    "access_user_data",
-
-    // Homepage Management
-    "edit_homepage",
-    "manage_content_pages",
-    "update_site_information",
-    "manage_banners",
-
-    // All manager permissions
-    "create_courses",
-    "edit_courses",
-    "delete_courses",
-    "manage_course_catalog",
-    "upload_content",
-    "manage_videos",
-    "manage_documents",
-    "manage_exercises",
-    "view_course_reports",
-    "create_promotions",
-    "manage_discount_codes",
-    "approve_reviews",
-    "create_notifications",
-    "manage_news",
-
-    // All learner permissions
-    "view_courses",
-    "enroll_courses",
-    "access_learning_materials",
-
-    // Add to admin permissions array (they inherit all manager permissions)
-    "create_modules",
-    "edit_modules",
-    "delete_modules",
-    "create_lessons",
-    "edit_lessons",
-    "delete_lessons",
-    "upload_videos",
-    "manage_course_content",
-  ],
-}
-
+// Provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const syncUserToCookie = useCallback((userData: User | null) => {
-    if (typeof window !== "undefined") {
-      if (userData) {
-        // Encode user data to avoid spaces and special characters
-        const encodedUserData = btoa(JSON.stringify(userData));
-        document.cookie = `user=${encodedUserData}; path=/; max-age=86400; SameSite=Strict`
-      } else {
-        // Clear cookie
-        document.cookie = "user=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+  // Load user data từ localStorage khi component mount
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const userData = localStorage.getItem('user')
+        const token = localStorage.getItem('accessToken')
+
+        if (userData && token) {
+          setUser(JSON.parse(userData))
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error)
+        localStorage.removeItem('user')
+        localStorage.removeItem('accessToken')
+      } finally {
+        setIsLoading(false)
       }
     }
+
+    loadUser()
   }, [])
 
-  useEffect(() => {
-    // Check for existing user session
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
-        syncUserToCookie(parsedUser)
-      } catch (error) {
-        console.error("Error parsing user data:", error)
-        localStorage.removeItem("user")
-      }
-    }
-    setIsInitialized(true)
-  }, [syncUserToCookie])
-
-  const login = async (userData: User, token: string): Promise<boolean> => {
+  // Hàm đăng nhập
+  const login = async (userData: User, token: string): Promise<void> => {
     try {
+      // Lưu thông tin user và token
       setUser(userData)
-      localStorage.setItem("user", JSON.stringify(userData))
-      localStorage.setItem("accessToken", token)
-      syncUserToCookie(userData)
-      return true
+      localStorage.setItem('user', JSON.stringify(userData))
+      localStorage.setItem('accessToken', token)
     } catch (error) {
-      console.error("Login error:", error)
-      return false
+      console.error('Login error:', error)
+      throw error
     }
   }
 
-  const logout = async () => {
+  // Hàm đăng xuất
+  const logout = async (): Promise<void> => {
     try {
-      const token = localStorage.getItem("accessToken")
+      const token = localStorage.getItem('accessToken')
       if (token) {
-        await httpClient.post('/auth/logout', { token });
+        // Gọi API logout
+        await httpClient.post('/auth/logout', { token })
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout error:', error)
     } finally {
+      // Xóa thông tin user và token
       setUser(null)
-      localStorage.removeItem("user")
-      localStorage.removeItem("accessToken")
-      localStorage.removeItem("enrolledCourses")
-      localStorage.removeItem("courseProgress")
-      syncUserToCookie(null)
+      localStorage.removeItem('user')
+      localStorage.removeItem('accessToken')
     }
   }
 
-  const updateUser = (userData: Partial<User>) => {
+  // Hàm cập nhật thông tin user
+  const updateUser = (userData: Partial<User>): void => {
     if (user) {
       const updatedUser = { ...user, ...userData }
       setUser(updatedUser)
-      localStorage.setItem("user", JSON.stringify(updatedUser))
-      syncUserToCookie(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
     }
   }
 
-  const hasPermission = (permission: string): boolean => {
-    if (!user) return false
-    const rolePermissions = PERMISSIONS[user.role] || []
-    return rolePermissions.includes(permission)
-  }
-
+  // Hàm kiểm tra role
   const isRole = (role: UserRole): boolean => {
     return user?.role === role
   }
 
+  // Hàm lấy token
   const getToken = (): string | null => {
-    return localStorage.getItem("accessToken")
+    return localStorage.getItem('accessToken')
   }
 
+  // Giá trị context
   const value: AuthContextType = {
-    user: isInitialized ? user : undefined, // Return undefined during initialization
+    user,
+    isLoading,
     login,
     logout,
     updateUser,
-    hasPermission,
     isRole,
-    getToken
+    getToken,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// Hook để sử dụng auth context
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
 }

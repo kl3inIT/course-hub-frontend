@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { categoryApi } from '@/api/category-api'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,7 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart'
 import {
   Select,
   SelectContent,
@@ -17,44 +22,33 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CategoryChartDTO, CategoryDetailDTO } from '@/types/category'
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts'
-import {
-  TrendingUp,
-  Users,
   BookOpen,
   DollarSign,
-  Star,
   Download,
-  RefreshCw,
-  X,
   Maximize,
   Minimize,
+  RefreshCw,
+  Star,
+  TrendingUp,
+  Users
 } from 'lucide-react'
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { categoryApi } from '@/api/category-api'
-import { CategoryChartDTO, CategoryDetailDTO } from '@/types/category'
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import { ChartConfig } from '../ui/chart'
 
 const revenueData = [
   { month: 'Jan', revenue: 12400, enrollments: 234 },
@@ -109,34 +103,28 @@ const COLORS = [
 ]
 
 // Custom label cho PieChart để tránh dính chữ
-const RADIAN = Math.PI / 180
 const renderCustomizedLabel = ({
-  cx,
-  cy,
-  midAngle,
-  outerRadius,
-  percent,
-  index,
-  categoryName,
-  percentage,
+  cx, cy, midAngle, innerRadius, outerRadius, percent
 }: any) => {
-  if (percentage === 0) return null
-  const radius = outerRadius + 24
-  const x = cx + radius * Math.cos(-midAngle * RADIAN)
-  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+  if (percent === 0) return null;
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
   return (
     <text
       x={x}
       y={y}
-      fill={COLORS[index % COLORS.length]}
-      textAnchor={x > cx ? 'start' : 'end'}
-      dominantBaseline='central'
-      fontSize={14}
+      fill="#222"
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={window.innerWidth < 600 ? 12 : 15}
+      style={{ pointerEvents: 'none' }}
     >
-      {`${categoryName} ${percentage.toFixed(1)}%`}
+      {(percent * 100).toFixed(1).replace('.', ',')}
     </text>
-  )
-}
+  );
+};
 
 // Hàm format ngày giờ: chỉ hiện ngày/tháng/năm và xuống dòng là giờ:phút:giây
 function formatDateTime(dateString: string) {
@@ -153,6 +141,12 @@ function formatDateTime(dateString: string) {
   )
 }
 
+interface ChartContainerProps {
+  children: ReactNode;
+  config: ChartConfig;
+  className?: string;
+}
+
 export function ManagerAnalytics() {
   const [timeRange, setTimeRange] = useState('6m')
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -167,6 +161,8 @@ export function ManagerAnalytics() {
   )
   const [page, setPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(5)
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [pieOuterRadius, setPieOuterRadius] = useState(120);
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -232,6 +228,20 @@ export function ManagerAnalytics() {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    function updateRadius() {
+      if (chartContainerRef.current) {
+        const width = chartContainerRef.current.offsetWidth;
+        const height = chartContainerRef.current.offsetHeight;
+        // outerRadius là 40% chiều rộng hoặc 40% chiều cao, nhỏ hơn
+        setPieOuterRadius(Math.max(60, Math.min(width, height) * 0.4));
+      }
+    }
+    updateRadius();
+    window.addEventListener('resize', updateRadius);
+    return () => window.removeEventListener('resize', updateRadius);
+  }, []);
+
   const filteredCategoryChart = categoryChart.filter(
     item => item.percentage > 0
   )
@@ -286,7 +296,7 @@ export function ManagerAnalytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 px-2 md:px-0'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Revenue</CardTitle>
@@ -365,7 +375,7 @@ export function ManagerAnalytics() {
         </TabsList>
 
         <TabsContent value='courses' className='space-y-4'>
-          <div className='grid gap-4 md:grid-cols-2'>
+          <div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
             <Card>
               <CardHeader>
                 <CardTitle>Course Enrollments</CardTitle>
@@ -401,7 +411,7 @@ export function ManagerAnalytics() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className='w-full rounded-lg border p-2 md:p-6'>
               <CardHeader>
                 <div className='flex items-center justify-between'>
                   <div>
@@ -426,7 +436,7 @@ export function ManagerAnalytics() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className='min-h-[500px]'>
+              <CardContent className='min-h-[500px] flex flex-col items-center'>
                 {loadingCategory ? (
                   <div className='text-center py-8'>Loading...</div>
                 ) : !showDetails ? (
@@ -436,29 +446,44 @@ export function ManagerAnalytics() {
                         label: 'Percentage',
                       },
                     }}
-                    className='h-[400px]'
+                    className='flex flex-col md:flex-row items-center justify-center w-full gap-8'
                   >
-                    <PieChart width={400} height={400}>
-                      <Pie
-                        data={filteredCategoryChart}
-                        dataKey='courseCount'
-                        nameKey='categoryName'
-                        cx='50%'
-                        cy='50%'
-                        labelLine={false}
-                        label={renderCustomizedLabel}
-                        outerRadius={120}
-                        fill='#8884d8'
-                      >
-                        {filteredCategoryChart.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
+                    <div ref={chartContainerRef} className="w-full max-w-[400px] mx-auto px-4 md:px-8" style={{ minWidth: 200, minHeight: 200, height: 'min(60vw,400px)', maxHeight: 400 }}>
+                      <h3 className="text-base font-medium text-center mb-2">Percentage Chart</h3>
+                      <p className="text-xs text-muted-foreground text-center mb-2">Percentage of courses by category</p>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
+                          <Pie
+                            data={filteredCategoryChart}
+                            dataKey='courseCount'
+                            nameKey='categoryName'
+                            cx='50%'
+                            cy='50%'
+                            labelLine={false}
+                            label={renderCustomizedLabel}
+                            outerRadius={pieOuterRadius > 100 ? pieOuterRadius - 24 : pieOuterRadius - 8}
+                            fill='#8884d8'
+                          >
+                            {filteredCategoryChart.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Legend responsive */}
+                    <div className="flex flex-col md:ml-4 md:mt-0 mt-4 w-full max-w-xs">
+                      {filteredCategoryChart.map((entry, idx) => (
+                        <div key={entry.categoryName} className="flex items-center mb-2">
+                          <span className="inline-block w-4 h-4 rounded-sm mr-2" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                          <span className="truncate text-sm font-medium" title={entry.categoryName}>{entry.categoryName}</span>
+                        </div>
+                      ))}
+                    </div>
                   </ChartContainer>
                 ) : (
                   <div

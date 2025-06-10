@@ -1,12 +1,12 @@
 import { httpClient } from '@/api/http-client'
-import { ApiResponse, Page } from '@/types/common'
 import {
+  CategoryChartDTO,
+  CategoryDetailDTO,
   CategoryRequestDTO,
   CategoryResponseDTO,
   CategorySearchParams,
-  CategoryChartDTO,
-  CategoryDetailDTO,
 } from '@/types/category'
+import { ApiResponse, Page } from '@/types/common'
 
 export const categoryApi = {
   getAllCategories: async (
@@ -50,12 +50,12 @@ export const categoryApi = {
   },
 
   getCategoryChart: async (): Promise<CategoryChartDTO[]> => {
-    const res = await httpClient.get('/categories/chart')
+    const res = await httpClient.get('/api/categories/chart')
     return res.data
   },
 
   getCategoryDetails: async (): Promise<CategoryDetailDTO[]> => {
-    const res = await httpClient.get('/categories/details')
+    const res = await httpClient.get('/api/categories/details')
     return res.data
   },
 }

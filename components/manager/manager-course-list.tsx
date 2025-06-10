@@ -1,31 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { courseApi } from '@/api/course-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,33 +11,56 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  Search,
-  MoreVertical,
-  Eye,
-  Edit,
-  Trash2,
-  BookOpen,
-  Users,
-  DollarSign,
-  Star,
-  RefreshCw,
-  Plus,
-  Download,
-  Filter,
-  Archive,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  Loader2,
-  X,
-} from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/hooks/use-toast'
-import { courseApi } from '@/api/course-api'
 import { CourseResponseDTO } from '@/types/course'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import {
+  Archive,
+  BookOpen,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Download,
+  Edit,
+  Eye,
+  Loader2,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Search,
+  Star,
+  Trash2,
+  Users
+} from 'lucide-react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 
 interface Course {
   id: string
@@ -115,7 +113,9 @@ function transformCourse(backendCourse: CourseResponseDTO): Course {
 export function ManagerCourseList() {
   const [courses, setCourses] = useState<Course[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const searchParams = useSearchParams()
+  const initialCategory = searchParams.get('category') || 'all'
+  const [categoryFilter, setCategoryFilter] = useState<string>(initialCategory)
   const [sortBy, setSortBy] = useState<string>('lastUpdated')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [loading, setLoading] = useState(true)

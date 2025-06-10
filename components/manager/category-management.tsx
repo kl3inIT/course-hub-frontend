@@ -1,26 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { categoryApi } from '@/api/category-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +11,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -39,34 +39,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Plus,
-  Search,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Tags,
-  BookOpen,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { categoryApi } from '@/api/category-api'
+  CategoryRequestDTO,
+  CategoryResponseDTO,
+  CategorySearchParams,
+} from '@/types/category'
 import { Page } from '@/types/common'
 import {
-  CategorySearchParams,
-  CategoryResponseDTO,
-  CategoryRequestDTO,
-} from '@/types/category'
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Plus,
+  RefreshCw,
+  Search,
+  Tags,
+  Trash2
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
@@ -541,7 +534,7 @@ export function CategoryManagement() {
                     className='cursor-pointer hover:bg-gray-50 transition group'
                     onClick={() =>
                       router.push(
-                        `/courses?category=${encodeURIComponent(category.name)}&categoryName=${encodeURIComponent(category.name)}`
+                        `/manager/courses?category=${encodeURIComponent(category.name)}`
                       )
                     }
                   >

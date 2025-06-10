@@ -12,6 +12,7 @@ export interface ReviewResponseDTO extends BaseResponse {
   userAvatar?: string
   courseId: number
   courseName: string
+  categoryName: string
   star: number
   comment: string
   createdDate: string

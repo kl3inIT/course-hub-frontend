@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { courseApi } from '@/api/course-api'
+import { lessonApi } from '@/api/lesson-api'
+import { reviewApi } from '@/api/review-api'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -9,33 +12,36 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
+import { Page } from '@/types/common'
+import { CourseDetailsResponseDTO } from '@/types/course'
+import { LessonResponseDTO } from '@/types/lesson'
+import { ModuleResponseDTO } from '@/types/module'
+import { ReviewResponseDTO } from '@/types/review'
 import {
-  Star,
-  Clock,
-  Play,
+  AlertCircle,
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  PlayCircle,
+  Clock,
   Loader2,
-  AlertCircle,
   Lock,
+  PlayCircle,
+  Star
 } from 'lucide-react'
-import { PaymentModal } from './payment-modal'
-import { courseApi } from '@/api/course-api'
-import { lessonApi } from '@/api/lesson-api'
-import { useToast } from '@/hooks/use-toast'
-import { CourseDetailsResponseDTO } from '@/types/course'
-import { ModuleResponseDTO } from '@/types/module'
-import { LessonResponseDTO } from '@/types/lesson'
+import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { PaymentModal } from './payment-modal'
 
 interface CourseDetailProps {
   courseId: string
@@ -83,6 +89,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [heroPreviewLesson, setHeroPreviewLesson] = useState<LessonResponseDTO | null>(null)
   const { toast } = useToast()
   const router = useRouter()
+  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewPage, setReviewPage] = useState<Page<ReviewResponseDTO> | null>(null)
+  const [expandedReviewIds, setExpandedReviewIds] = useState<number[]>([])
+  const [reportModal, setReportModal] = useState<{ open: boolean, reviewId?: number }>({ open: false })
+  const [reportReason, setReportReason] = useState('')
+  const [reportError, setReportError] = useState('')
+  const [reportLoading, setReportLoading] = useState(false)
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -187,6 +202,25 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       return newExpanded
     })
   }
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      setReviewLoading(true)
+      setReviewError(null)
+      try {
+        const res = await reviewApi.getAllReviews({ courseId: Number(courseId), page: 0, size: 10, sortBy: 'modifiedDate', direction: 'DESC' })
+        setReviewPage(res.data)
+        setReviews(res.data.content)
+      } catch (err) {
+        setReviewError('Failed to load reviews')
+      } finally {
+        setReviewLoading(false)
+      }
+    }
+    if (courseId) {
+      fetchReviews()
+    }
+  }, [courseId])
 
   if (loading) {
     return (
@@ -449,25 +483,113 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         <TabsContent value='reviews' className='space-y-6'>
           <div className='flex items-center justify-between'>
             <h3 className='text-2xl font-semibold'>Student Reviews</h3>
-            <div className='flex items-center gap-2'>
-              <Star className='h-5 w-5 fill-yellow-400 text-yellow-400' />
-              <span className='text-xl font-semibold'>
-                {course.averageRating?.toFixed(1) || '0.0'}
-              </span>
-              <span className='text-muted-foreground'>
-                ({course.totalReviews} reviews)
-              </span>
-            </div>
           </div>
 
           <div className='space-y-4'>
-            <Card>
-              <CardContent className='p-6'>
-                <div className='text-center text-muted-foreground'>
-                  No reviews yet. Be the first to review this course!
-                </div>
-              </CardContent>
-            </Card>
+            {reviewLoading ? (
+              <div className='text-center text-muted-foreground'>Loading reviews...</div>
+            ) : reviewError ? (
+              <div className='text-center text-destructive'>{reviewError}</div>
+            ) : reviews.length === 0 ? (
+              <Card>
+                <CardContent className='p-6'>
+                  <div className='text-center text-muted-foreground'>
+                    No reviews yet. Be the first to review this course!
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              reviews.map((review) => {
+                const isExpanded = expandedReviewIds.includes(review.id);
+                const handleToggleExpand = () => {
+                  setExpandedReviewIds(prev =>
+                    isExpanded ? prev.filter(id => id !== review.id) : [...prev, review.id]
+                  );
+                };
+                const handleOpenReport = () => {
+                  setReportModal({ open: true, reviewId: review.id });
+                  setReportReason('');
+                  setReportError('');
+                };
+                return (
+                  <Card key={review.id} className="rounded-xl shadow-sm border border-gray-200">
+                    <CardContent className="p-5 pb-4 relative">
+                      <div className="flex items-start gap-4">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border-4" style={{ borderColor: '#1e293b' }}>
+                          <Link href={`/profile/${review.userId}`} className="block w-12 h-12">
+                            {review.userAvatar ? (
+                              <Image
+                                src={review.userAvatar}
+                                alt={review.userName}
+                                width={48}
+                                height={48}
+                                className="object-cover w-full h-full"
+                                onError={e => { e.currentTarget.src = '/placeholder.svg?height=48&width=48' }}
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold border-4" style={{ borderColor: '#1e293b' }}>
+                                {review.userName?.charAt(0) || "?"}
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        {/* Info + comment */}
+                        <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                            <Link href={`/profile/${review.userId}`} className="font-semibold text-base sm:text-lg text-gray-900 hover:underline">
+                              {review.userName}
+                            </Link>
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, idx) => (
+                                <Star
+                                  key={idx}
+                                  className={`h-4 w-4 ${idx < review.star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-muted-foreground sm:ml-auto">
+                              {(() => {
+                                const d = new Date(review.createdDate);
+                                return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                              })()}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className={`text-gray-800 text-sm sm:text-base whitespace-pre-line ${isExpanded ? '' : 'line-clamp-2'}`} style={{ maxWidth: '90%' }}>
+                              {review.comment}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex items-center gap-1 text-sm ml-2 hover:bg-red-50 group"
+                              title="Báo cáo"
+                              onClick={handleOpenReport}
+                            >
+                              {/* Flag icon outline */}
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 group-hover:text-red-500 transition-colors">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h13l-1.5 4L16 13H3" />
+                              </svg>
+                              Report
+                            </Button>
+                          </div>
+                          {/* See more/less */}
+                          {review.comment && review.comment.length > 80 && (
+                            <button
+                              className="text-xs text-primary mt-1 ml-1 hover:underline focus:outline-none"
+                              onClick={handleToggleExpand}
+                            >
+                              {isExpanded ? 'See less' : 'See more'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -487,6 +609,72 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           totalStudents: course.totalStudents,
         }}
       />
+
+      {/* Report Modal */}
+      <Dialog open={reportModal.open} onOpenChange={open => {
+        // Luôn cho phép đóng modal khi ấn Cancel, X hoặc click ngoài
+        setReportModal(v => ({ ...v, open }));
+        setReportError('');
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Report Review</DialogTitle>
+          </DialogHeader>
+          <div className="mb-2">
+            <Textarea
+              value={reportReason}
+              onChange={e => {
+                setReportReason(e.target.value);
+                if (e.target.value.trim().length === 0) setReportError('Reason is required');
+                else if (e.target.value.length > 200) setReportError('Maximum 200 characters');
+                else setReportError('');
+              }}
+              placeholder="Enter your reason (1-200 characters)"
+              rows={4}
+              maxLength={200}
+              className={reportError ? 'border-red-500' : ''}
+            />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-muted-foreground">{reportReason.length}/200</span>
+              {reportError && <span className="text-xs text-red-500">{reportError}</span>}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReportModal({ open: false })}
+              disabled={reportLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!reportReason.trim()) {
+                  setReportError('Please enter a reason');
+                  return;
+                }
+                if (reportReason.length > 200) {
+                  setReportError('Maximum 200 characters');
+                  return;
+                }
+                setReportLoading(true);
+                // Fake send to admin
+                setTimeout(() => {
+                  console.log('[REPORT_TO_ADMIN]', { reviewId: reportModal.reviewId, reason: reportReason });
+                  setReportLoading(false);
+                  setReportModal({ open: false });
+                  setReportReason('');
+                  setReportError('');
+                  toast({ title: 'Report sent successfully!', description: 'Your report has been sent to admin.', variant: 'default' });
+                }, 1000);
+              }}
+              disabled={reportLoading || !reportReason.trim() || reportReason.length > 200}
+            >
+              {reportLoading ? 'Sending...' : 'Send'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

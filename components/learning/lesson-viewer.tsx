@@ -57,624 +57,17 @@ import {
 import { useAuth } from '@/context/auth-context'
 import { DiscussionSection } from './discussion-section'
 import { useToast } from '@/components/ui/use-toast'
-
-interface Resource {
-  id: string
-  title: string
-  type: 'pdf' | 'doc' | 'link' | 'video' | 'image'
-  url: string
-  size?: string
-}
-
-interface Lesson {
-  id: string
-  title: string
-  description: string
-  duration: number
-  videoUrl?: string
-  content: string
-  resources: Resource[]
-  completed: boolean
-  order: number
-}
-
-interface Module {
-  id: string
-  title: string
-  description: string
-  lessons: Lesson[]
-  completed: boolean
-  order: number
-  totalDuration: number
-}
-
-interface Course {
-  id: string
-  title: string
-  description: string
-  instructor: string
-  rating: number
-  totalStudents: number
-  modules: Module[]
-  progress: number
-  totalDuration: number
-}
+import { courseApi } from '@/api/course-api'
+import { moduleApi } from '@/api/module-api'
+import { lessonApi } from '@/api/lesson-api'
+import { CourseDetailsResponseDTO } from '@/types/course'
+import { ModuleResponseDTO } from '@/types/module'
+import { LessonResponseDTO } from '@/types/lesson'
 
 interface LessonViewerProps {
-  courseId: string
+  courseId?: string
   moduleId?: string
   lessonId?: string
-}
-
-// Enhanced mock data with proper module structure
-const mockCourses: Record<string, Course> = {
-  '1': {
-    id: '1',
-    title: 'Complete React Development Course',
-    description:
-      'Master React.js from fundamentals to advanced concepts with hands-on projects',
-    instructor: 'Sarah Johnson',
-    rating: 4.8,
-    totalStudents: 1250,
-    progress: 25,
-    totalDuration: 480, // 8 hours
-    modules: [
-      {
-        id: '1',
-        title: 'React Fundamentals',
-        description:
-          'Learn the core concepts of React including components, JSX, and props',
-        order: 1,
-        completed: false,
-        totalDuration: 120,
-        lessons: [
-          {
-            id: '1',
-            title: 'Introduction to React',
-            description: 'What is React and why use it?',
-            duration: 15,
-            order: 1,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Introduction to React
-
-React is a powerful JavaScript library for building user interfaces, particularly web applications. Created by Facebook (now Meta), React has revolutionized how we think about building interactive UIs.
-
-## What Makes React Special?
-
-### 1. Component-Based Architecture
-React applications are built using components - reusable pieces of code that manage their own state and render UI elements.
-
-### 2. Virtual DOM
-React uses a virtual representation of the DOM to optimize rendering performance, making updates faster and more efficient.
-
-### 3. Declarative Programming
-Instead of telling React how to update the UI, you describe what the UI should look like for any given state.
-
-## Key Benefits
-
-- **Reusability**: Write once, use anywhere
-- **Performance**: Virtual DOM optimization
-- **Developer Experience**: Great tooling and debugging
-- **Community**: Large ecosystem and community support
-
-## Getting Started
-
-To start with React, you'll need:
-1. Node.js installed on your computer
-2. A code editor (VS Code recommended)
-3. Basic knowledge of JavaScript and HTML
-
-Let's dive into creating your first React component!`,
-            resources: [
-              {
-                id: '1',
-                title: 'React Official Documentation',
-                type: 'link',
-                url: 'https://reactjs.org/docs',
-              },
-              {
-                id: '2',
-                title: 'React Setup Guide',
-                type: 'pdf',
-                url: '/setup-guide.pdf',
-                size: '2.5 MB',
-              },
-            ],
-            completed: true,
-          },
-          {
-            id: '2',
-            title: 'Setting Up Your Development Environment',
-            description: 'Install and configure tools for React development',
-            duration: 20,
-            order: 2,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Setting Up Your Development Environment
-
-A proper development environment is crucial for productive React development. Let's set up everything you need.
-
-## Required Tools
-
-### 1. Node.js and npm
-Node.js is required to run React development tools and manage packages.
-
-\`\`\`bash
-# Check if Node.js is installed
-node --version
-npm --version
-\`\`\`
-
-### 2. Code Editor
-We recommend Visual Studio Code with these extensions:
-- ES7+ React/Redux/React-Native snippets
-- Prettier - Code formatter
-- ESLint
-- Auto Rename Tag
-
-### 3. Browser Developer Tools
-Install React Developer Tools extension for Chrome or Firefox.
-
-## Creating Your First React App
-
-\`\`\`bash
-# Create a new React application
-npx create-react-app my-first-app
-cd my-first-app
-npm start
-\`\`\`
-
-## Project Structure
-
-Understanding the default project structure:
-- \`public/\` - Static files
-- \`src/\` - Source code
-- \`package.json\` - Dependencies and scripts
-- \`README.md\` - Project documentation
-
-Your development environment is now ready!`,
-            resources: [
-              {
-                id: '3',
-                title: 'VS Code Extensions List',
-                type: 'doc',
-                url: '/vscode-extensions.docx',
-                size: '1.2 MB',
-              },
-              {
-                id: '4',
-                title: 'Node.js Download',
-                type: 'link',
-                url: 'https://nodejs.org/',
-              },
-            ],
-            completed: false,
-          },
-          {
-            id: '3',
-            title: 'Your First React Component',
-            description: 'Create and understand React components',
-            duration: 25,
-            order: 3,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Your First React Component
-
-Components are the building blocks of React applications. Let's create your first component and understand how it works.
-
-## What is a Component?
-
-A React component is a JavaScript function or class that returns JSX (JavaScript XML) to describe what should appear on the screen.
-
-## Functional Components
-
-\`\`\`jsx
-function Welcome(props) {
-  return <h1>Hello, {props.name}!</h1>;
-}
-\`\`\`
-
-## JSX Syntax
-
-JSX allows you to write HTML-like syntax in JavaScript:
-
-\`\`\`jsx
-const element = <h1>Hello, world!</h1>;
-\`\`\`
-
-## Props
-
-Props are how components receive data:
-
-\`\`\`jsx
-function Greeting({ name, age }) {
-  return (
-    <div>
-      <h1>Hello, {name}!</h1>
-      <p>You are {age} years old.</p>
-    </div>
-  );
-}
-\`\`\`
-
-## Exercise
-
-Create a \`UserCard\` component that displays:
-- User's name
-- User's email
-- User's profile picture
-
-Try implementing this component and see how props work in practice!`,
-            resources: [
-              {
-                id: '5',
-                title: 'Component Examples',
-                type: 'pdf',
-                url: '/component-examples.pdf',
-                size: '3.1 MB',
-              },
-            ],
-            completed: false,
-          },
-        ],
-      },
-      {
-        id: '2',
-        title: 'State Management',
-        description:
-          'Learn how to manage component state and handle user interactions',
-        order: 2,
-        completed: false,
-        totalDuration: 150,
-        lessons: [
-          {
-            id: '1',
-            title: 'Understanding State',
-            description: 'What is state and why do we need it?',
-            duration: 30,
-            order: 1,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Understanding State in React
-
-State is one of the most important concepts in React. It allows components to create and manage their own data that can change over time.
-
-## What is State?
-
-State is a JavaScript object that stores component data that may change during the component's lifecycle. When state changes, React re-renders the component.
-
-## useState Hook
-
-The \`useState\` hook is the most common way to add state to functional components:
-
-\`\`\`jsx
-import { useState } from 'react';
-
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Click me
-      </button>
-    </div>
-  );
-}
-\`\`\`
-
-## State Rules
-
-1. **Never mutate state directly** - Always use the setter function
-2. **State updates are asynchronous** - React batches updates for performance
-3. **State is local** - Each component instance has its own state
-
-## Common Patterns
-
-### Toggle State
-\`\`\`jsx
-const [isVisible, setIsVisible] = useState(false);
-const toggle = () => setIsVisible(!isVisible);
-\`\`\`
-
-### Form Input State
-\`\`\`jsx
-const [inputValue, setInputValue] = useState('');
-const handleChange = (e) => setInputValue(e.target.value);
-\`\`\`
-
-Understanding state is crucial for building interactive React applications!`,
-            resources: [
-              {
-                id: '6',
-                title: 'State Management Patterns',
-                type: 'pdf',
-                url: '/state-patterns.pdf',
-                size: '2.8 MB',
-              },
-            ],
-            completed: false,
-          },
-          {
-            id: '2',
-            title: 'Event Handling',
-            description: 'Handle user interactions and events in React',
-            duration: 25,
-            order: 2,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Event Handling in React
-
-React provides a powerful event system that allows you to handle user interactions like clicks, form submissions, and keyboard input.
-
-## SyntheticEvents
-
-React wraps native events in SyntheticEvent objects, providing consistent behavior across browsers.
-
-## Common Event Handlers
-
-### Click Events
-\`\`\`jsx
-function Button() {
-  const handleClick = (e) => {
-    e.preventDefault();
-    console.log('Button clicked!');
-  };
-
-  return <button onClick={handleClick}>Click me</button>;
-}
-\`\`\`
-
-### Form Events
-\`\`\`jsx
-function LoginForm() {
-  const [email, setEmail] = useState('');
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Submitting:', email);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input 
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <button type="submit">Login</button>
-    </form>
-  );
-}
-\`\`\`
-
-### Keyboard Events
-\`\`\`jsx
-const handleKeyPress = (e) => {
-  if (e.key === 'Enter') {
-    // Handle enter key
-  }
-};
-\`\`\`
-
-## Best Practices
-
-1. Use arrow functions or bind methods properly
-2. Prevent default behavior when needed
-3. Don't call event handlers directly in JSX
-4. Use event delegation for performance
-
-Master event handling to create truly interactive applications!`,
-            resources: [
-              {
-                id: '7',
-                title: 'Event Handling Guide',
-                type: 'doc',
-                url: '/event-handling.docx',
-                size: '1.9 MB',
-              },
-            ],
-            completed: false,
-          },
-        ],
-      },
-      {
-        id: '3',
-        title: 'Advanced Concepts',
-        description:
-          'Explore advanced React patterns and optimization techniques',
-        order: 3,
-        completed: false,
-        totalDuration: 210,
-        lessons: [
-          {
-            id: '1',
-            title: 'React Hooks Deep Dive',
-            description: 'Master useEffect, useContext, and custom hooks',
-            duration: 45,
-            order: 1,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# React Hooks Deep Dive
-
-Hooks are functions that let you "hook into" React features from functional components. Let's explore the most important hooks.
-
-## useEffect Hook
-
-The \`useEffect\` hook lets you perform side effects in functional components:
-
-\`\`\`jsx
-import { useState, useEffect } from 'react';
-
-function UserProfile({ userId }) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Fetch user data
-    fetchUser(userId).then(setUser);
-  }, [userId]); // Dependency array
-
-  return user ? <div>{user.name}</div> : <div>Loading...</div>;
-}
-\`\`\`
-
-## useContext Hook
-
-Share data between components without prop drilling:
-
-\`\`\`jsx
-const ThemeContext = createContext();
-
-function App() {
-  return (
-    <ThemeContext.Provider value="dark">
-      <Header />
-    </ThemeContext.Provider>
-  );
-}
-
-function Header() {
-  const theme = useContext(ThemeContext);
-  return <header className={theme}>Header</header>;
-}
-\`\`\`
-
-## Custom Hooks
-
-Create reusable stateful logic:
-
-\`\`\`jsx
-function useCounter(initialValue = 0) {
-  const [count, setCount] = useState(initialValue);
-  
-  const increment = () => setCount(c => c + 1);
-  const decrement = () => setCount(c => c - 1);
-  const reset = () => setCount(initialValue);
-  
-  return { count, increment, decrement, reset };
-}
-\`\`\`
-
-## Hook Rules
-
-1. Only call hooks at the top level
-2. Only call hooks from React functions
-3. Use ESLint plugin for hooks
-
-Hooks make functional components as powerful as class components!`,
-            resources: [
-              {
-                id: '8',
-                title: 'Hooks Reference',
-                type: 'pdf',
-                url: '/hooks-reference.pdf',
-                size: '4.2 MB',
-              },
-            ],
-            completed: false,
-          },
-        ],
-      },
-    ],
-  },
-  '2': {
-    id: '2',
-    title: 'Advanced JavaScript Mastery',
-    description:
-      'Deep dive into advanced JavaScript concepts and modern ES6+ features',
-    instructor: 'Mike Chen',
-    rating: 4.9,
-    totalStudents: 890,
-    progress: 0,
-    totalDuration: 360,
-    modules: [
-      {
-        id: '1',
-        title: 'Modern JavaScript Features',
-        description: 'ES6+ features that every developer should know',
-        order: 1,
-        completed: false,
-        totalDuration: 180,
-        lessons: [
-          {
-            id: '1',
-            title: 'Arrow Functions and Template Literals',
-            description: 'Modern syntax for cleaner code',
-            duration: 30,
-            order: 1,
-            videoUrl: '/placeholder.svg?height=400&width=600',
-            content: `# Arrow Functions and Template Literals
-
-Modern JavaScript provides cleaner syntax for common patterns. Let's explore arrow functions and template literals.
-
-## Arrow Functions
-
-Arrow functions provide a shorter syntax for writing functions:
-
-\`\`\`javascript
-// Traditional function
-function add(a, b) {
-  return a + b;
-}
-
-// Arrow function
-const add = (a, b) => a + b;
-
-// With single parameter
-const square = x => x * x;
-
-// With no parameters
-const greet = () => 'Hello!';
-\`\`\`
-
-## Template Literals
-
-Template literals allow embedded expressions and multi-line strings:
-
-\`\`\`javascript
-const name = 'John';
-const age = 30;
-
-// Template literal
-const message = \`Hello, my name is \${name} and I'm \${age} years old.\`;
-
-// Multi-line strings
-const html = \`
-  <div>
-    <h1>\${title}</h1>
-    <p>\${content}</p>
-  </div>
-\`;
-\`\`\`
-
-## Practical Examples
-
-\`\`\`javascript
-// API URL building
-const buildApiUrl = (endpoint, params) => 
-  \`/api/\${endpoint}?\${new URLSearchParams(params)}\`;
-
-// Conditional rendering in templates
-const renderUser = user => \`
-  <div class="user">
-    <h2>\${user.name}</h2>
-    \${user.email ? \`<p>\${user.email}</p>\` : ''}
-  </div>
-\`;
-\`\`\`
-
-These features make JavaScript code more readable and maintainable!`,
-            resources: [
-              {
-                id: '9',
-                title: 'ES6+ Features Cheatsheet',
-                type: 'pdf',
-                url: '/es6-cheatsheet.pdf',
-                size: '2.1 MB',
-              },
-            ],
-            completed: false,
-          },
-        ],
-      },
-    ],
-  },
 }
 
 export default function LessonViewer({
@@ -686,18 +79,17 @@ export default function LessonViewer({
   const router = useRouter()
   const { toast } = useToast()
 
-  const [course, setCourse] = useState<Course | null>(null)
-  const [currentModule, setCurrentModule] = useState<Module | null>(null)
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
+  const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
+  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(null)
+  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const [moduleLessons, setModuleLessons] = useState<Record<string, LessonResponseDTO[]>>({})
 
   // Video player state
-  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>(
-    'medium'
-  )
+  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>('medium')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -712,14 +104,51 @@ export default function LessonViewer({
   const progressBarRef = useRef<HTMLDivElement>(null)
 
   // Video player functions
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause()
-      } else {
-        videoRef.current.play()
+      try {
+        console.log('Current video state:', {
+          isPlaying,
+          videoUrl,
+          currentTime: videoRef.current.currentTime,
+          duration: videoRef.current.duration,
+          readyState: videoRef.current.readyState
+        })
+
+        if (isPlaying) {
+          videoRef.current.pause()
+          setIsPlaying(false)
+        } else {
+          if (!videoUrl) {
+            console.log('No video URL available')
+            return
+          }
+
+          if (videoRef.current.readyState < 2) {
+            console.log('Video not ready, loading...')
+            videoRef.current.load()
+            // Wait for video to be loaded
+            await new Promise((resolve) => {
+              const handleCanPlay = () => {
+                videoRef.current?.removeEventListener('canplay', handleCanPlay)
+                resolve(true)
+              }
+              videoRef.current?.addEventListener('canplay', handleCanPlay)
+            })
+          }
+
+          try {
+            await videoRef.current.play()
+            setIsPlaying(true)
+          } catch (error) {
+            console.error('Error playing video:', error)
+            setIsPlaying(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling play/pause:', error)
+        setIsPlaying(false)
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
@@ -802,7 +231,7 @@ export default function LessonViewer({
       setIsFullscreen(!!document.fullscreenElement)
     }
 
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = async (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
         setIsFullscreen(false)
       }
@@ -813,7 +242,7 @@ export default function LessonViewer({
         activeElement !== 'TEXTAREA'
       ) {
         e.preventDefault()
-        togglePlayPause()
+        await togglePlayPause()
       }
     }
 
@@ -829,42 +258,48 @@ export default function LessonViewer({
   // Fetch course data and navigate to appropriate lesson
   useEffect(() => {
     const fetchCourseData = async () => {
+      if (!courseId) {
+        setError('Course ID is required')
+        setLoading(false)
+        return
+      }
       try {
         setLoading(true)
         setError(null)
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        const courseData = mockCourses[courseId]
-        if (!courseData) {
+        // Fetch course details
+        const courseResponse = await courseApi.getCourseDetails(courseId)
+        if (!courseResponse.data) {
           throw new Error(`Course with ID "${courseId}" not found`)
         }
 
-        setCourse(courseData)
+        setCourse(courseResponse.data)
 
         // If no module/lesson specified, redirect to first lesson
         if (!moduleId || !lessonId) {
-          const firstModule = courseData.modules[0]
-          const firstLesson = firstModule?.lessons[0]
-
-          if (firstModule && firstLesson) {
-            router.replace(
-              `/learn/${courseId}?module=${firstModule.id}&lesson=${firstLesson.id}`
-            )
-            return
+          const firstModule = courseResponse.data.modules[0]
+          if (firstModule) {
+            const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModule.id.toString())
+            const firstLesson = lessonsResponse.data[0]
+            if (firstLesson) {
+              router.replace(
+                `/learn/${courseId}?module=${firstModule.id}&lesson=${firstLesson.id}`
+              )
+              return
+            }
           }
         }
 
         // Find current module and lesson
-        const module = courseData.modules.find(m => m.id === moduleId)
+        const module = courseResponse.data.modules.find(m => m.id.toString() === moduleId)
         if (!module) {
           throw new Error(
-            `Module with ID "${moduleId}" not found in course "${courseData.title}"`
+            `Module with ID "${moduleId}" not found in course "${courseResponse.data.title}"`
           )
         }
 
-        const lesson = module.lessons.find(l => l.id === lessonId)
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(module.id.toString())
+        const lesson = lessonsResponse.data.find(l => l.id.toString() === lessonId)
         if (!lesson) {
           throw new Error(
             `Lesson with ID "${lessonId}" not found in module "${module.title}"`
@@ -873,7 +308,11 @@ export default function LessonViewer({
 
         setCurrentModule(module)
         setCurrentLesson(lesson)
-        setExpandedModules(new Set([moduleId]))
+        setModuleLessons(prev => ({
+          ...prev,
+          [module.id]: lessonsResponse.data
+        }))
+        setExpandedModules(new Set([module.id.toString()]))
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to load course content'
@@ -889,36 +328,7 @@ export default function LessonViewer({
   const handleLessonComplete = () => {
     if (!currentLesson || !course) return
 
-    const updatedCourse = { ...course }
-    const moduleIndex = updatedCourse.modules.findIndex(
-      m => m.id === currentModule?.id
-    )
-    const lessonIndex = updatedCourse.modules[moduleIndex].lessons.findIndex(
-      l => l.id === currentLesson.id
-    )
-
-    updatedCourse.modules[moduleIndex].lessons[lessonIndex].completed = true
-
-    // Update module completion
-    const moduleCompleted = updatedCourse.modules[moduleIndex].lessons.every(
-      l => l.completed
-    )
-    updatedCourse.modules[moduleIndex].completed = moduleCompleted
-
-    // Update course progress
-    const totalLessons = updatedCourse.modules.reduce(
-      (acc, m) => acc + m.lessons.length,
-      0
-    )
-    const completedLessons = updatedCourse.modules.reduce(
-      (acc, m) => acc + m.lessons.filter(l => l.completed).length,
-      0
-    )
-    updatedCourse.progress = (completedLessons / totalLessons) * 100
-
-    setCourse(updatedCourse)
-    setCurrentLesson({ ...currentLesson, completed: true })
-
+    // TODO: Implement lesson completion API call
     toast({
       title: 'Lesson Completed!',
       description: `You've completed "${currentLesson.title}"`,
@@ -926,6 +336,14 @@ export default function LessonViewer({
   }
 
   const navigateToLesson = (targetModuleId: string, targetLessonId: string) => {
+    if (!courseId) return
+    // Reset video state when navigating
+    setVideoUrl(undefined)
+    setIsPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+
     router.push(
       `/learn/${courseId}?module=${targetModuleId}&lesson=${targetLessonId}`
     )
@@ -935,17 +353,17 @@ export default function LessonViewer({
     if (!course || !currentModule || !currentLesson) return null
 
     const currentModuleIndex = course.modules.findIndex(
-      m => m.id === currentModule.id
+      m => m.id.toString() === currentModule.id.toString()
     )
-    const currentLessonIndex = currentModule.lessons.findIndex(
-      l => l.id === currentLesson.id
+    const currentLessonIndex = moduleLessons[currentModule.id]?.findIndex(
+      l => l.id.toString() === currentLesson.id.toString()
     )
 
     // Next lesson in current module
-    if (currentLessonIndex < currentModule.lessons.length - 1) {
+    if (currentLessonIndex !== undefined && currentLessonIndex < moduleLessons[currentModule.id].length - 1) {
       return {
         module: currentModule,
-        lesson: currentModule.lessons[currentLessonIndex + 1],
+        lesson: moduleLessons[currentModule.id][currentLessonIndex + 1],
       }
     }
 
@@ -954,7 +372,7 @@ export default function LessonViewer({
       const nextModule = course.modules[currentModuleIndex + 1]
       return {
         module: nextModule,
-        lesson: nextModule.lessons[0],
+        lesson: moduleLessons[nextModule.id]?.[0],
       }
     }
 
@@ -965,17 +383,17 @@ export default function LessonViewer({
     if (!course || !currentModule || !currentLesson) return null
 
     const currentModuleIndex = course.modules.findIndex(
-      m => m.id === currentModule.id
+      m => m.id.toString() === currentModule.id.toString()
     )
-    const currentLessonIndex = currentModule.lessons.findIndex(
-      l => l.id === currentLesson.id
+    const currentLessonIndex = moduleLessons[currentModule.id]?.findIndex(
+      l => l.id.toString() === currentLesson.id.toString()
     )
 
     // Previous lesson in current module
-    if (currentLessonIndex > 0) {
+    if (currentLessonIndex !== undefined && currentLessonIndex > 0) {
       return {
         module: currentModule,
-        lesson: currentModule.lessons[currentLessonIndex - 1],
+        lesson: moduleLessons[currentModule.id][currentLessonIndex - 1],
       }
     }
 
@@ -984,22 +402,86 @@ export default function LessonViewer({
       const prevModule = course.modules[currentModuleIndex - 1]
       return {
         module: prevModule,
-        lesson: prevModule.lessons[prevModule.lessons.length - 1],
+        lesson: moduleLessons[prevModule.id]?.[moduleLessons[prevModule.id].length - 1],
       }
     }
 
     return null
   }
 
-  const toggleModuleExpansion = (moduleId: string) => {
+  const toggleModuleExpansion = async (moduleId: string) => {
     const newExpanded = new Set(expandedModules)
     if (newExpanded.has(moduleId)) {
       newExpanded.delete(moduleId)
     } else {
       newExpanded.add(moduleId)
+      // Fetch lessons when module is expanded
+      try {
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(moduleId)
+        setModuleLessons(prev => ({
+          ...prev,
+          [moduleId]: lessonsResponse.data
+        }))
+      } catch (err) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load module lessons',
+          variant: 'destructive',
+        })
+      }
     }
     setExpandedModules(newExpanded)
   }
+
+  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    const loadVideoUrl = async () => {
+      if (currentLesson) {
+        try {
+          // Reset video state when lesson changes
+          setVideoUrl(undefined)
+          setIsPlaying(false)
+          setProgress(0)
+          setCurrentTime(0)
+          setDuration(0)
+
+          const url = await lessonApi.getLessonVideoUrl(currentLesson.id.toString())
+          console.log('Video URL loaded:', url)
+          setVideoUrl(url)
+        } catch (error) {
+          console.error('Failed to load video URL:', error)
+        }
+      }
+    }
+    loadVideoUrl()
+  }, [currentLesson])
+
+  // Add effect to handle video source changes
+  useEffect(() => {
+    if (videoRef.current && videoUrl) {
+      console.log('Setting video source:', videoUrl)
+      videoRef.current.load() // Reload video when source changes
+      // Reset video state
+      setIsPlaying(false)
+      setProgress(0)
+      setCurrentTime(0)
+      setDuration(0)
+
+      // Add event listener for when video is ready to play
+      const handleCanPlay = () => {
+        console.log('Video is ready to play')
+        if (videoRef.current) {
+          setDuration(videoRef.current.duration)
+        }
+      }
+      videoRef.current.addEventListener('canplay', handleCanPlay)
+
+      return () => {
+        videoRef.current?.removeEventListener('canplay', handleCanPlay)
+      }
+    }
+  }, [videoUrl])
 
   if (loading) {
     return (
@@ -1109,29 +591,12 @@ export default function LessonViewer({
           <div className='flex items-start justify-between'>
             <div className='space-y-2'>
               <CardTitle className='text-2xl'>{course.title}</CardTitle>
-              <CardDescription>{course.description}</CardDescription>
-              <div className='flex items-center space-x-4 text-sm text-muted-foreground'>
-                <span className='flex items-center'>
-                  <Users className='h-4 w-4 mr-1' />
-                  {course.totalStudents.toLocaleString()} students
-                </span>
-                <span className='flex items-center'>
-                  <Star className='h-4 w-4 mr-1 fill-yellow-400 text-yellow-400' />
-                  {course.rating}
-                </span>
-                <span>Instructor: {course.instructor}</span>
-                <span className='flex items-center'>
-                  <Clock className='h-4 w-4 mr-1' />
-                  {Math.floor(course.totalDuration / 60)}h{' '}
-                  {course.totalDuration % 60}m
-                </span>
-              </div>
             </div>
             <Badge variant='secondary'>
-              {Math.round(course.progress)}% Complete
+              {Math.round((course.totalLessons / course.totalLessons) * 100)}% Complete
             </Badge>
           </div>
-          <Progress value={course.progress} className='w-full' />
+          <Progress value={(course.totalLessons / course.totalLessons) * 100} className='w-full' />
         </CardHeader>
       </Card>
 
@@ -1144,15 +609,14 @@ export default function LessonViewer({
               <div className='flex items-center justify-between'>
                 <div>
                   <CardTitle className='text-lg'>
-                    Module {currentModule.order}: {currentModule.title}
+                    Module {currentModule.orderNumber}: {currentModule.title}
                   </CardTitle>
-                  <CardDescription>{currentModule.description}</CardDescription>
+                  <CardDescription>
+                    {moduleLessons[currentModule.id]?.length || 0} lessons •{' '}
+                    {Math.floor(currentModule.totalDuration / 60)}h{' '}
+                    {currentModule.totalDuration % 60}m
+                  </CardDescription>
                 </div>
-                <Badge
-                  variant={currentModule.completed ? 'default' : 'secondary'}
-                >
-                  {currentModule.completed ? 'Completed' : 'In Progress'}
-                </Badge>
               </div>
             </CardHeader>
           </Card>
@@ -1161,33 +625,29 @@ export default function LessonViewer({
           <Card>
             <CardContent className='p-0'>
               <div
-                className={`relative bg-black transition-all duration-300 ${
-                  isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
-                }`}
+                className={`relative bg-black transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
+                  }`}
                 ref={videoContainerRef}
               >
                 <video
                   ref={videoRef}
-                  className={`w-full object-contain ${
-                    isFullscreen
+                  className={`w-full object-contain ${isFullscreen
                       ? 'h-screen'
                       : videoSize === 'small'
                         ? 'h-48 md:h-64'
                         : videoSize === 'medium'
                           ? 'h-64 md:h-80 lg:h-96'
                           : 'h-80 md:h-96 lg:h-[32rem]'
-                  }`}
-                  poster={
-                    currentLesson.videoUrl ||
-                    '/placeholder.svg?height=400&width=600'
-                  }
+                    }`}
+                  poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
                   controls={false}
                   onClick={togglePlayPause}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => setIsPlaying(false)}
+                  onError={(e) => console.error('Video error:', e)}
                 >
-                  <source src={currentLesson.videoUrl} type='video/mp4' />
+                  {videoUrl && <source src={videoUrl} type='video/mp4' />}
                   Your browser does not support the video tag.
                 </video>
 
@@ -1288,8 +748,8 @@ export default function LessonViewer({
                           onClick={() =>
                             previousLesson &&
                             navigateToLesson(
-                              previousLesson.module.id,
-                              previousLesson.lesson.id
+                              previousLesson.module.id.toString(),
+                              previousLesson.lesson.id.toString()
                             )
                           }
                           disabled={!previousLesson}
@@ -1339,8 +799,8 @@ export default function LessonViewer({
                           onClick={() =>
                             nextLesson &&
                             navigateToLesson(
-                              nextLesson.module.id,
-                              nextLesson.lesson.id
+                              nextLesson.module.id.toString(),
+                              nextLesson.lesson.id.toString()
                             )
                           }
                           disabled={!nextLesson}
@@ -1423,21 +883,12 @@ export default function LessonViewer({
                         <Monitor className='h-4 w-4' />
                         <span className='capitalize'>{videoSize} player</span>
                       </div>
-                      {currentLesson.completed && (
-                        <Badge variant='secondary' className='text-xs'>
-                          <CheckCircle className='h-3 w-3 mr-1' />
-                          Completed
-                        </Badge>
-                      )}
                     </div>
-
                     <div className='flex items-center space-x-2'>
-                      {!currentLesson.completed && (
-                        <Button size='sm' onClick={handleLessonComplete}>
-                          <CheckCircle className='h-4 w-4 mr-2' />
-                          Mark Complete
-                        </Button>
-                      )}
+                      <Button size='sm' onClick={handleLessonComplete}>
+                        <CheckCircle className='h-4 w-4 mr-2' />
+                        Mark Complete
+                      </Button>
                       <Button
                         size='sm'
                         variant='outline'
@@ -1458,10 +909,7 @@ export default function LessonViewer({
             <CardHeader>
               <CardTitle className='flex items-center'>
                 <BookOpen className='h-5 w-5 mr-2' />
-                Lesson {currentLesson.order}: {currentLesson.title}
-                {currentLesson.completed && (
-                  <CheckCircle className='h-5 w-5 ml-2 text-green-500' />
-                )}
+                Lesson {currentLesson.orderNumber}: {currentLesson.title}
               </CardTitle>
               <CardDescription>{currentLesson.description}</CardDescription>
             </CardHeader>
@@ -1469,63 +917,20 @@ export default function LessonViewer({
               <Tabs defaultValue='content' className='w-full'>
                 <TabsList>
                   <TabsTrigger value='content'>Lesson Content</TabsTrigger>
-                  <TabsTrigger value='resources'>
-                    Resources ({currentLesson.resources.length})
-                  </TabsTrigger>
                   <TabsTrigger value='discussion'>Discussion</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value='content' className='mt-4'>
                   <div className='prose prose-sm max-w-none dark:prose-invert'>
                     <div className='whitespace-pre-wrap'>
-                      {currentLesson.content}
+                      {currentLesson.description}
                     </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value='resources' className='mt-4'>
-                  <div className='space-y-3'>
-                    {currentLesson.resources.length === 0 ? (
-                      <p className='text-muted-foreground text-center py-8'>
-                        No resources available for this lesson.
-                      </p>
-                    ) : (
-                      currentLesson.resources.map(resource => (
-                        <div
-                          key={resource.id}
-                          className='flex items-center justify-between p-3 border rounded-lg'
-                        >
-                          <div className='flex items-center space-x-3'>
-                            <FileText className='h-5 w-5 text-muted-foreground' />
-                            <div>
-                              <p className='font-medium'>{resource.title}</p>
-                              <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
-                                <span className='capitalize'>
-                                  {resource.type}
-                                </span>
-                                {resource.size && (
-                                  <>
-                                    <span>•</span>
-                                    <span>{resource.size}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <Button variant='outline' size='sm'>
-                            <Download className='h-4 w-4 mr-2' />
-                            Download
-                          </Button>
-                        </div>
-                      ))
-                    )}
                   </div>
                 </TabsContent>
 
                 <TabsContent value='discussion' className='mt-4'>
                   <DiscussionSection
-                    courseId={courseId}
-                    lessonId={currentLesson.id}
+                    lessonId={currentLesson.id.toString()}
                   />
                 </TabsContent>
               </Tabs>
@@ -1539,8 +944,8 @@ export default function LessonViewer({
               onClick={() =>
                 previousLesson &&
                 navigateToLesson(
-                  previousLesson.module.id,
-                  previousLesson.lesson.id
+                  previousLesson.module.id.toString(),
+                  previousLesson.lesson.id.toString()
                 )
               }
               disabled={!previousLesson}
@@ -1551,7 +956,10 @@ export default function LessonViewer({
             <Button
               onClick={() =>
                 nextLesson &&
-                navigateToLesson(nextLesson.module.id, nextLesson.lesson.id)
+                navigateToLesson(
+                  nextLesson.module.id.toString(),
+                  nextLesson.lesson.id.toString()
+                )
               }
               disabled={!nextLesson}
             >
@@ -1567,64 +975,60 @@ export default function LessonViewer({
             <CardHeader>
               <CardTitle className='text-lg'>Course Content</CardTitle>
               <CardDescription>
-                {course.modules.length} modules •{' '}
-                {course.modules.reduce((acc, m) => acc + m.lessons.length, 0)}{' '}
-                lessons
+                {course.totalModules} modules • {course.totalLessons} lessons
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-2'>
               {course.modules.map(module => (
                 <Collapsible
                   key={module.id}
-                  open={expandedModules.has(module.id)}
-                  onOpenChange={() => toggleModuleExpansion(module.id)}
+                  open={expandedModules.has(module.id.toString())}
+                  onOpenChange={() => toggleModuleExpansion(module.id.toString())}
                 >
                   <CollapsibleTrigger asChild>
                     <div className='flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted'>
                       <div className='flex items-center space-x-2'>
-                        {expandedModules.has(module.id) ? (
+                        {expandedModules.has(module.id.toString()) ? (
                           <ChevronDown className='h-4 w-4' />
                         ) : (
                           <ChevronRight className='h-4 w-4' />
                         )}
                         <div className='text-left'>
                           <p className='font-medium text-sm'>
-                            Module {module.order}: {module.title}
+                            Module {module.orderNumber}: {module.title}
                           </p>
                           <p className='text-xs text-muted-foreground'>
-                            {module.lessons.length} lessons •{' '}
+                            {module.totalLessons} lessons •{' '}
                             {Math.floor(module.totalDuration / 60)}h{' '}
                             {module.totalDuration % 60}m
                           </p>
                         </div>
                       </div>
-                      {module.completed && (
-                        <CheckCircle className='h-4 w-4 text-green-500' />
-                      )}
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent className='space-y-1 ml-6 mt-2'>
-                    {module.lessons.map(lesson => (
+                    {moduleLessons[module.id]?.map(lesson => (
                       <div
                         key={lesson.id}
-                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${
-                          currentLesson?.id === lesson.id
+                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${currentLesson?.id === lesson.id
                             ? 'bg-primary/10 border border-primary'
                             : 'hover:bg-muted'
-                        }`}
-                        onClick={() => navigateToLesson(module.id, lesson.id)}
+                          }`}
+                        onClick={() => navigateToLesson(module.id.toString(), lesson.id.toString())}
                       >
                         <div className='flex items-center justify-between'>
                           <div className='flex-1'>
                             <p className='font-medium'>
-                              {lesson.order}. {lesson.title}
+                              {lesson.orderNumber}. {lesson.title}
                             </p>
                             <p className='text-xs text-muted-foreground'>
                               {lesson.duration} minutes
                             </p>
                           </div>
-                          {lesson.completed && (
-                            <CheckCircle className='h-3 w-3 text-green-500' />
+                          {lesson.isPreview && (
+                            <Badge variant='secondary' className='text-xs'>
+                              Preview
+                            </Badge>
                           )}
                         </div>
                       </div>

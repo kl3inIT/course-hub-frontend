@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,6 +35,7 @@ import { useToast } from '@/hooks/use-toast'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
+import { useRouter } from 'next/navigation'
 
 interface CourseDetailProps {
   courseId: string
@@ -78,7 +78,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [loadingLessons, setLoadingLessons] = useState<Record<number, boolean>>(
     {}
   )
+  const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null)
+  const [heroPreviewLoading, setHeroPreviewLoading] = useState(false)
+  const [heroPreviewLesson, setHeroPreviewLesson] = useState<LessonResponseDTO | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -113,6 +117,36 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       fetchCourse()
     }
   }, [courseId, toast])
+
+  useEffect(() => {
+    if (course && course.modules && course.modules.length > 0) {
+      const firstModuleId = course.modules[0].id
+      setHeroPreviewLoading(true)
+      lessonApi.getLessonsByModuleId(firstModuleId.toString())
+        .then(res => {
+          const lessons = res.data || []
+          // Lấy lesson đầu tiên (hoặc lesson preview đầu tiên nếu muốn)
+          const previewLesson = lessons[0] // hoặc: lessons.find(l => l.isPreview)
+          if (previewLesson) {
+            setHeroPreviewLesson(previewLesson)
+            return lessonApi.getLessonPreviewUrl(previewLesson.id.toString())
+          } else {
+            setHeroPreviewLesson(null)
+            setHeroPreviewUrl(null)
+            setHeroPreviewLoading(false)
+            return null
+          }
+        })
+        .then(url => {
+          if (url) setHeroPreviewUrl(url)
+        })
+        .catch(() => {
+          setHeroPreviewLesson(null)
+          setHeroPreviewUrl(null)
+        })
+        .finally(() => setHeroPreviewLoading(false))
+    }
+  }, [course])
 
   const fetchModuleLessons = async (moduleId: number) => {
     if (moduleLessons[moduleId]) return // Don't fetch if already loaded
@@ -189,21 +223,29 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <div className='lg:col-span-2 space-y-6'>
           <div className='aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl overflow-hidden relative group'>
-            <img
-              src={
-                course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
-              }
-              alt={course.title}
-              className='w-full h-full object-cover'
-              onError={e => {
-                e.currentTarget.src = '/placeholder.svg?height=400&width=600'
-              }}
-            />
-            <div className='absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
-              <Button size='lg' className='rounded-full h-16 w-16'>
-                <Play className='h-6 w-6' />
-              </Button>
-            </div>
+            {heroPreviewUrl ? (
+              <video
+                controls
+                autoPlay={false}
+                src={heroPreviewUrl}
+                className='w-full h-full object-cover'
+                poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+              />
+            ) : (
+              <img
+                src={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                alt={course.title}
+                className='w-full h-full object-cover'
+                onError={e => {
+                  e.currentTarget.src = '/placeholder.svg?height=400&width=600'
+                }}
+              />
+            )}
+            {heroPreviewLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              </div>
+            )}
           </div>
 
           <div>
@@ -356,6 +398,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                                 <div
                                   key={lesson.id}
                                   className='flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer'
+                                  onClick={() => {
+                                    router.push(`/learn/${course.id}?module=${module.id}&lesson=${lesson.id}`)
+                                  }}
                                 >
                                   <div className='flex items-center gap-2'>
                                     <PlayCircle className='h-4 w-4 text-muted-foreground' />

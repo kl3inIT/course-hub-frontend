@@ -11,7 +11,6 @@ export interface LessonResponseDTO {
   id: number
   title: string
   description?: string
-  videoUrl?: string
   duration?: number
   orderNumber: number
   isPreview: boolean

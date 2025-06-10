@@ -421,7 +421,6 @@ const CommentComponentBase = ({
 const CommentComponent = memo(CommentComponentBase)
 
 export function DiscussionSection({
-  courseId,
   lessonId,
 }: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])

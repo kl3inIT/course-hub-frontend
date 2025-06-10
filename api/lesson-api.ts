@@ -1,16 +1,11 @@
 import { httpClient } from '@/api/http-client'
-import { ApiResponse, Page } from '@/types/common'
+import { ApiResponse } from '@/types/common'
 import {
   LessonUploadRequestDTO,
   LessonConfirmRequestDTO,
   LessonResponseDTO,
   LessonUploadResponseDTO,
 } from '@/types/lesson'
-import {
-  CategoryRequestDTO,
-  CategoryResponseDTO,
-  CategorySearchParams,
-} from '@/types/category'
 
 export const lessonApi = {
   // Chuẩn bị upload video
@@ -58,14 +53,27 @@ export const lessonApi = {
     const response = await httpClient.delete(`/api/lessons/${lessonId}`)
     return response.data
   },
-}
 
-export const categoryApi = {
-  getAllCategories: async (
-    params?: CategorySearchParams
-  ): Promise<ApiResponse<Page<CategoryResponseDTO>>> => {
-    const response = await httpClient.get('/api/categories', { params })
+  // Lấy URL preview cho bài học
+  getLessonPreviewUrl: async (lessonId: string): Promise<string> => {
+    const response = await httpClient.get(`/api/lessons/${lessonId}/preview-url`)
     return response.data
   },
-  // ... các hàm khác giữ nguyên
+  
+  getLessonVideoUrl: async (lessonId: string): Promise<string> => {
+    const response = await httpClient.get(`/api/lessons/${lessonId}/video-url`)
+    return response.data
+  },
+
+  // Check if lesson is a preview lesson and return the appropriate URL
+  getLessonUrl: async (lessonId: string): Promise<string> => {
+    const lessonResponse = await lessonApi.getLessonById(lessonId)
+    if (lessonResponse.data.isPreview) {
+      return await lessonApi.getLessonPreviewUrl(lessonId)
+    } else {
+      return await lessonApi.getLessonVideoUrl(lessonId)
+    }
+  },
 }
+
+

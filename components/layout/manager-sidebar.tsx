@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, BookOpen, Users, BarChart3, PlusCircle, Settings, LogOut, Star, Tags } from "lucide-react"
+import { Home, BookOpen, Users, BarChart3, PlusCircle, Settings, LogOut, Star, Tags, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -63,6 +63,11 @@ const navigationItems = [
     title: "Reviews",
     url: "/manager/reviews",
     icon: Star,
+  },
+  {
+    title: "Payments",
+    url: "/manager/payments",
+    icon: DollarSign,
   },
 ]
 

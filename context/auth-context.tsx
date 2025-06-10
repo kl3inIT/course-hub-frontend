@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       if (userData) {
         // Encode user data to avoid spaces and special characters
-        const encodedUserData = btoa(JSON.stringify(userData));
+        const encodedUserData = encodeURIComponent(JSON.stringify(userData));
         document.cookie = `user=${encodedUserData}; path=/; max-age=86400; SameSite=Strict`
       } else {
         // Clear cookie

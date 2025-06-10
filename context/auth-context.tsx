@@ -35,7 +35,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Load user data từ localStorage khi component mount
   useEffect(() => {
@@ -74,19 +73,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Hàm đăng xuất
   const logout = async (): Promise<void> => {
-    setIsLoggingOut(true)
     try {
       const token = localStorage.getItem('accessToken')
       if (token) {
-        await httpClient.post('/auth/logout', { token })
+        // Gọi API logout với endpoint chính xác
+        await httpClient.post('/api/auth/logout', { token })
       }
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      // Xóa thông tin user và token
       setUser(null)
       localStorage.removeItem('user')
       localStorage.removeItem('accessToken')
-      setIsLoggingOut(false)
     }
   }
 

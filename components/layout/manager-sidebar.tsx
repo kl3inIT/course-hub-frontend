@@ -10,6 +10,7 @@ import {
   Settings,
   Star,
   Tags,
+  Ticket,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -77,9 +78,14 @@ const navigationItems = [
     icon: Star,
   },
   {
-    title: "Payments",
-    url: "/manager/payments",
+    title: 'Payments',
+    url: '/manager/payments',
     icon: DollarSign,
+  },
+  {
+    title: 'Coupons',
+    url: '/manager/coupons',
+    icon: Ticket,
   },
 ]
 
@@ -88,8 +94,14 @@ export function ManagerSidebar() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await logout()
-    router.push('/')
+    try {
+      await logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Even if API call fails, we should still clear local state and redirect
+      router.push('/login')
+    }
   }
 
   const handleHomeNavigation = () => {

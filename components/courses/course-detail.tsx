@@ -59,7 +59,7 @@ const formatDate = (dateString: string): string => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   } catch {
     return dateString
@@ -80,7 +80,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   )
   const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null)
   const [heroPreviewLoading, setHeroPreviewLoading] = useState(false)
-  const [heroPreviewLesson, setHeroPreviewLesson] = useState<LessonResponseDTO | null>(null)
+  const [heroPreviewLesson, setHeroPreviewLesson] =
+    useState<LessonResponseDTO | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -122,7 +123,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     if (course && course.modules && course.modules.length > 0) {
       const firstModuleId = course.modules[0].id
       setHeroPreviewLoading(true)
-      lessonApi.getLessonsByModuleId(firstModuleId.toString())
+      lessonApi
+        .getLessonsByModuleId(firstModuleId.toString())
         .then(res => {
           const lessons = res.data || []
           // Lấy lesson đầu tiên (hoặc lesson preview đầu tiên nếu muốn)
@@ -229,11 +231,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 autoPlay={false}
                 src={heroPreviewUrl}
                 className='w-full h-full object-cover'
-                poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                poster={
+                  course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
+                }
               />
             ) : (
               <img
-                src={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                src={
+                  course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
+                }
                 alt={course.title}
                 className='w-full h-full object-cover'
                 onError={e => {
@@ -242,8 +248,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               />
             )}
             {heroPreviewLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              <div className='absolute inset-0 flex items-center justify-center bg-black/40'>
+                <Loader2 className='h-8 w-8 animate-spin text-white' />
               </div>
             )}
           </div>
@@ -399,7 +405,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                                   key={lesson.id}
                                   className='flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer'
                                   onClick={() => {
-                                    router.push(`/learn/${course.id}?module=${module.id}&lesson=${lesson.id}`)
+                                    router.push(
+                                      `/learn/${course.id}?module=${module.id}&lesson=${lesson.id}`
+                                    )
                                   }}
                                 >
                                   <div className='flex items-center gap-2'>

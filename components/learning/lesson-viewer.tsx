@@ -80,16 +80,24 @@ export default function LessonViewer({
   const { toast } = useToast()
 
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
-  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(null)
-  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(null)
+  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(
+    null
+  )
+  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
-  const [moduleLessons, setModuleLessons] = useState<Record<string, LessonResponseDTO[]>>({})
+  const [moduleLessons, setModuleLessons] = useState<
+    Record<string, LessonResponseDTO[]>
+  >({})
 
   // Video player state
-  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>('medium')
+  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>(
+    'medium'
+  )
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -112,7 +120,7 @@ export default function LessonViewer({
           videoUrl,
           currentTime: videoRef.current.currentTime,
           duration: videoRef.current.duration,
-          readyState: videoRef.current.readyState
+          readyState: videoRef.current.readyState,
         })
 
         if (isPlaying) {
@@ -128,7 +136,7 @@ export default function LessonViewer({
             console.log('Video not ready, loading...')
             videoRef.current.load()
             // Wait for video to be loaded
-            await new Promise((resolve) => {
+            await new Promise(resolve => {
               const handleCanPlay = () => {
                 videoRef.current?.removeEventListener('canplay', handleCanPlay)
                 resolve(true)
@@ -279,7 +287,9 @@ export default function LessonViewer({
         if (!moduleId || !lessonId) {
           const firstModule = courseResponse.data.modules[0]
           if (firstModule) {
-            const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModule.id.toString())
+            const lessonsResponse = await lessonApi.getLessonsByModuleId(
+              firstModule.id.toString()
+            )
             const firstLesson = lessonsResponse.data[0]
             if (firstLesson) {
               router.replace(
@@ -291,15 +301,21 @@ export default function LessonViewer({
         }
 
         // Find current module and lesson
-        const module = courseResponse.data.modules.find(m => m.id.toString() === moduleId)
+        const module = courseResponse.data.modules.find(
+          m => m.id.toString() === moduleId
+        )
         if (!module) {
           throw new Error(
             `Module with ID "${moduleId}" not found in course "${courseResponse.data.title}"`
           )
         }
 
-        const lessonsResponse = await lessonApi.getLessonsByModuleId(module.id.toString())
-        const lesson = lessonsResponse.data.find(l => l.id.toString() === lessonId)
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(
+          module.id.toString()
+        )
+        const lesson = lessonsResponse.data.find(
+          l => l.id.toString() === lessonId
+        )
         if (!lesson) {
           throw new Error(
             `Lesson with ID "${lessonId}" not found in module "${module.title}"`
@@ -310,7 +326,7 @@ export default function LessonViewer({
         setCurrentLesson(lesson)
         setModuleLessons(prev => ({
           ...prev,
-          [module.id]: lessonsResponse.data
+          [module.id]: lessonsResponse.data,
         }))
         setExpandedModules(new Set([module.id.toString()]))
       } catch (err) {
@@ -360,7 +376,10 @@ export default function LessonViewer({
     )
 
     // Next lesson in current module
-    if (currentLessonIndex !== undefined && currentLessonIndex < moduleLessons[currentModule.id].length - 1) {
+    if (
+      currentLessonIndex !== undefined &&
+      currentLessonIndex < moduleLessons[currentModule.id].length - 1
+    ) {
       return {
         module: currentModule,
         lesson: moduleLessons[currentModule.id][currentLessonIndex + 1],
@@ -402,7 +421,10 @@ export default function LessonViewer({
       const prevModule = course.modules[currentModuleIndex - 1]
       return {
         module: prevModule,
-        lesson: moduleLessons[prevModule.id]?.[moduleLessons[prevModule.id].length - 1],
+        lesson:
+          moduleLessons[prevModule.id]?.[
+            moduleLessons[prevModule.id].length - 1
+          ],
       }
     }
 
@@ -420,7 +442,7 @@ export default function LessonViewer({
         const lessonsResponse = await lessonApi.getLessonsByModuleId(moduleId)
         setModuleLessons(prev => ({
           ...prev,
-          [moduleId]: lessonsResponse.data
+          [moduleId]: lessonsResponse.data,
         }))
       } catch (err) {
         toast({
@@ -446,7 +468,9 @@ export default function LessonViewer({
           setCurrentTime(0)
           setDuration(0)
 
-          const url = await lessonApi.getLessonVideoUrl(currentLesson.id.toString())
+          const url = await lessonApi.getLessonVideoUrl(
+            currentLesson.id.toString()
+          )
           console.log('Video URL loaded:', url)
           setVideoUrl(url)
         } catch (error) {
@@ -593,10 +617,14 @@ export default function LessonViewer({
               <CardTitle className='text-2xl'>{course.title}</CardTitle>
             </div>
             <Badge variant='secondary'>
-              {Math.round((course.totalLessons / course.totalLessons) * 100)}% Complete
+              {Math.round((course.totalLessons / course.totalLessons) * 100)}%
+              Complete
             </Badge>
           </div>
-          <Progress value={(course.totalLessons / course.totalLessons) * 100} className='w-full' />
+          <Progress
+            value={(course.totalLessons / course.totalLessons) * 100}
+            className='w-full'
+          />
         </CardHeader>
       </Card>
 
@@ -625,27 +653,32 @@ export default function LessonViewer({
           <Card>
             <CardContent className='p-0'>
               <div
-                className={`relative bg-black transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
-                  }`}
+                className={`relative bg-black transition-all duration-300 ${
+                  isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
+                }`}
                 ref={videoContainerRef}
               >
                 <video
                   ref={videoRef}
-                  className={`w-full object-contain ${isFullscreen
+                  className={`w-full object-contain ${
+                    isFullscreen
                       ? 'h-screen'
                       : videoSize === 'small'
                         ? 'h-48 md:h-64'
                         : videoSize === 'medium'
                           ? 'h-64 md:h-80 lg:h-96'
                           : 'h-80 md:h-96 lg:h-[32rem]'
-                    }`}
-                  poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                  }`}
+                  poster={
+                    course.thumbnailUrl ||
+                    '/placeholder.svg?height=400&width=600'
+                  }
                   controls={false}
                   onClick={togglePlayPause}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => setIsPlaying(false)}
-                  onError={(e) => console.error('Video error:', e)}
+                  onError={e => console.error('Video error:', e)}
                 >
                   {videoUrl && <source src={videoUrl} type='video/mp4' />}
                   Your browser does not support the video tag.
@@ -929,9 +962,7 @@ export default function LessonViewer({
                 </TabsContent>
 
                 <TabsContent value='discussion' className='mt-4'>
-                  <DiscussionSection
-                    lessonId={currentLesson.id.toString()}
-                  />
+                  <DiscussionSection lessonId={currentLesson.id.toString()} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -983,7 +1014,9 @@ export default function LessonViewer({
                 <Collapsible
                   key={module.id}
                   open={expandedModules.has(module.id.toString())}
-                  onOpenChange={() => toggleModuleExpansion(module.id.toString())}
+                  onOpenChange={() =>
+                    toggleModuleExpansion(module.id.toString())
+                  }
                 >
                   <CollapsibleTrigger asChild>
                     <div className='flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted'>
@@ -1010,11 +1043,17 @@ export default function LessonViewer({
                     {moduleLessons[module.id]?.map(lesson => (
                       <div
                         key={lesson.id}
-                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${currentLesson?.id === lesson.id
+                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${
+                          currentLesson?.id === lesson.id
                             ? 'bg-primary/10 border border-primary'
                             : 'hover:bg-muted'
-                          }`}
-                        onClick={() => navigateToLesson(module.id.toString(), lesson.id.toString())}
+                        }`}
+                        onClick={() =>
+                          navigateToLesson(
+                            module.id.toString(),
+                            lesson.id.toString()
+                          )
+                        }
                       >
                         <div className='flex items-center justify-between'>
                           <div className='flex-1'>

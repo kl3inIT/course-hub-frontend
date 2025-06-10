@@ -15,7 +15,7 @@ import {
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger
+  NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu'
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -28,7 +28,7 @@ import {
   LogOut,
   Menu,
   Settings,
-  Shield
+  Shield,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

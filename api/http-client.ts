@@ -74,10 +74,17 @@ httpClient.interceptors.request.use(
 httpClient.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401 && !localStorage.getItem('isLoggingOut')) {
-      // Handle unauthorized access
+    if (
+      error.response?.status === 401 &&
+      !error.config.url?.includes('/api/auth/logout')
+    ) {
+      // Handle unauthorized access, but ignore during logout
       localStorage.removeItem('accessToken')
-      window.location.href = '/login'
+      localStorage.removeItem('user')
+      // Use router.push instead of window.location for smoother navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

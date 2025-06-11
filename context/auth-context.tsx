@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('accessToken')
       if (token) {
         // Gọi API logout
-        await httpClient.post('/auth/logout', { token })
+        await httpClient.post('api/auth/logout', { token })
       }
     } catch (error) {
       console.error('Logout error:', error)

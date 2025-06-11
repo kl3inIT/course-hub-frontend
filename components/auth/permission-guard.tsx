@@ -1,9 +1,9 @@
 'use client'
 
-import type React from 'react'
-import { useAuth } from '@/context/auth-context'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useAuth } from '@/context/auth-context'
 import { Shield } from 'lucide-react'
+import type React from 'react'
 
 interface PermissionGuardProps {
   permissions: string[]

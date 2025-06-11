@@ -1,340 +1,394 @@
 'use client'
 
+import { categoryApi } from '@/api/category-api'
+import { courseApi } from '@/api/course-api'
+import { discountApi } from '@/api/discount-api'
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { Toaster } from '@/components/ui/toaster'
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
+import { Category, Coupon, CouponSearchParams, Course } from '@/types/discount'
 import {
-    BookOpen,
-    Calendar,
-    DollarSign,
-    Edit,
-    Filter,
-    Globe,
-    MoreHorizontal,
-    Percent,
-    Plus,
-    Search,
-    Tag,
-    Trash2,
-    Users
+  BookOpen,
+  Calendar,
+  DollarSign,
+  Edit,
+  EyeIcon,
+  EyeOffIcon,
+  Filter,
+  Globe,
+  MoreHorizontal,
+  Percent,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+  Users
 } from 'lucide-react'
-import { useState } from 'react'
-
-// Types
-interface Category {
-  id: string
-  name: string
-  courseCount: number
-}
-
-interface Course {
-  id: string
-  title: string
-  category: string
-  price: number
-}
-
-interface Coupon {
-  id: string
-  code: string
-  name: string
-  description: string
-  discountType: 'percentage' | 'fixed'
-  discountValue: number
-  minimumAmount: number
-  maximumDiscount?: number
-  applicationType: 'all' | 'specific'
-  applicableCategories: string[]
-  applicableCourses: string[]
-  startDate: string
-  endDate: string
-  usageLimit: number
-  usedCount: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-// Mock data for categories
-const mockCategories: Category[] = [
-  { id: '1', name: 'Programming', courseCount: 45 },
-  { id: '2', name: 'Design', courseCount: 32 },
-  { id: '3', name: 'Business', courseCount: 28 },
-  { id: '4', name: 'Marketing', courseCount: 22 },
-  { id: '5', name: 'Photography', courseCount: 18 },
-  { id: '6', name: 'Music', courseCount: 15 },
-]
-
-// Mock data for courses
-const mockCourses: Course[] = [
-  { id: '1', title: 'React Complete Course', category: 'Programming', price: 99 },
-  { id: '2', title: 'UI/UX Design Fundamentals', category: 'Design', price: 79 },
-  { id: '3', title: 'Digital Marketing Strategy', category: 'Marketing', price: 89 },
-  { id: '4', title: 'JavaScript Mastery', category: 'Programming', price: 109 },
-  { id: '5', title: 'Photoshop for Beginners', category: 'Design', price: 69 },
-  { id: '6', title: 'Business Analytics', category: 'Business', price: 119 },
-  { id: '7', title: 'Portrait Photography', category: 'Photography', price: 95 },
-  { id: '8', title: 'Music Production', category: 'Music', price: 85 },
-]
-
-// Mock data for coupons
-const mockCoupons: Coupon[] = [
-  {
-    id: '1',
-    code: 'WELCOME10',
-    name: 'Welcome Discount',
-    description: 'Welcome discount for new students',
-    discountType: 'percentage',
-    discountValue: 10,
-    minimumAmount: 50,
-    maximumDiscount: 20,
-    applicationType: 'all',
-    applicableCategories: [],
-    applicableCourses: [],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    usageLimit: 1000,
-    usedCount: 150,
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    code: 'PROGRAMMING20',
-    name: 'Programming Course Sale',
-    description: 'Special discount for programming courses',
-    discountType: 'percentage',
-    discountValue: 20,
-    minimumAmount: 100,
-    maximumDiscount: 50,
-    applicationType: 'specific',
-    applicableCategories: ['1'], // Programming
-    applicableCourses: [],
-    startDate: '2024-03-01',
-    endDate: '2024-05-31',
-    usageLimit: 500,
-    usedCount: 75,
-    isActive: true,
-    createdAt: '2024-02-28T00:00:00Z',
-    updatedAt: '2024-03-10T14:20:00Z',
-  },
-  {
-    id: '3',
-    code: 'REACT15',
-    name: 'React Course Discount',
-    description: 'Special discount for React course',
-    discountType: 'fixed',
-    discountValue: 15,
-    minimumAmount: 75,
-    applicationType: 'specific',
-    applicableCategories: [],
-    applicableCourses: ['1'], // React Complete Course
-    startDate: '2024-02-01',
-    endDate: '2024-04-30',
-    usageLimit: 200,
-    usedCount: 45,
-    isActive: false,
-    createdAt: '2024-02-01T00:00:00Z',
-    updatedAt: '2024-02-15T09:15:00Z',
-  },
-  {
-    id: '4',
-    code: 'DESIGN25',
-    name: 'Design Bundle Sale',
-    description: 'Discount for design courses and specific programming courses',
-    discountType: 'percentage',
-    discountValue: 25,
-    minimumAmount: 150,
-    maximumDiscount: 75,
-    applicationType: 'specific',
-    applicableCategories: ['2', '5'], // Design, Photography
-    applicableCourses: ['1', '4'], // React + JavaScript courses
-    startDate: '2024-06-01',
-    endDate: '2024-08-31',
-    usageLimit: 300,
-    usedCount: 12,
-    isActive: true,
-    createdAt: '2024-05-25T00:00:00Z',
-    updatedAt: '2024-06-01T08:00:00Z',
-  },
-]
+import { useEffect, useState } from 'react'
 
 export function CouponManagement() {
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons)
-  const [categories] = useState<Category[]>(mockCategories)
-  const [courses] = useState<Course[]>(mockCourses)
+  const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [loadingCoupons, setLoadingCoupons] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
+  const [loadingCourses, setLoadingCourses] = useState(false)
+  const [visibleCodes, setVisibleCodes] = useState<{[key: string]: boolean}>({})
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 0,
+    size: 5, // Match backend default
+    totalElements: 0,
+    totalPages: 0,
+    first: true,
+    last: true,
+  })
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterCourse, setFilterCourse] = useState<string>('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
   const [formData, setFormData] = useState<Partial<Coupon>>({
     code: '',
-    name: '',
     description: '',
     discountType: 'percentage',
-    discountValue: 0,
-    minimumAmount: 0,
-    maximumDiscount: 0,
+    discountValue: undefined,
     applicationType: 'all',
     applicableCategories: [],
     applicableCourses: [],
-    startDate: '',
     endDate: '',
-    usageLimit: 1,
+    usageLimit: undefined,
     isActive: true,
   })
   const { toast } = useToast()
 
-  // Filter coupons based on search and status
-  const filteredCoupons = coupons.filter(coupon => {
-    const matchesSearch = 
-      coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = 
-      filterStatus === 'all' || 
-      (filterStatus === 'active' && coupon.isActive) ||
-      (filterStatus === 'inactive' && !coupon.isActive)
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchCategories()
+    fetchCourses()
+    fetchCoupons()
+  }, [])
 
-    return matchesSearch && matchesStatus
-  })
+  // Watch filter changes
+  useEffect(() => {
+    fetchCoupons(0) // Reset to first page when filters change
+  }, [filterStatus, filterCategory, filterCourse])
+
+  const fetchCoupons = async (page = 0) => {
+    try {
+      setLoadingCoupons(true)
+      
+      // Build search params
+      const searchParams: CouponSearchParams = {
+        page,
+        size: pagination.size,
+      }
+      
+      // Add filters
+      if (filterStatus !== 'all') {
+        searchParams.isActive = filterStatus === 'active' ? 1 : 0
+      }
+      
+      if (filterCategory !== 'all') {
+        searchParams.categoryId = Number(filterCategory)
+      }
+      
+      if (filterCourse !== 'all') {
+        searchParams.courseId = Number(filterCourse)
+      }
+      
+      const response = await discountApi.getCoupons(searchParams)
+      const backendData = response.data
+      
+      // Transform backend coupons to frontend format
+      const transformedCoupons: any[] = backendData.content.map(backendCoupon => {
+        const [usedCount, usageLimit] = backendCoupon.usage.split('/').map(Number)
+        
+        return {
+          id: backendCoupon.id.toString(),
+          code: backendCoupon.code,
+          name: '', // Backend doesn't have name field
+          description: backendCoupon.description,
+          discountType: 'percentage' as const,
+          discountValue: backendCoupon.percentage,
+          minimumAmount: 0, // Backend doesn't have this field
+          maximumDiscount: undefined,
+          applicationType: backendCoupon.isGlobal === 1 ? 'all' : 'specific',
+          applicableCategories: backendCoupon.categoryIds?.map(id => id.toString()) || [],
+          applicableCourses: backendCoupon.courseIds?.map(id => id.toString()) || [],
+          startDate: new Date().toISOString(), // Backend doesn't have start date
+          endDate: backendCoupon.expiryTime ? new Date(backendCoupon.expiryTime).toISOString().split('T')[0] : '',
+          usageLimit,
+          usedCount,
+          isActive: backendCoupon.isActive === 1,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          // Preserve backend fields for display
+          totalCategory: backendCoupon.totalCategory,
+          totalCourse: backendCoupon.totalCourse,
+          categoryIds: backendCoupon.categoryIds,
+          courseIds: backendCoupon.courseIds,
+        }
+      })
+      
+      setCoupons(transformedCoupons)
+      console.log('Transformed coupons:', transformedCoupons)
+      
+      // Update pagination state
+      setPagination({
+        page: backendData.number,
+        size: backendData.size,
+        totalElements: backendData.totalElements,
+        totalPages: backendData.totalPages,
+        first: backendData.first,
+        last: backendData.last,
+      })
+      
+    } catch (error) {
+      console.error('Error fetching coupons:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load coupons',
+        className: 'border-red-500 bg-red-50 text-red-900',
+      })
+    } finally {
+      setLoadingCoupons(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true)
+      const response = await categoryApi.getAllCategories({ size: 100 })
+      
+      // Transform API response to match our Category interface
+      const transformedCategories: Category[] = response.data.content.map(cat => ({
+        id: cat.id.toString(),
+        name: cat.name,
+        courseCount: cat.courseCount || 0
+      }))
+      
+      setCategories(transformedCategories)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load categories',
+        className: 'border-red-500 bg-red-50 text-red-900',
+      })
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  const fetchCourses = async () => {
+    try {
+      setLoadingCourses(true)
+      const response = await courseApi.getAllCourses({ size: 100 })
+      
+      // Transform API response to match our Course interface
+      const transformedCourses: Course[] = response.data.content.map(course => ({
+        id: course.id.toString(),
+        title: course.title,
+        category: course.category,
+        price: course.price
+      }))
+      
+      setCourses(transformedCourses)
+    } catch (error) {
+      console.error('Error fetching courses:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load courses',
+        className: 'border-red-500 bg-red-50 text-red-900',
+      })
+    } finally {
+      setLoadingCourses(false)
+    }
+  }
+
+  // Apply client-side search filtering (since backend may not support text search)
+  const filteredCoupons = searchTerm
+    ? coupons.filter(coupon => 
+        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : coupons
 
   // Handle form submission
-  const handleSubmit = () => {
-    if (!formData.code || !formData.name || !formData.startDate || !formData.endDate) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-      toast({
-        title: 'Error',
-        description: 'End date must be after start date',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    // Validate application type selections
-    if (formData.applicationType === 'specific' && 
-        (!formData.applicableCategories || formData.applicableCategories.length === 0) &&
-        (!formData.applicableCourses || formData.applicableCourses.length === 0)) {
-      toast({
-        title: 'Error',
-        description: 'Please select at least one category or course for specific application',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    if (selectedCoupon) {
-      // Update existing coupon
-      setCoupons(prev => prev.map(coupon => 
-        coupon.id === selectedCoupon.id 
-          ? { ...coupon, ...formData, updatedAt: new Date().toISOString() }
-          : coupon
-      ))
-      toast({
-        title: 'Success',
-        description: 'Coupon updated successfully',
-      })
-      setIsEditDialogOpen(false)
-    } else {
-      // Create new coupon
-      const newCoupon: Coupon = {
-        ...formData as Coupon,
-        id: Date.now().toString(),
-        usedCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+  const handleSubmit = async () => {
+    console.log('handleSubmit called')
+    console.log('Form data:', formData)
+    
+    try {
+      if (selectedCoupon) {
+        // Update existing coupon
+        const updateData = {
+          code: formData.code || '',
+          description: formData.description || '',
+          expiryDate: formData.endDate || '',
+          percentage: Number(formData.discountValue) || 0,
+          isActive: formData.isActive ? 1 : 0,
+          isGlobal: formData.applicationType === 'all' ? 1 : 0,
+          quantity: Number(formData.usageLimit) || 0,
+          categoryIds: formData.applicableCategories?.map(id => Number(id)) || [],
+          courseIds: formData.applicableCourses?.map(id => Number(id)) || [],
+        }
+        
+        console.log('Updating coupon data:', updateData)
+        
+        await discountApi.updateCoupon(selectedCoupon.id, updateData)
+        
+        // Refresh coupon list
+        await fetchCoupons()
+        
+        toast({
+          title: 'Success',
+          description: 'Coupon updated successfully',
+          className: 'border-green-500 bg-green-50 text-green-900',
+        })
+        setIsEditDialogOpen(false)
+      } else {
+        // Create new coupon via API
+        const couponData = {
+          code: formData.code || '',
+          description: formData.description || '',
+          expiryDate: formData.endDate || '',
+          percentage: Number(formData.discountValue) || 0,
+          isActive: formData.isActive ? 1 : 0,
+          isGlobal: formData.applicationType === 'all' ? 1 : 0,
+          quantity: Number(formData.usageLimit) || 0,
+          categoryIds: formData.applicableCategories?.map(id => Number(id)) || [],
+          courseIds: formData.applicableCourses?.map(id => Number(id)) || [],
+        }
+        
+        console.log('Sending coupon data to backend:', couponData)
+        
+        await discountApi.createCoupon(couponData)
+        
+        // Refresh coupon list
+        await fetchCoupons()
+        
+        toast({
+          title: 'Success',
+          description: 'Coupon created successfully',
+          className: 'border-green-500 bg-green-50 text-green-900',
+        })
+        setIsCreateDialogOpen(false)
       }
-      setCoupons(prev => [newCoupon, ...prev])
-      toast({
-        title: 'Success',
-        description: 'Coupon created successfully',
-      })
-      setIsCreateDialogOpen(false)
-    }
 
-    resetForm()
+      resetForm()
+          } catch (error: any) {
+        console.log(error.response?.data)
+        
+        // Extract error messages for toast
+        let errorMessage = 'An error occurred while processing the coupon'
+        
+        if (error.response?.data) {
+          const errorData = error.response.data
+          
+          // Handle validation errors in 'data' array
+          if (errorData.data && Array.isArray(errorData.data)) {
+            errorMessage = errorData.data.join('\n• ')
+            errorMessage = `Validation errors:\n• ${errorMessage}`
+          }
+          // Handle other error formats
+          else if (errorData.message) {
+            errorMessage = errorData.message
+          }
+          else if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        }
+        // Handle network errors
+        else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        // Show toast
+        toast({
+          title: 'Error',
+          description: (
+            <div style={{ whiteSpace: 'pre-line', fontSize: '14px' }}>
+              {errorMessage}
+            </div>
+          ),
+          variant: 'default',
+          className: 'border-blue-500 bg-blue-50 text-blue-900',
+        })
+      }
   }
 
   // Reset form
   const resetForm = () => {
     setFormData({
       code: '',
-      name: '',
       description: '',
       discountType: 'percentage',
-      discountValue: 0,
-      minimumAmount: 0,
-      maximumDiscount: 0,
+      discountValue: undefined,
       applicationType: 'all',
       applicableCategories: [],
       applicableCourses: [],
-      startDate: '',
       endDate: '',
-      usageLimit: 1,
+      usageLimit: undefined,
       isActive: true,
     })
     setSelectedCoupon(null)
@@ -345,16 +399,12 @@ export function CouponManagement() {
     setSelectedCoupon(coupon)
     setFormData({
       code: coupon.code,
-      name: coupon.name,
       description: coupon.description,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
-      minimumAmount: coupon.minimumAmount,
-      maximumDiscount: coupon.maximumDiscount,
       applicationType: coupon.applicationType,
       applicableCategories: coupon.applicableCategories,
       applicableCourses: coupon.applicableCourses,
-      startDate: coupon.startDate,
       endDate: coupon.endDate,
       usageLimit: coupon.usageLimit,
       isActive: coupon.isActive,
@@ -362,14 +412,42 @@ export function CouponManagement() {
     setIsEditDialogOpen(true)
   }
 
-  // Handle delete
-  const handleDelete = (couponId: string) => {
-    setCoupons(prev => prev.filter(coupon => coupon.id !== couponId))
+ // Handle delete
+ const handleDelete = async (couponId: string) => {
+  try {
+    console.log(`Deleting coupon with ID: ${couponId}`);
+
+    await discountApi.deleteCoupon(couponId);
+
+    // Refresh coupon list after successful deletion
+    await fetchCoupons(pagination.page);
+
     toast({
       title: 'Success',
       description: 'Coupon deleted successfully',
-    })
+      className: 'border-green-500 bg-green-50 text-green-900',
+    });
+  }catch (error: any) {
+    console.log(error.response?.data);
+  
+    // Lấy message chi tiết nếu có
+    const errorMessage = error.response?.data?.data 
+      || error.response?.data?.message 
+      || 'An unexpected error occurred';
+  
+      toast({
+        title: 'Error',
+        description: (
+          <div style={{ whiteSpace: 'pre-line', fontSize: '14px' }}>
+            {errorMessage}
+          </div>
+        ),
+        variant: 'default',
+        className: 'border-red-500 bg-red-50 text-red-900', 
+      });
   }
+};
+
 
   // Toggle coupon status
   const toggleStatus = (couponId: string) => {
@@ -413,87 +491,72 @@ export function CouponManagement() {
   }
 
   // Get applicable items display
-  const getApplicableItemsDisplay = (coupon: Coupon) => {
+  const getApplicableItemsDisplay = (coupon: Coupon & { totalCategory?: number, totalCourse?: number }) => {
     if (coupon.applicationType === 'all') {
       return <Badge className="bg-blue-100 text-blue-800"><Globe className="w-3 h-3 mr-1" />All Items</Badge>
     } else {
-      const categoryNames = coupon.applicableCategories.map(id => 
-        categories.find(c => c.id === id)?.name
-      ).filter(Boolean)
-      
-      const courseNames = coupon.applicableCourses.map(id => 
-        courses.find(c => c.id === id)?.title
-      ).filter(Boolean)
-
-      const displayItems = []
-      if (categoryNames.length > 0) {
-        displayItems.push(`${categoryNames.length} categories`)
-      }
-      if (courseNames.length > 0) {
-        displayItems.push(`${courseNames.length} courses`)
-      }
+      const totalCategories = (coupon as any).totalCategory || 0
+      const totalCourses = (coupon as any).totalCourse || 0
 
       return (
-        <Badge className="bg-purple-100 text-purple-800">
-          <Tag className="w-3 h-3 mr-1" />
-          {displayItems.join(' + ')}
-        </Badge>
+        <div className="space-y-1">
+          <Badge className="bg-purple-100 text-purple-800">
+            <Tag className="w-3 h-3 mr-1" />
+            Specific Items
+          </Badge>
+          <div className="text-xs text-gray-600">
+            {totalCategories > 0 && (
+              <div>• {totalCategories} categories</div>
+            )}
+            {totalCourses > 0 && (
+              <div>• {totalCourses} courses</div>
+            )}
+            {totalCategories === 0 && totalCourses === 0 && (
+              <div>• No items selected</div>
+            )}
+          </div>
+        </div>
       )
     }
   }
 
   // Get detailed tooltip content for applicable items
-  const getApplicableItemsTooltip = (coupon: Coupon) => {
+  const getApplicableItemsTooltip = (coupon: Coupon & { totalCategory?: number, totalCourse?: number }) => {
     if (coupon.applicationType === 'all') {
       return (
-        <div className="space-y-1">
-          <div className="font-medium">All Items</div>
-          <div className="text-sm">This coupon applies to all courses on the platform</div>
+        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg">
+          <div className="font-medium text-sm text-gray-900">All Items</div>
+          <div className="text-xs text-gray-600 mt-1">This coupon applies to all courses on the platform</div>
         </div>
       )
     } else {
-      const categoryNames = coupon.applicableCategories.map(id => 
-        categories.find(c => c.id === id)?.name
-      ).filter(Boolean)
-      
-      const courseNames = coupon.applicableCourses.map(id => 
-        courses.find(c => c.id === id)?.title
-      ).filter(Boolean)
+      const totalCategories = (coupon as any).totalCategory || 0
+      const totalCourses = (coupon as any).totalCourse || 0
 
       return (
-        <div className="space-y-2 max-w-sm">
-          <div className="font-medium">Specific Items</div>
+        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs">
+          <div className="font-medium text-sm text-gray-900 mb-2">Specific Items</div>
           
-          {categoryNames.length > 0 && (
-            <div>
-              <div className="text-sm font-medium flex items-center">
+          {totalCategories > 0 && (
+            <div className="mb-2">
+              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
                 <Tag className="w-3 h-3 mr-1" />
-                Categories ({categoryNames.length}):
+                Categories: {totalCategories} selected
               </div>
-              <ul className="text-xs mt-1 space-y-1">
-                {categoryNames.map((name, index) => (
-                  <li key={index} className="ml-4">• {name}</li>
-                ))}
-              </ul>
             </div>
           )}
           
-          {courseNames.length > 0 && (
+          {totalCourses > 0 && (
             <div>
-              <div className="text-sm font-medium flex items-center">
+              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
                 <BookOpen className="w-3 h-3 mr-1" />
-                Courses ({courseNames.length}):
+                Courses: {totalCourses} selected
               </div>
-              <ul className="text-xs mt-1 space-y-1">
-                {courseNames.map((name, index) => (
-                  <li key={index} className="ml-4">• {name}</li>
-                ))}
-              </ul>
             </div>
           )}
           
-          {categoryNames.length === 0 && courseNames.length === 0 && (
-            <div className="text-sm text-muted-foreground">No specific items selected</div>
+          {totalCategories === 0 && totalCourses === 0 && (
+            <div className="text-xs text-gray-500">No specific items selected</div>
           )}
         </div>
       )
@@ -543,28 +606,25 @@ export function CouponManagement() {
     }
   }
 
+  // Add toggle code visibility function
+  const toggleCodeVisibility = (couponId: string) => {
+    setVisibleCodes(prev => ({
+      ...prev,
+      [couponId]: !prev[couponId]
+    }))
+  }
+
   // Render form fields
   const renderFormFields = (isEdit = false) => (
     <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-code" : "code"}>Coupon Code *</Label>
-          <Input
-            id={isEdit ? "edit-code" : "code"}
-            placeholder="e.g., WELCOME10"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-name" : "name"}>Coupon Name *</Label>
-          <Input
-            id={isEdit ? "edit-name" : "name"}
-            placeholder="e.g., Welcome Discount"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-code" : "code"}>Coupon Code *</Label>
+        <Input
+          id={isEdit ? "edit-code" : "code"}
+          placeholder="e.g., WELCOME10"
+          value={formData.code}
+          onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor={isEdit ? "edit-description" : "description"}>Description</Label>
@@ -609,18 +669,28 @@ export function CouponManagement() {
             <div className="space-y-2">
               <Label>Select Categories (Optional)</Label>
               <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
-                {categories.map((category) => (
-                  <div key={category.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`category-${category.id}-${isEdit ? 'edit' : 'create'}`}
-                      checked={formData.applicableCategories?.includes(category.id) || false}
-                      onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
-                    />
-                    <Label htmlFor={`category-${category.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
-                      {category.name} ({category.courseCount} courses)
-                    </Label>
+                {loadingCategories ? (
+                  <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
+                    Loading categories...
                   </div>
-                ))}
+                ) : categories.length === 0 ? (
+                  <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
+                    No categories available
+                  </div>
+                ) : (
+                  categories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`category-${category.id}-${isEdit ? 'edit' : 'create'}`}
+                        checked={formData.applicableCategories?.includes(category.id) || false}
+                        onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
+                      />
+                      <Label htmlFor={`category-${category.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
+                        {category.name}
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -628,18 +698,28 @@ export function CouponManagement() {
             <div className="space-y-2">
               <Label>Select Courses (Optional)</Label>
               <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border rounded p-2">
-                {courses.map((course) => (
-                  <div key={course.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`course-${course.id}-${isEdit ? 'edit' : 'create'}`}
-                      checked={formData.applicableCourses?.includes(course.id) || false}
-                      onCheckedChange={(checked) => handleCourseChange(course.id, checked as boolean)}
-                    />
-                    <Label htmlFor={`course-${course.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
-                      {course.title} ({course.category}) - {formatCurrency(course.price)}
-                    </Label>
+                {loadingCourses ? (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    Loading courses...
                   </div>
-                ))}
+                ) : courses.length === 0 ? (
+                  <div className="text-center text-sm text-muted-foreground py-4">
+                    No courses available
+                  </div>
+                ) : (
+                  courses.map((course) => (
+                    <div key={course.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`course-${course.id}-${isEdit ? 'edit' : 'create'}`}
+                        checked={formData.applicableCourses?.includes(course.id) || false}
+                        onCheckedChange={(checked) => handleCourseChange(course.id, checked as boolean)}
+                      />
+                      <Label htmlFor={`course-${course.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
+                        {course.title}
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             
@@ -650,91 +730,41 @@ export function CouponManagement() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-discountType" : "discountType"}>Discount Type</Label>
-          <Select
-            value={formData.discountType}
-            onValueChange={(value: 'percentage' | 'fixed') => 
-              setFormData({ ...formData, discountType: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="percentage">Percentage (%)</SelectItem>
-              <SelectItem value="fixed">Fixed Amount (VND)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-discountValue" : "discountValue"}>
-            Discount Value {formData.discountType === 'percentage' ? '(%)' : '(VND)'}
-          </Label>
-          <Input
-            id={isEdit ? "edit-discountValue" : "discountValue"}
-            type="number"
-            min="0"
-            max={formData.discountType === 'percentage' ? "100" : undefined}
-            value={formData.discountValue}
-            onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-discountValue" : "discountValue"}>Percentage (%) *</Label>
+        <Input
+          id={isEdit ? "edit-discountValue" : "discountValue"}
+          type="number"
+          min="1"
+          max="100"
+          placeholder="e.g., 10"
+          value={formData.discountValue || ''}
+          onChange={(e) => setFormData({ ...formData, discountValue: e.target.value ? Number(e.target.value) : undefined })}
+        />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-minimumAmount" : "minimumAmount"}>Minimum Amount (VND)</Label>
-          <Input
-            id={isEdit ? "edit-minimumAmount" : "minimumAmount"}
-            type="number"
-            min="0"
-            value={formData.minimumAmount}
-            onChange={(e) => setFormData({ ...formData, minimumAmount: Number(e.target.value) })}
-          />
-        </div>
-        {formData.discountType === 'percentage' && (
-          <div className="space-y-2">
-            <Label htmlFor={isEdit ? "edit-maximumDiscount" : "maximumDiscount"}>Maximum Discount (VND)</Label>
-            <Input
-              id={isEdit ? "edit-maximumDiscount" : "maximumDiscount"}
-              type="number"
-              min="0"
-              value={formData.maximumDiscount || ''}
-              onChange={(e) => setFormData({ ...formData, maximumDiscount: Number(e.target.value) })}
-            />
-          </div>
-        )}
+      
+      <div className="space-y-2">
+        <Label htmlFor={isEdit ? "edit-endDate" : "endDate"}>Expiry Date *</Label>
+        <Input
+          id={isEdit ? "edit-endDate" : "endDate"}
+          type="date"
+          min={new Date().toISOString().split('T')[0]}
+          value={formData.endDate}
+          onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+        />
       </div>
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-startDate" : "startDate"}>Start Date *</Label>
-          <Input
-            id={isEdit ? "edit-startDate" : "startDate"}
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-endDate" : "endDate"}>End Date *</Label>
-          <Input
-            id={isEdit ? "edit-endDate" : "endDate"}
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-usageLimit" : "usageLimit"}>Usage Limit</Label>
+          <Label htmlFor={isEdit ? "edit-usageLimit" : "usageLimit"}>Quantity *</Label>
           <Input
             id={isEdit ? "edit-usageLimit" : "usageLimit"}
             type="number"
             min="1"
-            value={formData.usageLimit}
-            onChange={(e) => setFormData({ ...formData, usageLimit: Number(e.target.value) })}
+            step="1"
+            placeholder="e.g., 100"
+            value={formData.usageLimit || ''}
+            onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value ? Number(e.target.value) : undefined })}
           />
         </div>
         <div className="flex items-center space-x-2 pt-8">
@@ -759,29 +789,32 @@ export function CouponManagement() {
             Manage discount coupons and promotional codes
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Coupon
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Coupon</DialogTitle>
-              <DialogDescription>
-                Create a new discount coupon for your courses
-              </DialogDescription>
-            </DialogHeader>
-            {renderFormFields()}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
+        <div className="flex gap-2">
+      
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Coupon
               </Button>
-              <Button onClick={handleSubmit}>Create Coupon</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Coupon</DialogTitle>
+                <DialogDescription>
+                  Create a new discount coupon for your courses
+                </DialogDescription>
+              </DialogHeader>
+              {renderFormFields()}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmit}>Create Coupon</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -792,7 +825,7 @@ export function CouponManagement() {
             <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{coupons.length}</div>
+            <div className="text-2xl font-bold">{pagination.totalElements}</div>
           </CardContent>
         </Card>
         <Card>
@@ -802,7 +835,7 @@ export function CouponManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {coupons.filter(c => getCouponStatus(c) === 'active').length}
+              {coupons.filter(c => c.isActive).length}
             </div>
           </CardContent>
         </Card>
@@ -819,14 +852,12 @@ export function CouponManagement() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Usage Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Current Page</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {coupons.length > 0 
-                ? Math.round((coupons.reduce((sum, c) => sum + (c.usedCount / c.usageLimit), 0) / coupons.length) * 100)
-                : 0}%
+              {pagination.page + 1} / {pagination.totalPages}
             </div>
           </CardContent>
         </Card>
@@ -844,14 +875,42 @@ export function CouponManagement() {
           />
         </div>
         <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[150px]">
             <Filter className="mr-2 h-4 w-4" />
-            <SelectValue />
+            <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active Only</SelectItem>
             <SelectItem value="inactive">Inactive Only</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={(value: string) => setFilterCategory(value)}>
+          <SelectTrigger className="w-[150px]">
+            <Tag className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterCourse} onValueChange={(value: string) => setFilterCourse(value)}>
+          <SelectTrigger className="w-[180px]">
+            <BookOpen className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Course" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Courses</SelectItem>
+            {courses.map((course) => (
+              <SelectItem key={course.id} value={course.id}>
+                {course.title}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -862,40 +921,59 @@ export function CouponManagement() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Discount</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Applicable To</TableHead>
+                <TableHead>Percentage</TableHead>
                 <TableHead>Usage</TableHead>
-                <TableHead>Date Range</TableHead>
+                <TableHead>Expiry Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCoupons.map((coupon) => (
+              {loadingCoupons ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+                      Loading coupons...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredCoupons.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    No coupons found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCoupons.map((coupon) => (
                 <TableRow key={coupon.id}>
-                  <TableCell className="font-mono">{coupon.code}</TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{coupon.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {coupon.description}
-                      </div>
+                  <TableCell className="font-mono">#{coupon.id}</TableCell>
+                  <TableCell className="font-mono font-semibold">
+                    <div className="flex items-center space-x-2">
+                      <span style={{ fontFamily: 'monospace' }}>
+                        {visibleCodes[coupon.id] ? coupon.code : '•'.repeat(coupon.code.length)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => toggleCodeVisibility(coupon.id)}
+                      >
+                        {visibleCodes[coupon.id] ? (
+                          <EyeOffIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div>
-                        {coupon.discountType === 'percentage' 
-                          ? `${coupon.discountValue}%`
-                          : formatCurrency(coupon.discountValue)
-                        }
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Min: {formatCurrency(coupon.minimumAmount)}
-                        {coupon.maximumDiscount && ` • Max: ${formatCurrency(coupon.maximumDiscount)}`}
-                      </div>
+                    <div className="max-w-xs">
+                      <div className="text-sm">{coupon.description}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -911,20 +989,23 @@ export function CouponManagement() {
                     </TooltipProvider>
                   </TableCell>
                   <TableCell>
+                    <div className="font-medium">
+                      {coupon.discountType === 'percentage' 
+                        ? `${coupon.discountValue}%`
+                        : formatCurrency(coupon.discountValue)
+                      }
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="space-y-1">
-                      <div>{coupon.usedCount} / {coupon.usageLimit}</div>
+                      <div className="text-sm font-medium">{coupon.usedCount} / {coupon.usageLimit}</div>
                       <div className="text-xs text-muted-foreground">
                         {Math.round((coupon.usedCount / coupon.usageLimit) * 100)}% used
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="text-sm">{formatDate(coupon.startDate)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        to {formatDate(coupon.endDate)}
-                      </div>
-                    </div>
+                    <div className="text-sm">{formatDate(coupon.endDate)}</div>
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(getCouponStatus(coupon))}
@@ -940,11 +1021,7 @@ export function CouponManagement() {
                         <DropdownMenuItem onClick={() => handleEdit(coupon)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatus(coupon.id)}>
-                          <Switch className="mr-2 h-4 w-4" />
-                          {coupon.isActive ? 'Deactivate' : 'Activate'}
-                        </DropdownMenuItem>
+                        </DropdownMenuItem>                        
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -971,11 +1048,42 @@ export function CouponManagement() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Showing {pagination.page * pagination.size + 1} to{' '}
+          {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of{' '}
+          {pagination.totalElements} results
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchCoupons(pagination.page - 1)}
+            disabled={pagination.first}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {pagination.page + 1} of {pagination.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchCoupons(pagination.page + 1)}
+            disabled={pagination.last}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -995,6 +1103,7 @@ export function CouponManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Toaster />
     </div>
   )
 } 

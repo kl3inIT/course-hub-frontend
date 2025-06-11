@@ -53,12 +53,9 @@ export const paymentApi = {
       {}
     )
     return response.data
-<<<<<<< HEAD
+
   }
 
   
 } 
-=======
-  },
-}
->>>>>>> 6db9cb2bbb689c9eab506c8cb9e745708d5148ab
+

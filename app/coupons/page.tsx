@@ -1,6 +1,10 @@
 'use client'
 
-import { useEffect, useState, useRef, memo } from 'react'
+import { categoryApi } from '@/api/category-api'
+import { courseApi } from '@/api/course-api'
+import { userApi } from '@/api/user-api'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,29 +12,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Button } from '@/components/ui/button'
-import {
-  Info,
-  Gift,
-  Search,
-  SlidersHorizontal,
-  X,
-  Copy,
-  Check,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { useAuth } from '@/context/auth-context'
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Sheet,
   SheetContent,
@@ -39,74 +34,171 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useAuth } from '@/context/auth-context'
+import { useCoupon } from '@/hooks/use-coupon'
+import { cn } from '@/lib/utils'
+import { Category, ClaimedCoupon, Coupon, CouponSearchParams, Course, PaginationState } from '@/types/discount'
+import { transformCoupon } from '@/utils/transform'
+import {
+  BookOpen,
+  Check,
+  ChevronsUpDown,
+  Copy,
+  Gift,
+  Globe,
+  Search,
+  SlidersHorizontal,
+  Tag
+} from 'lucide-react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-interface Category {
-  id: string
-  name: string
-}
+const Select = ({
+  options,
+  selected,
+  onChange,
+  placeholder,
+  emptyText,
+}: {
+  options: { id: string; name: string }[] | { id: string; title: string }[]
+  selected: string | null
+  onChange: (value: string | null) => void
+  placeholder: string
+  emptyText: string
+}) => {
+  const [open, setOpen] = useState(false)
 
-interface Course {
-  id: string
-  title: string
-}
-
-interface Coupon {
-  id: string
-  code: string
-  discount: number
-  description: string
-  validUntil: string
-  isActive: boolean
-  isClaimed?: boolean
-  scope: {
-    type: 'all' | 'categories' | 'specific_course'
-    categories?: Category[]
-    course?: Course
+  const getLabel = (id: string | null) => {
+    if (!id) return null
+    const option = options.find(opt => opt.id === id)
+    return option ? 'title' in option ? option.title : option.name : null
   }
-}
 
-interface FilterSidebarProps {
-  selectedCategories: string[]
-  onCategoryToggle: (categoryId: string) => void
-  onDiscountChange: (value: string) => void
-  onClearFilters: () => void
-  minDiscount: string
-  allCategories: Array<{ id: string; name: string }>
-}
-
-interface ClaimedCoupon {
-  userId: string
-  couponId: string
-  claimedAt: string
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {selected ? (
+            <span className="truncate">{getLabel(selected)}</span>
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command>
+          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandEmpty>{emptyText}</CommandEmpty>
+          <CommandGroup className="max-h-64 overflow-auto">
+            <CommandItem onSelect={() => {
+              onChange(null)
+              setOpen(false)
+            }}>
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                  !selected ? "bg-primary text-primary-foreground" : "opacity-50"
+                )}>
+                  {!selected && <Check className="h-3 w-3" />}
+                </div>
+                <span>All</span>
+              </div>
+            </CommandItem>
+            {options.map((option) => {
+              const value = option.id
+              const label = 'title' in option ? option.title : option.name
+              const isSelected = selected === value
+              
+              return (
+                <CommandItem
+                  key={value}
+                  onSelect={() => {
+                    onChange(isSelected ? null : value)
+                    setOpen(false)
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      isSelected ? "bg-primary text-primary-foreground" : "opacity-50"
+                    )}>
+                      {isSelected && <Check className="h-3 w-3" />}
+                    </div>
+                    <span>{label}</span>
+                  </div>
+                </CommandItem>
+              )
+            })}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 const FilterSidebar = memo(function FilterSidebar({
   selectedCategories,
-  onCategoryToggle,
-  onDiscountChange,
-  onClearFilters,
-  minDiscount,
+  selectedCourses,
+  percentage,
   allCategories,
-}: FilterSidebarProps) {
-  const [localDiscount, setLocalDiscount] = useState(minDiscount)
+  allCourses,
+  onClearFilters,
+  onApplyFilter,
+}: {
+  selectedCategories: string | null,
+  selectedCourses: string | null,
+  percentage: string,
+  allCategories: { id: string; name: string }[],
+  allCourses: { id: string; title: string }[],
+  onClearFilters: () => void,
+  onApplyFilter: (filter: { category: string | null, course: string | null, percentage: string }) => void,
+}) {
+  const [localPercentage, setLocalPercentage] = useState(percentage)
+  const [localCategory, setLocalCategory] = useState<string | null>(selectedCategories)
+  const [localCourse, setLocalCourse] = useState<string | null>(selectedCourses)
 
-  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Sync local state with props when they change
+  useEffect(() => {
+    setLocalCategory(selectedCategories)
+    setLocalCourse(selectedCourses)
+    setLocalPercentage(percentage)
+  }, [selectedCategories, selectedCourses, percentage])
+
+  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setLocalDiscount(value)
-    if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 100)) {
-      onDiscountChange(value)
-    }
+    setLocalPercentage(value)
+  }
+
+  const handleApplyFilter = () => onApplyFilter({ category: localCategory, course: localCourse, percentage: localPercentage })
+
+  const handleClearFilters = () => {
+    setLocalCategory(null)
+    setLocalCourse(null)
+    setLocalPercentage('')
+    onClearFilters()
   }
 
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>Filters</h2>
-        {(selectedCategories.length > 0 || minDiscount) && (
+        {(localCategory || localCourse || localPercentage) && (
           <Button
             variant='ghost'
             size='sm'
-            onClick={onClearFilters}
+            onClick={handleClearFilters}
             className='h-8 px-2 text-muted-foreground'
           >
             Clear all
@@ -116,38 +208,46 @@ const FilterSidebar = memo(function FilterSidebar({
 
       <div className='space-y-4'>
         <div className='space-y-3'>
-          <Label className='text-base'>Categories</Label>
-          <div className='space-y-2'>
-            {allCategories.map(category => (
-              <div key={category.id} className='flex items-center space-x-2'>
-                <Checkbox
-                  id={`category-${category.id}`}
-                  checked={selectedCategories.includes(category.id)}
-                  onCheckedChange={() => onCategoryToggle(category.id)}
-                />
-                <label
-                  htmlFor={`category-${category.id}`}
-                  className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
-                >
-                  {category.name}
-                </label>
+          <Label className='text-base'>Category</Label>
+          <Select
+            options={allCategories}
+            selected={localCategory}
+            onChange={setLocalCategory}
+            placeholder="Select category"
+            emptyText="No categories found."
+          />
               </div>
-            ))}
-          </div>
+
+        <div className='space-y-3'>
+          <Label className='text-base'>Course</Label>
+          <Select
+            options={allCourses}
+            selected={localCourse}
+            onChange={setLocalCourse}
+            placeholder="Select course"
+            emptyText="No courses found."
+          />
         </div>
 
         <div className='space-y-3'>
-          <Label className='text-base'>Minimum Discount (%)</Label>
+          <Label className='text-base'>Percentage</Label>
           <Input
             type='number'
-            placeholder='Enter minimum discount'
-            value={localDiscount}
-            onChange={handleDiscountChange}
+            placeholder='Enter percentage'
+            value={localPercentage}
+            onChange={handlePercentageChange}
             min='0'
             max='100'
             className='[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
           />
         </div>
+
+        <Button 
+          className="w-full" 
+          onClick={handleApplyFilter}
+        >
+          Apply Filters
+        </Button>
       </div>
     </div>
   )
@@ -156,104 +256,302 @@ const FilterSidebar = memo(function FilterSidebar({
 export default function CouponsPage() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [minDiscount, setMinDiscount] = useState('')
+  const [filter, setFilter] = useState({
+    category: null as string | null,
+    course: null as string | null,
+    percentage: '',
+  })
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
   const [isFilterVisible, setIsFilterVisible] = useState(true)
   const [activeTab, setActiveTab] = useState('available')
   const [copiedCodes, setCopiedCodes] = useState<Record<string, boolean>>({})
   const discountInputRef = useRef<HTMLInputElement>(null)
   const [claimedCoupons, setClaimedCoupons] = useState<ClaimedCoupon[]>([])
+  const [allCategories, setAllCategories] = useState<Category[]>([])
+  const [allCourses, setCourses] = useState<Course[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [myCoupons, setMyCoupons] = useState<Coupon[]>([])
+  const [loadingMyCoupons, setLoadingMyCoupons] = useState(false)
+  const [myCouponsPagination, setMyCouponsPagination] = useState<PaginationState>({
+    page: 0,
+    size: 8,
+    totalElements: 0,
+    totalPages: 0,
+    first: true,
+    last: true,
+  })
 
-  const allCategories = [
-    { id: '1', name: 'Programming' },
-    { id: '2', name: 'Web Development' },
-    { id: '3', name: 'IT & Software' },
-    { id: '4', name: 'Business' },
-    { id: '5', name: 'Design' },
-  ]
+  // Use the custom hook
+  const { coupons, loadingCoupons, pagination, fetchCoupons } = useCoupon()
 
-  const [coupons, setCoupons] = useState<Coupon[]>([
-    {
-      id: '1',
-      code: 'WELCOME2024',
-      discount: 20,
-      description: 'Get 20% off on your first course purchase',
-      validUntil: '2024-12-31',
-      isActive: true,
-      isClaimed: false,
-      scope: {
-        type: 'all',
-      },
-    },
-    {
-      id: '2',
-      code: 'SPRING2024',
-      discount: 15,
-      description: 'Spring season special discount',
-      validUntil: '2024-05-31',
-      isActive: true,
-      isClaimed: false,
-      scope: {
-        type: 'categories',
-        categories: [
-          { id: '1', name: 'Programming' },
-          { id: '2', name: 'Web Development' },
-        ],
-      },
-    },
-    {
-      id: '3',
-      code: 'REACT101',
-      discount: 25,
-      description: 'Special discount for React Fundamentals course',
-      validUntil: '2024-06-30',
-      isActive: true,
-      isClaimed: false,
-      scope: {
-        type: 'specific_course',
-        course: { id: '1', title: 'React Fundamentals' },
-      },
-    },
-    {
-      id: '4',
-      code: 'SUMMER2024',
-      discount: 30,
-      description: 'Summer special offer for all IT courses',
-      validUntil: '2024-08-31',
-      isActive: true,
-      isClaimed: false,
-      scope: {
-        type: 'categories',
-        categories: [{ id: '3', name: 'IT & Software' }],
-      },
-    },
-  ])
-
-  // Simulate fetching user's claimed coupons
+  // Fetch data on component mount
   useEffect(() => {
-    if (user) {
-      // In real app, fetch from API
-      const fetchClaimedCoupons = async () => {
-        try {
-          // Simulated API call
-          // const response = await fetch('/api/user/claimed-coupons')
-          // const data = await response.json()
-          // setClaimedCoupons(data)
-        } catch (error) {
-          console.error('Failed to fetch claimed coupons:', error)
-        }
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        const [categoriesResponse, coursesResponse] = await Promise.all([
+          categoryApi.getAllCategories({ size: 100 }),
+          courseApi.getAllCourses({ size: 100 })
+        ])
+
+        const transformedCategories: Category[] = categoriesResponse.data.content.map((cat: { id: number; name: string }) => ({
+          id: cat.id.toString(),
+          name: cat.name
+        }))
+        
+        const transformedCourses: Course[] = coursesResponse.data.content.map((course: { id: number; title: string }) => ({
+          id: course.id.toString(),
+          title: course.title
+        }))
+
+        setAllCategories(transformedCategories)
+        setCourses(transformedCourses)
+        setIsLoading(false)
+        // Initial coupon fetch
+        await fetchCoupons(0)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        toast.error('Failed to load data', {
+          description: 'Please try refreshing the page.'
+        })
+        setIsLoading(false)
       }
-
-      fetchClaimedCoupons()
     }
-  }, [user])
+    fetchData()
+  }, [fetchCoupons])
 
-  // Filter coupons based on claimed status
-  const myCoupons = coupons.filter(coupon =>
-    claimedCoupons.some(claimed => claimed.couponId === coupon.id)
-  )
+  // Call API when filter state changes
+  useEffect(() => {
+    const params: CouponSearchParams = {
+      page: 0,
+      size: pagination.size,
+      isActive: 1,
+    }
+    if (filter.category) params.categoryId = Number(filter.category)
+    if (filter.course) params.courseId = Number(filter.course)
+    if (filter.percentage) params.percentage = parseInt(filter.percentage)
+    fetchCoupons(0, params)
+  }, [filter, pagination.size, fetchCoupons])
 
+  // FilterSidebar callbacks
+  const handleApplyFilter = useCallback((newFilter: { category: string | null, course: string | null, percentage: string }) => {
+    setFilter(newFilter)
+    setIsMobileFilterOpen(false)
+  }, [])
+
+  const clearFilters = useCallback(() => {
+    setFilter({ category: null, course: null, percentage: '' })
+    if (discountInputRef.current) {
+      discountInputRef.current.value = ''
+    }
+    fetchCoupons(0)
+  }, [fetchCoupons])
+
+  // Get category and course names
+  const getCategoryNames = useCallback((categoryIds: number[]) => {
+    if (!categoryIds) return ''
+    return allCategories
+      .filter(cat => categoryIds.includes(Number(cat.id)))
+      .map(cat => cat.name)
+      .join(', ')
+  }, [allCategories])
+
+  const getCourseNames = useCallback((courseIds: number[]) => {
+    if (!courseIds) return ''
+    return allCourses
+      .filter(course => courseIds.includes(Number(course.id)))
+      .map(course => course.title)
+      .join(', ')
+  }, [allCourses])
+
+  // Filter coupons based on search term
+  const filteredCoupons = useMemo(() => 
+    searchTerm
+      ? coupons.filter(coupon =>
+          coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : coupons
+  , [coupons, searchTerm])
+
+  // Fetch my coupons when tab changes to 'my-coupons' or page/filter changes
+  const fetchMyCoupons = useCallback(async (page = 0) => {
+    if (!user) return
+    setLoadingMyCoupons(true)
+    const params: CouponSearchParams = {
+      page,
+      size: myCouponsPagination.size,
+      isActive: 1,
+      ...(filter.category ? { categoryId: Number(filter.category) } : {}),
+      ...(filter.course ? { courseId: Number(filter.course) } : {}),
+      ...(filter.percentage ? { percentage: parseInt(filter.percentage) } : {}),
+    }
+    try {
+      const res = await userApi.getMyCoupons(params)
+      setMyCoupons(res.data.content.map(transformCoupon))
+      setMyCouponsPagination({
+        page: res.data.number,
+        size: res.data.size,
+        totalElements: res.data.totalElements,
+        totalPages: res.data.totalPages,
+        first: res.data.first,
+        last: res.data.last,
+      })
+    } catch {
+      setMyCoupons([])
+    } finally {
+      setLoadingMyCoupons(false)
+    }
+  }, [user, filter, myCouponsPagination.size])
+
+  useEffect(() => {
+    if (activeTab === 'my-coupons' && user) {
+      fetchMyCoupons(0)
+    }
+  }, [activeTab, user, filter, fetchMyCoupons])
+
+  // Get coupon status
+  const getCouponStatus = (coupon: Coupon) => {
+    if (!coupon.isActive) return 'inactive'
+    const now = new Date()
+    const startDate = new Date(coupon.startDate)
+    const endDate = new Date(coupon.endDate)
+    
+    if (now < startDate) return 'upcoming'
+    if (now > endDate) return 'expired'
+    if (coupon.usedCount >= coupon.usageLimit) return 'exhausted'
+    return 'active'
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Active</Badge>
+      case 'inactive':
+        return <Badge variant="secondary">Inactive</Badge>
+      case 'upcoming':
+        return <Badge className="bg-blue-100 text-blue-800">Upcoming</Badge>
+      case 'expired':
+        return <Badge className="bg-red-100 text-red-800">Expired</Badge>
+      case 'exhausted':
+        return <Badge className="bg-orange-100 text-orange-800">Exhausted</Badge>
+      default:
+        return <Badge variant="secondary">Unknown</Badge>
+    }
+  }
+
+  // Get applicable items display
+  const getApplicableItemsDisplay = (coupon: Coupon) => {
+    if (coupon.applicationType === 'all') {
+      return <Badge className="bg-blue-100 text-blue-800"><Globe className="w-3 h-3 mr-1" />All Items</Badge>
+    } else {
+      const totalCategories = coupon.totalCategory || 0
+      const totalCourses = coupon.totalCourse || 0
+
+      return (
+        <div className="space-y-1">
+          <Badge className="bg-purple-100 text-purple-800">
+            <Tag className="w-3 h-3 mr-1" />
+            Specific Items
+          </Badge>
+          <div className="text-xs text-gray-600">
+            {totalCategories > 0 && (
+              <div>• {totalCategories} categories</div>
+            )}
+            {totalCourses > 0 && (
+              <div>• {totalCourses} courses</div>
+            )}
+            {totalCategories === 0 && totalCourses === 0 && (
+              <div>• No items selected</div>
+            )}
+          </div>
+        </div>
+      )
+    }
+  }
+
+  // Get detailed tooltip content for applicable items
+  const getApplicableItemsTooltip = (coupon: Coupon) => {
+    if (coupon.applicationType === 'all') {
+      return (
+        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg">
+          <div className="font-medium text-sm text-gray-900">All Items</div>
+          <div className="text-xs text-gray-600 mt-1">This coupon applies to all courses on the platform</div>
+        </div>
+      )
+    } else {
+      const categoryNames = coupon.categoryIds?.length 
+        ? allCategories
+            .filter(cat => coupon.categoryIds?.includes(Number(cat.id)))
+            .map(cat => cat.name)
+        : []
+
+      const courseNames = coupon.courseIds?.length
+        ? allCourses
+            .filter(course => coupon.courseIds?.includes(Number(course.id)))
+            .map(course => course.title)
+        : []
+
+      return (
+        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs">
+          <div className="font-medium text-sm text-gray-900 mb-2">Specific Items</div>
+          
+          {categoryNames.length > 0 && (
+            <div className="mb-3">
+              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
+                <Tag className="w-3 h-3 mr-1" />
+                Categories ({categoryNames.length})
+              </div>
+              <div className="text-xs text-gray-600 pl-4">
+                {categoryNames.map((name, idx) => (
+                  <div key={idx} className="flex items-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5" />
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {courseNames.length > 0 && (
+            <div>
+              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
+                <BookOpen className="w-3 h-3 mr-1" />
+                Courses ({courseNames.length})
+              </div>
+              <div className="text-xs text-gray-600 pl-4">
+                {courseNames.map((name, idx) => (
+                  <div key={idx} className="flex items-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5" />
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {categoryNames.length === 0 && courseNames.length === 0 && (
+            <div className="text-xs text-gray-500">No specific items selected</div>
+          )}
+        </div>
+      )
+    }
+  }
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount)
+  }
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN')
+  }
+
+  // Handle claim coupon
   const handleClaimCoupon = async (coupon: Coupon) => {
     if (!user) {
       toast.error('Please login', {
@@ -263,111 +561,19 @@ export default function CouponsPage() {
     }
 
     try {
-      // Here you would make an API call to claim the coupon
-      // const response = await fetch('/api/coupons/claim', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ couponId: coupon.id }),
-      // })
-      // const data = await response.json()
-
-      // Simulate successful API response
-      const newClaim: ClaimedCoupon = {
-        userId: user.id,
-        couponId: coupon.id,
-        claimedAt: new Date().toISOString(),
-      }
-
-      // Update local state with new claimed coupon
-      setClaimedCoupons(prev => [...prev, newClaim])
-
-      toast.success('🎉 Coupon claimed successfully!', {
-        description: (
-          <div className='space-y-2'>
-            <p>
-              You've successfully claimed the coupon{' '}
-              <span className='font-semibold'>{coupon.code}</span>
-            </p>
-            <p className='text-sm text-muted-foreground'>
-              {coupon.scope.type === 'all'
-                ? 'This coupon can be used for any course'
-                : coupon.scope.type === 'categories'
-                  ? `Valid for: ${coupon.scope.categories?.map(cat => cat.name).join(', ')}`
-                  : `Valid for: ${coupon.scope.course?.title}`}
-            </p>
-            <p className='text-sm text-emerald-600 dark:text-emerald-500'>
-              Save {coupon.discount}% on your purchase!
-            </p>
-          </div>
-        ),
-      })
-    } catch (error) {
-      toast.error('Failed to claim coupon', {
-        description: 'Please try again.',
-      })
-    }
-  }
-
-  // Filter available coupons based on search and filters
-  const filteredAvailableCoupons = coupons.filter(coupon => {
-    const matchesSearch =
-      coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      (coupon.scope.type === 'categories' &&
-        coupon.scope.categories?.some(cat =>
-          selectedCategories.includes(cat.id)
-        )) ||
-      coupon.scope.type === 'all' ||
-      (coupon.scope.type === 'specific_course' &&
-        selectedCategories.length === 0)
-
-    const matchesDiscount =
-      !minDiscount || coupon.discount >= parseInt(minDiscount)
-
-    return matchesSearch && matchesCategory && matchesDiscount
-  })
-
-  // Filter my coupons based on search and filters
-  const filteredMyCoupons = myCoupons.filter(coupon => {
-    const matchesSearch =
-      coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      (coupon.scope.type === 'categories' &&
-        coupon.scope.categories?.some(cat =>
-          selectedCategories.includes(cat.id)
-        )) ||
-      coupon.scope.type === 'all' ||
-      (coupon.scope.type === 'specific_course' &&
-        selectedCategories.length === 0)
-
-    const matchesDiscount =
-      !minDiscount || coupon.discount >= parseInt(minDiscount)
-
-    return matchesSearch && matchesCategory && matchesDiscount
-  })
-
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    )
-  }
-
-  const handleDiscountChange = (value: string) => {
-    setMinDiscount(value)
-  }
-
-  const clearFilters = () => {
-    setSelectedCategories([])
-    setMinDiscount('')
-    if (discountInputRef.current) {
-      discountInputRef.current.value = ''
+      // Gọi API claim coupon
+      const res = await userApi.claimCoupon(coupon.id)
+      toast.success(res.message || 'Claim coupon successfully!')
+      // Có thể reload lại coupon nếu muốn
+      fetchCoupons(0)
+      if (activeTab === 'my-coupons') fetchMyCoupons(myCouponsPagination.page)
+    } catch (err: any) {
+      // Ưu tiên lấy err.response.data.data, nếu không có thì lấy message, cuối cùng fallback chuỗi mặc định
+      const msg =
+        err?.response?.data?.data ||
+        err?.response?.data?.message ||
+        'Failed to claim coupon'
+      toast.error(msg)
     }
   }
 
@@ -391,37 +597,11 @@ export default function CouponsPage() {
     }
   }
 
-  const renderScopeInfo = (coupon: Coupon) => {
-    switch (coupon.scope.type) {
-      case 'all':
-        return 'Applicable to all courses'
-      case 'categories':
-        return `Valid for categories: ${coupon.scope.categories?.map(cat => cat.name).join(', ')}`
-      case 'specific_course':
-        return `Only for course: ${coupon.scope.course?.title}`
-      default:
-        return 'Unknown scope'
-    }
-  }
-
-  const getScopeBadgeColor = (
-    scopeType: 'all' | 'categories' | 'specific_course'
-  ) => {
-    switch (scopeType) {
-      case 'all':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-      case 'categories':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-      case 'specific_course':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100'
-    }
-  }
-
   const CouponGrid = ({
     coupons,
     showCopyButton = false,
   }: {
-    coupons: typeof filteredAvailableCoupons
+    coupons: Coupon[]
     showCopyButton?: boolean
   }) => (
     <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
@@ -437,19 +617,17 @@ export default function CouponsPage() {
                 <CardTitle className='text-lg font-bold'>
                   {coupon.code}
                 </CardTitle>
-                <Badge variant={coupon.isActive ? 'default' : 'secondary'}>
-                  {coupon.isActive ? 'Active' : 'Expired'}
-                </Badge>
+                {getStatusBadge(getCouponStatus(coupon))}
               </div>
               <CardDescription className='text-sm'>
-                Valid until {new Date(coupon.validUntil).toLocaleDateString()}
+                Valid until {formatDate(coupon.endDate)}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-4'>
                 <div>
                   <p className='text-xl font-bold text-primary'>
-                    {coupon.discount}% OFF
+                    {coupon.discountValue}% OFF
                   </p>
                   <p className='text-sm text-muted-foreground line-clamp-2'>
                     {coupon.description}
@@ -457,12 +635,16 @@ export default function CouponsPage() {
                 </div>
 
                 <div className='flex items-center justify-between'>
-                  <Badge
-                    variant='outline'
-                    className={`${getScopeBadgeColor(coupon.scope.type)} capitalize text-xs`}
-                  >
-                    {coupon.scope.type.replace('_', ' ')}
-                  </Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {getApplicableItemsDisplay(coupon)}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {getApplicableItemsTooltip(coupon)}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
                   {!showCopyButton ? (
                     <Button
@@ -513,31 +695,11 @@ export default function CouponsPage() {
       >
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <TabsList className='bg-muted/50 p-1 rounded-lg'>
-            <TabsTrigger
-              value='available'
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md px-6 py-2 text-sm font-medium transition-all data-[state=active]:before:content-[''] data-[state=active]:before:absolute data-[state=active]:before:bottom-0 data-[state=active]:before:left-0 data-[state=active]:before:w-full data-[state=active]:before:h-[2px] data-[state=active]:before:bg-primary"
-            >
-              <span className='flex items-center gap-2'>
-                Available
-                {filteredAvailableCoupons.length > 0 && (
-                  <Badge variant='secondary' className='bg-muted-foreground/10'>
-                    {filteredAvailableCoupons.length}
-                  </Badge>
-                )}
-              </span>
+            <TabsTrigger value='available'>
+              Available
             </TabsTrigger>
-            <TabsTrigger
-              value='my-coupons'
-              className="relative data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md px-6 py-2 text-sm font-medium transition-all data-[state=active]:before:content-[''] data-[state=active]:before:absolute data-[state=active]:before:bottom-0 data-[state=active]:before:left-0 data-[state=active]:before:w-full data-[state=active]:before:h-[2px] data-[state=active]:before:bg-primary"
-            >
-              <span className='flex items-center gap-2'>
-                My Coupons
-                {filteredMyCoupons.length > 0 && (
-                  <Badge variant='secondary' className='bg-muted-foreground/10'>
-                    {filteredMyCoupons.length}
-                  </Badge>
-                )}
-              </span>
+            <TabsTrigger value='my-coupons'>
+              My Coupons
             </TabsTrigger>
           </TabsList>
 
@@ -562,14 +724,24 @@ export default function CouponsPage() {
             )}
           >
             <div className='sticky top-24 bg-card rounded-lg border p-4'>
+              {isLoading ? (
+                <div className="space-y-4">
+                  <div className="h-8 bg-muted animate-pulse rounded" />
+                  <div className="h-32 bg-muted animate-pulse rounded" />
+                  <div className="h-32 bg-muted animate-pulse rounded" />
+                  <div className="h-20 bg-muted animate-pulse rounded" />
+                </div>
+              ) : (
               <FilterSidebar
-                selectedCategories={selectedCategories}
-                onCategoryToggle={handleCategoryToggle}
-                onDiscountChange={handleDiscountChange}
+                  selectedCategories={filter.category}
+                  selectedCourses={filter.course}
+                  percentage={filter.percentage}
+                  allCategories={allCategories}
+                  allCourses={allCourses}
                 onClearFilters={clearFilters}
-                minDiscount={minDiscount}
-                allCategories={allCategories}
+                  onApplyFilter={handleApplyFilter}
               />
+              )}
             </div>
           </div>
 
@@ -593,14 +765,24 @@ export default function CouponsPage() {
                   <SheetTitle>Filters</SheetTitle>
                 </SheetHeader>
                 <div className='py-4'>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-8 bg-muted animate-pulse rounded" />
+                      <div className="h-32 bg-muted animate-pulse rounded" />
+                      <div className="h-32 bg-muted animate-pulse rounded" />
+                      <div className="h-20 bg-muted animate-pulse rounded" />
+                    </div>
+                  ) : (
                   <FilterSidebar
-                    selectedCategories={selectedCategories}
-                    onCategoryToggle={handleCategoryToggle}
-                    onDiscountChange={handleDiscountChange}
+                      selectedCategories={filter.category}
+                      selectedCourses={filter.course}
+                      percentage={filter.percentage}
+                      allCategories={allCategories}
+                      allCourses={allCourses}
                     onClearFilters={clearFilters}
-                    minDiscount={minDiscount}
-                    allCategories={allCategories}
+                      onApplyFilter={handleApplyFilter}
                   />
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
@@ -612,13 +794,58 @@ export default function CouponsPage() {
               value='available'
               className='mt-0 focus-visible:outline-none'
             >
-              <CouponGrid coupons={filteredAvailableCoupons} />
-              {filteredAvailableCoupons.length === 0 && (
+              {loadingCoupons ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="space-y-4 p-6 border rounded-lg">
+                      <div className="h-6 bg-muted animate-pulse rounded" />
+                      <div className="h-20 bg-muted animate-pulse rounded" />
+                      <div className="h-8 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <CouponGrid coupons={filteredCoupons} />
+                  {filteredCoupons.length === 0 && (
                 <div className='text-center py-10'>
                   <p className='text-muted-foreground'>
                     No available coupons found matching your filters.
                   </p>
                 </div>
+                  )}
+                  {/* Pagination for Available */}
+                  {activeTab === 'available' && (
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {pagination.page * pagination.size + 1} to{' '}
+                        {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of{' '}
+                        {pagination.totalElements} results
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchCoupons(pagination.page - 1)}
+                          disabled={pagination.first || loadingCoupons}
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-sm">
+                          Page {pagination.page + 1} of {pagination.totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchCoupons(pagination.page + 1)}
+                          disabled={pagination.last || loadingCoupons}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
 
@@ -626,15 +853,60 @@ export default function CouponsPage() {
               value='my-coupons'
               className='mt-0 focus-visible:outline-none'
             >
-              <CouponGrid coupons={filteredMyCoupons} showCopyButton={true} />
-              {filteredMyCoupons.length === 0 && (
+              {loadingMyCoupons ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="space-y-4 p-6 border rounded-lg">
+                      <div className="h-6 bg-muted animate-pulse rounded" />
+                      <div className="h-20 bg-muted animate-pulse rounded" />
+                      <div className="h-8 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <CouponGrid coupons={myCoupons} showCopyButton={true} />
+                  {myCoupons.length === 0 && (
                 <div className='text-center py-10'>
                   <p className='text-muted-foreground'>
-                    {searchTerm || selectedCategories.length > 0 || minDiscount
+                        {searchTerm || filter.category || filter.percentage
                       ? 'No claimed coupons found matching your filters.'
                       : "You haven't claimed any coupons yet."}
                   </p>
                 </div>
+                  )}
+                  {/* Pagination for My Coupons */}
+                  {activeTab === 'my-coupons' && (
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {myCouponsPagination.page * myCouponsPagination.size + 1} to{' '}
+                        {Math.min((myCouponsPagination.page + 1) * myCouponsPagination.size, myCouponsPagination.totalElements)} of{' '}
+                        {myCouponsPagination.totalElements} results
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchMyCoupons(myCouponsPagination.page - 1)}
+                          disabled={myCouponsPagination.first || loadingMyCoupons}
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-sm">
+                          Page {myCouponsPagination.page + 1} of {myCouponsPagination.totalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchMyCoupons(myCouponsPagination.page + 1)}
+                          disabled={myCouponsPagination.last || loadingMyCoupons}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
           </div>

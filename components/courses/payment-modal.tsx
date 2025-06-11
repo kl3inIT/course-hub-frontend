@@ -1,23 +1,22 @@
 'use client'
 
-import type React from 'react'
-import { useState, useEffect } from 'react'
+import { discountApi } from '@/api/discount-api'
+import { paymentApi } from '@/api/payment-api'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, Clock, Video, Star, Users, Loader2 } from 'lucide-react'
-import Image from 'next/image'
 import { useAuth } from '@/context/auth-context'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { discountApi } from '@/api/discount-api'
-import { paymentApi } from '@/api/payment-api'
 import { paymentStorage } from '@/utils/payment'
+import { Clock, Loader2, Star, Users, Video, X } from 'lucide-react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -327,7 +326,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                   </div>
                 )}
                 <a
-                  href='/discount-codes'
+                  href='/coupons'
                   className='text-sm text-blue-600 hover:underline'
                 >
                   👉 View available discount codes

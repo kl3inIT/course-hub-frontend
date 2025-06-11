@@ -63,6 +63,8 @@ import { lessonApi } from '@/api/lesson-api'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
+import { progressApi } from '@/api/progress-api'
+import { LessonProgressDTO, UpdateLessonProgressRequestDTO } from '@/types/progress'
 
 interface LessonViewerProps {
   courseId?: string
@@ -434,30 +436,116 @@ export default function LessonViewer({
   }
 
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
+  const [lessonProgress, setLessonProgress] = useState<LessonProgressDTO | null>(null)
+  const [isProgressLoading, setIsProgressLoading] = useState(true)
+  const lastProgressUpdate = useRef<number>(0)
+  const progressUpdateInterval = 10000 // Update progress every 10 seconds
 
+  // Add progress tracking effect
   useEffect(() => {
-    const loadVideoUrl = async () => {
+    const loadLessonProgress = async () => {
       if (currentLesson) {
+        setIsProgressLoading(true)
         try {
-          // Reset video state when lesson changes
-          setVideoUrl(undefined)
-          setIsPlaying(false)
-          setProgress(0)
-          setCurrentTime(0)
-          setDuration(0)
-
-          const url = await lessonApi.getLessonVideoUrl(currentLesson.id.toString())
-          console.log('Video URL loaded:', url)
-          setVideoUrl(url)
+          const response = await progressApi.getLessonProgress(currentLesson.id)
+          setLessonProgress(response.data)
+          // Set video position if progress exists
+          if (response.data && videoRef.current) {
+            videoRef.current.currentTime = response.data.currentTime
+          }
         } catch (error) {
-          console.error('Failed to load video URL:', error)
+          console.error('Failed to load lesson progress:', error)
+          // Initialize with default values if progress doesn't exist
+          const defaultProgress: LessonProgressDTO = {
+            lessonId: currentLesson.id,
+            currentTime: 0,
+            watchedTime: 0,
+            isCompleted: 0
+          }
+          setLessonProgress(defaultProgress)
+        } finally {
+          setIsProgressLoading(false)
         }
       }
     }
-    loadVideoUrl()
+    loadLessonProgress()
   }, [currentLesson])
 
+  // Update progress periodically
+  useEffect(() => {
+    if (isProgressLoading) return; // Don't update if still loading initial progress
+
+    const updateProgress = async () => {
+      if (!currentLesson || !videoRef.current) return
+
+      const now = Date.now()
+      if (now - lastProgressUpdate.current < progressUpdateInterval) return
+
+      try {
+        const currentTime = Math.floor(videoRef.current.currentTime)
+        const watchedDelta = Math.floor(videoRef.current.currentTime - (lessonProgress?.currentTime || 0))
+
+        if (watchedDelta > 0) {
+          const updateData: UpdateLessonProgressRequestDTO = {
+            currentTime: currentTime.toString(),
+            watchedDelta: watchedDelta.toString()
+          }
+
+          const response = await progressApi.updateLessonProgress(currentLesson.id, updateData)
+          setLessonProgress(response.data)
+          lastProgressUpdate.current = now
+        }
+      } catch (error) {
+        console.error('Failed to update progress:', error)
+        // Don't update lastProgressUpdate to retry sooner
+      }
+    }
+
+    const interval = setInterval(updateProgress, progressUpdateInterval)
+    return () => clearInterval(interval)
+  }, [currentLesson, lessonProgress, isProgressLoading])
+
+  // Update progress when video ends
+  const handleVideoEnded = async () => {
+    if (!currentLesson || !videoRef.current || isProgressLoading) return
+
+    try {
+      const updateData: UpdateLessonProgressRequestDTO = {
+        currentTime: Math.floor(videoRef.current.duration).toString(),
+        watchedDelta: Math.floor(videoRef.current.duration - (lessonProgress?.currentTime || 0)).toString()
+      }
+
+      const response = await progressApi.updateLessonProgress(currentLesson.id, updateData)
+      setLessonProgress(response.data)
+      setIsPlaying(false)
+    } catch (error) {
+      console.error('Failed to update final progress:', error)
+      // Still mark as not playing even if progress update fails
+      setIsPlaying(false)
+    }
+  }
+
   // Add effect to handle video source changes
+  useEffect(() => {
+    const fetchVideoUrl = async () => {
+      if (!currentLesson) return;
+      
+      try {
+        const response = await lessonApi.getLessonUrl(currentLesson.id.toString());
+        setVideoUrl(response);
+      } catch (error) {
+        console.error('Failed to fetch video URL:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load video content',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    fetchVideoUrl();
+  }, [currentLesson, toast]);
+
   useEffect(() => {
     if (videoRef.current && videoUrl) {
       console.log('Setting video source:', videoUrl)
@@ -612,9 +700,7 @@ export default function LessonViewer({
                     Module {currentModule.orderNumber}: {currentModule.title}
                   </CardTitle>
                   <CardDescription>
-                    {moduleLessons[currentModule.id]?.length || 0} lessons •{' '}
-                    {Math.floor(currentModule.totalDuration / 60)}h{' '}
-                    {currentModule.totalDuration % 60}m
+                    {course.totalLessons} lessons • {course.totalDuration} minutes
                   </CardDescription>
                 </div>
               </div>
@@ -644,7 +730,7 @@ export default function LessonViewer({
                   onClick={togglePlayPause}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
-                  onEnded={() => setIsPlaying(false)}
+                  onEnded={handleVideoEnded}
                   onError={(e) => console.error('Video error:', e)}
                 >
                   {videoUrl && <source src={videoUrl} type='video/mp4' />}
@@ -877,7 +963,7 @@ export default function LessonViewer({
                     <div className='flex items-center space-x-4'>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Clock className='h-4 w-4' />
-                        <span>{currentLesson.duration} min</span>
+                        <span>{currentLesson?.duration ? Math.floor(currentLesson.duration / 60) : 0} min</span>
                       </div>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Monitor className='h-4 w-4' />
@@ -931,6 +1017,7 @@ export default function LessonViewer({
                 <TabsContent value='discussion' className='mt-4'>
                   <DiscussionSection
                     lessonId={currentLesson.id.toString()}
+                    courseId={course.id.toString()}
                   />
                 </TabsContent>
               </Tabs>
@@ -1022,7 +1109,7 @@ export default function LessonViewer({
                               {lesson.orderNumber}. {lesson.title}
                             </p>
                             <p className='text-xs text-muted-foreground'>
-                              {lesson.duration} minutes
+                              {Math.floor((lesson?.duration || 0) / 60)} minutes
                             </p>
                           </div>
                           {lesson.isPreview && (

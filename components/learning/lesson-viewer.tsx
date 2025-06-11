@@ -64,7 +64,10 @@ import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
 import { progressApi } from '@/api/progress-api'
-import { LessonProgressDTO, UpdateLessonProgressRequestDTO } from '@/types/progress'
+import {
+  LessonProgressDTO,
+  UpdateLessonProgressRequestDTO,
+} from '@/types/progress'
 
 interface LessonViewerProps {
   courseId?: string
@@ -82,16 +85,24 @@ export default function LessonViewer({
   const { toast } = useToast()
 
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
-  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(null)
-  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(null)
+  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(
+    null
+  )
+  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
-  const [moduleLessons, setModuleLessons] = useState<Record<string, LessonResponseDTO[]>>({})
+  const [moduleLessons, setModuleLessons] = useState<
+    Record<string, LessonResponseDTO[]>
+  >({})
 
   // Video player state
-  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>('medium')
+  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>(
+    'medium'
+  )
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -114,7 +125,7 @@ export default function LessonViewer({
           videoUrl,
           currentTime: videoRef.current.currentTime,
           duration: videoRef.current.duration,
-          readyState: videoRef.current.readyState
+          readyState: videoRef.current.readyState,
         })
 
         if (isPlaying) {
@@ -130,7 +141,7 @@ export default function LessonViewer({
             console.log('Video not ready, loading...')
             videoRef.current.load()
             // Wait for video to be loaded
-            await new Promise((resolve) => {
+            await new Promise(resolve => {
               const handleCanPlay = () => {
                 videoRef.current?.removeEventListener('canplay', handleCanPlay)
                 resolve(true)
@@ -281,7 +292,9 @@ export default function LessonViewer({
         if (!moduleId || !lessonId) {
           const firstModule = courseResponse.data.modules[0]
           if (firstModule) {
-            const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModule.id.toString())
+            const lessonsResponse = await lessonApi.getLessonsByModuleId(
+              firstModule.id.toString()
+            )
             const firstLesson = lessonsResponse.data[0]
             if (firstLesson) {
               router.replace(
@@ -293,15 +306,21 @@ export default function LessonViewer({
         }
 
         // Find current module and lesson
-        const module = courseResponse.data.modules.find(m => m.id.toString() === moduleId)
+        const module = courseResponse.data.modules.find(
+          m => m.id.toString() === moduleId
+        )
         if (!module) {
           throw new Error(
             `Module with ID "${moduleId}" not found in course "${courseResponse.data.title}"`
           )
         }
 
-        const lessonsResponse = await lessonApi.getLessonsByModuleId(module.id.toString())
-        const lesson = lessonsResponse.data.find(l => l.id.toString() === lessonId)
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(
+          module.id.toString()
+        )
+        const lesson = lessonsResponse.data.find(
+          l => l.id.toString() === lessonId
+        )
         if (!lesson) {
           throw new Error(
             `Lesson with ID "${lessonId}" not found in module "${module.title}"`
@@ -312,7 +331,7 @@ export default function LessonViewer({
         setCurrentLesson(lesson)
         setModuleLessons(prev => ({
           ...prev,
-          [module.id]: lessonsResponse.data
+          [module.id]: lessonsResponse.data,
         }))
         setExpandedModules(new Set([module.id.toString()]))
       } catch (err) {
@@ -362,7 +381,10 @@ export default function LessonViewer({
     )
 
     // Next lesson in current module
-    if (currentLessonIndex !== undefined && currentLessonIndex < moduleLessons[currentModule.id].length - 1) {
+    if (
+      currentLessonIndex !== undefined &&
+      currentLessonIndex < moduleLessons[currentModule.id].length - 1
+    ) {
       return {
         module: currentModule,
         lesson: moduleLessons[currentModule.id][currentLessonIndex + 1],
@@ -404,7 +426,10 @@ export default function LessonViewer({
       const prevModule = course.modules[currentModuleIndex - 1]
       return {
         module: prevModule,
-        lesson: moduleLessons[prevModule.id]?.[moduleLessons[prevModule.id].length - 1],
+        lesson:
+          moduleLessons[prevModule.id]?.[
+            moduleLessons[prevModule.id].length - 1
+          ],
       }
     }
 
@@ -422,7 +447,7 @@ export default function LessonViewer({
         const lessonsResponse = await lessonApi.getLessonsByModuleId(moduleId)
         setModuleLessons(prev => ({
           ...prev,
-          [moduleId]: lessonsResponse.data
+          [moduleId]: lessonsResponse.data,
         }))
       } catch (err) {
         toast({
@@ -436,7 +461,8 @@ export default function LessonViewer({
   }
 
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
-  const [lessonProgress, setLessonProgress] = useState<LessonProgressDTO | null>(null)
+  const [lessonProgress, setLessonProgress] =
+    useState<LessonProgressDTO | null>(null)
   const [isProgressLoading, setIsProgressLoading] = useState(true)
   const lastProgressUpdate = useRef<number>(0)
   const progressUpdateInterval = 10000 // Update progress every 10 seconds
@@ -460,7 +486,7 @@ export default function LessonViewer({
             lessonId: currentLesson.id,
             currentTime: 0,
             watchedTime: 0,
-            isCompleted: 0
+            isCompleted: 0,
           }
           setLessonProgress(defaultProgress)
         } finally {
@@ -473,7 +499,7 @@ export default function LessonViewer({
 
   // Update progress periodically
   useEffect(() => {
-    if (isProgressLoading) return; // Don't update if still loading initial progress
+    if (isProgressLoading) return // Don't update if still loading initial progress
 
     const updateProgress = async () => {
       if (!currentLesson || !videoRef.current) return
@@ -483,15 +509,20 @@ export default function LessonViewer({
 
       try {
         const currentTime = Math.floor(videoRef.current.currentTime)
-        const watchedDelta = Math.floor(videoRef.current.currentTime - (lessonProgress?.currentTime || 0))
+        const watchedDelta = Math.floor(
+          videoRef.current.currentTime - (lessonProgress?.currentTime || 0)
+        )
 
         if (watchedDelta > 0) {
           const updateData: UpdateLessonProgressRequestDTO = {
             currentTime: currentTime.toString(),
-            watchedDelta: watchedDelta.toString()
+            watchedDelta: watchedDelta.toString(),
           }
 
-          const response = await progressApi.updateLessonProgress(currentLesson.id, updateData)
+          const response = await progressApi.updateLessonProgress(
+            currentLesson.id,
+            updateData
+          )
           setLessonProgress(response.data)
           lastProgressUpdate.current = now
         }
@@ -512,10 +543,15 @@ export default function LessonViewer({
     try {
       const updateData: UpdateLessonProgressRequestDTO = {
         currentTime: Math.floor(videoRef.current.duration).toString(),
-        watchedDelta: Math.floor(videoRef.current.duration - (lessonProgress?.currentTime || 0)).toString()
+        watchedDelta: Math.floor(
+          videoRef.current.duration - (lessonProgress?.currentTime || 0)
+        ).toString(),
       }
 
-      const response = await progressApi.updateLessonProgress(currentLesson.id, updateData)
+      const response = await progressApi.updateLessonProgress(
+        currentLesson.id,
+        updateData
+      )
       setLessonProgress(response.data)
       setIsPlaying(false)
     } catch (error) {
@@ -528,23 +564,25 @@ export default function LessonViewer({
   // Add effect to handle video source changes
   useEffect(() => {
     const fetchVideoUrl = async () => {
-      if (!currentLesson) return;
-      
+      if (!currentLesson) return
+
       try {
-        const response = await lessonApi.getLessonUrl(currentLesson.id.toString());
-        setVideoUrl(response);
+        const response = await lessonApi.getLessonUrl(
+          currentLesson.id.toString()
+        )
+        setVideoUrl(response)
       } catch (error) {
-        console.error('Failed to fetch video URL:', error);
+        console.error('Failed to fetch video URL:', error)
         toast({
           title: 'Error',
           description: 'Failed to load video content',
           variant: 'destructive',
-        });
+        })
       }
-    };
+    }
 
-    fetchVideoUrl();
-  }, [currentLesson, toast]);
+    fetchVideoUrl()
+  }, [currentLesson, toast])
 
   useEffect(() => {
     if (videoRef.current && videoUrl) {
@@ -681,10 +719,14 @@ export default function LessonViewer({
               <CardTitle className='text-2xl'>{course.title}</CardTitle>
             </div>
             <Badge variant='secondary'>
-              {Math.round((course.totalLessons / course.totalLessons) * 100)}% Complete
+              {Math.round((course.totalLessons / course.totalLessons) * 100)}%
+              Complete
             </Badge>
           </div>
-          <Progress value={(course.totalLessons / course.totalLessons) * 100} className='w-full' />
+          <Progress
+            value={(course.totalLessons / course.totalLessons) * 100}
+            className='w-full'
+          />
         </CardHeader>
       </Card>
 
@@ -700,7 +742,8 @@ export default function LessonViewer({
                     Module {currentModule.orderNumber}: {currentModule.title}
                   </CardTitle>
                   <CardDescription>
-                    {course.totalLessons} lessons • {course.totalDuration} minutes
+                    {course.totalLessons} lessons • {course.totalDuration}{' '}
+                    minutes
                   </CardDescription>
                 </div>
               </div>
@@ -711,27 +754,32 @@ export default function LessonViewer({
           <Card>
             <CardContent className='p-0'>
               <div
-                className={`relative bg-black transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
-                  }`}
+                className={`relative bg-black transition-all duration-300 ${
+                  isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
+                }`}
                 ref={videoContainerRef}
               >
                 <video
                   ref={videoRef}
-                  className={`w-full object-contain ${isFullscreen
+                  className={`w-full object-contain ${
+                    isFullscreen
                       ? 'h-screen'
                       : videoSize === 'small'
                         ? 'h-48 md:h-64'
                         : videoSize === 'medium'
                           ? 'h-64 md:h-80 lg:h-96'
                           : 'h-80 md:h-96 lg:h-[32rem]'
-                    }`}
-                  poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                  }`}
+                  poster={
+                    course.thumbnailUrl ||
+                    '/placeholder.svg?height=400&width=600'
+                  }
                   controls={false}
                   onClick={togglePlayPause}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={handleVideoEnded}
-                  onError={(e) => console.error('Video error:', e)}
+                  onError={e => console.error('Video error:', e)}
                 >
                   {videoUrl && <source src={videoUrl} type='video/mp4' />}
                   Your browser does not support the video tag.
@@ -963,7 +1011,12 @@ export default function LessonViewer({
                     <div className='flex items-center space-x-4'>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Clock className='h-4 w-4' />
-                        <span>{currentLesson?.duration ? Math.floor(currentLesson.duration / 60) : 0} min</span>
+                        <span>
+                          {currentLesson?.duration
+                            ? Math.floor(currentLesson.duration / 60)
+                            : 0}{' '}
+                          min
+                        </span>
                       </div>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Monitor className='h-4 w-4' />
@@ -1070,7 +1123,9 @@ export default function LessonViewer({
                 <Collapsible
                   key={module.id}
                   open={expandedModules.has(module.id.toString())}
-                  onOpenChange={() => toggleModuleExpansion(module.id.toString())}
+                  onOpenChange={() =>
+                    toggleModuleExpansion(module.id.toString())
+                  }
                 >
                   <CollapsibleTrigger asChild>
                     <div className='flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted'>
@@ -1097,11 +1152,17 @@ export default function LessonViewer({
                     {moduleLessons[module.id]?.map(lesson => (
                       <div
                         key={lesson.id}
-                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${currentLesson?.id === lesson.id
+                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${
+                          currentLesson?.id === lesson.id
                             ? 'bg-primary/10 border border-primary'
                             : 'hover:bg-muted'
-                          }`}
-                        onClick={() => navigateToLesson(module.id.toString(), lesson.id.toString())}
+                        }`}
+                        onClick={() =>
+                          navigateToLesson(
+                            module.id.toString(),
+                            lesson.id.toString()
+                          )
+                        }
                       >
                         <div className='flex items-center justify-between'>
                           <div className='flex-1'>

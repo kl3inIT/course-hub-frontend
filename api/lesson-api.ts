@@ -56,10 +56,12 @@ export const lessonApi = {
 
   // Lấy URL preview cho bài học
   getLessonPreviewUrl: async (lessonId: string): Promise<string> => {
-    const response = await httpClient.get(`/api/lessons/${lessonId}/preview-url`)
+    const response = await httpClient.get(
+      `/api/lessons/${lessonId}/preview-url`
+    )
     return response.data
   },
-  
+
   getLessonVideoUrl: async (lessonId: string): Promise<string> => {
     const response = await httpClient.get(`/api/lessons/${lessonId}/video-url`)
     return response.data
@@ -75,5 +77,3 @@ export const lessonApi = {
     }
   },
 }
-
-

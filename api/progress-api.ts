@@ -1,6 +1,9 @@
 import { httpClient } from './http-client'
 import { ApiResponse } from '@/types/common'
-import { LessonProgressDTO, UpdateLessonProgressRequestDTO } from '../types/progress'
+import {
+  LessonProgressDTO,
+  UpdateLessonProgressRequestDTO,
+} from '../types/progress'
 
 const BASE_PATH = '/api/progress'
 
@@ -18,10 +21,12 @@ export const progressApi = {
   },
 
   // Get lesson progress
-  getLessonProgress: async (lessonId: number): Promise<ApiResponse<LessonProgressDTO>> => {
+  getLessonProgress: async (
+    lessonId: number
+  ): Promise<ApiResponse<LessonProgressDTO>> => {
     const response = await httpClient.get<ApiResponse<LessonProgressDTO>>(
       `${BASE_PATH}/lessons/${lessonId}`
     )
     return response.data
-  }
+  },
 }

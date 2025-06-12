@@ -5,6 +5,7 @@ import {
   CourseResponseDTO,
   CourseSearchParams,
   CourseDetailsResponseDTO,
+  DashboardCourseResponseDTO,
 } from '@/types/course'
 
 export const courseApi = {
@@ -127,5 +128,25 @@ export const courseApi = {
       ApiResponse<CourseDetailsResponseDTO>
     >(`/api/courses/${courseId}/details`)
     return response.data
+  },
+
+  getDashboardCourses: async (): Promise<ApiResponse<DashboardCourseResponseDTO[]>> => {
+    console.log('Base URL:', process.env.NEXT_PUBLIC_API_URL)
+    console.log('Making request to:', '/api/courses/dashboard')
+    try {
+      const token = localStorage.getItem('accessToken')
+      console.log('Token:', token)
+
+      const response = await httpClient.get<ApiResponse<DashboardCourseResponseDTO[]>>('/api/courses/dashboard', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      console.log('Response:', response)
+      return response.data
+    } catch (error) {
+      console.error('Error details:', error)
+      throw error
+    }
   },
 }

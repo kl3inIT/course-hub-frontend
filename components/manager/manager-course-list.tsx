@@ -514,18 +514,10 @@ export function ManagerCourseList() {
 
         {/* Filters and Actions */}
         <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'>
-          <div className='relative flex-1'>
-            <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-            <Input
-              placeholder='Search courses, instructors...'
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className='pl-10'
-            />
-          </div>
-
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className='w-full md:w-[150px]'>
+            <SelectTrigger
+              className={`w-full md:w-[200px] ${categoryFilter ? 'bg-black text-white font-bold' : ''}`}
+            >
               <SelectValue placeholder='Category' />
             </SelectTrigger>
             <SelectContent>
@@ -537,6 +529,16 @@ export function ManagerCourseList() {
               ))}
             </SelectContent>
           </Select>
+
+          <div className='relative flex-1'>
+            <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+            <Input
+              placeholder='Search courses, instructors...'
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className='pl-10'
+            />
+          </div>
 
           <Button variant='outline'>
             <Download className='mr-2 h-4 w-4' />

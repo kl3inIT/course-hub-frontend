@@ -3,50 +3,50 @@
 import { categoryApi } from '@/api/category-api'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
 } from '@/components/ui/chart'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategoryChartDTO, CategoryDetailDTO } from '@/types/category'
 import {
-  BookOpen,
-  DollarSign,
-  Download,
-  Maximize,
-  Minimize,
-  RefreshCw,
-  Star,
-  TrendingUp,
-  Users
+    BookOpen,
+    DollarSign,
+    Download,
+    Maximize,
+    Minimize,
+    RefreshCw,
+    Star,
+    TrendingUp,
+    Users
 } from 'lucide-react'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
 } from 'recharts'
 import { ChartConfig } from '../ui/chart'
 

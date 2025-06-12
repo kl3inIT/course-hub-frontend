@@ -31,10 +31,12 @@ import {
 import { PaymentModal } from './payment-modal'
 import { courseApi } from '@/api/course-api'
 import { lessonApi } from '@/api/lesson-api'
+import { enrollmentApi } from '@/api/enrollment-api'
 import { useToast } from '@/hooks/use-toast'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
+import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { useRouter } from 'next/navigation'
 
 interface CourseDetailProps {
@@ -82,8 +84,25 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [heroPreviewLoading, setHeroPreviewLoading] = useState(false)
   const [heroPreviewLesson, setHeroPreviewLesson] =
     useState<LessonResponseDTO | null>(null)
+  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatusResponseDTO | null>(null)
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+
+  const checkEnrollmentStatus = async (courseId: string) => {
+    try {
+      setEnrollmentLoading(true)
+      const response = await enrollmentApi.getEnrollmentStatus(courseId)
+      if (response.data) {
+        setEnrollmentStatus(response.data)
+      }
+    } catch (err) {
+      console.error('Error checking enrollment status:', err)
+      // Don't show error toast for enrollment check as user might not be logged in
+    } finally {
+      setEnrollmentLoading(false)
+    }
+  }
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -97,6 +116,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         if (response) {
           console.log('Course Data:', response.data)
           setCourse(response.data)
+          // Check enrollment status
+          await checkEnrollmentStatus(courseId)
           // Removed auto-expansion of first module
         }
       } catch (err) {
@@ -319,9 +340,47 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               <CardDescription>Full lifetime access</CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
-              <Button onClick={handleEnroll} className='w-full' size='lg'>
-                Enroll Now
-              </Button>
+              {enrollmentLoading ? (
+                <Button disabled className='w-full' size='lg'>
+                  <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                  Checking...
+                </Button>
+              ) : enrollmentStatus?.enrolled ? (
+                <div className='space-y-3'>
+                  <Button 
+                    onClick={() => router.push(`/learn/${course.id}`)} 
+                    className='w-full' 
+                    size='lg'
+                  >
+                    <Play className='h-4 w-4 mr-2' />
+                    Continue Learning
+                  </Button>
+                  {enrollmentStatus.progress > 0 && (
+                    <div className='text-sm text-muted-foreground'>
+                      <div className='flex justify-between mb-1'>
+                        <span>Progress</span>
+                        <span>{Math.round(enrollmentStatus.progress)}%</span>
+                      </div>
+                      <div className='w-full bg-gray-200 rounded-full h-2'>
+                        <div 
+                          className='bg-primary h-2 rounded-full transition-all duration-300' 
+                          style={{ width: `${enrollmentStatus.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  {enrollmentStatus.completed && (
+                    <div className='flex items-center gap-2 text-green-600 text-sm'>
+                      <CheckCircle className='h-4 w-4' />
+                      <span>Course Completed!</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button onClick={handleEnroll} className='w-full' size='lg'>
+                  Enroll Now
+                </Button>
+              )}
 
               <div className='space-y-2 text-sm'>
                 <div className='flex items-center gap-2'>

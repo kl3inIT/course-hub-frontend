@@ -5,6 +5,7 @@ import {
   CourseResponseDTO,
   CourseSearchParams,
   CourseDetailsResponseDTO,
+  DashboardCourseResponseDTO,
 } from '@/types/course'
 
 export const courseApi = {
@@ -25,11 +26,7 @@ export const courseApi = {
   createCourse: async (
     data: CourseRequestDTO
   ): Promise<ApiResponse<CourseResponseDTO>> => {
-    const response = await httpClient.post('/api/courses', data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    })
+    const response = await httpClient.post('/api/courses', data)
     return response.data
   },
 
@@ -126,6 +123,15 @@ export const courseApi = {
     const response = await httpClient.get<
       ApiResponse<CourseDetailsResponseDTO>
     >(`/api/courses/${courseId}/details`)
+    return response.data
+  },
+
+  getDashboardCourses: async (): Promise<
+    ApiResponse<DashboardCourseResponseDTO[]>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<DashboardCourseResponseDTO[]>
+    >('/api/courses/dashboard')
     return response.data
   },
 }

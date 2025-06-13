@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/context/auth-context'
+import { httpClient } from '@/api/http-client'
 
 // Hàm giải mã JWT
 function parseJwt(token: string) {
@@ -40,21 +41,16 @@ export default function GoogleCallbackPage() {
 
     const handleGoogleCallback = async () => {
       try {
-        const response = await fetch(
-          'http://localhost:8080/api/auth/google/callback',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code }),
-          }
-        )
+        const response = await httpClient.post('/api/auth/google/callback', {
+          code,
+        })
+        const { data } = response.data
 
-        const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to authenticate with Google')
+        if (!data?.token) {
+          throw new Error('No token received from server')
         }
 
-        const token = data.data.token
+        const token = data.token
         const decodedToken = parseJwt(token)
 
         const user = {
@@ -80,8 +76,10 @@ export default function GoogleCallbackPage() {
           window.location.href = '/'
         }
       } catch (error: any) {
-        console.error('Google callback error:', error)
-        window.location.href = `/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`
+        console.error('Google authentication error:', error)
+        router.push(
+          `/login?error=${encodeURIComponent(error.message || 'Failed to authenticate with Google')}`
+        )
       }
     }
 

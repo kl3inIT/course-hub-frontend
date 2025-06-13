@@ -61,3 +61,17 @@ export interface CourseSearchParams {
   maxPrice?: number
   rating?: number
 }
+
+export interface DashboardCourseResponseDTO {
+  title: string
+  description: string
+  thumbnailUrl: string | null
+  category: string
+  instructorName: string
+  totalDuration: number
+  totalLessons: number
+  completed: boolean
+  enrollDate: string
+  completedDate: string | null
+  progress: number
+}

@@ -77,6 +77,7 @@ interface LessonViewerProps {
 }
 
 function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
+  // All hooks must be called before any early return
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
@@ -88,118 +89,11 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
     ? Number(searchParams.get('progress'))
     : undefined
 
-  // Add enrollment state
+  // Enrollment state
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null)
   const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true)
 
-  // Add enrollment check effect
-  useEffect(() => {
-    const checkEnrollment = async () => {
-      if (!courseId || !user) {
-        setIsEnrolled(false)
-        setIsCheckingEnrollment(false)
-        return
-      }
-
-      try {
-        setIsCheckingEnrollment(true)
-        const response = await enrollmentApi.getEnrollmentStatus(courseId)
-        setIsEnrolled(response.data?.enrolled || false)
-      } catch (error) {
-        console.error('Failed to check enrollment:', error)
-        setIsEnrolled(false)
-      } finally {
-        setIsCheckingEnrollment(false)
-      }
-    }
-
-    checkEnrollment()
-  }, [courseId, user])
-
-  // Add validation for required params
-  if (!courseId || !lessonId) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center space-y-4'>
-          <h2 className='text-2xl font-semibold text-destructive'>
-            Error Loading Content
-          </h2>
-          <p className='text-muted-foreground'>
-            {!courseId ? 'Course ID is required' : 'Lesson ID is required'}
-          </p>
-          <div className='flex gap-2 justify-center'>
-            <Button onClick={() => router.push('/courses')}>
-              Back to Courses
-            </Button>
-            {courseId && (
-              <Button onClick={() => router.push(`/courses/${courseId}`)}>
-                Back to Course
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show loading state while checking enrollment
-  if (isCheckingEnrollment) {
-    return (
-      <div className='flex items-center justify-center min-h-[400px]'>
-        <div className='text-center space-y-4'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
-          <div className='space-y-2'>
-            <p className='text-lg font-medium'>Checking enrollment...</p>
-            <p className='text-sm text-muted-foreground'>
-              Please wait while we verify your access
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show unauthorized message if not enrolled
-  if (!isEnrolled) {
-    return (
-      <div className='max-w-2xl mx-auto'>
-        <Alert className='border-destructive'>
-          <AlertCircle className='h-4 w-4' />
-          <AlertDescription>
-            <div className='space-y-4'>
-              <div>
-                <h3 className='font-semibold text-destructive'>
-                  Access Restricted
-                </h3>
-                <p className='mt-1'>
-                  You need to enroll in this course to access its content.
-                </p>
-              </div>
-              <div className='flex gap-2'>
-                <Button
-                  onClick={() => router.push(`/courses/${courseId}`)}
-                  size='sm'
-                  variant='outline'
-                >
-                  <Home className='h-4 w-4 mr-2' />
-                  View Course Details
-                </Button>
-                <Button
-                  onClick={() => router.push('/courses')}
-                  size='sm'
-                  variant='outline'
-                >
-                  <Home className='h-4 w-4 mr-2' />
-                  Browse Courses
-                </Button>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-
+  // Course/lesson/module state
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
   const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(
     null
@@ -231,6 +125,158 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const progressBarRef = useRef<HTMLDivElement>(null)
+
+  // Seek state
+  const [hasSeeked, setHasSeeked] = useState(false)
+
+  // Video URL
+  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
+
+  // Progress tracking
+  const [lessonProgress, setLessonProgress] = useState<LessonProgressDTO | null>(null)
+  const [isProgressLoading, setIsProgressLoading] = useState(true)
+  const [canAccessLesson, setCanAccessLesson] = useState(true)
+  const [accessReason, setAccessReason] = useState<string | null>(null)
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
+  const lastProgressUpdate = useRef<number>(0)
+  const progressUpdateInterval = 10000 // Update progress every 10 seconds
+  const [isAccessChecking, setIsAccessChecking] = useState(true)
+
+  // Progress from query/localStorage
+  const [displayProgress, setDisplayProgress] = useState<number | undefined>(
+    overallProgress
+  )
+
+  // All hooks above, now handle early returns below
+
+  // Add enrollment check effect
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      if (!courseId || !user) {
+        setIsEnrolled(false)
+        setIsCheckingEnrollment(false)
+        return
+      }
+      try {
+        setIsCheckingEnrollment(true)
+        const response = await enrollmentApi.getEnrollmentStatus(courseId)
+        setIsEnrolled(response.data?.enrolled || false)
+      } catch (error) {
+        console.error('Failed to check enrollment:', error)
+        setIsEnrolled(false)
+      } finally {
+        setIsCheckingEnrollment(false)
+      }
+    }
+    checkEnrollment()
+  }, [courseId, user])
+
+  // Validation for required params
+  useEffect(() => {
+    if (!courseId || !lessonId) {
+      setError(!courseId ? 'Course ID is required' : 'Lesson ID is required')
+      setLoading(false)
+    }
+  }, [courseId, lessonId])
+
+  // Fullscreen event listeners
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    const handleKeyPress = async (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
+      const activeElement = document.activeElement?.tagName
+      if (
+        e.key === ' ' &&
+        activeElement !== 'INPUT' &&
+        activeElement !== 'TEXTAREA'
+      ) {
+        e.preventDefault()
+        await togglePlayPause()
+      }
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('keydown', handleKeyPress)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('keydown', handleKeyPress)
+    }
+  }, [isFullscreen, isPlaying])
+
+  // Fetch course data and navigate to appropriate lesson
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (!courseId) {
+        setError('Course ID is required')
+        setLoading(false)
+        return
+      }
+      try {
+        setLoading(true)
+        setError(null)
+        const courseResponse = await courseApi.getCourseDetails(courseId)
+        if (!courseResponse.data) {
+          throw new Error(`Course with ID "${courseId}" not found`)
+        }
+        setCourse(courseResponse.data)
+        if (!lessonId) {
+          const firstModule = courseResponse.data.modules[0]
+          if (firstModule) {
+            const lessonsResponse = await lessonApi.getLessonsByModuleId(
+              firstModule.id.toString()
+            )
+            const firstLesson = lessonsResponse.data[0]
+            if (firstLesson) {
+              router.replace(`/learn/${courseId}?lesson=${firstLesson.id}`)
+              return
+            }
+          }
+        }
+        let foundModule: ModuleResponseDTO | undefined = undefined
+        let foundLesson: LessonResponseDTO | undefined = undefined
+        for (const m of courseResponse.data.modules) {
+          const lessonsResponse = await lessonApi.getLessonsByModuleId(
+            m.id.toString()
+          )
+          const lesson = lessonsResponse.data.find(
+            l => l.id.toString() === lessonId
+          )
+          if (lesson) {
+            foundModule = m
+            foundLesson = lesson
+            setModuleLessons(prev => ({
+              ...prev,
+              [m.id]: lessonsResponse.data,
+            }))
+            break
+          } else {
+            setModuleLessons(prev => ({
+              ...prev,
+              [m.id]: lessonsResponse.data,
+            }))
+          }
+        }
+        if (!foundModule || !foundLesson) {
+          throw new Error(
+            `Lesson with ID "${lessonId}" not found in any module of course "${courseResponse.data.title}"`
+          )
+        }
+        setCurrentModule(foundModule)
+        setCurrentLesson(foundLesson)
+        setExpandedModules(new Set([foundModule.id.toString()]))
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to load course content'
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCourseData()
+  }, [courseId, lessonId, router])
 
   // Video player functions
   const togglePlayPause = async () => {
@@ -292,8 +338,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       setDuration(videoRef.current.duration)
     }
   }
-
-  const [hasSeeked, setHasSeeked] = useState(false)
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (progressBarRef.current && videoRef.current) {
@@ -358,117 +402,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
     const seconds = Math.floor(time % 60)
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
-
-  // Fullscreen event listeners
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
-
-    const handleKeyPress = async (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false)
-      }
-      const activeElement = document.activeElement?.tagName
-      if (
-        e.key === ' ' &&
-        activeElement !== 'INPUT' &&
-        activeElement !== 'TEXTAREA'
-      ) {
-        e.preventDefault()
-        await togglePlayPause()
-      }
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    document.addEventListener('keydown', handleKeyPress)
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-      document.removeEventListener('keydown', handleKeyPress)
-    }
-  }, [isFullscreen, isPlaying])
-
-  // Fetch course data and navigate to appropriate lesson
-  useEffect(() => {
-    const fetchCourseData = async () => {
-      if (!courseId) {
-        setError('Course ID is required')
-        setLoading(false)
-        return
-      }
-      try {
-        setLoading(true)
-        setError(null)
-
-        // Fetch course details
-        const courseResponse = await courseApi.getCourseDetails(courseId)
-        if (!courseResponse.data) {
-          throw new Error(`Course with ID "${courseId}" not found`)
-        }
-
-        setCourse(courseResponse.data)
-
-        // If no module/lesson specified, redirect to first lesson
-        if (!lessonId) {
-          const firstModule = courseResponse.data.modules[0]
-          if (firstModule) {
-            const lessonsResponse = await lessonApi.getLessonsByModuleId(
-              firstModule.id.toString()
-            )
-            const firstLesson = lessonsResponse.data[0]
-            if (firstLesson) {
-              router.replace(`/learn/${courseId}?lesson=${firstLesson.id}`)
-              return
-            }
-          }
-        }
-
-        // Find current module and lesson by searching all modules
-        let foundModule: ModuleResponseDTO | undefined = undefined
-        let foundLesson: LessonResponseDTO | undefined = undefined
-        for (const m of courseResponse.data.modules) {
-          const lessonsResponse = await lessonApi.getLessonsByModuleId(
-            m.id.toString()
-          )
-          const lesson = lessonsResponse.data.find(
-            l => l.id.toString() === lessonId
-          )
-          if (lesson) {
-            foundModule = m
-            foundLesson = lesson
-            setModuleLessons(prev => ({
-              ...prev,
-              [m.id]: lessonsResponse.data,
-            }))
-            break
-          } else {
-            // Cache lessons for sidebar even if not found
-            setModuleLessons(prev => ({
-              ...prev,
-              [m.id]: lessonsResponse.data,
-            }))
-          }
-        }
-        if (!foundModule || !foundLesson) {
-          throw new Error(
-            `Lesson with ID "${lessonId}" not found in any module of course "${courseResponse.data.title}"`
-          )
-        }
-        setCurrentModule(foundModule)
-        setCurrentLesson(foundLesson)
-        setExpandedModules(new Set([foundModule.id.toString()]))
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to load course content'
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchCourseData()
-  }, [courseId, lessonId, router])
 
   const handleLessonComplete = () => {
     if (!currentLesson || !course) return
@@ -608,19 +541,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
     }
     setExpandedModules(newExpanded)
   }
-
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
-  const [lessonProgress, setLessonProgress] =
-    useState<LessonProgressDTO | null>(null)
-  const [isProgressLoading, setIsProgressLoading] = useState(true)
-  const [canAccessLesson, setCanAccessLesson] = useState(true)
-  const [accessReason, setAccessReason] = useState<string | null>(null)
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
-    new Set()
-  )
-  const lastProgressUpdate = useRef<number>(0)
-  const progressUpdateInterval = 10000 // Update progress every 10 seconds
-  const [isAccessChecking, setIsAccessChecking] = useState(true)
 
   // Add effect to check lesson access and load completed lessons
   useEffect(() => {
@@ -828,10 +748,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   }, [overallProgress, courseId])
 
   // Khi render, lấy từ localStorage nếu không có trong query string:
-  const [displayProgress, setDisplayProgress] = useState<number | undefined>(
-    overallProgress
-  )
-
   useEffect(() => {
     if (overallProgress === undefined || isNaN(overallProgress)) {
       const stored = localStorage.getItem(`course-progress-${courseId}`)
@@ -874,6 +790,91 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       videoRef.current.currentTime = 0
     }
   }, [lessonId])
+
+  // Early returns (after all hooks)
+  if (!courseId || !lessonId) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center space-y-4'>
+          <h2 className='text-2xl font-semibold text-destructive'>
+            Error Loading Content
+          </h2>
+          <p className='text-muted-foreground'>
+            {!courseId ? 'Course ID is required' : 'Lesson ID is required'}
+          </p>
+          <div className='flex gap-2 justify-center'>
+            <Button onClick={() => router.push('/courses')}>
+              Back to Courses
+            </Button>
+            {courseId && (
+              <Button onClick={() => router.push(`/courses/${courseId}`)}>
+                Back to Course
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCheckingEnrollment) {
+    return (
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='text-center space-y-4'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
+          <div className='space-y-2'>
+            <p className='text-lg font-medium'>Checking enrollment...</p>
+            <p className='text-sm text-muted-foreground'>
+              Please wait while we verify your access
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isEnrolled) {
+    return (
+      <div className='max-w-2xl mx-auto'>
+        <Alert className='border-destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>
+            <div className='space-y-4'>
+              <div>
+                <h3 className='font-semibold text-destructive'>
+                  Access Restricted
+                </h3>
+                <p className='mt-1'>
+                  You need to enroll in this course to access its content.
+                </p>
+              </div>
+              <div className='flex gap-2'>
+                <Button
+                  onClick={() => router.push(`/courses/${courseId}`)}
+                  size='sm'
+                  variant='outline'
+                >
+                  <Home className='h-4 w-4 mr-2' />
+                  View Course Details
+                </Button>
+                <Button
+                  onClick={() => router.push('/courses')}
+                  size='sm'
+                  variant='outline'
+                >
+                  <Home className='h-4 w-4 mr-2' />
+                  Browse Courses
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  const nextLesson = getNextLesson()
+  const previousLesson = getPreviousLesson()
 
   if (loading) {
     return (
@@ -948,9 +949,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       </Alert>
     )
   }
-
-  const nextLesson = getNextLesson()
-  const previousLesson = getPreviousLesson()
 
   return (
     <div className='max-w-7xl mx-auto space-y-6'>

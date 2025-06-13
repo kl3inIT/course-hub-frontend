@@ -80,8 +80,13 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : undefined;
-  const overallProgress = searchParams ? Number(searchParams.get('progress')) : undefined;
+  const searchParams =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : undefined
+  const overallProgress = searchParams
+    ? Number(searchParams.get('progress'))
+    : undefined
 
   // Add enrollment state
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null)
@@ -114,13 +119,15 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   // Add validation for required params
   if (!courseId || !lessonId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-destructive">Error Loading Content</h2>
-          <p className="text-muted-foreground">
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center space-y-4'>
+          <h2 className='text-2xl font-semibold text-destructive'>
+            Error Loading Content
+          </h2>
+          <p className='text-muted-foreground'>
             {!courseId ? 'Course ID is required' : 'Lesson ID is required'}
           </p>
-          <div className="flex gap-2 justify-center">
+          <div className='flex gap-2 justify-center'>
             <Button onClick={() => router.push('/courses')}>
               Back to Courses
             </Button>
@@ -164,7 +171,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                 <h3 className='font-semibold text-destructive'>
                   Access Restricted
                 </h3>
-                <p className='mt-1'>You need to enroll in this course to access its content.</p>
+                <p className='mt-1'>
+                  You need to enroll in this course to access its content.
+                </p>
               </div>
               <div className='flex gap-2'>
                 <Button
@@ -297,7 +306,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       if (!hasSeeked) {
         toast({
           title: 'Warning',
-          description: 'Seeking in the video will not count towards valid watch time.',
+          description:
+            'Seeking in the video will not count towards valid watch time.',
           variant: 'destructive',
         })
         setHasSeeked(true)
@@ -311,7 +321,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       if (!hasSeeked) {
         toast({
           title: 'Warning',
-          description: 'Seeking in the video will not count towards valid watch time.',
+          description:
+            'Seeking in the video will not count towards valid watch time.',
           variant: 'destructive',
         })
         setHasSeeked(true)
@@ -407,9 +418,7 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
             )
             const firstLesson = lessonsResponse.data[0]
             if (firstLesson) {
-              router.replace(
-                `/learn/${courseId}?lesson=${firstLesson.id}`
-              )
+              router.replace(`/learn/${courseId}?lesson=${firstLesson.id}`)
               return
             }
           }
@@ -419,8 +428,12 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         let foundModule: ModuleResponseDTO | undefined = undefined
         let foundLesson: LessonResponseDTO | undefined = undefined
         for (const m of courseResponse.data.modules) {
-          const lessonsResponse = await lessonApi.getLessonsByModuleId(m.id.toString())
-          const lesson = lessonsResponse.data.find(l => l.id.toString() === lessonId)
+          const lessonsResponse = await lessonApi.getLessonsByModuleId(
+            m.id.toString()
+          )
+          const lesson = lessonsResponse.data.find(
+            l => l.id.toString() === lessonId
+          )
           if (lesson) {
             foundModule = m
             foundLesson = lesson
@@ -467,12 +480,17 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
     })
   }
 
-  const navigateToLesson = async (targetModuleId: string, targetLessonId: string) => {
+  const navigateToLesson = async (
+    targetModuleId: string,
+    targetLessonId: string
+  ) => {
     if (!courseId) return
 
     try {
       // Check if user can access the target lesson
-      const canAccess = await progressApi.canAccessLesson(Number(targetLessonId))
+      const canAccess = await progressApi.canAccessLesson(
+        Number(targetLessonId)
+      )
       if (!canAccess) {
         toast({
           title: 'Access Restricted',
@@ -597,7 +615,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const [isProgressLoading, setIsProgressLoading] = useState(true)
   const [canAccessLesson, setCanAccessLesson] = useState(true)
   const [accessReason, setAccessReason] = useState<string | null>(null)
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  )
   const lastProgressUpdate = useRef<number>(0)
   const progressUpdateInterval = 10000 // Update progress every 10 seconds
   const [isAccessChecking, setIsAccessChecking] = useState(true)
@@ -615,7 +635,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         setAccessReason(canAccess ? null : 'Complete the previous lesson first')
 
         // Load completed lessons for the course
-        const completedResponse = await progressApi.getCompletedLessons(course.id)
+        const completedResponse = await progressApi.getCompletedLessons(
+          course.id
+        )
         setCompletedLessons(new Set(completedResponse.data))
       } catch (error) {
         console.error('Failed to check lesson access:', error)
@@ -677,7 +699,10 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       try {
         const currentTime = Math.floor(videoRef.current.currentTime)
         const watchedDelta = Math.floor(
-          Math.max(0, videoRef.current.currentTime - (lessonProgress?.currentTime || 0))
+          Math.max(
+            0,
+            videoRef.current.currentTime - (lessonProgress?.currentTime || 0)
+          )
         )
 
         if (watchedDelta > 0) {
@@ -783,33 +808,38 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
 
   // Thêm hàm formatDuration
   function formatDuration(seconds: number): string {
-    if (!seconds || isNaN(seconds)) return '0m';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}h ${m}m ${s > 0 ? s + 's' : ''}`.trim();
-    if (m > 0) return `${m}m${s > 0 ? ' ' + s + 's' : ''}`;
-    return `${s}s`;
+    if (!seconds || isNaN(seconds)) return '0m'
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = Math.floor(seconds % 60)
+    if (h > 0) return `${h}h ${m}m ${s > 0 ? s + 's' : ''}`.trim()
+    if (m > 0) return `${m}m${s > 0 ? ' ' + s + 's' : ''}`
+    return `${s}s`
   }
 
   // Khi nhận progress từ query string:
   useEffect(() => {
     if (overallProgress !== undefined && !isNaN(overallProgress)) {
-      localStorage.setItem(`course-progress-${courseId}`, overallProgress.toString());
+      localStorage.setItem(
+        `course-progress-${courseId}`,
+        overallProgress.toString()
+      )
     }
-  }, [overallProgress, courseId]);
+  }, [overallProgress, courseId])
 
   // Khi render, lấy từ localStorage nếu không có trong query string:
-  const [displayProgress, setDisplayProgress] = useState<number | undefined>(overallProgress);
+  const [displayProgress, setDisplayProgress] = useState<number | undefined>(
+    overallProgress
+  )
 
   useEffect(() => {
     if (overallProgress === undefined || isNaN(overallProgress)) {
-      const stored = localStorage.getItem(`course-progress-${courseId}`);
-      if (stored) setDisplayProgress(Number(stored));
+      const stored = localStorage.getItem(`course-progress-${courseId}`)
+      if (stored) setDisplayProgress(Number(stored))
     } else {
-      setDisplayProgress(overallProgress);
+      setDisplayProgress(overallProgress)
     }
-  }, [overallProgress, courseId]);
+  }, [overallProgress, courseId])
 
   // Hàm cập nhật progress tổng thể từ backend
   const updateOverallProgress = async () => {
@@ -817,7 +847,10 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       const res = await enrollmentApi.getEnrollmentStatus(courseId)
       if (res.data && typeof res.data.progress === 'number') {
         setDisplayProgress(res.data.progress)
-        localStorage.setItem(`course-progress-${courseId}`, res.data.progress.toString())
+        localStorage.setItem(
+          `course-progress-${courseId}`,
+          res.data.progress.toString()
+        )
       }
     } catch {}
   }
@@ -958,10 +991,7 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
             )}
           </div>
           {displayProgress !== undefined && (
-            <Progress
-              value={displayProgress}
-              className='w-full'
-            />
+            <Progress value={displayProgress} className='w-full' />
           )}
         </CardHeader>
       </Card>
@@ -978,7 +1008,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                     Module {currentModule.orderNumber}: {currentModule.title}
                   </CardTitle>
                   <CardDescription>
-                    {course.totalLessons} lessons • {formatDuration(course.totalDuration)}
+                    {course.totalLessons} lessons •{' '}
+                    {formatDuration(course.totalDuration)}
                   </CardDescription>
                 </div>
               </div>
@@ -991,12 +1022,16 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
               {isAccessChecking ? (
                 <div className='p-8 text-center space-y-4'>
                   <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
-                  <p className='text-muted-foreground'>Checking lesson access...</p>
+                  <p className='text-muted-foreground'>
+                    Checking lesson access...
+                  </p>
                 </div>
               ) : !canAccessLesson ? (
                 <div className='p-8 text-center space-y-4'>
                   <AlertCircle className='h-12 w-12 mx-auto text-destructive' />
-                  <h3 className='text-lg font-semibold'>Lesson Access Restricted</h3>
+                  <h3 className='text-lg font-semibold'>
+                    Lesson Access Restricted
+                  </h3>
                   <p className='text-muted-foreground'>{accessReason}</p>
                   {previousLesson && (
                     <Button
@@ -1021,7 +1056,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                 >
                   {!videoUrl && (
                     <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-10'>
-                      <div className='text-white text-center'>No video available for this lesson.</div>
+                      <div className='text-white text-center'>
+                        No video available for this lesson.
+                      </div>
                     </div>
                   )}
                   <video
@@ -1076,7 +1113,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                       <div className='flex items-center space-x-1 bg-black/50 rounded-lg p-1 backdrop-blur-sm'>
                         <Button
                           size='sm'
-                          variant={videoSize === 'small' ? 'secondary' : 'ghost'}
+                          variant={
+                            videoSize === 'small' ? 'secondary' : 'ghost'
+                          }
                           className='h-8 w-8 p-0 text-white hover:text-black'
                           onClick={() => setVideoSize('small')}
                           title='Small video'
@@ -1085,7 +1124,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                         </Button>
                         <Button
                           size='sm'
-                          variant={videoSize === 'medium' ? 'secondary' : 'ghost'}
+                          variant={
+                            videoSize === 'medium' ? 'secondary' : 'ghost'
+                          }
                           className='h-8 w-8 p-0 text-white hover:text-black'
                           onClick={() => setVideoSize('medium')}
                           title='Medium video'
@@ -1094,7 +1135,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                         </Button>
                         <Button
                           size='sm'
-                          variant={videoSize === 'large' ? 'secondary' : 'ghost'}
+                          variant={
+                            videoSize === 'large' ? 'secondary' : 'ghost'
+                          }
                           className='h-8 w-8 p-0 text-white hover:text-black'
                           onClick={() => setVideoSize('large')}
                           title='Large video'
@@ -1414,7 +1457,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                             ? 'bg-primary/10 border border-primary'
                             : 'hover:bg-muted'
                         } ${
-                          !completedLessons.has(lesson.id) && lesson.id !== currentLesson?.id
+                          !completedLessons.has(lesson.id) &&
+                          lesson.id !== currentLesson?.id
                             ? 'opacity-50'
                             : ''
                         }`}
@@ -1425,7 +1469,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                           )
                         }
                         title={
-                          !completedLessons.has(lesson.id) && lesson.id !== currentLesson?.id
+                          !completedLessons.has(lesson.id) &&
+                          lesson.id !== currentLesson?.id
                             ? accessReason || 'Locked'
                             : undefined
                         }

@@ -34,7 +34,9 @@ export default function CourseLearnPage({ params }: PageProps) {
         }
 
         // Get lessons from first module
-        const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModule.id.toString())
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(
+          firstModule.id.toString()
+        )
         const firstLesson = lessonsResponse.data[0]
         if (!firstLesson) {
           throw new Error('No lessons found in this module')
@@ -64,11 +66,10 @@ export default function CourseLearnPage({ params }: PageProps) {
             </CardHeader>
             <CardContent className='flex flex-col items-center justify-center py-8 space-y-4'>
               <Loader2 className='h-8 w-8 animate-spin text-primary' />
-              <p className='text-muted-foreground'>Redirecting to first lesson...</p>
-              <Button 
-                variant='outline' 
-                onClick={() => router.push('/courses')}
-              >
+              <p className='text-muted-foreground'>
+                Redirecting to first lesson...
+              </p>
+              <Button variant='outline' onClick={() => router.push('/courses')}>
                 Back to Courses
               </Button>
             </CardContent>
@@ -77,4 +78,4 @@ export default function CourseLearnPage({ params }: PageProps) {
       </div>
     </div>
   )
-} 
+}

@@ -27,4 +27,4 @@ export default function LearnPage({ params }: PageProps) {
       </div>
     </div>
   )
-} 
+}

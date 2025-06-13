@@ -40,7 +40,9 @@ import { CourseCard } from './course-card'
 
 export function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
-  const [dashboardCourses, setDashboardCourses] = useState<DashboardCourseResponseDTO[]>([])
+  const [dashboardCourses, setDashboardCourses] = useState<
+    DashboardCourseResponseDTO[]
+  >([])
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -73,7 +75,7 @@ export function StudentDashboard() {
   const totalProgress =
     enrolledCourses.length > 0
       ? enrolledCourses.reduce((acc, course) => acc + course.progress, 0) /
-      enrolledCourses.length
+        enrolledCourses.length
       : 0
 
   const handleViewCertificate = (course: DashboardCourseResponseDTO) => {
@@ -148,7 +150,11 @@ export function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {enrolledCourses.reduce((acc, course) => acc + course.totalDuration, 0)}h
+              {enrolledCourses.reduce(
+                (acc, course) => acc + course.totalDuration,
+                0
+              )}
+              h
             </div>
             <p className='text-xs text-muted-foreground'>Total duration</p>
           </CardContent>
@@ -288,7 +294,9 @@ export function StudentDashboard() {
               <CompletionCertificate
                 courseTitle={selectedCertificate.title}
                 instructor={selectedCertificate.instructorName}
-                completionDate={new Date(selectedCertificate.completedDate || '')}
+                completionDate={
+                  new Date(selectedCertificate.completedDate || '')
+                }
                 studentName={user?.name || user?.email || 'Student'}
                 certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
               />

@@ -126,11 +126,12 @@ export const courseApi = {
     return response.data
   },
 
-  getDashboardCourses: async (): Promise<ApiResponse<DashboardCourseResponseDTO[]>> => {
-    const response = await httpClient.get<ApiResponse<DashboardCourseResponseDTO[]>>(
-      '/api/courses/dashboard'
-    );
-    return response.data;
+  getDashboardCourses: async (): Promise<
+    ApiResponse<DashboardCourseResponseDTO[]>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<DashboardCourseResponseDTO[]>
+    >('/api/courses/dashboard')
+    return response.data
   },
-
 }

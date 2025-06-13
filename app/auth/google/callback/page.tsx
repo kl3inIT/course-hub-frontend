@@ -41,7 +41,9 @@ export default function GoogleCallbackPage() {
 
     const handleGoogleCallback = async () => {
       try {
-        const response = await httpClient.post('/api/auth/google/callback', { code })
+        const response = await httpClient.post('/api/auth/google/callback', {
+          code,
+        })
         const { data } = response.data
 
         if (!data?.token) {
@@ -75,7 +77,9 @@ export default function GoogleCallbackPage() {
         }
       } catch (error: any) {
         console.error('Google authentication error:', error)
-        router.push(`/login?error=${encodeURIComponent(error.message || 'Failed to authenticate with Google')}`)
+        router.push(
+          `/login?error=${encodeURIComponent(error.message || 'Failed to authenticate with Google')}`
+        )
       }
     }
 

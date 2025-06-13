@@ -95,10 +95,13 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [heroPreviewLoading, setHeroPreviewLoading] = useState(false)
   const [heroPreviewLesson, setHeroPreviewLesson] =
     useState<LessonResponseDTO | null>(null)
-  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatusResponseDTO | null>(null)
+  const [enrollmentStatus, setEnrollmentStatus] =
+    useState<EnrollmentStatusResponseDTO | null>(null)
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
   const router = useRouter()
-  const [previewLesson, setPreviewLesson] = useState<LessonResponseDTO | null>(null)
+  const [previewLesson, setPreviewLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -219,7 +222,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         description: 'Please sign in to enroll in this course.',
         variant: 'destructive',
       })
-      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+      router.push(
+        '/login?redirect=' + encodeURIComponent(window.location.pathname)
+      )
       return
     }
     setShowPayment(true)
@@ -389,9 +394,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                   </span>
                   {course.discount && course.discount > 0 && (
                     <span className='text-lg text-muted-foreground line-through'>
-                      ${
-                        (course.finalPrice / (1 - course.discount / 100)).toFixed(2)
-                      }
+                      $
+                      {(
+                        course.finalPrice /
+                        (1 - course.discount / 100)
+                      ).toFixed(2)}
                     </span>
                   )}
                   {course.discount && course.discount > 0 && (
@@ -411,9 +418,13 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 </Button>
               ) : enrollmentStatus?.enrolled ? (
                 <div className='space-y-3'>
-                  <Button 
-                    onClick={() => router.push(`/learn/${course.id}/${heroPreviewLesson?.id || ''}?progress=${enrollmentStatus?.progress ?? 0}`)} 
-                    className='w-full' 
+                  <Button
+                    onClick={() =>
+                      router.push(
+                        `/learn/${course.id}/${heroPreviewLesson?.id || ''}?progress=${enrollmentStatus?.progress ?? 0}`
+                      )
+                    }
+                    className='w-full'
                     size='lg'
                   >
                     <Play className='h-4 w-4 mr-2' />
@@ -426,8 +437,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                         <span>{Math.round(enrollmentStatus.progress)}%</span>
                       </div>
                       <div className='w-full bg-gray-200 rounded-full h-2'>
-                        <div 
-                          className='bg-primary h-2 rounded-full transition-all duration-300' 
+                        <div
+                          className='bg-primary h-2 rounded-full transition-all duration-300'
                           style={{ width: `${enrollmentStatus.progress}%` }}
                         ></div>
                       </div>
@@ -523,31 +534,49 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                             </div>
                           ) : moduleLessons[module.id] ? (
                             <div className='space-y-2'>
-                              {moduleLessons[module.id].map((lesson: LessonResponseDTO) => {
-                                const isPreview = !!lesson.isPreview
-                                const hasDuration = lesson.duration && lesson.duration > 0
-                                return (
-                                  <div
-                                    key={lesson.id}
-                                    className={`flex items-center justify-between p-2 rounded-lg ${isPreview ? 'hover:bg-primary/10 cursor-pointer transition' : ''}`}
-                                    onClick={isPreview ? () => handlePreviewClick(lesson) : undefined}
-                                  >
-                                    <div className='flex items-center gap-2'>
-                                      <PlayCircle className='h-4 w-4 text-muted-foreground' />
-                                      <span>{lesson.title}</span>
-                                      {isPreview && (
-                                        <Badge variant='secondary' className='text-xs'>Preview</Badge>
-                                      )}
+                              {moduleLessons[module.id].map(
+                                (lesson: LessonResponseDTO) => {
+                                  const isPreview = !!lesson.isPreview
+                                  const hasDuration =
+                                    lesson.duration && lesson.duration > 0
+                                  return (
+                                    <div
+                                      key={lesson.id}
+                                      className={`flex items-center justify-between p-2 rounded-lg ${isPreview ? 'hover:bg-primary/10 cursor-pointer transition' : ''}`}
+                                      onClick={
+                                        isPreview
+                                          ? () => handlePreviewClick(lesson)
+                                          : undefined
+                                      }
+                                    >
+                                      <div className='flex items-center gap-2'>
+                                        <PlayCircle className='h-4 w-4 text-muted-foreground' />
+                                        <span>{lesson.title}</span>
+                                        {isPreview && (
+                                          <Badge
+                                            variant='secondary'
+                                            className='text-xs'
+                                          >
+                                            Preview
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                        {hasDuration && (
+                                          <span>
+                                            {formatDuration(
+                                              lesson.duration || 0
+                                            )}
+                                          </span>
+                                        )}
+                                        {!isPreview && (
+                                          <Lock className='h-4 w-4' />
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                                      {hasDuration && (
-                                        <span>{formatDuration(lesson.duration || 0)}</span>
-                                      )}
-                                      {!isPreview && <Lock className='h-4 w-4' />}
-                                    </div>
-                                  </div>
-                                )
-                              })}
+                                  )
+                                }
+                              )}
                             </div>
                           ) : (
                             <div className='flex items-center justify-center py-4 text-muted-foreground'>
@@ -604,7 +633,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               </DialogTitle>
             </div>
             <DialogDescription>
-              Preview video for this lesson. This is a sample of the course content.
+              Preview video for this lesson. This is a sample of the course
+              content.
             </DialogDescription>
           </DialogHeader>
           <div className='aspect-video bg-black'>

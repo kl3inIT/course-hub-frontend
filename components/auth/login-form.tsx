@@ -97,9 +97,9 @@ export function LoginForm() {
     } catch (err: any) {
       console.error('Login error:', err)
       setError(
-        err.response?.data?.message || 
-        err.message || 
-        'An error occurred during login. Please try again.'
+        err.response?.data?.message ||
+          err.message ||
+          'An error occurred during login. Please try again.'
       )
     } finally {
       setIsLoading(false)

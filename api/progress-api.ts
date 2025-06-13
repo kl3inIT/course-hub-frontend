@@ -46,5 +46,5 @@ export const progressApi = {
       `${BASE_PATH}/courses/${courseId}/completed-lessons`
     )
     return response.data
-  }
+  },
 }

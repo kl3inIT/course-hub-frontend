@@ -3,7 +3,7 @@
 import type React from 'react'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -63,33 +63,162 @@ import { lessonApi } from '@/api/lesson-api'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
+import { progressApi } from '@/api/progress-api'
+import {
+  LessonProgressDTO,
+  UpdateLessonProgressRequestDTO,
+} from '@/types/progress'
+import { ProtectedRoute } from '@/components/auth/protected-route'
+import { enrollmentApi } from '@/api/enrollment-api'
 
 interface LessonViewerProps {
-  courseId?: string
-  moduleId?: string
-  lessonId?: string
+  courseId: string
+  lessonId: string
 }
 
-export default function LessonViewer({
-  courseId,
-  moduleId,
-  lessonId,
-}: LessonViewerProps) {
-  const { user } = useAuth()
+function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
+  const searchParams =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : undefined
+  const overallProgress = searchParams
+    ? Number(searchParams.get('progress'))
+    : undefined
+
+  // Add enrollment state
+  const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null)
+  const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true)
+
+  // Add enrollment check effect
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      if (!courseId || !user) {
+        setIsEnrolled(false)
+        setIsCheckingEnrollment(false)
+        return
+      }
+
+      try {
+        setIsCheckingEnrollment(true)
+        const response = await enrollmentApi.getEnrollmentStatus(courseId)
+        setIsEnrolled(response.data?.enrolled || false)
+      } catch (error) {
+        console.error('Failed to check enrollment:', error)
+        setIsEnrolled(false)
+      } finally {
+        setIsCheckingEnrollment(false)
+      }
+    }
+
+    checkEnrollment()
+  }, [courseId, user])
+
+  // Add validation for required params
+  if (!courseId || !lessonId) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center space-y-4'>
+          <h2 className='text-2xl font-semibold text-destructive'>
+            Error Loading Content
+          </h2>
+          <p className='text-muted-foreground'>
+            {!courseId ? 'Course ID is required' : 'Lesson ID is required'}
+          </p>
+          <div className='flex gap-2 justify-center'>
+            <Button onClick={() => router.push('/courses')}>
+              Back to Courses
+            </Button>
+            {courseId && (
+              <Button onClick={() => router.push(`/courses/${courseId}`)}>
+                Back to Course
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading state while checking enrollment
+  if (isCheckingEnrollment) {
+    return (
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='text-center space-y-4'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
+          <div className='space-y-2'>
+            <p className='text-lg font-medium'>Checking enrollment...</p>
+            <p className='text-sm text-muted-foreground'>
+              Please wait while we verify your access
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show unauthorized message if not enrolled
+  if (!isEnrolled) {
+    return (
+      <div className='max-w-2xl mx-auto'>
+        <Alert className='border-destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>
+            <div className='space-y-4'>
+              <div>
+                <h3 className='font-semibold text-destructive'>
+                  Access Restricted
+                </h3>
+                <p className='mt-1'>
+                  You need to enroll in this course to access its content.
+                </p>
+              </div>
+              <div className='flex gap-2'>
+                <Button
+                  onClick={() => router.push(`/courses/${courseId}`)}
+                  size='sm'
+                  variant='outline'
+                >
+                  <Home className='h-4 w-4 mr-2' />
+                  View Course Details
+                </Button>
+                <Button
+                  onClick={() => router.push('/courses')}
+                  size='sm'
+                  variant='outline'
+                >
+                  <Home className='h-4 w-4 mr-2' />
+                  Browse Courses
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
 
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
-  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(null)
-  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(null)
+  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(
+    null
+  )
+  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
   const [isPlaying, setIsPlaying] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
-  const [moduleLessons, setModuleLessons] = useState<Record<string, LessonResponseDTO[]>>({})
+  const [moduleLessons, setModuleLessons] = useState<
+    Record<string, LessonResponseDTO[]>
+  >({})
 
   // Video player state
-  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>('medium')
+  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>(
+    'medium'
+  )
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -107,28 +236,16 @@ export default function LessonViewer({
   const togglePlayPause = async () => {
     if (videoRef.current) {
       try {
-        console.log('Current video state:', {
-          isPlaying,
-          videoUrl,
-          currentTime: videoRef.current.currentTime,
-          duration: videoRef.current.duration,
-          readyState: videoRef.current.readyState
-        })
-
         if (isPlaying) {
           videoRef.current.pause()
           setIsPlaying(false)
         } else {
           if (!videoUrl) {
-            console.log('No video URL available')
             return
           }
-
           if (videoRef.current.readyState < 2) {
-            console.log('Video not ready, loading...')
             videoRef.current.load()
-            // Wait for video to be loaded
-            await new Promise((resolve) => {
+            await new Promise(resolve => {
               const handleCanPlay = () => {
                 videoRef.current?.removeEventListener('canplay', handleCanPlay)
                 resolve(true)
@@ -136,17 +253,14 @@ export default function LessonViewer({
               videoRef.current?.addEventListener('canplay', handleCanPlay)
             })
           }
-
           try {
             await videoRef.current.play()
             setIsPlaying(true)
           } catch (error) {
-            console.error('Error playing video:', error)
             setIsPlaying(false)
           }
         }
       } catch (error) {
-        console.error('Error toggling play/pause:', error)
         setIsPlaying(false)
       }
     }
@@ -179,6 +293,8 @@ export default function LessonViewer({
     }
   }
 
+  const [hasSeeked, setHasSeeked] = useState(false)
+
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (progressBarRef.current && videoRef.current) {
       const rect = progressBarRef.current.getBoundingClientRect()
@@ -187,12 +303,30 @@ export default function LessonViewer({
       const percentage = clickX / width
       const newTime = percentage * duration
       videoRef.current.currentTime = newTime
+      if (!hasSeeked) {
+        toast({
+          title: 'Warning',
+          description:
+            'Seeking in the video will not count towards valid watch time.',
+          variant: 'destructive',
+        })
+        setHasSeeked(true)
+      }
     }
   }
 
   const seekVideo = (seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime += seconds
+      if (!hasSeeked) {
+        toast({
+          title: 'Warning',
+          description:
+            'Seeking in the video will not count towards valid watch time.',
+          variant: 'destructive',
+        })
+        setHasSeeked(true)
+      }
     }
   }
 
@@ -276,43 +410,54 @@ export default function LessonViewer({
         setCourse(courseResponse.data)
 
         // If no module/lesson specified, redirect to first lesson
-        if (!moduleId || !lessonId) {
+        if (!lessonId) {
           const firstModule = courseResponse.data.modules[0]
           if (firstModule) {
-            const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModule.id.toString())
+            const lessonsResponse = await lessonApi.getLessonsByModuleId(
+              firstModule.id.toString()
+            )
             const firstLesson = lessonsResponse.data[0]
             if (firstLesson) {
-              router.replace(
-                `/learn/${courseId}?module=${firstModule.id}&lesson=${firstLesson.id}`
-              )
+              router.replace(`/learn/${courseId}?lesson=${firstLesson.id}`)
               return
             }
           }
         }
 
-        // Find current module and lesson
-        const module = courseResponse.data.modules.find(m => m.id.toString() === moduleId)
-        if (!module) {
+        // Find current module and lesson by searching all modules
+        let foundModule: ModuleResponseDTO | undefined = undefined
+        let foundLesson: LessonResponseDTO | undefined = undefined
+        for (const m of courseResponse.data.modules) {
+          const lessonsResponse = await lessonApi.getLessonsByModuleId(
+            m.id.toString()
+          )
+          const lesson = lessonsResponse.data.find(
+            l => l.id.toString() === lessonId
+          )
+          if (lesson) {
+            foundModule = m
+            foundLesson = lesson
+            setModuleLessons(prev => ({
+              ...prev,
+              [m.id]: lessonsResponse.data,
+            }))
+            break
+          } else {
+            // Cache lessons for sidebar even if not found
+            setModuleLessons(prev => ({
+              ...prev,
+              [m.id]: lessonsResponse.data,
+            }))
+          }
+        }
+        if (!foundModule || !foundLesson) {
           throw new Error(
-            `Module with ID "${moduleId}" not found in course "${courseResponse.data.title}"`
+            `Lesson with ID "${lessonId}" not found in any module of course "${courseResponse.data.title}"`
           )
         }
-
-        const lessonsResponse = await lessonApi.getLessonsByModuleId(module.id.toString())
-        const lesson = lessonsResponse.data.find(l => l.id.toString() === lessonId)
-        if (!lesson) {
-          throw new Error(
-            `Lesson with ID "${lessonId}" not found in module "${module.title}"`
-          )
-        }
-
-        setCurrentModule(module)
-        setCurrentLesson(lesson)
-        setModuleLessons(prev => ({
-          ...prev,
-          [module.id]: lessonsResponse.data
-        }))
-        setExpandedModules(new Set([module.id.toString()]))
+        setCurrentModule(foundModule)
+        setCurrentLesson(foundLesson)
+        setExpandedModules(new Set([foundModule.id.toString()]))
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to load course content'
@@ -323,7 +468,7 @@ export default function LessonViewer({
     }
 
     fetchCourseData()
-  }, [courseId, moduleId, lessonId, router])
+  }, [courseId, lessonId, router])
 
   const handleLessonComplete = () => {
     if (!currentLesson || !course) return
@@ -335,18 +480,43 @@ export default function LessonViewer({
     })
   }
 
-  const navigateToLesson = (targetModuleId: string, targetLessonId: string) => {
+  const navigateToLesson = async (
+    targetModuleId: string,
+    targetLessonId: string
+  ) => {
     if (!courseId) return
-    // Reset video state when navigating
-    setVideoUrl(undefined)
-    setIsPlaying(false)
-    setProgress(0)
-    setCurrentTime(0)
-    setDuration(0)
 
-    router.push(
-      `/learn/${courseId}?module=${targetModuleId}&lesson=${targetLessonId}`
-    )
+    try {
+      // Check if user can access the target lesson
+      const canAccess = await progressApi.canAccessLesson(
+        Number(targetLessonId)
+      )
+      if (!canAccess) {
+        toast({
+          title: 'Access Restricted',
+          description: 'Complete the previous lesson first',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      // Reset video state when navigating
+      setVideoUrl(undefined)
+      setIsPlaying(false)
+      setProgress(0)
+      setCurrentTime(0)
+      setDuration(0)
+
+      // Điều hướng đúng sang /learn/[courseId]/[lessonId]
+      router.push(`/learn/${courseId}/${targetLessonId}`)
+    } catch (error) {
+      console.error('Failed to check lesson access:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to verify lesson access',
+        variant: 'destructive',
+      })
+    }
   }
 
   const getNextLesson = () => {
@@ -360,7 +530,10 @@ export default function LessonViewer({
     )
 
     // Next lesson in current module
-    if (currentLessonIndex !== undefined && currentLessonIndex < moduleLessons[currentModule.id].length - 1) {
+    if (
+      currentLessonIndex !== undefined &&
+      currentLessonIndex < moduleLessons[currentModule.id].length - 1
+    ) {
       return {
         module: currentModule,
         lesson: moduleLessons[currentModule.id][currentLessonIndex + 1],
@@ -402,7 +575,10 @@ export default function LessonViewer({
       const prevModule = course.modules[currentModuleIndex - 1]
       return {
         module: prevModule,
-        lesson: moduleLessons[prevModule.id]?.[moduleLessons[prevModule.id].length - 1],
+        lesson:
+          moduleLessons[prevModule.id]?.[
+            moduleLessons[prevModule.id].length - 1
+          ],
       }
     }
 
@@ -420,7 +596,7 @@ export default function LessonViewer({
         const lessonsResponse = await lessonApi.getLessonsByModuleId(moduleId)
         setModuleLessons(prev => ({
           ...prev,
-          [moduleId]: lessonsResponse.data
+          [moduleId]: lessonsResponse.data,
         }))
       } catch (err) {
         toast({
@@ -434,33 +610,181 @@ export default function LessonViewer({
   }
 
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
+  const [lessonProgress, setLessonProgress] =
+    useState<LessonProgressDTO | null>(null)
+  const [isProgressLoading, setIsProgressLoading] = useState(true)
+  const [canAccessLesson, setCanAccessLesson] = useState(true)
+  const [accessReason, setAccessReason] = useState<string | null>(null)
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  )
+  const lastProgressUpdate = useRef<number>(0)
+  const progressUpdateInterval = 10000 // Update progress every 10 seconds
+  const [isAccessChecking, setIsAccessChecking] = useState(true)
 
+  // Add effect to check lesson access and load completed lessons
   useEffect(() => {
-    const loadVideoUrl = async () => {
-      if (currentLesson) {
-        try {
-          // Reset video state when lesson changes
-          setVideoUrl(undefined)
-          setIsPlaying(false)
-          setProgress(0)
-          setCurrentTime(0)
-          setDuration(0)
+    const checkLessonAccess = async () => {
+      if (!currentLesson || !course) return
 
-          const url = await lessonApi.getLessonVideoUrl(currentLesson.id.toString())
-          console.log('Video URL loaded:', url)
-          setVideoUrl(url)
+      try {
+        setIsAccessChecking(true)
+        // Check if user can access this lesson
+        const canAccess = await progressApi.canAccessLesson(currentLesson.id)
+        setCanAccessLesson(canAccess)
+        setAccessReason(canAccess ? null : 'Complete the previous lesson first')
+
+        // Load completed lessons for the course
+        const completedResponse = await progressApi.getCompletedLessons(
+          course.id
+        )
+        setCompletedLessons(new Set(completedResponse.data))
+      } catch (error) {
+        console.error('Failed to check lesson access:', error)
+        setCanAccessLesson(false)
+        setAccessReason('Failed to verify lesson access')
+        toast({
+          title: 'Error',
+          description: 'Failed to verify lesson access. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsAccessChecking(false)
+      }
+    }
+
+    checkLessonAccess()
+  }, [currentLesson, course, toast])
+
+  // Add progress tracking effect
+  useEffect(() => {
+    const loadLessonProgress = async () => {
+      if (currentLesson) {
+        setIsProgressLoading(true)
+        try {
+          const response = await progressApi.getLessonProgress(currentLesson.id)
+          setLessonProgress(response.data)
+          // Set video position if progress exists
+          if (response.data && videoRef.current) {
+            videoRef.current.currentTime = response.data.currentTime
+          }
         } catch (error) {
-          console.error('Failed to load video URL:', error)
+          console.error('Failed to load lesson progress:', error)
+          // Initialize with default values if progress doesn't exist
+          const defaultProgress: LessonProgressDTO = {
+            lessonId: currentLesson.id,
+            currentTime: 0,
+            watchedTime: 0,
+            isCompleted: 0,
+          }
+          setLessonProgress(defaultProgress)
+        } finally {
+          setIsProgressLoading(false)
         }
       }
     }
-    loadVideoUrl()
+    loadLessonProgress()
   }, [currentLesson])
+
+  // Update progress periodically
+  useEffect(() => {
+    if (isProgressLoading) return // Don't update if still loading initial progress
+
+    const updateProgress = async () => {
+      if (!currentLesson || !videoRef.current) return
+
+      const now = Date.now()
+      if (now - lastProgressUpdate.current < progressUpdateInterval) return
+
+      try {
+        const currentTime = Math.floor(videoRef.current.currentTime)
+        const watchedDelta = Math.floor(
+          Math.max(
+            0,
+            videoRef.current.currentTime - (lessonProgress?.currentTime || 0)
+          )
+        )
+
+        if (watchedDelta > 0) {
+          const updateData: UpdateLessonProgressRequestDTO = {
+            currentTime: currentTime.toString(),
+            watchedDelta: watchedDelta.toString(),
+          }
+
+          const response = await progressApi.updateLessonProgress(
+            currentLesson.id,
+            updateData
+          )
+          setLessonProgress(response.data)
+          lastProgressUpdate.current = now
+        }
+      } catch (error) {
+        console.error('Failed to update progress:', error)
+        // Don't update lastProgressUpdate to retry sooner
+      }
+    }
+
+    const interval = setInterval(updateProgress, progressUpdateInterval)
+    return () => clearInterval(interval)
+  }, [currentLesson, lessonProgress, isProgressLoading])
+
+  // Update progress when video ends
+  const handleVideoEnded = async () => {
+    if (!currentLesson || !videoRef.current || isProgressLoading) return
+    try {
+      const updateData: UpdateLessonProgressRequestDTO = {
+        currentTime: Math.floor(videoRef.current.duration).toString(),
+        watchedDelta: Math.floor(
+          videoRef.current.duration - (lessonProgress?.currentTime || 0)
+        ).toString(),
+      }
+      const response = await progressApi.updateLessonProgress(
+        currentLesson.id,
+        updateData
+      )
+      setLessonProgress(response.data)
+      setIsPlaying(false)
+      // Mark lesson as completed in sidebar instantly
+      setCompletedLessons(prev => new Set(prev).add(currentLesson.id))
+      // Nếu có nextLesson thì tự động chuyển sang bài tiếp theo
+      if (nextLesson && nextLesson.lesson && nextLesson.module) {
+        setTimeout(() => {
+          navigateToLesson(
+            nextLesson.module.id.toString(),
+            nextLesson.lesson.id.toString()
+          )
+        }, 1200)
+      }
+      // Cập nhật progress tổng thể
+      updateOverallProgress()
+    } catch (error) {
+      setIsPlaying(false)
+    }
+  }
 
   // Add effect to handle video source changes
   useEffect(() => {
+    const fetchVideoUrl = async () => {
+      if (!currentLesson) return
+      try {
+        const response = await lessonApi.getLessonUrl(
+          currentLesson.id.toString()
+        )
+        setVideoUrl(response)
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load video content',
+          variant: 'destructive',
+        })
+        setVideoUrl(undefined)
+      }
+    }
+    fetchVideoUrl()
+  }, [currentLesson, toast])
+
+  useEffect(() => {
     if (videoRef.current && videoUrl) {
-      console.log('Setting video source:', videoUrl)
       videoRef.current.load() // Reload video when source changes
       // Reset video state
       setIsPlaying(false)
@@ -470,7 +794,6 @@ export default function LessonViewer({
 
       // Add event listener for when video is ready to play
       const handleCanPlay = () => {
-        console.log('Video is ready to play')
         if (videoRef.current) {
           setDuration(videoRef.current.duration)
         }
@@ -482,6 +805,75 @@ export default function LessonViewer({
       }
     }
   }, [videoUrl])
+
+  // Thêm hàm formatDuration
+  function formatDuration(seconds: number): string {
+    if (!seconds || isNaN(seconds)) return '0m'
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = Math.floor(seconds % 60)
+    if (h > 0) return `${h}h ${m}m ${s > 0 ? s + 's' : ''}`.trim()
+    if (m > 0) return `${m}m${s > 0 ? ' ' + s + 's' : ''}`
+    return `${s}s`
+  }
+
+  // Khi nhận progress từ query string:
+  useEffect(() => {
+    if (overallProgress !== undefined && !isNaN(overallProgress)) {
+      localStorage.setItem(
+        `course-progress-${courseId}`,
+        overallProgress.toString()
+      )
+    }
+  }, [overallProgress, courseId])
+
+  // Khi render, lấy từ localStorage nếu không có trong query string:
+  const [displayProgress, setDisplayProgress] = useState<number | undefined>(
+    overallProgress
+  )
+
+  useEffect(() => {
+    if (overallProgress === undefined || isNaN(overallProgress)) {
+      const stored = localStorage.getItem(`course-progress-${courseId}`)
+      if (stored) setDisplayProgress(Number(stored))
+    } else {
+      setDisplayProgress(overallProgress)
+    }
+  }, [overallProgress, courseId])
+
+  // Hàm cập nhật progress tổng thể từ backend
+  const updateOverallProgress = async () => {
+    try {
+      const res = await enrollmentApi.getEnrollmentStatus(courseId)
+      if (res.data && typeof res.data.progress === 'number') {
+        setDisplayProgress(res.data.progress)
+        localStorage.setItem(
+          `course-progress-${courseId}`,
+          res.data.progress.toString()
+        )
+      }
+    } catch {}
+  }
+
+  // Gọi updateOverallProgress khi sang lesson mới
+  useEffect(() => {
+    if (currentLesson) {
+      updateOverallProgress()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLesson])
+
+  // Reset video player state when lessonId changes
+  useEffect(() => {
+    setIsPlaying(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+    setHasSeeked(false)
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0
+    }
+  }, [lessonId])
 
   if (loading) {
     return (
@@ -592,11 +984,15 @@ export default function LessonViewer({
             <div className='space-y-2'>
               <CardTitle className='text-2xl'>{course.title}</CardTitle>
             </div>
-            <Badge variant='secondary'>
-              {Math.round((course.totalLessons / course.totalLessons) * 100)}% Complete
-            </Badge>
+            {displayProgress !== undefined && (
+              <Badge variant='secondary'>
+                {Math.round(displayProgress)}% Complete
+              </Badge>
+            )}
           </div>
-          <Progress value={(course.totalLessons / course.totalLessons) * 100} className='w-full' />
+          {displayProgress !== undefined && (
+            <Progress value={displayProgress} className='w-full' />
+          )}
         </CardHeader>
       </Card>
 
@@ -612,9 +1008,8 @@ export default function LessonViewer({
                     Module {currentModule.orderNumber}: {currentModule.title}
                   </CardTitle>
                   <CardDescription>
-                    {moduleLessons[currentModule.id]?.length || 0} lessons •{' '}
-                    {Math.floor(currentModule.totalDuration / 60)}h{' '}
-                    {currentModule.totalDuration % 60}m
+                    {course.totalLessons} lessons •{' '}
+                    {formatDuration(course.totalDuration)}
                   </CardDescription>
                 </div>
               </div>
@@ -624,251 +1019,299 @@ export default function LessonViewer({
           {/* Enhanced Video Player */}
           <Card>
             <CardContent className='p-0'>
-              <div
-                className={`relative bg-black transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
-                  }`}
-                ref={videoContainerRef}
-              >
-                <video
-                  ref={videoRef}
-                  className={`w-full object-contain ${isFullscreen
-                      ? 'h-screen'
-                      : videoSize === 'small'
-                        ? 'h-48 md:h-64'
-                        : videoSize === 'medium'
-                          ? 'h-64 md:h-80 lg:h-96'
-                          : 'h-80 md:h-96 lg:h-[32rem]'
-                    }`}
-                  poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
-                  controls={false}
-                  onClick={togglePlayPause}
-                  onTimeUpdate={handleTimeUpdate}
-                  onLoadedMetadata={handleLoadedMetadata}
-                  onEnded={() => setIsPlaying(false)}
-                  onError={(e) => console.error('Video error:', e)}
-                >
-                  {videoUrl && <source src={videoUrl} type='video/mp4' />}
-                  Your browser does not support the video tag.
-                </video>
-
-                {/* Video Overlay Controls */}
-                <div
-                  className={`absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-200 ${isPlaying ? '' : 'opacity-100'}`}
-                >
-                  {/* Center Play/Pause Button */}
-                  <div className='absolute inset-0 flex items-center justify-center'>
+              {isAccessChecking ? (
+                <div className='p-8 text-center space-y-4'>
+                  <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
+                  <p className='text-muted-foreground'>
+                    Checking lesson access...
+                  </p>
+                </div>
+              ) : !canAccessLesson ? (
+                <div className='p-8 text-center space-y-4'>
+                  <AlertCircle className='h-12 w-12 mx-auto text-destructive' />
+                  <h3 className='text-lg font-semibold'>
+                    Lesson Access Restricted
+                  </h3>
+                  <p className='text-muted-foreground'>{accessReason}</p>
+                  {previousLesson && (
                     <Button
-                      size='lg'
-                      variant='secondary'
-                      className='rounded-full h-16 w-16 bg-black/50 hover:bg-black/70 backdrop-blur-sm'
-                      onClick={togglePlayPause}
-                    >
-                      {isPlaying ? (
-                        <Pause className='h-8 w-8' />
-                      ) : (
-                        <Play className='h-8 w-8 ml-1' />
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Top Controls */}
-                  <div className='absolute top-4 right-4 flex items-center space-x-2'>
-                    {/* Video Size Controls */}
-                    <div className='flex items-center space-x-1 bg-black/50 rounded-lg p-1 backdrop-blur-sm'>
-                      <Button
-                        size='sm'
-                        variant={videoSize === 'small' ? 'secondary' : 'ghost'}
-                        className='h-8 w-8 p-0 text-white hover:text-black'
-                        onClick={() => setVideoSize('small')}
-                        title='Small video'
-                      >
-                        <Monitor className='h-3 w-3' />
-                      </Button>
-                      <Button
-                        size='sm'
-                        variant={videoSize === 'medium' ? 'secondary' : 'ghost'}
-                        className='h-8 w-8 p-0 text-white hover:text-black'
-                        onClick={() => setVideoSize('medium')}
-                        title='Medium video'
-                      >
-                        <Monitor className='h-4 w-4' />
-                      </Button>
-                      <Button
-                        size='sm'
-                        variant={videoSize === 'large' ? 'secondary' : 'ghost'}
-                        className='h-8 w-8 p-0 text-white hover:text-black'
-                        onClick={() => setVideoSize('large')}
-                        title='Large video'
-                      >
-                        <Monitor className='h-5 w-5' />
-                      </Button>
-                    </div>
-
-                    {/* Fullscreen Toggle */}
-                    <Button
-                      size='sm'
-                      variant='ghost'
-                      className='h-8 w-8 p-0 text-white hover:text-black bg-black/50 hover:bg-white/90 backdrop-blur-sm'
-                      onClick={toggleFullscreen}
-                      title={
-                        isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'
+                      onClick={() =>
+                        navigateToLesson(
+                          previousLesson.module.id.toString(),
+                          previousLesson.lesson.id.toString()
+                        )
                       }
                     >
-                      {isFullscreen ? (
-                        <Minimize2 className='h-4 w-4' />
-                      ) : (
-                        <Maximize2 className='h-4 w-4' />
-                      )}
+                      <SkipBack className='h-4 w-4 mr-2' />
+                      Return to Previous Lesson
                     </Button>
-                  </div>
-
-                  {/* Bottom Controls Bar */}
-                  <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4'>
-                    {/* Progress Bar */}
-                    <div className='mb-3'>
-                      <div
-                        className='w-full h-1 bg-white/30 rounded-full cursor-pointer'
-                        onClick={handleProgressClick}
-                        ref={progressBarRef}
-                      >
-                        <div
-                          className='h-full bg-primary rounded-full transition-all duration-150'
-                          style={{ width: `${progress}%` }}
-                        />
+                  )}
+                </div>
+              ) : (
+                <div
+                  className={`relative bg-black transition-all duration-300 ${
+                    isFullscreen ? 'fixed inset-0 z-50' : 'rounded-t-lg'
+                  }`}
+                  ref={videoContainerRef}
+                >
+                  {!videoUrl && (
+                    <div className='absolute inset-0 flex items-center justify-center bg-black/80 z-10'>
+                      <div className='text-white text-center'>
+                        No video available for this lesson.
                       </div>
                     </div>
+                  )}
+                  <video
+                    ref={videoRef}
+                    className={`w-full object-contain ${
+                      isFullscreen
+                        ? 'h-screen'
+                        : videoSize === 'small'
+                          ? 'h-48 md:h-64'
+                          : videoSize === 'medium'
+                            ? 'h-64 md:h-80 lg:h-96'
+                            : 'h-80 md:h-96 lg:h-[32rem]'
+                    }`}
+                    poster={
+                      course.thumbnailUrl ||
+                      '/placeholder.svg?height=400&width=600'
+                    }
+                    controls={false}
+                    onClick={togglePlayPause}
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onEnded={handleVideoEnded}
+                    onError={e => console.error('Video error:', e)}
+                  >
+                    {videoUrl && <source src={videoUrl} type='video/mp4' />}
+                    Your browser does not support the video tag.
+                  </video>
 
-                    {/* Control Buttons */}
-                    <div className='flex items-center justify-between'>
-                      <div className='flex items-center space-x-2'>
+                  {/* Video Overlay Controls */}
+                  <div
+                    className={`absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-200 ${isPlaying ? '' : 'opacity-100'}`}
+                  >
+                    {/* Center Play/Pause Button */}
+                    <div className='absolute inset-0 flex items-center justify-center'>
+                      <Button
+                        size='lg'
+                        variant='secondary'
+                        className='rounded-full h-16 w-16 bg-black/50 hover:bg-black/70 backdrop-blur-sm'
+                        onClick={togglePlayPause}
+                      >
+                        {isPlaying ? (
+                          <Pause className='h-8 w-8' />
+                        ) : (
+                          <Play className='h-8 w-8 ml-1' />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Top Controls */}
+                    <div className='absolute top-4 right-4 flex items-center space-x-2'>
+                      {/* Video Size Controls */}
+                      <div className='flex items-center space-x-1 bg-black/50 rounded-lg p-1 backdrop-blur-sm'>
                         <Button
                           size='sm'
-                          variant='ghost'
-                          className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                          onClick={() =>
-                            previousLesson &&
-                            navigateToLesson(
-                              previousLesson.module.id.toString(),
-                              previousLesson.lesson.id.toString()
-                            )
+                          variant={
+                            videoSize === 'small' ? 'secondary' : 'ghost'
                           }
-                          disabled={!previousLesson}
-                          title='Previous lesson'
+                          className='h-8 w-8 p-0 text-white hover:text-black'
+                          onClick={() => setVideoSize('small')}
+                          title='Small video'
                         >
-                          <SkipBack className='h-4 w-4' />
+                          <Monitor className='h-3 w-3' />
                         </Button>
-
                         <Button
                           size='sm'
-                          variant='ghost'
-                          className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                          onClick={() => seekVideo(-10)}
-                          title='Rewind 10 seconds'
-                        >
-                          <RotateCcw className='h-4 w-4' />
-                        </Button>
-
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                          onClick={togglePlayPause}
-                          title={isPlaying ? 'Pause' : 'Play'}
-                        >
-                          {isPlaying ? (
-                            <Pause className='h-4 w-4' />
-                          ) : (
-                            <Play className='h-4 w-4' />
-                          )}
-                        </Button>
-
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                          onClick={() => seekVideo(10)}
-                          title='Forward 10 seconds'
-                        >
-                          <RotateCw className='h-4 w-4' />
-                        </Button>
-
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                          onClick={() =>
-                            nextLesson &&
-                            navigateToLesson(
-                              nextLesson.module.id.toString(),
-                              nextLesson.lesson.id.toString()
-                            )
+                          variant={
+                            videoSize === 'medium' ? 'secondary' : 'ghost'
                           }
-                          disabled={!nextLesson}
-                          title='Next lesson'
+                          className='h-8 w-8 p-0 text-white hover:text-black'
+                          onClick={() => setVideoSize('medium')}
+                          title='Medium video'
                         >
-                          <SkipForward className='h-4 w-4' />
+                          <Monitor className='h-4 w-4' />
                         </Button>
+                        <Button
+                          size='sm'
+                          variant={
+                            videoSize === 'large' ? 'secondary' : 'ghost'
+                          }
+                          className='h-8 w-8 p-0 text-white hover:text-black'
+                          onClick={() => setVideoSize('large')}
+                          title='Large video'
+                        >
+                          <Monitor className='h-5 w-5' />
+                        </Button>
+                      </div>
 
-                        {/* Volume Control */}
+                      {/* Fullscreen Toggle */}
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        className='h-8 w-8 p-0 text-white hover:text-black bg-black/50 hover:bg-white/90 backdrop-blur-sm'
+                        onClick={toggleFullscreen}
+                        title={
+                          isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'
+                        }
+                      >
+                        {isFullscreen ? (
+                          <Minimize2 className='h-4 w-4' />
+                        ) : (
+                          <Maximize2 className='h-4 w-4' />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Bottom Controls Bar */}
+                    <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4'>
+                      {/* Progress Bar */}
+                      <div className='mb-3'>
+                        <div
+                          className='w-full h-1 bg-white/30 rounded-full cursor-pointer'
+                          onClick={handleProgressClick}
+                          ref={progressBarRef}
+                        >
+                          <div
+                            className='h-full bg-primary rounded-full transition-all duration-150'
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Control Buttons */}
+                      <div className='flex items-center justify-between'>
                         <div className='flex items-center space-x-2'>
                           <Button
                             size='sm'
                             variant='ghost'
                             className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
-                            onClick={toggleMute}
-                            title={isMuted ? 'Unmute' : 'Mute'}
+                            onClick={() =>
+                              previousLesson &&
+                              navigateToLesson(
+                                previousLesson.module.id.toString(),
+                                previousLesson.lesson.id.toString()
+                              )
+                            }
+                            disabled={!previousLesson}
+                            title='Previous lesson'
                           >
-                            {isMuted ? (
-                              <VolumeX className='h-4 w-4' />
+                            <SkipBack className='h-4 w-4' />
+                          </Button>
+
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
+                            onClick={() => seekVideo(-10)}
+                            title='Rewind 10 seconds'
+                          >
+                            <RotateCcw className='h-4 w-4' />
+                          </Button>
+
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
+                            onClick={togglePlayPause}
+                            title={isPlaying ? 'Pause' : 'Play'}
+                          >
+                            {isPlaying ? (
+                              <Pause className='h-4 w-4' />
                             ) : (
-                              <Volume2 className='h-4 w-4' />
+                              <Play className='h-4 w-4' />
                             )}
                           </Button>
-                          <input
-                            type='range'
-                            min='0'
-                            max='1'
-                            step='0.1'
-                            value={volume}
-                            onChange={handleVolumeChange}
-                            className='w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer slider'
-                            title='Volume'
-                          />
+
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
+                            onClick={() => seekVideo(10)}
+                            title='Forward 10 seconds'
+                          >
+                            <RotateCw className='h-4 w-4' />
+                          </Button>
+
+                          <Button
+                            size='sm'
+                            variant='ghost'
+                            className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
+                            onClick={() =>
+                              nextLesson &&
+                              navigateToLesson(
+                                nextLesson.module.id.toString(),
+                                nextLesson.lesson.id.toString()
+                              )
+                            }
+                            disabled={!nextLesson}
+                            title='Next lesson'
+                          >
+                            <SkipForward className='h-4 w-4' />
+                          </Button>
+
+                          {/* Volume Control */}
+                          <div className='flex items-center space-x-2'>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              className='h-8 w-8 p-0 text-white hover:text-black hover:bg-white/90'
+                              onClick={toggleMute}
+                              title={isMuted ? 'Unmute' : 'Mute'}
+                            >
+                              {isMuted ? (
+                                <VolumeX className='h-4 w-4' />
+                              ) : (
+                                <Volume2 className='h-4 w-4' />
+                              )}
+                            </Button>
+                            <input
+                              type='range'
+                              min='0'
+                              max='1'
+                              step='0.1'
+                              value={volume}
+                              onChange={handleVolumeChange}
+                              className='w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer slider'
+                              title='Volume'
+                            />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className='flex items-center space-x-4 text-white text-sm'>
-                        {/* Time Display */}
-                        <span className='font-mono'>
-                          {formatTime(currentTime)} / {formatTime(duration)}
-                        </span>
+                        <div className='flex items-center space-x-4 text-white text-sm'>
+                          {/* Time Display */}
+                          <span className='font-mono'>
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                          </span>
 
-                        {/* Playback Speed */}
-                        <select
-                          value={playbackSpeed}
-                          onChange={handleSpeedChange}
-                          className='bg-black/50 text-white text-xs rounded px-2 py-1 border-none outline-none cursor-pointer'
-                          title='Playback speed'
-                        >
-                          <option value={0.5}>0.5x</option>
-                          <option value={0.75}>0.75x</option>
-                          <option value={1}>1x</option>
-                          <option value={1.25}>1.25x</option>
-                          <option value={1.5}>1.5x</option>
-                          <option value={2}>2x</option>
-                        </select>
+                          {/* Playback Speed */}
+                          <select
+                            value={playbackSpeed}
+                            onChange={handleSpeedChange}
+                            className='bg-black/50 text-white text-xs rounded px-2 py-1 border-none outline-none cursor-pointer'
+                            title='Playback speed'
+                          >
+                            <option value={0.5}>0.5x</option>
+                            <option value={0.75}>0.75x</option>
+                            <option value={1}>1x</option>
+                            <option value={1.25}>1.25x</option>
+                            <option value={1.5}>1.5x</option>
+                            <option value={2}>2x</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Fullscreen Exit Hint */}
-                {isFullscreen && (
-                  <div className='absolute top-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded backdrop-blur-sm'>
-                    Press ESC to exit fullscreen
-                  </div>
-                )}
-              </div>
+                  {/* Fullscreen Exit Hint */}
+                  {isFullscreen && (
+                    <div className='absolute top-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded backdrop-blur-sm'>
+                      Press ESC to exit fullscreen
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Video Info Bar (only visible when not fullscreen) */}
               {!isFullscreen && (
@@ -877,7 +1320,9 @@ export default function LessonViewer({
                     <div className='flex items-center space-x-4'>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Clock className='h-4 w-4' />
-                        <span>{currentLesson.duration} min</span>
+                        <span>
+                          {formatDuration(currentLesson?.duration || 0)}
+                        </span>
                       </div>
                       <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                         <Monitor className='h-4 w-4' />
@@ -885,10 +1330,6 @@ export default function LessonViewer({
                       </div>
                     </div>
                     <div className='flex items-center space-x-2'>
-                      <Button size='sm' onClick={handleLessonComplete}>
-                        <CheckCircle className='h-4 w-4 mr-2' />
-                        Mark Complete
-                      </Button>
                       <Button
                         size='sm'
                         variant='outline'
@@ -931,6 +1372,7 @@ export default function LessonViewer({
                 <TabsContent value='discussion' className='mt-4'>
                   <DiscussionSection
                     lessonId={currentLesson.id.toString()}
+                    courseId={course.id.toString()}
                   />
                 </TabsContent>
               </Tabs>
@@ -983,7 +1425,9 @@ export default function LessonViewer({
                 <Collapsible
                   key={module.id}
                   open={expandedModules.has(module.id.toString())}
-                  onOpenChange={() => toggleModuleExpansion(module.id.toString())}
+                  onOpenChange={() =>
+                    toggleModuleExpansion(module.id.toString())
+                  }
                 >
                   <CollapsibleTrigger asChild>
                     <div className='flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted'>
@@ -998,9 +1442,7 @@ export default function LessonViewer({
                             Module {module.orderNumber}: {module.title}
                           </p>
                           <p className='text-xs text-muted-foreground'>
-                            {module.totalLessons} lessons •{' '}
-                            {Math.floor(module.totalDuration / 60)}h{' '}
-                            {module.totalDuration % 60}m
+                            {formatDuration(module.totalDuration)}
                           </p>
                         </div>
                       </div>
@@ -1010,11 +1452,28 @@ export default function LessonViewer({
                     {moduleLessons[module.id]?.map(lesson => (
                       <div
                         key={lesson.id}
-                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${currentLesson?.id === lesson.id
+                        className={`p-2 rounded cursor-pointer transition-colors text-sm ${
+                          currentLesson?.id === lesson.id
                             ? 'bg-primary/10 border border-primary'
                             : 'hover:bg-muted'
-                          }`}
-                        onClick={() => navigateToLesson(module.id.toString(), lesson.id.toString())}
+                        } ${
+                          !completedLessons.has(lesson.id) &&
+                          lesson.id !== currentLesson?.id
+                            ? 'opacity-50'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          navigateToLesson(
+                            module.id.toString(),
+                            lesson.id.toString()
+                          )
+                        }
+                        title={
+                          !completedLessons.has(lesson.id) &&
+                          lesson.id !== currentLesson?.id
+                            ? accessReason || 'Locked'
+                            : undefined
+                        }
                       >
                         <div className='flex items-center justify-between'>
                           <div className='flex-1'>
@@ -1022,14 +1481,18 @@ export default function LessonViewer({
                               {lesson.orderNumber}. {lesson.title}
                             </p>
                             <p className='text-xs text-muted-foreground'>
-                              {lesson.duration} minutes
+                              {formatDuration(lesson?.duration || 0)}
                             </p>
                           </div>
-                          {lesson.isPreview && (
-                            <Badge variant='secondary' className='text-xs'>
-                              Preview
-                            </Badge>
-                          )}
+                          <div className='flex items-center space-x-2'>
+                            {completedLessons.has(lesson.id) ? (
+                              <CheckCircle className='h-4 w-4 text-green-500' />
+                            ) : (
+                              <Badge variant='outline' className='text-xs'>
+                                Locked
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1043,3 +1506,6 @@ export default function LessonViewer({
     </div>
   )
 }
+
+// Export the LessonViewer component directly
+export default LessonViewer

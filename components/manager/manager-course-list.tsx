@@ -56,7 +56,7 @@ import {
   Search,
   Star,
   Trash2,
-  Users
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'

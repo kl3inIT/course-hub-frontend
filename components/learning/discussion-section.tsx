@@ -420,9 +420,7 @@ const CommentComponentBase = ({
 
 const CommentComponent = memo(CommentComponentBase)
 
-export function DiscussionSection({
-  lessonId,
-}: DiscussionSectionProps) {
+export function DiscussionSection({ lessonId }: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)

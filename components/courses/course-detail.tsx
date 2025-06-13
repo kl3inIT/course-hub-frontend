@@ -1,6 +1,7 @@
 'use client'
 
 import { courseApi } from '@/api/course-api'
+import { enrollmentApi } from '@/api/enrollment-api'
 import { lessonApi } from '@/api/lesson-api'
 import { reviewApi } from '@/api/review-api'
 import { Badge } from '@/components/ui/badge'
@@ -17,12 +18,21 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { Page } from '@/types/common'
 import { CourseDetailsResponseDTO } from '@/types/course'
+import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { LessonResponseDTO } from '@/types/lesson'
 import { ModuleResponseDTO } from '@/types/module'
 import { ReviewResponseDTO } from '@/types/review'
@@ -34,14 +44,15 @@ import {
   Clock,
   Loader2,
   Lock,
+  Play,
   PlayCircle,
-  Star
+  Star,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { PaymentModal } from './payment-modal'
+import { useEffect, useRef, useState } from 'react'
+import { PaymentModal } from '../payment/payment-modal'
 
 interface CourseDetailProps {
   courseId: string
@@ -65,7 +76,7 @@ const formatDate = (dateString: string): string => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
   } catch {
     return dateString
@@ -73,6 +84,8 @@ const formatDate = (dateString: string): string => {
 }
 
 export function CourseDetail({ courseId }: CourseDetailProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,18 +99,52 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   )
   const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null)
   const [heroPreviewLoading, setHeroPreviewLoading] = useState(false)
-  const [heroPreviewLesson, setHeroPreviewLesson] = useState<LessonResponseDTO | null>(null)
-  const { toast } = useToast()
+  const [heroPreviewLesson, setHeroPreviewLesson] =
+    useState<LessonResponseDTO | null>(null)
+  const [enrollmentStatus, setEnrollmentStatus] =
+    useState<EnrollmentStatusResponseDTO | null>(null)
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false)
   const router = useRouter()
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
   const [reviewLoading, setReviewLoading] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
-  const [reviewPage, setReviewPage] = useState<Page<ReviewResponseDTO> | null>(null)
+  const [reviewPage, setReviewPage] = useState<Page<ReviewResponseDTO> | null>(
+    null
+  )
   const [expandedReviewIds, setExpandedReviewIds] = useState<number[]>([])
-  const [reportModal, setReportModal] = useState<{ open: boolean, reviewId?: number }>({ open: false })
+  const [reportModal, setReportModal] = useState<{
+    open: boolean
+    reviewId?: number
+  }>({ open: false })
   const [reportReason, setReportReason] = useState('')
   const [reportError, setReportError] = useState('')
   const [reportLoading, setReportLoading] = useState(false)
+  const [previewLesson, setPreviewLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  const checkEnrollmentStatus = async (courseId: string) => {
+    if (!user) {
+      setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
+      return
+    }
+
+    try {
+      setEnrollmentLoading(true)
+      const response = await enrollmentApi.getEnrollmentStatus(courseId)
+      if (response.data) {
+        setEnrollmentStatus(response.data)
+      }
+    } catch (err) {
+      console.error('Error checking enrollment status:', err)
+      setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
+    } finally {
+      setEnrollmentLoading(false)
+    }
+  }
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -111,7 +158,10 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         if (response) {
           console.log('Course Data:', response.data)
           setCourse(response.data)
-          // Removed auto-expansion of first module
+          // Check enrollment status only if user is authenticated
+          if (user) {
+            await checkEnrollmentStatus(courseId)
+          }
         }
       } catch (err) {
         console.error('Error fetching course:', err)
@@ -131,13 +181,14 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     if (courseId) {
       fetchCourse()
     }
-  }, [courseId, toast])
+  }, [courseId, toast, user])
 
   useEffect(() => {
     if (course && course.modules && course.modules.length > 0) {
       const firstModuleId = course.modules[0].id
       setHeroPreviewLoading(true)
-      lessonApi.getLessonsByModuleId(firstModuleId.toString())
+      lessonApi
+        .getLessonsByModuleId(firstModuleId.toString())
         .then(res => {
           const lessons = res.data || []
           // Lấy lesson đầu tiên (hoặc lesson preview đầu tiên nếu muốn)
@@ -185,6 +236,17 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   }
 
   const handleEnroll = () => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to enroll in this course.',
+        variant: 'destructive',
+      })
+      router.push(
+        '/login?redirect=' + encodeURIComponent(window.location.pathname)
+      )
+      return
+    }
     setShowPayment(true)
   }
 
@@ -208,7 +270,13 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       setReviewLoading(true)
       setReviewError(null)
       try {
-        const res = await reviewApi.getAllReviews({ courseId: Number(courseId), page: 0, size: 10, sortBy: 'modifiedDate', direction: 'DESC' })
+        const res = await reviewApi.getAllReviews({
+          courseId: Number(courseId),
+          page: 0,
+          size: 10,
+          sortBy: 'modifiedDate',
+          direction: 'DESC',
+        })
         setReviewPage(res.data)
         setReviews(res.data.content)
       } catch (err) {
@@ -221,6 +289,40 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       fetchReviews()
     }
   }, [courseId])
+
+  // Add preview video handling
+  const handlePreviewClick = async (lesson: LessonResponseDTO) => {
+    if (!lesson.isPreview) {
+      toast({
+        title: 'Preview Not Available',
+        description: 'This lesson is not available for preview.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setPreviewLesson(lesson)
+      const url = await lessonApi.getLessonPreviewUrl(lesson.id.toString())
+      setPreviewVideoUrl(url)
+      setShowPreview(true)
+    } catch (error) {
+      console.error('Error loading preview:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load preview video.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleClosePreview = () => {
+    setShowPreview(false)
+    setPreviewVideoUrl(null)
+    if (videoRef.current) {
+      videoRef.current.pause()
+    }
+  }
 
   if (loading) {
     return (
@@ -263,11 +365,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 autoPlay={false}
                 src={heroPreviewUrl}
                 className='w-full h-full object-cover'
-                poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                poster={
+                  course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
+                }
               />
             ) : (
               <img
-                src={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+                src={
+                  course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
+                }
                 alt={course.title}
                 className='w-full h-full object-cover'
                 onError={e => {
@@ -276,8 +382,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               />
             )}
             {heroPreviewLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              <div className='absolute inset-0 flex items-center justify-center bg-black/40'>
+                <Loader2 className='h-8 w-8 animate-spin text-white' />
               </div>
             )}
           </div>
@@ -326,30 +432,75 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         <div className='lg:col-span-1'>
           <Card className='sticky top-6'>
             <CardHeader>
-              <div className='flex items-center gap-2 mb-2'>
-                <span className='text-3xl font-bold'>
-                  ${course.finalPrice.toFixed(2)}
-                </span>
-                {course.discount && course.discount > 0 && (
-                  <span className='text-lg text-muted-foreground line-through'>
-                    $
-                    {(course.finalPrice / (1 - course.discount / 100)).toFixed(
-                      2
-                    )}
+              {enrollmentStatus?.enrolled ? null : (
+                <div className='flex items-center gap-2 mb-2'>
+                  <span className='text-3xl font-bold'>
+                    ${course.finalPrice.toFixed(2)}
                   </span>
-                )}
-                {course.discount && course.discount > 0 && (
-                  <Badge variant='destructive' className='ml-auto'>
-                    {course.discount}% OFF
-                  </Badge>
-                )}
-              </div>
+                  {course.discount && course.discount > 0 && (
+                    <span className='text-lg text-muted-foreground line-through'>
+                      $
+                      {(
+                        course.finalPrice /
+                        (1 - course.discount / 100)
+                      ).toFixed(2)}
+                    </span>
+                  )}
+                  {course.discount && course.discount > 0 && (
+                    <Badge variant='destructive' className='ml-auto'>
+                      {course.discount}% OFF
+                    </Badge>
+                  )}
+                </div>
+              )}
               <CardDescription>Full lifetime access</CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
-              <Button onClick={handleEnroll} className='w-full' size='lg'>
-                Enroll Now
-              </Button>
+              {enrollmentLoading ? (
+                <Button disabled className='w-full' size='lg'>
+                  <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                  Checking...
+                </Button>
+              ) : enrollmentStatus?.enrolled ? (
+                <div className='space-y-3'>
+                  <Button
+                    onClick={() =>
+                      router.push(
+                        `/learn/${course.id}/${heroPreviewLesson?.id || ''}?progress=${enrollmentStatus?.progress ?? 0}`
+                      )
+                    }
+                    className='w-full'
+                    size='lg'
+                  >
+                    <Play className='h-4 w-4 mr-2' />
+                    Continue Learning
+                  </Button>
+                  {enrollmentStatus.progress > 0 && (
+                    <div className='text-sm text-muted-foreground'>
+                      <div className='flex justify-between mb-1'>
+                        <span>Progress</span>
+                        <span>{Math.round(enrollmentStatus.progress)}%</span>
+                      </div>
+                      <div className='w-full bg-gray-200 rounded-full h-2'>
+                        <div
+                          className='bg-primary h-2 rounded-full transition-all duration-300'
+                          style={{ width: `${enrollmentStatus.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  {enrollmentStatus.completed && (
+                    <div className='flex items-center gap-2 text-green-600 text-sm'>
+                      <CheckCircle className='h-4 w-4' />
+                      <span>Course Completed!</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button onClick={handleEnroll} className='w-full' size='lg'>
+                  Enroll Now
+                </Button>
+              )}
 
               <div className='space-y-2 text-sm'>
                 <div className='flex items-center gap-2'>
@@ -428,38 +579,49 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                             </div>
                           ) : moduleLessons[module.id] ? (
                             <div className='space-y-2'>
-                              {moduleLessons[module.id].map(lesson => (
-                                <div
-                                  key={lesson.id}
-                                  className='flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer'
-                                  onClick={() => {
-                                    router.push(`/learn/${course.id}?module=${module.id}&lesson=${lesson.id}`)
-                                  }}
-                                >
-                                  <div className='flex items-center gap-2'>
-                                    <PlayCircle className='h-4 w-4 text-muted-foreground' />
-                                    <span>{lesson.title}</span>
-                                    {lesson.isPreview && (
-                                      <Badge
-                                        variant='secondary'
-                                        className='text-xs'
-                                      >
-                                        Preview
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                                    {lesson.duration && (
-                                      <span>
-                                        {formatDuration(lesson.duration)}
-                                      </span>
-                                    )}
-                                    {!lesson.isPreview && (
-                                      <Lock className='h-4 w-4' />
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
+                              {moduleLessons[module.id].map(
+                                (lesson: LessonResponseDTO) => {
+                                  const isPreview = !!lesson.isPreview
+                                  const hasDuration =
+                                    lesson.duration && lesson.duration > 0
+                                  return (
+                                    <div
+                                      key={lesson.id}
+                                      className={`flex items-center justify-between p-2 rounded-lg ${isPreview ? 'hover:bg-primary/10 cursor-pointer transition' : ''}`}
+                                      onClick={
+                                        isPreview
+                                          ? () => handlePreviewClick(lesson)
+                                          : undefined
+                                      }
+                                    >
+                                      <div className='flex items-center gap-2'>
+                                        <PlayCircle className='h-4 w-4 text-muted-foreground' />
+                                        <span>{lesson.title}</span>
+                                        {isPreview && (
+                                          <Badge
+                                            variant='secondary'
+                                            className='text-xs'
+                                          >
+                                            Preview
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                        {hasDuration && (
+                                          <span>
+                                            {formatDuration(
+                                              lesson.duration || 0
+                                            )}
+                                          </span>
+                                        )}
+                                        {!isPreview && (
+                                          <Lock className='h-4 w-4' />
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                }
+                              )}
                             </div>
                           ) : (
                             <div className='flex items-center justify-center py-4 text-muted-foreground'>
@@ -487,7 +649,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
           <div className='space-y-4'>
             {reviewLoading ? (
-              <div className='text-center text-muted-foreground'>Loading reviews...</div>
+              <div className='text-center text-muted-foreground'>
+                Loading reviews...
+              </div>
             ) : reviewError ? (
               <div className='text-center text-destructive'>{reviewError}</div>
             ) : reviews.length === 0 ? (
@@ -499,77 +663,126 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 </CardContent>
               </Card>
             ) : (
-              reviews.map((review) => {
-                const isExpanded = expandedReviewIds.includes(review.id);
+              reviews.map(review => {
+                const isExpanded = expandedReviewIds.includes(review.id)
                 const handleToggleExpand = () => {
                   setExpandedReviewIds(prev =>
-                    isExpanded ? prev.filter(id => id !== review.id) : [...prev, review.id]
-                  );
-                };
+                    isExpanded
+                      ? prev.filter(id => id !== review.id)
+                      : [...prev, review.id]
+                  )
+                }
                 const handleOpenReport = () => {
-                  setReportModal({ open: true, reviewId: review.id });
-                  setReportReason('');
-                  setReportError('');
-                };
+                  setReportModal({ open: true, reviewId: review.id })
+                  setReportReason('')
+                  setReportError('')
+                }
                 return (
-                  <Card key={review.id} className="rounded-xl shadow-sm border border-gray-200">
-                    <CardContent className="p-5 pb-4 relative">
-                      <div className="flex items-start gap-4">
+                  <Card
+                    key={review.id}
+                    className='rounded-xl shadow-sm border border-gray-200'
+                  >
+                    <CardContent className='p-5 pb-4 relative'>
+                      <div className='flex items-start gap-4'>
                         {/* Avatar */}
-                        <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border-4" style={{ borderColor: '#1e293b' }}>
-                          <Link href={`/profile/${review.userId}`} className="block w-12 h-12">
+                        <div
+                          className='w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border-4'
+                          style={{ borderColor: '#1e293b' }}
+                        >
+                          <Link
+                            href={`/profile/${review.userId}`}
+                            className='block w-12 h-12'
+                          >
                             {review.userAvatar ? (
                               <Image
                                 src={review.userAvatar}
                                 alt={review.userName}
                                 width={48}
                                 height={48}
-                                className="object-cover w-full h-full"
-                                onError={e => { e.currentTarget.src = '/placeholder.svg?height=48&width=48' }}
+                                className='object-cover w-full h-full'
+                                onError={e => {
+                                  e.currentTarget.src =
+                                    '/placeholder.svg?height=48&width=48'
+                                }}
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold border-4" style={{ borderColor: '#1e293b' }}>
-                                {review.userName?.charAt(0) || "?"}
+                              <div
+                                className='w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold border-4'
+                                style={{ borderColor: '#1e293b' }}
+                              >
+                                {review.userName?.charAt(0) || '?'}
                               </div>
                             )}
                           </Link>
                         </div>
                         {/* Info + comment */}
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <Link href={`/profile/${review.userId}`} className="font-semibold text-base sm:text-lg text-gray-900 hover:underline">
+                        <div className='flex-1'>
+                          <div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3'>
+                            <Link
+                              href={`/profile/${review.userId}`}
+                              className='font-semibold text-base sm:text-lg text-gray-900 hover:underline'
+                            >
                               {review.userName}
                             </Link>
-                            <div className="flex items-center gap-1">
+                            <div className='flex items-center gap-1'>
                               {[...Array(5)].map((_, idx) => (
                                 <Star
                                   key={idx}
-                                  className={`h-4 w-4 ${idx < review.star ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                  className={`h-4 w-4 ${idx < review.star ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
                                 />
                               ))}
                             </div>
-                            <span className="text-xs text-muted-foreground sm:ml-auto">
+                            <span className='text-xs text-muted-foreground sm:ml-auto'>
                               {(() => {
-                                const d = new Date(review.createdDate);
-                                return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                                const d = new Date(review.createdDate)
+                                return (
+                                  d.toLocaleTimeString('vi-VN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  }) +
+                                  ' ' +
+                                  d.toLocaleDateString('vi-VN', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                  })
+                                )
                               })()}
                             </span>
                           </div>
-                          <div className="mt-2 flex items-center justify-between">
-                            <div className={`text-gray-800 text-sm sm:text-base whitespace-pre-line ${isExpanded ? '' : 'line-clamp-2'}`} style={{ maxWidth: '90%' }}>
+                          <div className='mt-2 flex items-center justify-between'>
+                            <div
+                              className={`text-gray-800 text-sm sm:text-base whitespace-pre-line ${isExpanded ? '' : 'line-clamp-2'}`}
+                              style={{ maxWidth: '90%' }}
+                            >
                               {review.comment}
                             </div>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="flex items-center gap-1 text-sm ml-2 hover:bg-red-50 group"
-                              title="Báo cáo"
+                              variant='ghost'
+                              size='sm'
+                              className='flex items-center gap-1 text-sm ml-2 hover:bg-red-50 group'
+                              title='Báo cáo'
                               onClick={handleOpenReport}
                             >
                               {/* Flag icon outline */}
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 group-hover:text-red-500 transition-colors">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h13l-1.5 4L16 13H3" />
+                              <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                fill='none'
+                                viewBox='0 0 24 24'
+                                strokeWidth={1.5}
+                                stroke='currentColor'
+                                className='w-5 h-5 group-hover:text-red-500 transition-colors'
+                              >
+                                <path
+                                  strokeLinecap='round'
+                                  strokeLinejoin='round'
+                                  d='M3 3v18'
+                                />
+                                <path
+                                  strokeLinecap='round'
+                                  strokeLinejoin='round'
+                                  d='M3 5h13l-1.5 4L16 13H3'
+                                />
                               </svg>
                               Report
                             </Button>
@@ -577,7 +790,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                           {/* See more/less */}
                           {review.comment && review.comment.length > 80 && (
                             <button
-                              className="text-xs text-primary mt-1 ml-1 hover:underline focus:outline-none"
+                              className='text-xs text-primary mt-1 ml-1 hover:underline focus:outline-none'
                               onClick={handleToggleExpand}
                             >
                               {isExpanded ? 'See less' : 'See more'}
@@ -587,12 +800,44 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                       </div>
                     </CardContent>
                   </Card>
-                );
+                )
               })
             )}
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Video Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className='sm:max-w-[800px] p-0 gap-0'>
+          <DialogHeader className='p-4 border-b'>
+            <div className='flex items-center justify-between'>
+              <DialogTitle>
+                {previewLesson?.title || 'Lesson Preview'}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              Preview video for this lesson. This is a sample of the course
+              content.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='aspect-video bg-black'>
+            {previewVideoUrl ? (
+              <video
+                ref={videoRef}
+                src={previewVideoUrl}
+                controls
+                className='w-full h-full'
+                autoPlay
+              />
+            ) : (
+              <div className='flex items-center justify-center h-full'>
+                <Loader2 className='h-8 w-8 animate-spin text-white' />
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PaymentModal
         isOpen={showPayment}
@@ -611,37 +856,46 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       />
 
       {/* Report Modal */}
-      <Dialog open={reportModal.open} onOpenChange={open => {
-        // Luôn cho phép đóng modal khi ấn Cancel, X hoặc click ngoài
-        setReportModal(v => ({ ...v, open }));
-        setReportError('');
-      }}>
-        <DialogContent className="max-w-md">
+      <Dialog
+        open={reportModal.open}
+        onOpenChange={open => {
+          // Luôn cho phép đóng modal khi ấn Cancel, X hoặc click ngoài
+          setReportModal(v => ({ ...v, open }))
+          setReportError('')
+        }}
+      >
+        <DialogContent className='max-w-md'>
           <DialogHeader>
-            <DialogTitle className="text-lg">Report Review</DialogTitle>
+            <DialogTitle className='text-lg'>Report Review</DialogTitle>
           </DialogHeader>
-          <div className="mb-2">
+          <div className='mb-2'>
             <Textarea
               value={reportReason}
               onChange={e => {
-                setReportReason(e.target.value);
-                if (e.target.value.trim().length === 0) setReportError('Reason is required');
-                else if (e.target.value.length > 200) setReportError('Maximum 200 characters');
-                else setReportError('');
+                setReportReason(e.target.value)
+                if (e.target.value.trim().length === 0)
+                  setReportError('Reason is required')
+                else if (e.target.value.length > 200)
+                  setReportError('Maximum 200 characters')
+                else setReportError('')
               }}
-              placeholder="Enter your reason (1-200 characters)"
+              placeholder='Enter your reason (1-200 characters)'
               rows={4}
               maxLength={200}
               className={reportError ? 'border-red-500' : ''}
             />
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-muted-foreground">{reportReason.length}/200</span>
-              {reportError && <span className="text-xs text-red-500">{reportError}</span>}
+            <div className='flex justify-between items-center mt-1'>
+              <span className='text-xs text-muted-foreground'>
+                {reportReason.length}/200
+              </span>
+              {reportError && (
+                <span className='text-xs text-red-500'>{reportError}</span>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={() => setReportModal({ open: false })}
               disabled={reportLoading}
             >
@@ -650,25 +904,36 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             <Button
               onClick={async () => {
                 if (!reportReason.trim()) {
-                  setReportError('Please enter a reason');
-                  return;
+                  setReportError('Please enter a reason')
+                  return
                 }
                 if (reportReason.length > 200) {
-                  setReportError('Maximum 200 characters');
-                  return;
+                  setReportError('Maximum 200 characters')
+                  return
                 }
-                setReportLoading(true);
+                setReportLoading(true)
                 // Fake send to admin
                 setTimeout(() => {
-                  console.log('[REPORT_TO_ADMIN]', { reviewId: reportModal.reviewId, reason: reportReason });
-                  setReportLoading(false);
-                  setReportModal({ open: false });
-                  setReportReason('');
-                  setReportError('');
-                  toast({ title: 'Report sent successfully!', description: 'Your report has been sent to admin.', variant: 'default' });
-                }, 1000);
+                  console.log('[REPORT_TO_ADMIN]', {
+                    reviewId: reportModal.reviewId,
+                    reason: reportReason,
+                  })
+                  setReportLoading(false)
+                  setReportModal({ open: false })
+                  setReportReason('')
+                  setReportError('')
+                  toast({
+                    title: 'Report sent successfully!',
+                    description: 'Your report has been sent to admin.',
+                    variant: 'default',
+                  })
+                }, 1000)
               }}
-              disabled={reportLoading || !reportReason.trim() || reportReason.length > 200}
+              disabled={
+                reportLoading ||
+                !reportReason.trim() ||
+                reportReason.length > 200
+              }
             >
               {reportLoading ? 'Sending...' : 'Send'}
             </Button>

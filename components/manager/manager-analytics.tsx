@@ -32,16 +32,10 @@ import {
   RefreshCw,
   Star,
   TrendingUp,
-  Users
+  Users,
 } from 'lucide-react'
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis
-} from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import { ChartConfig } from '../ui/chart'
 
 const revenueData = [
@@ -98,27 +92,32 @@ const COLORS = [
 
 // Custom label cho PieChart để tránh dính chữ
 const renderCustomizedLabel = ({
-  cx, cy, midAngle, innerRadius, outerRadius, percent
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
 }: any) => {
-  if (percent === 0) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  if (percent === 0) return null
+  const RADIAN = Math.PI / 180
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
   return (
     <text
       x={x}
       y={y}
-      fill="#222"
-      textAnchor="middle"
-      dominantBaseline="central"
+      fill='#222'
+      textAnchor='middle'
+      dominantBaseline='central'
       fontSize={window.innerWidth < 600 ? 12 : 15}
       style={{ pointerEvents: 'none' }}
     >
       {(percent * 100).toFixed(1).replace('.', ',')}
     </text>
-  );
-};
+  )
+}
 
 // Hàm format ngày giờ: chỉ hiện ngày/tháng/năm và xuống dòng là giờ:phút:giây
 function formatDateTime(dateString: string) {
@@ -136,9 +135,9 @@ function formatDateTime(dateString: string) {
 }
 
 interface ChartContainerProps {
-  children: ReactNode;
-  config: ChartConfig;
-  className?: string;
+  children: ReactNode
+  config: ChartConfig
+  className?: string
 }
 
 export function ManagerAnalytics() {
@@ -155,8 +154,8 @@ export function ManagerAnalytics() {
   )
   const [page, setPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(5)
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [pieOuterRadius, setPieOuterRadius] = useState(120);
+  const chartContainerRef = useRef<HTMLDivElement>(null)
+  const [pieOuterRadius, setPieOuterRadius] = useState(120)
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -225,16 +224,16 @@ export function ManagerAnalytics() {
   useEffect(() => {
     function updateRadius() {
       if (chartContainerRef.current) {
-        const width = chartContainerRef.current.offsetWidth;
-        const height = chartContainerRef.current.offsetHeight;
+        const width = chartContainerRef.current.offsetWidth
+        const height = chartContainerRef.current.offsetHeight
         // outerRadius là 40% chiều rộng hoặc 40% chiều cao, nhỏ hơn
-        setPieOuterRadius(Math.max(60, Math.min(width, height) * 0.4));
+        setPieOuterRadius(Math.max(60, Math.min(width, height) * 0.4))
       }
     }
-    updateRadius();
-    window.addEventListener('resize', updateRadius);
-    return () => window.removeEventListener('resize', updateRadius);
-  }, []);
+    updateRadius()
+    window.addEventListener('resize', updateRadius)
+    return () => window.removeEventListener('resize', updateRadius)
+  }, [])
 
   const filteredCategoryChart = categoryChart.filter(
     item => item.percentage > 0
@@ -370,11 +369,12 @@ export function ManagerAnalytics() {
 
         <TabsContent value='courses' className='space-y-4'>
           <div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
-            
             <Card className='w-full rounded-lg border p-2 md:p-6'>
               <CardHeader>
                 <CardTitle>Category Details</CardTitle>
-                <CardDescription>Detailed statistics by category</CardDescription>
+                <CardDescription>
+                  Detailed statistics by category
+                </CardDescription>
               </CardHeader>
               <CardContent className='min-h-[500px] flex flex-col items-center'>
                 {loadingCategory ? (
@@ -664,7 +664,9 @@ export function ManagerAnalytics() {
             <Card className='w-full rounded-lg border p-2 md:p-6'>
               <CardHeader>
                 <CardTitle>Category Details</CardTitle>
-                <CardDescription>Detailed statistics by category</CardDescription>
+                <CardDescription>
+                  Detailed statistics by category
+                </CardDescription>
               </CardHeader>
               <CardContent className='min-h-[500px] flex flex-col items-center'>
                 {loadingCategory ? (

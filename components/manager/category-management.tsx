@@ -55,7 +55,7 @@ import {
   RefreshCw,
   Search,
   Tags,
-  Trash2
+  Trash2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'

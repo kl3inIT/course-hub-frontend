@@ -3,50 +3,44 @@
 import { categoryApi } from '@/api/category-api'
 import { Button } from '@/components/ui/button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import {
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
 } from '@/components/ui/chart'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CategoryChartDTO, CategoryDetailDTO } from '@/types/category'
 import {
-    BookOpen,
-    DollarSign,
-    Download,
-    Maximize,
-    Minimize,
-    RefreshCw,
-    Star,
-    TrendingUp,
-    Users
+  BookOpen,
+  DollarSign,
+  Download,
+  Maximize,
+  Minimize,
+  RefreshCw,
+  Star,
+  TrendingUp,
+  Users
 } from 'lucide-react'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    Line,
-    LineChart,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis
 } from 'recharts'
 import { ChartConfig } from '../ui/chart'
 
@@ -376,115 +370,305 @@ export function ManagerAnalytics() {
 
         <TabsContent value='courses' className='space-y-4'>
           <div className='grid gap-4 grid-cols-1 md:grid-cols-2'>
-            <Card>
+            
+            <Card className='w-full rounded-lg border p-2 md:p-6'>
               <CardHeader>
-                <CardTitle>Course Enrollments</CardTitle>
-                <CardDescription>Enrollment numbers by course</CardDescription>
+                <CardTitle>Category Details</CardTitle>
+                <CardDescription>Detailed statistics by category</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    enrollments: {
-                      label: 'Enrollments',
-                      color: 'hsl(var(--chart-1))',
-                    },
-                  }}
-                  className='h-[300px]'
-                >
-                  <BarChart data={coursePerformanceData}>
-                    <CartesianGrid strokeDasharray='3 3' />
-                    <XAxis
-                      dataKey='course'
-                      tick={{ fontSize: 12 }}
-                      angle={-45}
-                      textAnchor='end'
-                      height={100}
-                    />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey='enrollments'
-                      fill='var(--color-enrollments)'
-                    />
-                  </BarChart>
-                </ChartContainer>
+              <CardContent className='min-h-[500px] flex flex-col items-center'>
+                {loadingCategory ? (
+                  <div className='text-center py-8'>Loading...</div>
+                ) : (
+                  <div
+                    className={
+                      isFullscreenDetail
+                        ? 'fixed inset-0 z-50 bg-white bg-opacity-95 flex flex-col items-center justify-center p-8 overflow-auto'
+                        : 'mt-8 relative'
+                    }
+                  >
+                    <div
+                      className={
+                        isFullscreenDetail
+                          ? 'w-full max-w-7xl mx-auto'
+                          : 'w-full max-w-6xl mx-auto'
+                      }
+                    >
+                      <div className='flex justify-between items-center mb-6'>
+                        <h2 className='text-2xl font-bold'>Category Details</h2>
+                        <div className='flex gap-2'>
+                          <label className='flex items-center text-sm'>
+                            Show
+                            <select
+                              value={rowsPerPage}
+                              onChange={e => {
+                                setRowsPerPage(Number(e.target.value))
+                                setPage(1)
+                              }}
+                              className='border rounded px-2 py-1 ml-2'
+                            >
+                              <option value={5}>5</option>
+                              <option value={10}>10</option>
+                              <option value={20}>20</option>
+                              <option value={-1}>All</option>
+                            </select>
+                            <span className='ml-2'>
+                              {isFullscreenDetail ? 'Zoom Out' : 'Zoom In'}
+                            </span>
+                          </label>
+                          <button
+                            className='p-2 rounded-full hover:bg-gray-200'
+                            onClick={() =>
+                              setIsFullscreenDetail(!isFullscreenDetail)
+                            }
+                            title={isFullscreenDetail ? 'Zoom Out' : 'Zoom In'}
+                          >
+                            {isFullscreenDetail ? (
+                              <Minimize className='h-6 w-6' />
+                            ) : (
+                              <Maximize className='h-6 w-6' />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        className={
+                          isFullscreenDetail
+                            ? 'overflow-y-auto max-h-[70vh] w-full'
+                            : 'overflow-x-auto w-full'
+                        }
+                      >
+                        <table
+                          className={`w-full border bg-white table-fixed ${isFullscreenDetail ? 'text-sm' : 'text-xs'}`}
+                        >
+                          <thead>
+                            <tr className='bg-gray-50'>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '5%', minWidth: '40px' }}
+                              >
+                                ID
+                              </th>
+                              <th
+                                className='px-1 py-1 border'
+                                style={{ width: '15%', minWidth: '80px' }}
+                              >
+                                Name
+                              </th>
+                              <th
+                                className='px-1 py-1 border'
+                                style={{ width: '15%', minWidth: '90px' }}
+                              >
+                                Description
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '8%', minWidth: '50px' }}
+                              >
+                                Courses
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '8%', minWidth: '60px' }}
+                              >
+                                Avg Rating
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '7%', minWidth: '50px' }}
+                              >
+                                Students
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '10%', minWidth: '70px' }}
+                              >
+                                Revenue
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '12%', minWidth: '80px' }}
+                              >
+                                Created
+                              </th>
+                              <th
+                                className='px-1 py-1 border text-center'
+                                style={{ width: '12%', minWidth: '80px' }}
+                              >
+                                Modified
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedData.map((cat, idx) => (
+                              <tr key={cat.categoryId}>
+                                <td
+                                  className='border px-1 py-1 align-top text-center'
+                                  style={{ width: '5%', minWidth: '40px' }}
+                                >
+                                  {isFullscreenDetail ? (
+                                    <div>
+                                      {rowsPerPage === -1
+                                        ? idx + 1
+                                        : (page - 1) * rowsPerPage + idx + 1}
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className='line-clamp-2 h-12 overflow-hidden'
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                      }}
+                                    >
+                                      {rowsPerPage === -1
+                                        ? idx + 1
+                                        : (page - 1) * rowsPerPage + idx + 1}
+                                    </div>
+                                  )}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 align-top'
+                                  style={{ width: '15%', minWidth: '80px' }}
+                                >
+                                  {isFullscreenDetail ? (
+                                    <div>
+                                      {(cat.categoryName || '').replace(
+                                        /\n|\r|\r\n/g,
+                                        ' '
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        lineHeight: '1.2em',
+                                        maxHeight: '2.4em',
+                                      }}
+                                    >
+                                      {(cat.categoryName || '').replace(
+                                        /\n|\r|\r\n/g,
+                                        ' '
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 align-top'
+                                  style={{ width: '15%', minWidth: '90px' }}
+                                >
+                                  {isFullscreenDetail ? (
+                                    <div>
+                                      {(cat.description || '').replace(
+                                        /\n|\r|\r\n/g,
+                                        ' '
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div
+                                      style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        lineHeight: '1.2em',
+                                        maxHeight: '2.4em',
+                                      }}
+                                    >
+                                      {(cat.description || '').replace(
+                                        /\n|\r|\r\n/g,
+                                        ' '
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 text-center'
+                                  style={{ width: '8%', minWidth: '50px' }}
+                                >
+                                  {cat.courseCount}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 text-center'
+                                  style={{ width: '8%', minWidth: '60px' }}
+                                >
+                                  {cat.averageRating}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 text-center'
+                                  style={{ width: '7%', minWidth: '50px' }}
+                                >
+                                  {cat.totalStudents}
+                                </td>
+                                <td
+                                  className='border px-1 py-1 text-center'
+                                  style={{ width: '10%', minWidth: '70px' }}
+                                >
+                                  ${cat.totalRevenue?.toLocaleString('en-US')}
+                                </td>
+                                <td
+                                  className={`border px-1 py-1 text-center ${isFullscreenDetail ? 'text-sm' : 'text-xs'}`}
+                                  style={{ width: '12%', minWidth: '80px' }}
+                                >
+                                  {formatDateTime(cat.createdDate)}
+                                </td>
+                                <td
+                                  className={`border px-1 py-1 text-center ${isFullscreenDetail ? 'text-sm' : 'text-xs'}`}
+                                  style={{ width: '12%', minWidth: '80px' }}
+                                >
+                                  {formatDateTime(cat.modifiedDate)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Pagination controls */}
+                      <div className='flex items-center gap-2 mt-4 justify-center'>
+                        <button
+                          className='px-2 py-1 border rounded disabled:opacity-50'
+                          disabled={page === 1}
+                          onClick={() => setPage(page - 1)}
+                        >
+                          Previous
+                        </button>
+                        {Array.from({ length: totalPages }, (_, idx) => (
+                          <button
+                            key={idx}
+                            className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                            onClick={() => setPage(idx + 1)}
+                          >
+                            {idx + 1}
+                          </button>
+                        ))}
+                        <button
+                          className='px-2 py-1 border rounded disabled:opacity-50'
+                          disabled={page === totalPages}
+                          onClick={() => setPage(page + 1)}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <Card className='w-full rounded-lg border p-2 md:p-6'>
               <CardHeader>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <CardTitle>Category analysis</CardTitle>
-                    <CardDescription>Distribution by category</CardDescription>
-                  </div>
-                  <div className='space-x-2'>
-                    <Button
-                      size='sm'
-                      variant={showDetails ? 'outline' : 'default'}
-                      onClick={() => setShowDetails(false)}
-                    >
-                      Show Chart
-                    </Button>
-                    <Button
-                      size='sm'
-                      variant={showDetails ? 'default' : 'outline'}
-                      onClick={() => setShowDetails(true)}
-                    >
-                      Show Details
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle>Category Details</CardTitle>
+                <CardDescription>Detailed statistics by category</CardDescription>
               </CardHeader>
               <CardContent className='min-h-[500px] flex flex-col items-center'>
                 {loadingCategory ? (
                   <div className='text-center py-8'>Loading...</div>
-                ) : !showDetails ? (
-                  <ChartContainer
-                    config={{
-                      value: {
-                        label: 'Percentage',
-                      },
-                    }}
-                    className='flex flex-col md:flex-row items-center justify-center w-full gap-8'
-                  >
-                    <div ref={chartContainerRef} className="w-full max-w-[400px] mx-auto px-4 md:px-8" style={{ minWidth: 200, minHeight: 200, height: 'min(60vw,400px)', maxHeight: 400 }}>
-                      <h3 className="text-base font-medium text-center mb-2">Percentage Chart</h3>
-                      <p className="text-xs text-muted-foreground text-center mb-2">Percentage of courses by category</p>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart margin={{ top: 24, right: 24, left: 24, bottom: 24 }}>
-                          <Pie
-                            data={filteredCategoryChart}
-                            dataKey='courseCount'
-                            nameKey='categoryName'
-                            cx='50%'
-                            cy='50%'
-                            labelLine={false}
-                            label={renderCustomizedLabel}
-                            outerRadius={pieOuterRadius > 100 ? pieOuterRadius - 24 : pieOuterRadius - 8}
-                            fill='#8884d8'
-                          >
-                            {filteredCategoryChart.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    {/* Legend responsive */}
-                    <div className="flex flex-col md:ml-4 md:mt-0 mt-4 w-full max-w-xs">
-                      {filteredCategoryChart.map((entry, idx) => (
-                        <div key={entry.categoryName} className="flex items-center mb-2">
-                          <span className="inline-block w-4 h-4 rounded-sm mr-2" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                          <span className="truncate text-sm font-medium" title={entry.categoryName}>{entry.categoryName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </ChartContainer>
                 ) : (
                   <div
                     className={

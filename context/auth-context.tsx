@@ -65,6 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData)
       localStorage.setItem('user', JSON.stringify(userData))
       localStorage.setItem('accessToken', token)
+
+      // Kiểm tra và xử lý redirect
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectUrl = urlParams.get('redirect')
+      if (redirectUrl) {
+        window.location.href = decodeURIComponent(redirectUrl)
+      }
     } catch (error) {
       console.error('Login error:', error)
       throw error
@@ -77,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('accessToken')
       if (token) {
         // Gọi API logout
-        await httpClient.post('api/auth/logout', { token })
+        await httpClient.post('/api/auth/logout', { token })
       }
     } catch (error) {
       console.error('Logout error:', error)

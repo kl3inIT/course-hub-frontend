@@ -1,11 +1,11 @@
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { RoleGuard } from '@/components/auth/role-guard'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 
 export default function AdminPage() {
   return (
-    <RoleGuard allowedRoles={['admin']} redirectOnUnauthorized={true}>
+    <ProtectedRoute allowedRoles={['admin']} requireAuth={true}>
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
@@ -14,6 +14,6 @@ export default function AdminPage() {
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </RoleGuard>
+    </ProtectedRoute>
   )
 }

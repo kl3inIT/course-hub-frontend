@@ -1,165 +1,91 @@
 'use client'
 
 import type React from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth, type UserRole } from '@/context/auth-context'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Shield, ArrowLeft, Home } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useEffect, useState } from 'react'
+import { Shield } from 'lucide-react'
 
 interface RoleGuardProps {
-  allowedRoles: UserRole[]
   children: React.ReactNode
-  fallback?: React.ReactNode
-  showActions?: boolean
+  allowedRoles: UserRole[]
   redirectOnUnauthorized?: boolean
+  redirectTo?: string
 }
 
 export function RoleGuard({
-  allowedRoles,
   children,
-  fallback,
-  showActions = true,
-  redirectOnUnauthorized = false,
+  allowedRoles,
+  redirectOnUnauthorized = true,
+  redirectTo = '/unauthorized',
 }: RoleGuardProps) {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [shouldRedirect, setShouldRedirect] = useState(false)
 
-  useEffect(() => {
-    // Handle loading state
-    if (user !== undefined) {
-      setIsLoading(false)
-    }
-
-    // Handle redirects in useEffect to avoid state updates during render
-    if (!isLoading && redirectOnUnauthorized) {
-      if (!user) {
-        setShouldRedirect(true)
-      } else if (!allowedRoles.includes(user.role)) {
-        setShouldRedirect(true)
-      }
-    }
-  }, [user, isLoading, redirectOnUnauthorized, allowedRoles])
-
-  useEffect(() => {
-    if (shouldRedirect) {
-      if (!user) {
-        router.push('/login')
-      } else if (!allowedRoles.includes(user.role)) {
-        router.push(
-          `/unauthorized?requiredRole=${allowedRoles.join(' or ')}&currentRole=${user.role}`
-        )
-      }
-      setShouldRedirect(false)
-    }
-  }, [shouldRedirect, user, allowedRoles, router])
-
-  // Loading state while auth is being determined
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className='space-y-4 p-6'>
-        <Skeleton className='h-8 w-48' />
-        <Skeleton className='h-4 w-full' />
-        <Skeleton className='h-4 w-3/4' />
-        <Skeleton className='h-32 w-full' />
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto'></div>
+          <p className='mt-2 text-muted-foreground'>
+            Checking permissions...
+          </p>
+        </div>
       </div>
     )
   }
 
-  // User not authenticated
-  if (!user) {
+  // Check if user has required role
+  const hasRequiredRole = user && allowedRoles.includes(user.role)
+
+  // If user is not authenticated or doesn't have required role
+  if (!user || !hasRequiredRole) {
     if (redirectOnUnauthorized) {
-      return (
-        <div className='space-y-4 p-6'>
-          <Skeleton className='h-8 w-48' />
-          <Skeleton className='h-4 w-full' />
-        </div>
-      )
+      // Redirect to unauthorized page with role information
+      const searchParams = new URLSearchParams()
+      if (user) {
+        searchParams.set('currentRole', user.role)
+      }
+      searchParams.set('requiredRole', allowedRoles.join(','))
+      router.push(`${redirectTo}?${searchParams.toString()}`)
+      return null
     }
 
+    // Show access denied message if not redirecting
     return (
-      fallback || (
-        <Alert className='max-w-md mx-auto mt-8'>
+      <div className='min-h-screen flex items-center justify-center p-4'>
+        <Alert className='max-w-md border-destructive'>
           <Shield className='h-4 w-4' />
-          <AlertDescription className='space-y-4'>
-            <p>Please log in to access this content.</p>
-            {showActions && (
-              <div className='flex gap-2'>
-                <Button size='sm' onClick={() => router.push('/login')}>
-                  Log In
-                </Button>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => router.push('/')}
-                >
-                  <Home className='mr-2 h-4 w-4' />
-                  Home
-                </Button>
+          <AlertDescription className='mt-2'>
+            <div className='space-y-3'>
+              <div>
+                <h3 className='font-semibold'>Access Denied</h3>
+                <p>You don't have permission to access this page.</p>
+                <p className='text-sm mt-1'>
+                  Required role: {allowedRoles.join(' or ')}
+                </p>
+                {user && <p className='text-sm'>Your role: {user.role}</p>}
               </div>
-            )}
-          </AlertDescription>
-        </Alert>
-      )
-    )
-  }
-
-  // User doesn't have required role
-  if (!allowedRoles.includes(user.role)) {
-    if (redirectOnUnauthorized) {
-      return (
-        <div className='space-y-4 p-6'>
-          <Skeleton className='h-8 w-48' />
-          <Skeleton className='h-4 w-full' />
-        </div>
-      )
-    }
-
-    return (
-      fallback || (
-        <Alert variant='destructive' className='max-w-md mx-auto mt-8'>
-          <Shield className='h-4 w-4' />
-          <AlertDescription className='space-y-4'>
-            <div>
-              <p className='font-medium'>Access Denied</p>
-              <p className='text-sm'>
-                You don't have permission to access this content. Required role:{' '}
-                <strong>{allowedRoles.join(' or ')}</strong>
-              </p>
-              <p className='text-sm'>
-                Your current role:{' '}
-                <strong className='capitalize'>{user.role}</strong>
-              </p>
-            </div>
-            {showActions && (
-              <div className='flex gap-2'>
+              <div className='flex space-x-2'>
                 <Button
-                  size='sm'
-                  variant='outline'
                   onClick={() => router.back()}
+                  variant='outline'
+                  size='sm'
                 >
-                  <ArrowLeft className='mr-2 h-4 w-4' />
                   Go Back
                 </Button>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => router.push('/')}
-                >
-                  <Home className='mr-2 h-4 w-4' />
-                  Home
+                <Button onClick={() => router.push('/')} size='sm'>
+                  Go Home
                 </Button>
               </div>
-            )}
+            </div>
           </AlertDescription>
         </Alert>
-      )
+      </div>
     )
   }
 
   return <>{children}</>
-}
+} 

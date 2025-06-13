@@ -29,4 +29,22 @@ export const progressApi = {
     )
     return response.data
   },
+
+  // Check if user can access a lesson
+  canAccessLesson: async (lessonId: number): Promise<boolean> => {
+    const response = await httpClient.get<boolean>(
+      `${BASE_PATH}/lessons/${lessonId}/access`
+    )
+    return response.data
+  },
+
+  // Get all completed lessons for a course
+  getCompletedLessons: async (
+    courseId: number
+  ): Promise<ApiResponse<number[]>> => {
+    const response = await httpClient.get<ApiResponse<number[]>>(
+      `${BASE_PATH}/courses/${courseId}/completed-lessons`
+    )
+    return response.data
+  }
 }

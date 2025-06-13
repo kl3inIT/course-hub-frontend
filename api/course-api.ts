@@ -26,11 +26,7 @@ export const courseApi = {
   createCourse: async (
     data: CourseRequestDTO
   ): Promise<ApiResponse<CourseResponseDTO>> => {
-    const response = await httpClient.post('/api/courses', data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    })
+    const response = await httpClient.post('/api/courses', data)
     return response.data
   },
 
@@ -131,22 +127,10 @@ export const courseApi = {
   },
 
   getDashboardCourses: async (): Promise<ApiResponse<DashboardCourseResponseDTO[]>> => {
-    console.log('Base URL:', process.env.NEXT_PUBLIC_API_URL)
-    console.log('Making request to:', '/api/courses/dashboard')
-    try {
-      const token = localStorage.getItem('accessToken')
-      console.log('Token:', token)
-
-      const response = await httpClient.get<ApiResponse<DashboardCourseResponseDTO[]>>('/api/courses/dashboard', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      console.log('Response:', response)
-      return response.data
-    } catch (error) {
-      console.error('Error details:', error)
-      throw error
-    }
+    const response = await httpClient.get<ApiResponse<DashboardCourseResponseDTO[]>>(
+      '/api/courses/dashboard'
+    );
+    return response.data;
   },
+
 }

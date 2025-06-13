@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -27,8 +27,9 @@ import {
   Loader2,
   AlertCircle,
   Lock,
+  X,
 } from 'lucide-react'
-import { PaymentModal } from './payment-modal'
+import { PaymentModal } from '../payment/payment-modal'
 import { courseApi } from '@/api/course-api'
 import { lessonApi } from '@/api/lesson-api'
 import { enrollmentApi } from '@/api/enrollment-api'
@@ -38,6 +39,14 @@ import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
 import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { useRouter } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { useAuth } from '@/context/auth-context'
 
 interface CourseDetailProps {
   courseId: string
@@ -69,6 +78,8 @@ const formatDate = (dateString: string): string => {
 }
 
 export function CourseDetail({ courseId }: CourseDetailProps) {
+  const { user } = useAuth()
+  const { toast } = useToast()
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,10 +97,18 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     useState<LessonResponseDTO | null>(null)
   const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatusResponseDTO | null>(null)
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
-  const { toast } = useToast()
   const router = useRouter()
+  const [previewLesson, setPreviewLesson] = useState<LessonResponseDTO | null>(null)
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const checkEnrollmentStatus = async (courseId: string) => {
+    if (!user) {
+      setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
+      return
+    }
+
     try {
       setEnrollmentLoading(true)
       const response = await enrollmentApi.getEnrollmentStatus(courseId)
@@ -98,7 +117,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       }
     } catch (err) {
       console.error('Error checking enrollment status:', err)
-      // Don't show error toast for enrollment check as user might not be logged in
+      setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
     } finally {
       setEnrollmentLoading(false)
     }
@@ -116,9 +135,10 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         if (response) {
           console.log('Course Data:', response.data)
           setCourse(response.data)
-          // Check enrollment status
-          await checkEnrollmentStatus(courseId)
-          // Removed auto-expansion of first module
+          // Check enrollment status only if user is authenticated
+          if (user) {
+            await checkEnrollmentStatus(courseId)
+          }
         }
       } catch (err) {
         console.error('Error fetching course:', err)
@@ -138,7 +158,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     if (courseId) {
       fetchCourse()
     }
-  }, [courseId, toast])
+  }, [courseId, toast, user])
 
   useEffect(() => {
     if (course && course.modules && course.modules.length > 0) {
@@ -193,6 +213,15 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   }
 
   const handleEnroll = () => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to enroll in this course.',
+        variant: 'destructive',
+      })
+      router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+      return
+    }
     setShowPayment(true)
   }
 
@@ -209,6 +238,40 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
       return newExpanded
     })
+  }
+
+  // Add preview video handling
+  const handlePreviewClick = async (lesson: LessonResponseDTO) => {
+    if (!lesson.isPreview) {
+      toast({
+        title: 'Preview Not Available',
+        description: 'This lesson is not available for preview.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      setPreviewLesson(lesson)
+      const url = await lessonApi.getLessonPreviewUrl(lesson.id.toString())
+      setPreviewVideoUrl(url)
+      setShowPreview(true)
+    } catch (error) {
+      console.error('Error loading preview:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load preview video.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleClosePreview = () => {
+    setShowPreview(false)
+    setPreviewVideoUrl(null)
+    if (videoRef.current) {
+      videoRef.current.pause()
+    }
   }
 
   if (loading) {
@@ -319,24 +382,25 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         <div className='lg:col-span-1'>
           <Card className='sticky top-6'>
             <CardHeader>
-              <div className='flex items-center gap-2 mb-2'>
-                <span className='text-3xl font-bold'>
-                  ${course.finalPrice.toFixed(2)}
-                </span>
-                {course.discount && course.discount > 0 && (
-                  <span className='text-lg text-muted-foreground line-through'>
-                    $
-                    {(course.finalPrice / (1 - course.discount / 100)).toFixed(
-                      2
-                    )}
+              {enrollmentStatus?.enrolled ? null : (
+                <div className='flex items-center gap-2 mb-2'>
+                  <span className='text-3xl font-bold'>
+                    ${course.finalPrice.toFixed(2)}
                   </span>
-                )}
-                {course.discount && course.discount > 0 && (
-                  <Badge variant='destructive' className='ml-auto'>
-                    {course.discount}% OFF
-                  </Badge>
-                )}
-              </div>
+                  {course.discount && course.discount > 0 && (
+                    <span className='text-lg text-muted-foreground line-through'>
+                      ${
+                        (course.finalPrice / (1 - course.discount / 100)).toFixed(2)
+                      }
+                    </span>
+                  )}
+                  {course.discount && course.discount > 0 && (
+                    <Badge variant='destructive' className='ml-auto'>
+                      {course.discount}% OFF
+                    </Badge>
+                  )}
+                </div>
+              )}
               <CardDescription>Full lifetime access</CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
@@ -348,7 +412,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
               ) : enrollmentStatus?.enrolled ? (
                 <div className='space-y-3'>
                   <Button 
-                    onClick={() => router.push(`/learn/${course.id}`)} 
+                    onClick={() => router.push(`/learn/${course.id}/${heroPreviewLesson?.id || ''}?progress=${enrollmentStatus?.progress ?? 0}`)} 
                     className='w-full' 
                     size='lg'
                   >
@@ -459,40 +523,31 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                             </div>
                           ) : moduleLessons[module.id] ? (
                             <div className='space-y-2'>
-                              {moduleLessons[module.id].map(lesson => (
-                                <div
-                                  key={lesson.id}
-                                  className='flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer'
-                                  onClick={() => {
-                                    router.push(
-                                      `/learn/${course.id}?module=${module.id}&lesson=${lesson.id}`
-                                    )
-                                  }}
-                                >
-                                  <div className='flex items-center gap-2'>
-                                    <PlayCircle className='h-4 w-4 text-muted-foreground' />
-                                    <span>{lesson.title}</span>
-                                    {lesson.isPreview && (
-                                      <Badge
-                                        variant='secondary'
-                                        className='text-xs'
-                                      >
-                                        Preview
-                                      </Badge>
-                                    )}
+                              {moduleLessons[module.id].map((lesson: LessonResponseDTO) => {
+                                const isPreview = !!lesson.isPreview
+                                const hasDuration = lesson.duration && lesson.duration > 0
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    className={`flex items-center justify-between p-2 rounded-lg ${isPreview ? 'hover:bg-primary/10 cursor-pointer transition' : ''}`}
+                                    onClick={isPreview ? () => handlePreviewClick(lesson) : undefined}
+                                  >
+                                    <div className='flex items-center gap-2'>
+                                      <PlayCircle className='h-4 w-4 text-muted-foreground' />
+                                      <span>{lesson.title}</span>
+                                      {isPreview && (
+                                        <Badge variant='secondary' className='text-xs'>Preview</Badge>
+                                      )}
+                                    </div>
+                                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                                      {hasDuration && (
+                                        <span>{formatDuration(lesson.duration || 0)}</span>
+                                      )}
+                                      {!isPreview && <Lock className='h-4 w-4' />}
+                                    </div>
                                   </div>
-                                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                                    {lesson.duration && (
-                                      <span>
-                                        {formatDuration(lesson.duration)}
-                                      </span>
-                                    )}
-                                    {!lesson.isPreview && (
-                                      <Lock className='h-4 w-4' />
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           ) : (
                             <div className='flex items-center justify-center py-4 text-muted-foreground'>
@@ -538,6 +593,37 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Video Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className='sm:max-w-[800px] p-0 gap-0'>
+          <DialogHeader className='p-4 border-b'>
+            <div className='flex items-center justify-between'>
+              <DialogTitle>
+                {previewLesson?.title || 'Lesson Preview'}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              Preview video for this lesson. This is a sample of the course content.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='aspect-video bg-black'>
+            {previewVideoUrl ? (
+              <video
+                ref={videoRef}
+                src={previewVideoUrl}
+                controls
+                className='w-full h-full'
+                autoPlay
+              />
+            ) : (
+              <div className='flex items-center justify-center h-full'>
+                <Loader2 className='h-8 w-8 animate-spin text-white' />
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <PaymentModal
         isOpen={showPayment}

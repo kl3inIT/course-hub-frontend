@@ -1,18 +1,31 @@
 'use client'
 
 import {
-  Home,
-  BookOpen,
-  Users,
   BarChart3,
+  BookOpen,
+  DollarSign,
+  Home,
+  LogOut,
   PlusCircle,
   Settings,
-  LogOut,
   Star,
   Tags,
+  Ticket,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { RoleBadge } from '@/components/ui/role-badge'
 import {
   Sidebar,
   SidebarContent,
@@ -26,17 +39,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/context/auth-context'
-import { RoleBadge } from '@/components/ui/role-badge'
 
 const navigationItems = [
   {
@@ -74,15 +77,31 @@ const navigationItems = [
     url: '/manager/reviews',
     icon: Star,
   },
+  {
+    title: 'Payments',
+    url: '/manager/payments',
+    icon: DollarSign,
+  },
+  {
+    title: 'Coupons',
+    url: '/manager/coupons',
+    icon: Ticket,
+  },
 ]
 
 export function ManagerSidebar() {
   const { user, logout } = useAuth()
   const router = useRouter()
 
-  const handleLogout = () => {
-    logout()
-    router.push('/')
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Even if API call fails, we should still clear local state and redirect
+      router.push('/login')
+    }
   }
 
   const handleHomeNavigation = () => {

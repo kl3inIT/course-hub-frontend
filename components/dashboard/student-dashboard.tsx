@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
+
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -33,59 +31,19 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { CompletionCertificate } from '../learning/completion-certificate'
-
-const enrolledCoursesData = [
-  {
-    id: 1,
-    title: 'React.js Fundamentals',
-    instructor: 'John Doe',
-    progress: 65,
-    totalLessons: 12,
-    completedLessons: 8,
-    lastAccessed: '2 hours ago',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-  },
-  {
-    id: 2,
-    title: 'Advanced JavaScript',
-    instructor: 'Jane Smith',
-    progress: 30,
-    totalLessons: 15,
-    completedLessons: 4,
-    lastAccessed: '1 day ago',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-  },
-]
-
-const completedCoursesData = [
-  {
-    id: 3,
-    title: 'HTML & CSS Mastery',
-    instructor: 'Sarah Wilson',
-    completionDate: '2024-01-15',
-    totalLessons: 20,
-    duration: '8 hours',
-    certificateId: 'CERT-3-1705123200000',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-  },
-  {
-    id: 4,
-    title: 'JavaScript Essentials',
-    instructor: 'Mike Johnson',
-    completionDate: '2024-01-10',
-    totalLessons: 18,
-    duration: '6 hours',
-    certificateId: 'CERT-4-1704844800000',
-    thumbnail: '/placeholder.svg?height=200&width=300',
-  },
-]
+import { courseApi } from '@/api/course-api'
+import { DashboardCourseResponseDTO } from '@/types/course'
+import { toast } from 'sonner'
+import { CourseCard } from './course-card'
 
 export function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([])
-  const [completedCourses, setCompletedCourses] = useState<any[]>([])
+  const [dashboardCourses, setDashboardCourses] = useState<
+    DashboardCourseResponseDTO[]
+  >([])
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -93,34 +51,32 @@ export function StudentDashboard() {
       setUser(JSON.parse(userData))
     }
 
-    // Load enrolled courses
-    const enrolled = JSON.parse(localStorage.getItem('enrolledCourses') || '[]')
-    const coursesWithProgress = enrolledCoursesData.filter(course =>
-      enrolled.includes(course.id)
-    )
-    setEnrolledCourses(coursesWithProgress)
-
-    // Load completed courses from localStorage
-    const completed = JSON.parse(
-      localStorage.getItem('completedCourses') || '[]'
-    )
-    // Merge with sample data for demonstration
-    const allCompleted = [...completedCoursesData, ...completed]
-    setCompletedCourses(allCompleted)
+    fetchDashboardCourses()
   }, [])
+
+  const fetchDashboardCourses = async () => {
+    try {
+      setIsLoading(true)
+      const response = await courseApi.getDashboardCourses()
+      setDashboardCourses(response.data)
+    } catch (error) {
+      console.error('Error fetching dashboard courses:', error)
+      toast.error('Failed to load dashboard courses')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const enrolledCourses = dashboardCourses.filter(course => !course.completed)
+  const completedCourses = dashboardCourses.filter(course => course.completed)
 
   const totalProgress =
     enrolledCourses.length > 0
       ? enrolledCourses.reduce((acc, course) => acc + course.progress, 0) /
-        enrolledCourses.length
+      enrolledCourses.length
       : 0
 
-  const totalCompletedLessons = enrolledCourses.reduce(
-    (acc, course) => acc + course.completedLessons,
-    0
-  )
-
-  const handleViewCertificate = (course: any) => {
+  const handleViewCertificate = (course: DashboardCourseResponseDTO) => {
     setSelectedCertificate(course)
     setShowCertificateModal(true)
   }
@@ -191,8 +147,14 @@ export function StudentDashboard() {
             <Clock className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>24h</div>
-            <p className='text-xs text-muted-foreground'>This month</p>
+            <div className='text-2xl font-bold'>
+              {enrolledCourses.reduce(
+                (acc, course) => acc + course.totalDuration,
+                0
+              )}
+              h
+            </div>
+            <p className='text-xs text-muted-foreground'>Total duration</p>
           </CardContent>
         </Card>
       </div>
@@ -210,48 +172,13 @@ export function StudentDashboard() {
           {enrolledCourses.length > 0 ? (
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>Continue Learning</h2>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                {enrolledCourses.map(course => (
-                  <Card key={course.id} className='overflow-hidden'>
-                    <div className='aspect-video bg-muted'>
-                      <img
-                        src={course.thumbnail || '/placeholder.svg'}
-                        alt={course.title}
-                        className='w-full h-full object-cover'
-                      />
-                    </div>
-                    <CardHeader>
-                      <CardTitle className='line-clamp-1'>
-                        {course.title}
-                      </CardTitle>
-                      <CardDescription>by {course.instructor}</CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                      <div className='space-y-2'>
-                        <div className='flex justify-between text-sm'>
-                          <span>Progress</span>
-                          <span>{course.progress}%</span>
-                        </div>
-                        <Progress value={course.progress} />
-                        <p className='text-xs text-muted-foreground'>
-                          {course.completedLessons} of {course.totalLessons}{' '}
-                          lessons completed
-                        </p>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <Badge variant='secondary'>
-                          Last accessed {course.lastAccessed}
-                        </Badge>
-                        <Link href={`/learn/${course.id}`}>
-                          <Button size='sm'>
-                            <Play className='h-4 w-4 mr-2' />
-                            Continue
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                {enrolledCourses.map((course, index) => (
+                  <CourseCard
+                    key={`active-${course.title}-${index}`}
+                    course={course}
+                    type='active'
+                  />
                 ))}
               </div>
             </div>
@@ -279,58 +206,13 @@ export function StudentDashboard() {
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>Completed Courses</h2>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {completedCourses.map(course => (
-                  <Card key={course.id} className='overflow-hidden'>
-                    <div className='aspect-video bg-muted relative'>
-                      <img
-                        src={course.thumbnail || '/placeholder.svg'}
-                        alt={course.title}
-                        className='w-full h-full object-cover'
-                      />
-                      <div className='absolute top-2 right-2'>
-                        <Badge className='bg-green-500 hover:bg-green-600'>
-                          <Trophy className='h-3 w-3 mr-1' />
-                          Completed
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardHeader>
-                      <CardTitle className='line-clamp-1'>
-                        {course.title}
-                      </CardTitle>
-                      <CardDescription>by {course.instructor}</CardDescription>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                      <div className='space-y-2'>
-                        <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                          <Calendar className='h-4 w-4' />
-                          Completed on {formatDate(course.completionDate)}
-                        </div>
-                        <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                          <Clock className='h-4 w-4' />
-                          {course.duration} • {course.totalLessons} lessons
-                        </div>
-                      </div>
-
-                      <div className='flex items-center justify-between'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => handleViewCertificate(course)}
-                          className='flex items-center gap-2'
-                        >
-                          <Award className='h-4 w-4' />
-                          View Certificate
-                        </Button>
-                        <Link href={`/courses/${course.id}`}>
-                          <Button variant='ghost' size='sm'>
-                            <Eye className='h-4 w-4 mr-2' />
-                            Review
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {completedCourses.map((course, index) => (
+                  <CourseCard
+                    key={`completed-${course.title}-${index}`}
+                    course={course}
+                    type='completed'
+                    onViewCertificate={handleViewCertificate}
+                  />
                 ))}
               </div>
             </div>
@@ -358,66 +240,13 @@ export function StudentDashboard() {
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>My Certificates</h2>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {completedCourses.map(course => (
-                  <Card
-                    key={course.certificateId}
-                    className='overflow-hidden hover:shadow-lg transition-shadow'
-                  >
-                    <CardHeader className='bg-gradient-to-r from-blue-500 to-purple-600 text-white'>
-                      <div className='flex items-center justify-between'>
-                        <Award className='h-8 w-8' />
-                        <Badge
-                          variant='secondary'
-                          className='bg-white/20 text-white'
-                        >
-                          Certificate
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className='p-6 space-y-4'>
-                      <div>
-                        <h3 className='font-bold text-lg line-clamp-2'>
-                          {course.title}
-                        </h3>
-                        <p className='text-sm text-muted-foreground'>
-                          by {course.instructor}
-                        </p>
-                      </div>
-
-                      <div className='space-y-2'>
-                        <div className='flex items-center gap-2 text-sm'>
-                          <Calendar className='h-4 w-4 text-muted-foreground' />
-                          <span>
-                            Completed: {formatDate(course.completionDate)}
-                          </span>
-                        </div>
-                        <div className='text-xs text-muted-foreground'>
-                          Certificate ID: {course.certificateId}
-                        </div>
-                      </div>
-
-                      <div className='flex gap-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => handleViewCertificate(course)}
-                          className='flex-1'
-                        >
-                          <Eye className='h-4 w-4 mr-2' />
-                          View
-                        </Button>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => handleViewCertificate(course)}
-                          className='flex-1'
-                        >
-                          <Download className='h-4 w-4 mr-2' />
-                          Download
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {completedCourses.map((course, index) => (
+                  <CourseCard
+                    key={`certificate-${course.title}-${index}`}
+                    course={course}
+                    type='certificate'
+                    onViewCertificate={handleViewCertificate}
+                  />
                 ))}
               </div>
             </div>
@@ -441,57 +270,6 @@ export function StudentDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* Recommended Courses */}
-      <div className='space-y-4'>
-        <h2 className='text-2xl font-bold'>Recommended for You</h2>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-          {[
-            {
-              id: 5,
-              title: 'UI/UX Design Principles',
-              instructor: 'Mike Johnson',
-              price: 79,
-            },
-            {
-              id: 6,
-              title: 'Node.js Backend Development',
-              instructor: 'Sarah Wilson',
-              price: 129,
-            },
-            {
-              id: 7,
-              title: 'Python for Beginners',
-              instructor: 'Alex Brown',
-              price: 89,
-            },
-          ].map(course => (
-            <Card key={course.id}>
-              <div className='aspect-video bg-muted'>
-                <img
-                  src='/placeholder.svg?height=200&width=300'
-                  alt={course.title}
-                  className='w-full h-full object-cover'
-                />
-              </div>
-              <CardHeader>
-                <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
-                <CardDescription>by {course.instructor}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className='flex items-center justify-between'>
-                  <span className='text-xl font-bold'>${course.price}</span>
-                  <Link href={`/courses/${course.id}`}>
-                    <Button variant='outline' size='sm'>
-                      View Course
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
       {/* Certificate Modal */}
       <Dialog
         open={showCertificateModal}
@@ -513,10 +291,12 @@ export function StudentDashboard() {
             <div className='space-y-6'>
               <CompletionCertificate
                 courseTitle={selectedCertificate.title}
-                instructor={selectedCertificate.instructor}
-                completionDate={new Date(selectedCertificate.completionDate)}
+                instructor={selectedCertificate.instructorName}
+                completionDate={
+                  new Date(selectedCertificate.completedDate || '')
+                }
                 studentName={user?.name || user?.email || 'Student'}
-                certificateId={selectedCertificate.certificateId}
+                certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
               />
 
               <div className='flex justify-center gap-4'>

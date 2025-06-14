@@ -1,9 +1,9 @@
 import { httpClient } from '@/api/http-client'
 import { ApiResponse } from '@/types/common'
 import {
+  LessonUploadRequestDTO,
   LessonConfirmRequestDTO,
   LessonResponseDTO,
-  LessonUploadRequestDTO,
   LessonUploadResponseDTO,
 } from '@/types/lesson'
 

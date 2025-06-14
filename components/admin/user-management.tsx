@@ -410,9 +410,9 @@ export function UserManagement() {
       <div className='flex-1 text-sm text-muted-foreground'>
         {displayedUsers.length > 0
           ? `Showing ${pagination.currentPage * pagination.pageSize + 1} to ${Math.min(
-              (pagination.currentPage + 1) * pagination.pageSize,
-              pagination.totalElements
-            )} of ${pagination.totalElements} ${activeTab}s`
+            (pagination.currentPage + 1) * pagination.pageSize,
+            pagination.totalElements
+          )} of ${pagination.totalElements} ${activeTab}s`
           : `No ${activeTab}s found`}
       </div>
       <div className='flex items-center space-x-2'>
@@ -655,9 +655,9 @@ export function UserManagement() {
                               <AvatarFallback>
                                 {user.name
                                   ? user.name
-                                      .split(' ')
-                                      .map(n => n[0])
-                                      .join('')
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
                                   : user.email?.charAt(0).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
@@ -829,11 +829,11 @@ export function UserManagement() {
                               <AvatarFallback>
                                 {user.name
                                   ? user.name
-                                      .split(' ')
-                                      .map(n => n[0])
-                                      .join('')
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
                                   : user.email?.charAt(0).toUpperCase() ||
-                                    'User'}
+                                  'User'}
                               </AvatarFallback>
                             </Avatar>
                             <div>

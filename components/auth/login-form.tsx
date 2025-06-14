@@ -64,6 +64,10 @@ export function LoginForm() {
 
       const { data } = response.data
 
+      if (!data?.token) {
+        throw new Error('No token received from server')
+      }
+
       // Lưu token vào localStorage
       const token = data.token
 
@@ -91,7 +95,12 @@ export function LoginForm() {
         router.push('/')
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred during login')
+      console.error('Login error:', err)
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        'An error occurred during login. Please try again.'
+      )
     } finally {
       setIsLoading(false)
     }

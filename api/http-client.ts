@@ -4,15 +4,9 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
+  // Auth endpoints
   '/api/auth/login',
   '/api/auth/register',
-  '/api/courses',
-  '/api/courses/search',
-  '/api/categories',
-  '/api/reviews',
-  '/api/courses/featured',
-  '/api/auth/google-login-url',
-  '/api/auth/logout',
   '/api/auth/register/init',
   '/api/auth/register/re-send-otp',
   '/api/auth/forgot-password/send-otp',
@@ -23,14 +17,23 @@ const PUBLIC_ENDPOINTS = [
   '/api/auth/verify-email/verify-otp',
   '/api/auth/verify-email/reset-password',
   '/api/auth/verify-email/verify-email',
-  '/auth/login',
-  '/auth/register',
-  '/courses/search',
-  '/categories',
-  '/reviews',
-  '/courses/featured',
-  '/categories/chart',
-  '/categories/details',
+  '/api/auth/google-login-url',
+  '/api/auth/logout',
+
+  // Course endpoints
+  '/api/courses/search',
+  '/api/courses/featured',
+  '/api/courses/categories',
+  '/api/courses/search/advanced-search',
+  '/api/courses/search/stats',
+
+  // Category endpoints
+  '/api/categories',
+  '/api/categories/chart',
+  '/api/categories/details',
+
+  // Review endpoints
+  '/api/reviews',
 ]
 
 export const httpClient = axios.create({

@@ -1,10 +1,10 @@
 import { httpClient } from '@/api/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import {
-  CreateManagerRequest,
-  ProfileData,
   User,
   UserDetail,
+  ProfileData,
+  CreateManagerRequest,
   UserSearchParams,
 } from '@/types/user'
 
@@ -75,7 +75,7 @@ export const userApi = {
 
     // Update user status
     updateUserStatus: async (
-      userId: number,
+      userId: string,
       status: 'active' | 'banned'
     ): Promise<ApiResponse<void>> => {
       const response = await httpClient.put(

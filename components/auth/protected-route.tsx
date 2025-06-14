@@ -22,17 +22,17 @@ export function ProtectedRoute({
   requireAuth = true,
   redirectTo = '/login',
 }: ProtectedRouteProps) {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (requireAuth && !user) {
+    if (!isLoading && requireAuth && !user) {
       router.push(redirectTo)
     }
-  }, [user, requireAuth, redirectTo, router])
+  }, [user, isLoading, requireAuth, redirectTo, router])
 
-  // Show loading or nothing while redirecting
-  if (requireAuth && !user) {
+  // Show loading state while checking authentication
+  if (isLoading) {
     return (
       <div className='min-h-screen flex items-center justify-center'>
         <div className='text-center'>

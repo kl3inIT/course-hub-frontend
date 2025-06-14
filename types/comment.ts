@@ -1,5 +1,6 @@
+
+import { User } from './user'
 import { ApiResponse } from './common'
-import { User } from './User'
 
 export interface Comment {
   id: number

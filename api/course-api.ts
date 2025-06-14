@@ -5,6 +5,8 @@ import {
   CourseResponseDTO,
   CourseSearchParams,
   CourseDetailsResponseDTO,
+  DashboardCourseResponseDTO,
+  CourseSearchStatsResponseDTO,
 } from '@/types/course'
 
 export const courseApi = {
@@ -25,11 +27,7 @@ export const courseApi = {
   createCourse: async (
     data: CourseRequestDTO
   ): Promise<ApiResponse<CourseResponseDTO>> => {
-    const response = await httpClient.post('/api/courses', data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-      },
-    })
+    const response = await httpClient.post('/api/courses', data)
     return response.data
   },
 
@@ -41,20 +39,6 @@ export const courseApi = {
     return response.data
   },
 
-  deleteCourse: async (id: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/api/courses/${id}`)
-    return response.data
-  },
-
-  enrollCourse: async (courseId: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.post(`/api/courses/${courseId}/enroll`)
-    return response.data
-  },
-
-  unenrollCourse: async (courseId: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/api/courses/${courseId}/enroll`)
-    return response.data
-  },
 
   getEnrolledCourses: async (
     params?: CourseSearchParams
@@ -85,9 +69,9 @@ export const courseApi = {
     return response.data
   },
 
-  searchCourses: async (params: CourseSearchParams) => {
+  advancedSearch: async (params: CourseSearchParams) => {
     const response = await httpClient.get<ApiResponse<Page<CourseResponseDTO>>>(
-      '/api/courses/search',
+      '/api/courses/search/advanced-search',
       {
         params: {
           page: params?.page ?? 0,
@@ -98,6 +82,14 @@ export const courseApi = {
           level: params?.level,
           minPrice: params?.minPrice,
           maxPrice: params?.maxPrice,
+          searchTerm: params?.searchTerm,
+          categoryId: params?.categoryId,
+          minRating: params?.minRating,
+          isFree: params?.isFree,
+          isDiscounted: params?.isDiscounted,
+          status: params?.status,
+          sortBy: params?.sortBy,
+          sortDirection: params?.sortDirection,
         },
       }
     )
@@ -126,6 +118,24 @@ export const courseApi = {
     const response = await httpClient.get<
       ApiResponse<CourseDetailsResponseDTO>
     >(`/api/courses/${courseId}/details`)
+    return response.data
+  },
+
+  getDashboardCourses: async (): Promise<
+    ApiResponse<DashboardCourseResponseDTO[]>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<DashboardCourseResponseDTO[]>
+    >('/api/courses/dashboard')
+    return response.data
+  },
+
+  getSearchStats: async (): Promise<
+    ApiResponse<CourseSearchStatsResponseDTO>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<CourseSearchStatsResponseDTO>
+    >('/api/courses/search/stats')
     return response.data
   },
 }

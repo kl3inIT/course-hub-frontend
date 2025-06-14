@@ -76,7 +76,6 @@ export default function GoogleCallbackPage() {
           window.location.href = '/'
         }
       } catch (error: any) {
-
         console.error('Google authentication error:', error)
         router.push(
           `/login?error=${encodeURIComponent(error.message || 'Failed to authenticate with Google')}`

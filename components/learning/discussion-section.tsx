@@ -69,17 +69,17 @@ interface CommentComponentProps {
 }
 
 const CommentComponentBase = ({
-                                comment,
-                                isReply = false,
-                                parentId,
-                                onReply,
-                                onLike,
-                                onReport,
-                                onDelete,
-                                onEdit,
-                                replyTo,
-                                onSubmitReply,
-                              }: CommentComponentProps) => {
+  comment,
+  isReply = false,
+  parentId,
+  onReply,
+  onLike,
+  onReport,
+  onDelete,
+  onEdit,
+  replyTo,
+  onSubmitReply,
+}: CommentComponentProps) => {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportDescription, setReportDescription] = useState('')
@@ -436,9 +436,9 @@ const CommentComponentBase = ({
 const CommentComponent = memo(CommentComponentBase)
 
 export function DiscussionSection({
-                                    courseId,
-                                    lessonId,
-                                  }: DiscussionSectionProps) {
+  courseId,
+  lessonId,
+}: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)
@@ -576,12 +576,12 @@ export function DiscussionSection({
           const updatedReplies = comment.replies.map(reply =>
             reply.id === commentId
               ? {
-                ...reply,
-                likeCount: isLiked
-                  ? reply.likeCount + 1
-                  : reply.likeCount - 1,
-                likedByCurrentUser: isLiked,
-              }
+                  ...reply,
+                  likeCount: isLiked
+                    ? reply.likeCount + 1
+                    : reply.likeCount - 1,
+                  likedByCurrentUser: isLiked,
+                }
               : reply
           )
           return { ...comment, replies: updatedReplies }

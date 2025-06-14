@@ -154,9 +154,9 @@ export function AdminSidebar() {
                     <AvatarFallback className='rounded-lg'>
                       {user?.name
                         ? user.name
-                          .split(' ')
-                          .map((n: string) => n[0])
-                          .join('')
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')
                         : user?.email[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

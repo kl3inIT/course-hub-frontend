@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -73,7 +68,7 @@ export function StudentDashboard() {
   const totalProgress =
     enrolledCourses.length > 0
       ? enrolledCourses.reduce((acc, course) => acc + course.progress, 0) /
-      enrolledCourses.length
+        enrolledCourses.length
       : 0
 
   const handleViewCertificate = (course: DashboardCourseResponseDTO) => {

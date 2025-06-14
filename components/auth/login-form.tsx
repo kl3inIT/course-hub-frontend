@@ -98,8 +98,8 @@ export function LoginForm() {
       console.error('Login error:', err)
       setError(
         err.response?.data?.message ||
-        err.message ||
-        'An error occurred during login. Please try again.'
+          err.message ||
+          'An error occurred during login. Please try again.'
       )
     } finally {
       setIsLoading(false)

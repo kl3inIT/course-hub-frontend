@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -14,16 +14,33 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd"
-import { BookOpen, Plus, Trash2, Video, FileText, Clock, GripVertical, Settings, Save, Eye, Upload } from "lucide-react"
-import { VideoUploadManager } from "./video-upload-manager"
+} from '@/components/ui/dialog'
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+} from '@hello-pangea/dnd'
+import {
+  BookOpen,
+  Plus,
+  Trash2,
+  Video,
+  FileText,
+  Clock,
+  GripVertical,
+  Settings,
+  Save,
+  Eye,
+  Upload,
+} from 'lucide-react'
+import { VideoUploadManager } from './video-upload-manager'
 
 interface Lesson {
   id: string
   title: string
   description: string
-  type: "video" | "text" | "quiz"
+  type: 'video' | 'text' | 'quiz'
   duration: number
   videoUrl?: string
   content?: string
@@ -46,32 +63,32 @@ interface Course {
 }
 
 const mockCourse: Course = {
-  id: "1",
-  title: "Complete React Development",
-  description: "Master React from fundamentals to advanced concepts",
+  id: '1',
+  title: 'Complete React Development',
+  description: 'Master React from fundamentals to advanced concepts',
   modules: [
     {
-      id: "m1",
-      title: "Introduction to React",
-      description: "Learn the basics of React components and JSX",
+      id: 'm1',
+      title: 'Introduction to React',
+      description: 'Learn the basics of React components and JSX',
       order: 1,
       lessons: [
         {
-          id: "l1",
-          title: "What is React?",
-          description: "Understanding React and its ecosystem",
-          type: "video",
+          id: 'l1',
+          title: 'What is React?',
+          description: 'Understanding React and its ecosystem',
+          type: 'video',
           duration: 15,
-          videoUrl: "/videos/intro-to-react.mp4",
+          videoUrl: '/videos/intro-to-react.mp4',
           order: 1,
         },
         {
-          id: "l2",
-          title: "Setting up Development Environment",
-          description: "Installing Node.js, npm, and create-react-app",
-          type: "video",
+          id: 'l2',
+          title: 'Setting up Development Environment',
+          description: 'Installing Node.js, npm, and create-react-app',
+          type: 'video',
           duration: 20,
-          videoUrl: "/videos/setup-env.mp4",
+          videoUrl: '/videos/setup-env.mp4',
           order: 2,
         },
       ],
@@ -96,19 +113,19 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
 
     const { source, destination } = result
 
-    if (source.droppableId.startsWith("module-")) {
+    if (source.droppableId.startsWith('module-')) {
       // Reordering lessons within a module
-      const moduleId = source.droppableId.replace("module-", "")
-      const module = course.modules.find((m) => m.id === moduleId)
+      const moduleId = source.droppableId.replace('module-', '')
+      const module = course.modules.find(m => m.id === moduleId)
       if (!module) return
 
       const newLessons = Array.from(module.lessons)
       const [reorderedLesson] = newLessons.splice(source.index, 1)
       newLessons.splice(destination.index, 0, reorderedLesson)
 
-      setCourse((prev) => ({
+      setCourse(prev => ({
         ...prev,
-        modules: prev.modules.map((m) =>
+        modules: prev.modules.map(m =>
           m.id === moduleId
             ? {
                 ...m,
@@ -117,16 +134,16 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
                   order: index + 1,
                 })),
               }
-            : m,
+            : m
         ),
       }))
-    } else if (source.droppableId === "modules") {
+    } else if (source.droppableId === 'modules') {
       // Reordering modules
       const newModules = Array.from(course.modules)
       const [reorderedModule] = newModules.splice(source.index, 1)
       newModules.splice(destination.index, 0, reorderedModule)
 
-      setCourse((prev) => ({
+      setCourse(prev => ({
         ...prev,
         modules: newModules.map((module, index) => ({
           ...module,
@@ -139,13 +156,13 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
   const addModule = () => {
     const newModule: Module = {
       id: `m${Date.now()}`,
-      title: "New Module",
-      description: "Module description",
+      title: 'New Module',
+      description: 'Module description',
       lessons: [],
       order: course.modules.length + 1,
     }
 
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
       modules: [...prev.modules, newModule],
     }))
@@ -156,22 +173,23 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
   const addLesson = (moduleId: string) => {
     const newLesson: Lesson = {
       id: `l${Date.now()}`,
-      title: "New Lesson",
-      description: "Lesson description",
-      type: "video",
+      title: 'New Lesson',
+      description: 'Lesson description',
+      type: 'video',
       duration: 10,
-      order: course.modules.find((m) => m.id === moduleId)?.lessons.length || 0 + 1,
+      order:
+        course.modules.find(m => m.id === moduleId)?.lessons.length || 0 + 1,
     }
 
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
-      modules: prev.modules.map((m) =>
+      modules: prev.modules.map(m =>
         m.id === moduleId
           ? {
               ...m,
               lessons: [...m.lessons, newLesson],
             }
-          : m,
+          : m
       ),
     }))
     setSelectedLesson(newLesson.id)
@@ -179,30 +197,38 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
   }
 
   const updateModule = (moduleId: string, updates: Partial<Module>) => {
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
-      modules: prev.modules.map((m) => (m.id === moduleId ? { ...m, ...updates } : m)),
+      modules: prev.modules.map(m =>
+        m.id === moduleId ? { ...m, ...updates } : m
+      ),
     }))
   }
 
-  const updateLesson = (moduleId: string, lessonId: string, updates: Partial<Lesson>) => {
-    setCourse((prev) => ({
+  const updateLesson = (
+    moduleId: string,
+    lessonId: string,
+    updates: Partial<Lesson>
+  ) => {
+    setCourse(prev => ({
       ...prev,
-      modules: prev.modules.map((m) =>
+      modules: prev.modules.map(m =>
         m.id === moduleId
           ? {
               ...m,
-              lessons: m.lessons.map((l) => (l.id === lessonId ? { ...l, ...updates } : l)),
+              lessons: m.lessons.map(l =>
+                l.id === lessonId ? { ...l, ...updates } : l
+              ),
             }
-          : m,
+          : m
       ),
     }))
   }
 
   const deleteModule = (moduleId: string) => {
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
-      modules: prev.modules.filter((m) => m.id !== moduleId),
+      modules: prev.modules.filter(m => m.id !== moduleId),
     }))
     if (selectedModule === moduleId) {
       setSelectedModule(null)
@@ -210,15 +236,15 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
   }
 
   const deleteLesson = (moduleId: string, lessonId: string) => {
-    setCourse((prev) => ({
+    setCourse(prev => ({
       ...prev,
-      modules: prev.modules.map((m) =>
+      modules: prev.modules.map(m =>
         m.id === moduleId
           ? {
               ...m,
-              lessons: m.lessons.filter((l) => l.id !== lessonId),
+              lessons: m.lessons.filter(l => l.id !== lessonId),
             }
-          : m,
+          : m
       ),
     }))
     if (selectedLesson === lessonId) {
@@ -226,125 +252,147 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
     }
   }
 
-  const handleVideoUpload = (moduleId: string, lessonId: string, file: File) => {
+  const handleVideoUpload = (
+    moduleId: string,
+    lessonId: string,
+    file: File
+  ) => {
     // Simulate video upload
     const videoUrl = URL.createObjectURL(file)
     updateLesson(moduleId, lessonId, { videoUrl })
   }
 
-  const getSelectedModule = () => course.modules.find((m) => m.id === selectedModule)
+  const getSelectedModule = () =>
+    course.modules.find(m => m.id === selectedModule)
   const getSelectedLesson = () => {
     const module = getSelectedModule()
-    return module?.lessons.find((l) => l.id === selectedLesson)
+    return module?.lessons.find(l => l.id === selectedLesson)
   }
 
   const getTotalDuration = () => {
     return course.modules.reduce(
-      (total, module) => total + module.lessons.reduce((moduleTotal, lesson) => moduleTotal + lesson.duration, 0),
-      0,
+      (total, module) =>
+        total +
+        module.lessons.reduce(
+          (moduleTotal, lesson) => moduleTotal + lesson.duration,
+          0
+        ),
+      0
     )
   }
 
   const getTotalLessons = () => {
-    return course.modules.reduce((total, module) => total + module.lessons.length, 0)
+    return course.modules.reduce(
+      (total, module) => total + module.lessons.length,
+      0
+    )
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Course Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-3xl font-bold">{course.title}</h1>
-          <p className="text-muted-foreground">{course.description}</p>
+          <h1 className='text-3xl font-bold'>{course.title}</h1>
+          <p className='text-muted-foreground'>{course.description}</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Eye className="mr-2 h-4 w-4" />
+        <div className='flex items-center space-x-2'>
+          <Button variant='outline'>
+            <Eye className='mr-2 h-4 w-4' />
             Preview
           </Button>
           <Button>
-            <Save className="mr-2 h-4 w-4" />
+            <Save className='mr-2 h-4 w-4' />
             Save Course
           </Button>
         </div>
       </div>
 
       {/* Course Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className='grid gap-4 md:grid-cols-4'>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Modules</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Modules</CardTitle>
+            <BookOpen className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{course.modules.length}</div>
+            <div className='text-2xl font-bold'>{course.modules.length}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lessons</CardTitle>
-            <Video className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Lessons</CardTitle>
+            <Video className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getTotalLessons()}</div>
+            <div className='text-2xl font-bold'>{getTotalLessons()}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Duration</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Duration</CardTitle>
+            <Clock className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className='text-2xl font-bold'>
               {Math.floor(getTotalDuration() / 60)}h {getTotalDuration() % 60}m
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <Settings className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Status</CardTitle>
+            <Settings className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <Badge variant="secondary">Draft</Badge>
+            <Badge variant='secondary'>Draft</Badge>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className='grid gap-6 lg:grid-cols-3'>
         {/* Course Structure */}
-        <div className="lg:col-span-1">
+        <div className='lg:col-span-1'>
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Course Structure</CardTitle>
+              <div className='flex items-center justify-between'>
+                <CardTitle className='text-lg'>Course Structure</CardTitle>
                 <Dialog open={isAddingModule} onOpenChange={setIsAddingModule}>
                   <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
+                    <Button size='sm'>
+                      <Plus className='mr-2 h-4 w-4' />
                       Add Module
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Add New Module</DialogTitle>
-                      <DialogDescription>Create a new module for your course</DialogDescription>
+                      <DialogDescription>
+                        Create a new module for your course
+                      </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className='space-y-4'>
                       <div>
-                        <label className="text-sm font-medium">Module Title</label>
-                        <Input placeholder="Enter module title" />
+                        <label className='text-sm font-medium'>
+                          Module Title
+                        </label>
+                        <Input placeholder='Enter module title' />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Description</label>
-                        <Textarea placeholder="Enter module description" />
+                        <label className='text-sm font-medium'>
+                          Description
+                        </label>
+                        <Textarea placeholder='Enter module description' />
                       </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsAddingModule(false)}>
+                      <div className='flex justify-end space-x-2'>
+                        <Button
+                          variant='outline'
+                          onClick={() => setIsAddingModule(false)}
+                        >
                           Cancel
                         </Button>
                         <Button onClick={addModule}>Create Module</Button>
@@ -356,196 +404,251 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
             </CardHeader>
             <CardContent>
               <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="modules">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                <Droppable droppableId='modules'>
+                  {provided => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className='space-y-2'
+                    >
                       {course.modules.map((module, index) => (
-                        <Draggable key={module.id} draggableId={module.id} index={index}>
+                        <Draggable
+                          key={module.id}
+                          draggableId={module.id}
+                          index={index}
+                        >
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={`border rounded-lg p-3 ${
-                                selectedModule === module.id ? "border-primary bg-primary/5" : "border-border"
-                              } ${snapshot.isDragging ? "shadow-lg" : ""}`}
+                                selectedModule === module.id
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border'
+                              } ${snapshot.isDragging ? 'shadow-lg' : ''}`}
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2 flex-1">
+                              <div className='flex items-center justify-between'>
+                                <div className='flex items-center space-x-2 flex-1'>
                                   <div {...provided.dragHandleProps}>
-                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    <GripVertical className='h-4 w-4 text-muted-foreground' />
                                   </div>
-                                  <div className="flex-1 cursor-pointer" onClick={() => setSelectedModule(module.id)}>
-                                    <div className="font-medium">{module.title}</div>
-                                    <div className="text-xs text-muted-foreground">{module.lessons.length} lessons</div>
+                                  <div
+                                    className='flex-1 cursor-pointer'
+                                    onClick={() => setSelectedModule(module.id)}
+                                  >
+                                    <div className='font-medium'>
+                                      {module.title}
+                                    </div>
+                                    <div className='text-xs text-muted-foreground'>
+                                      {module.lessons.length} lessons
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className='flex items-center space-x-1'>
                                   <Button
-                                    variant="ghost"
-                                    size="sm"
+                                    variant='ghost'
+                                    size='sm'
                                     onClick={() => setIsAddingLesson(true)}
-                                    className="h-6 w-6 p-0"
+                                    className='h-6 w-6 p-0'
                                   >
-                                    <Plus className="h-3 w-3" />
+                                    <Plus className='h-3 w-3' />
                                   </Button>
                                   <Button
-                                    variant="ghost"
-                                    size="sm"
+                                    variant='ghost'
+                                    size='sm'
                                     onClick={() => deleteModule(module.id)}
-                                    className="h-6 w-6 p-0 text-destructive"
+                                    className='h-6 w-6 p-0 text-destructive'
                                   >
-                                    <Trash2 className="h-3 w-3" />
+                                    <Trash2 className='h-3 w-3' />
                                   </Button>
                                 </div>
                               </div>
 
                               {/* Enhanced Lessons with Video Upload Support */}
                               <Droppable droppableId={`module-${module.id}`}>
-                                {(provided) => (
-                                  <div {...provided.droppableProps} ref={provided.innerRef} className="mt-2 space-y-1">
-                                    {module.lessons.map((lesson, lessonIndex) => (
-                                      <Draggable key={lesson.id} draggableId={lesson.id} index={lessonIndex}>
-                                        {(provided, snapshot) => (
-                                          <div
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            className={`ml-4 p-2 border rounded text-sm ${
-                                              selectedLesson === lesson.id
-                                                ? "border-primary bg-primary/5"
-                                                : "border-border"
-                                            } ${snapshot.isDragging ? "shadow-lg" : ""}`}
-                                            onClick={() => setSelectedLesson(lesson.id)}
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <div className="flex items-center space-x-2">
-                                                {lesson.type === "video" ? (
-                                                  <div className="flex items-center space-x-1">
-                                                    <Video className="h-3 w-3" />
-                                                    {lesson.videoUrl && (
-                                                      <div
-                                                        className="w-2 h-2 bg-green-500 rounded-full"
-                                                        title="Video uploaded"
-                                                      />
-                                                    )}
-                                                  </div>
-                                                ) : (
-                                                  <FileText className="h-3 w-3" />
-                                                )}
-                                                <span className="cursor-pointer">{lesson.title}</span>
-                                              </div>
-                                              <div className="flex items-center space-x-1">
-                                                <span className="text-xs text-muted-foreground">
-                                                  {lesson.duration}m
-                                                </span>
-                                                {lesson.type === "video" && !lesson.videoUrl && (
-                                                  <Badge variant="outline" className="text-xs px-1 py-0">
-                                                    No Video
-                                                  </Badge>
-                                                )}
-                                                {lesson.type === "video" && lesson.videoUrl && (
-                                                  <Badge variant="secondary" className="text-xs px-1 py-0">
-                                                    Ready
-                                                  </Badge>
-                                                )}
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    deleteLesson(module.id, lesson.id)
-                                                  }}
-                                                  className="h-4 w-4 p-0 text-destructive"
-                                                >
-                                                  <Trash2 className="h-2 w-2" />
-                                                </Button>
-                                              </div>
-                                            </div>
-
-                                            {/* Video Upload Drop Zone for Individual Lessons */}
-                                            {lesson.type === "video" &&
-                                              !lesson.videoUrl &&
-                                              selectedLesson === lesson.id && (
-                                                <div className="mt-2 p-2 border-2 border-dashed border-muted-foreground/25 rounded text-center">
-                                                  <div className="flex flex-col items-center space-y-1">
-                                                    <Upload className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-xs text-muted-foreground">
-                                                      Drop video here
-                                                    </span>
-                                                    <input
-                                                      type="file"
-                                                      accept="video/*"
-                                                      className="hidden"
-                                                      id={`video-upload-${lesson.id}`}
-                                                      onChange={(e) => {
-                                                        const file = e.target.files?.[0]
-                                                        if (file) {
-                                                          handleVideoUpload(module.id, lesson.id, file)
-                                                        }
-                                                      }}
-                                                    />
-                                                    <label
-                                                      htmlFor={`video-upload-${lesson.id}`}
-                                                      className="text-xs text-primary cursor-pointer hover:underline"
-                                                    >
-                                                      Browse files
-                                                    </label>
-                                                  </div>
-                                                </div>
-                                              )}
-
-                                            {/* Video Preview for Uploaded Videos */}
-                                            {lesson.type === "video" &&
-                                              lesson.videoUrl &&
-                                              selectedLesson === lesson.id && (
-                                                <div className="mt-2 p-2 bg-muted/50 rounded">
-                                                  <div className="flex items-center justify-between">
-                                                    <div className="flex items-center space-x-2">
-                                                      <div className="w-8 h-6 bg-black rounded overflow-hidden">
-                                                        <video
-                                                          src={lesson.videoUrl}
-                                                          className="w-full h-full object-cover"
-                                                          muted
+                                {provided => (
+                                  <div
+                                    {...provided.droppableProps}
+                                    ref={provided.innerRef}
+                                    className='mt-2 space-y-1'
+                                  >
+                                    {module.lessons.map(
+                                      (lesson, lessonIndex) => (
+                                        <Draggable
+                                          key={lesson.id}
+                                          draggableId={lesson.id}
+                                          index={lessonIndex}
+                                        >
+                                          {(provided, snapshot) => (
+                                            <div
+                                              ref={provided.innerRef}
+                                              {...provided.draggableProps}
+                                              {...provided.dragHandleProps}
+                                              className={`ml-4 p-2 border rounded text-sm ${
+                                                selectedLesson === lesson.id
+                                                  ? 'border-primary bg-primary/5'
+                                                  : 'border-border'
+                                              } ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                                              onClick={() =>
+                                                setSelectedLesson(lesson.id)
+                                              }
+                                            >
+                                              <div className='flex items-center justify-between'>
+                                                <div className='flex items-center space-x-2'>
+                                                  {lesson.type === 'video' ? (
+                                                    <div className='flex items-center space-x-1'>
+                                                      <Video className='h-3 w-3' />
+                                                      {lesson.videoUrl && (
+                                                        <div
+                                                          className='w-2 h-2 bg-green-500 rounded-full'
+                                                          title='Video uploaded'
                                                         />
-                                                      </div>
-                                                      <div>
-                                                        <p className="text-xs font-medium">Video uploaded</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                          {lesson.duration} minutes
-                                                        </p>
-                                                      </div>
+                                                      )}
                                                     </div>
-                                                    <div className="flex items-center space-x-1">
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0"
-                                                        title="Preview video"
+                                                  ) : (
+                                                    <FileText className='h-3 w-3' />
+                                                  )}
+                                                  <span className='cursor-pointer'>
+                                                    {lesson.title}
+                                                  </span>
+                                                </div>
+                                                <div className='flex items-center space-x-1'>
+                                                  <span className='text-xs text-muted-foreground'>
+                                                    {lesson.duration}m
+                                                  </span>
+                                                  {lesson.type === 'video' &&
+                                                    !lesson.videoUrl && (
+                                                      <Badge
+                                                        variant='outline'
+                                                        className='text-xs px-1 py-0'
                                                       >
-                                                        <Eye className="h-3 w-3" />
-                                                      </Button>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 w-6 p-0"
-                                                        title="Replace video"
-                                                        onClick={() => {
-                                                          const input = document.getElementById(
-                                                            `video-upload-${lesson.id}`,
-                                                          ) as HTMLInputElement
-                                                          input?.click()
+                                                        No Video
+                                                      </Badge>
+                                                    )}
+                                                  {lesson.type === 'video' &&
+                                                    lesson.videoUrl && (
+                                                      <Badge
+                                                        variant='secondary'
+                                                        className='text-xs px-1 py-0'
+                                                      >
+                                                        Ready
+                                                      </Badge>
+                                                    )}
+                                                  <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={e => {
+                                                      e.stopPropagation()
+                                                      deleteLesson(
+                                                        module.id,
+                                                        lesson.id
+                                                      )
+                                                    }}
+                                                    className='h-4 w-4 p-0 text-destructive'
+                                                  >
+                                                    <Trash2 className='h-2 w-2' />
+                                                  </Button>
+                                                </div>
+                                              </div>
+
+                                              {/* Video Upload Drop Zone for Individual Lessons */}
+                                              {lesson.type === 'video' &&
+                                                !lesson.videoUrl &&
+                                                selectedLesson ===
+                                                  lesson.id && (
+                                                  <div className='mt-2 p-2 border-2 border-dashed border-muted-foreground/25 rounded text-center'>
+                                                    <div className='flex flex-col items-center space-y-1'>
+                                                      <Upload className='h-4 w-4 text-muted-foreground' />
+                                                      <span className='text-xs text-muted-foreground'>
+                                                        Drop video here
+                                                      </span>
+                                                      <input
+                                                        type='file'
+                                                        accept='video/*'
+                                                        className='hidden'
+                                                        id={`video-upload-${lesson.id}`}
+                                                        onChange={e => {
+                                                          const file =
+                                                            e.target.files?.[0]
+                                                          if (file) {
+                                                            handleVideoUpload(
+                                                              module.id,
+                                                              lesson.id,
+                                                              file
+                                                            )
+                                                          }
                                                         }}
+                                                      />
+                                                      <label
+                                                        htmlFor={`video-upload-${lesson.id}`}
+                                                        className='text-xs text-primary cursor-pointer hover:underline'
                                                       >
-                                                        <Upload className="h-3 w-3" />
-                                                      </Button>
+                                                        Browse files
+                                                      </label>
                                                     </div>
                                                   </div>
-                                                </div>
-                                              )}
-                                          </div>
-                                        )}
-                                      </Draggable>
-                                    ))}
+                                                )}
+
+                                              {/* Video Preview for Uploaded Videos */}
+                                              {lesson.type === 'video' &&
+                                                lesson.videoUrl &&
+                                                selectedLesson ===
+                                                  lesson.id && (
+                                                  <div className='mt-2 p-2 bg-muted/50 rounded'>
+                                                    <div className='flex items-center justify-between'>
+                                                      <div className='flex items-center space-x-2'>
+                                                        <div className='w-8 h-6 bg-black rounded overflow-hidden'>
+                                                          <video
+                                                            src={
+                                                              lesson.videoUrl
+                                                            }
+                                                            className='w-full h-full object-cover'
+                                                            muted
+                                                          />
+                                                        </div>
+                                                        <div>
+                                                          <p className='text-xs font-medium'>
+                                                            Video uploaded
+                                                          </p>
+                                                          <p className='text-xs text-muted-foreground'>
+                                                            {lesson.duration}{' '}
+                                                            minutes
+                                                          </p>
+                                                        </div>
+                                                      </div>
+                                                      <div className='flex items-center space-x-1'>
+                                                        <Button
+                                                          variant='ghost'
+                                                          size='sm'
+                                                          className='h-6 w-6 p-0'
+                                                          title='Preview video'
+                                                        >
+                                                          <Eye className='h-3 w-3' />
+                                                        </Button>
+                                                        <Button
+                                                          variant='ghost'
+                                                          size='sm'
+                                                          className='h-6 w-6 p-0'
+                                                          title='Replace video'
+                                                          onClick={() => {
+                                                            const input =
+                                                              document.getElementById(
+                                                                `video-upload-${lesson.id}`
+                                                              ) as HTMLInputElement
+                                                            input?.click()
+                                                          }}
+                                                        >
+                                                          <Upload className='h-3 w-3' />
+                                                        </Button>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                            </div>
+                                          )}
+                                        </Draggable>
+                                      )
+                                    )}
                                     {provided.placeholder}
                                   </div>
                                 )}
@@ -565,39 +668,62 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add New Lesson</DialogTitle>
-                    <DialogDescription>Create a new lesson for the selected module</DialogDescription>
+                    <DialogDescription>
+                      Create a new lesson for the selected module
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className='space-y-4'>
                     <div>
-                      <label className="text-sm font-medium">Lesson Title</label>
-                      <Input placeholder="Enter lesson title" />
+                      <label className='text-sm font-medium'>
+                        Lesson Title
+                      </label>
+                      <Input placeholder='Enter lesson title' />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Lesson Type</label>
-                      <div className="flex space-x-2 mt-2">
-                        <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                          <Video className="h-4 w-4" />
+                      <label className='text-sm font-medium'>Lesson Type</label>
+                      <div className='flex space-x-2 mt-2'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='flex items-center space-x-2'
+                        >
+                          <Video className='h-4 w-4' />
                           <span>Video Lesson</span>
                         </Button>
-                        <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4" />
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='flex items-center space-x-2'
+                        >
+                          <FileText className='h-4 w-4' />
                           <span>Text Lesson</span>
                         </Button>
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Description</label>
-                      <Textarea placeholder="Enter lesson description" />
+                      <label className='text-sm font-medium'>Description</label>
+                      <Textarea placeholder='Enter lesson description' />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Duration (minutes)</label>
-                      <Input type="number" placeholder="10" />
+                      <label className='text-sm font-medium'>
+                        Duration (minutes)
+                      </label>
+                      <Input type='number' placeholder='10' />
                     </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" onClick={() => setIsAddingLesson(false)}>
+                    <div className='flex justify-end space-x-2'>
+                      <Button
+                        variant='outline'
+                        onClick={() => setIsAddingLesson(false)}
+                      >
                         Cancel
                       </Button>
-                      <Button onClick={() => selectedModule && addLesson(selectedModule)}>Create Lesson</Button>
+                      <Button
+                        onClick={() =>
+                          selectedModule && addLesson(selectedModule)
+                        }
+                      >
+                        Create Lesson
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>
@@ -607,33 +733,45 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
         </div>
 
         {/* Content Editor */}
-        <div className="lg:col-span-2">
+        <div className='lg:col-span-2'>
           {selectedModule && (
-            <Tabs defaultValue="module" className="space-y-4">
+            <Tabs defaultValue='module' className='space-y-4'>
               <TabsList>
-                <TabsTrigger value="module">Module Settings</TabsTrigger>
-                {selectedLesson && <TabsTrigger value="lesson">Lesson Content</TabsTrigger>}
+                <TabsTrigger value='module'>Module Settings</TabsTrigger>
+                {selectedLesson && (
+                  <TabsTrigger value='lesson'>Lesson Content</TabsTrigger>
+                )}
               </TabsList>
 
-              <TabsContent value="module">
+              <TabsContent value='module'>
                 <Card>
                   <CardHeader>
                     <CardTitle>Module: {getSelectedModule()?.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className='space-y-4'>
                     <div>
-                      <label className="text-sm font-medium">Module Title</label>
+                      <label className='text-sm font-medium'>
+                        Module Title
+                      </label>
                       <Input
                         value={getSelectedModule()?.title}
-                        onChange={(e) => selectedModule && updateModule(selectedModule, { title: e.target.value })}
+                        onChange={e =>
+                          selectedModule &&
+                          updateModule(selectedModule, {
+                            title: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Description</label>
+                      <label className='text-sm font-medium'>Description</label>
                       <Textarea
                         value={getSelectedModule()?.description}
-                        onChange={(e) =>
-                          selectedModule && updateModule(selectedModule, { description: e.target.value })
+                        onChange={e =>
+                          selectedModule &&
+                          updateModule(selectedModule, {
+                            description: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -642,31 +780,39 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
               </TabsContent>
 
               {selectedLesson && (
-                <TabsContent value="lesson">
+                <TabsContent value='lesson'>
                   <Card>
                     <CardHeader>
-                      <CardTitle>Lesson: {getSelectedLesson()?.title}</CardTitle>
+                      <CardTitle>
+                        Lesson: {getSelectedLesson()?.title}
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className='space-y-6'>
                       {/* Lesson Basic Info */}
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className='grid gap-4 md:grid-cols-2'>
                         <div>
-                          <label className="text-sm font-medium">Lesson Title</label>
+                          <label className='text-sm font-medium'>
+                            Lesson Title
+                          </label>
                           <Input
                             value={getSelectedLesson()?.title}
-                            onChange={(e) =>
+                            onChange={e =>
                               selectedModule &&
                               selectedLesson &&
-                              updateLesson(selectedModule, selectedLesson, { title: e.target.value })
+                              updateLesson(selectedModule, selectedLesson, {
+                                title: e.target.value,
+                              })
                             }
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Duration (minutes)</label>
+                          <label className='text-sm font-medium'>
+                            Duration (minutes)
+                          </label>
                           <Input
-                            type="number"
+                            type='number'
                             value={getSelectedLesson()?.duration}
-                            onChange={(e) =>
+                            onChange={e =>
                               selectedModule &&
                               selectedLesson &&
                               updateLesson(selectedModule, selectedLesson, {
@@ -678,23 +824,29 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">Description</label>
+                        <label className='text-sm font-medium'>
+                          Description
+                        </label>
                         <Textarea
                           value={getSelectedLesson()?.description}
-                          onChange={(e) =>
+                          onChange={e =>
                             selectedModule &&
                             selectedLesson &&
-                            updateLesson(selectedModule, selectedLesson, { description: e.target.value })
+                            updateLesson(selectedModule, selectedLesson, {
+                              description: e.target.value,
+                            })
                           }
                         />
                       </div>
 
                       {/* Video Content */}
                       <div>
-                        <label className="text-sm font-medium">Video Content</label>
+                        <label className='text-sm font-medium'>
+                          Video Content
+                        </label>
                         <VideoUploadManager
                           lessonId={selectedLesson}
-                          onVideoUploaded={(video) => {
+                          onVideoUploaded={video => {
                             if (selectedModule && selectedLesson) {
                               updateLesson(selectedModule, selectedLesson, {
                                 videoUrl: video.url,
@@ -705,29 +857,30 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
                           existingVideo={
                             getSelectedLesson()?.videoUrl
                               ? {
-                                  id: "existing",
-                                  file: new File([], "existing-video"),
-                                  name: "Current Video",
+                                  id: 'existing',
+                                  file: new File([], 'existing-video'),
+                                  name: 'Current Video',
                                   size: 0,
                                   url: getSelectedLesson()?.videoUrl,
                                   uploadProgress: 100,
-                                  processingStatus: "completed",
+                                  processingStatus: 'completed',
                                   processingProgress: 100,
                                   metadata: {
-                                    title: getSelectedLesson()?.title || "",
-                                    description: getSelectedLesson()?.description || "",
+                                    title: getSelectedLesson()?.title || '',
+                                    description:
+                                      getSelectedLesson()?.description || '',
                                     tags: [],
-                                    resolution: "1920x1080",
-                                    bitrate: "Unknown",
-                                    format: "video/mp4",
+                                    resolution: '1920x1080',
+                                    bitrate: 'Unknown',
+                                    format: 'video/mp4',
                                   },
                                   transcoding: {
                                     formats: [
                                       {
-                                        quality: "1080p",
+                                        quality: '1080p',
                                         size: 0,
                                         url: getSelectedLesson()?.videoUrl,
-                                        status: "completed",
+                                        status: 'completed',
                                       },
                                     ],
                                   },
@@ -739,14 +892,18 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
 
                       {/* Additional Content */}
                       <div>
-                        <label className="text-sm font-medium">Additional Content</label>
+                        <label className='text-sm font-medium'>
+                          Additional Content
+                        </label>
                         <Textarea
-                          placeholder="Add text content, notes, or resources for this lesson..."
-                          value={getSelectedLesson()?.content || ""}
-                          onChange={(e) =>
+                          placeholder='Add text content, notes, or resources for this lesson...'
+                          value={getSelectedLesson()?.content || ''}
+                          onChange={e =>
                             selectedModule &&
                             selectedLesson &&
-                            updateLesson(selectedModule, selectedLesson, { content: e.target.value })
+                            updateLesson(selectedModule, selectedLesson, {
+                              content: e.target.value,
+                            })
                           }
                         />
                       </div>
@@ -759,10 +916,14 @@ export function CourseBuilder({ courseId }: CourseBuilderProps) {
 
           {!selectedModule && (
             <Card>
-              <CardContent className="text-center py-12">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Select a module to get started</h3>
-                <p className="text-muted-foreground">Choose a module from the left panel to edit its content</p>
+              <CardContent className='text-center py-12'>
+                <BookOpen className='mx-auto h-12 w-12 text-muted-foreground' />
+                <h3 className='mt-4 text-lg font-semibold'>
+                  Select a module to get started
+                </h3>
+                <p className='text-muted-foreground'>
+                  Choose a module from the left panel to edit its content
+                </p>
               </CardContent>
             </Card>
           )}

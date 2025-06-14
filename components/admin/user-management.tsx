@@ -1,21 +1,5 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { format } from "date-fns";
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,29 +10,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  Search,
-  MoreHorizontal,
-  Trash2,
-  Users,
-  GraduationCap,
-  Eye,
-  Ban,
-  CheckCircle,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/context/auth-context"
-import { useRouter } from "next/navigation"
-import { Toaster } from "@/components/ui/toaster"
-import { User } from "@/types/User"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -57,7 +29,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Form,
   FormControl,
@@ -65,28 +44,60 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Toaster } from '@/components/ui/toaster'
+import { useAuth } from '@/context/auth-context'
+import { useToast } from '@/hooks/use-toast'
+import { User } from '@/types/User'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { format } from 'date-fns'
+import {
+  Ban,
+  CheckCircle,
+  Eye,
+  GraduationCap,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
-const BACKEND_URL = "http://localhost:8080"
+const BACKEND_URL = 'http://localhost:8080'
 
 // Add form schema
 const createManagerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .nonempty('Name is required'),
+  email: z
+    .string()
+    .nonempty('Email is required')
+    .email('Invalid email address'),
+})
 
-type CreateManagerForm = z.infer<typeof createManagerSchema>;
+type CreateManagerForm = z.infer<typeof createManagerSchema>
 
 export function UserManagement() {
   const { toast } = useToast()
@@ -97,42 +108,41 @@ export function UserManagement() {
   const form = useForm<CreateManagerForm>({
     resolver: zodResolver(createManagerSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
+      name: '',
+      email: '',
     },
-  });
+  })
 
   // Constants
   const ITEMS_PER_PAGE_OPTIONS = [
-    { value: "5", label: "5 / page" },
-    { value: "10", label: "10 / page" },
-    { value: "20", label: "20 / page" },
-    { value: "50", label: "50 / page" }
+    { value: '5', label: '5 / page' },
+    { value: '10', label: '10 / page' },
+    { value: '20', label: '20 / page' },
+    { value: '50', label: '50 / page' },
   ]
 
   const STATUS_OPTIONS = [
-    { value: "all", label: "All Status" },
-    { value: "active", label: "Active" },
-    { value: "banned", label: "Banned" }
+    { value: 'all', label: 'All Status' },
+    { value: 'active', label: 'Active' },
+    { value: 'banned', label: 'Banned' },
   ]
 
   // States
   const [users, setUsers] = useState<User[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [activeTab, setActiveTab] = useState("learner")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [activeTab, setActiveTab] = useState('learner')
   const [isLoading, setIsLoading] = useState(true)
   const [userStats, setUserStats] = useState({
     total: 0,
     active: 0,
-    banned: 0
+    banned: 0,
   })
   const [pagination, setPagination] = useState({
     currentPage: 0,
     totalPages: 0,
     totalElements: 0,
-    pageSize: 10
+    pageSize: 10,
   })
 
   // Effects
@@ -165,9 +175,9 @@ export function UserManagement() {
       const token = getToken()
       if (!token) {
         toast({
-          title: "Error",
-          description: "No auth token",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No auth token',
+          variant: 'destructive',
         })
         return
       }
@@ -176,13 +186,13 @@ export function UserManagement() {
       if (pagination.currentPage === 0) {
         const [activeCount, bannedCount] = await Promise.all([
           fetchUsersWithStatus('active'),
-          fetchUsersWithStatus('banned')
+          fetchUsersWithStatus('banned'),
         ])
 
         setUserStats({
           total: activeCount + bannedCount,
           active: activeCount,
-          banned: bannedCount
+          banned: bannedCount,
         })
       }
 
@@ -191,39 +201,43 @@ export function UserManagement() {
         pageSize: pagination.pageSize.toString(),
         pageNo: pagination.currentPage.toString(),
         role: activeTab.toUpperCase(),
-        status: selectedStatus !== "all" ? selectedStatus : "",
+        status: selectedStatus !== 'all' ? selectedStatus : '',
       })
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users?${queryParams}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await fetch(
+        `${BACKEND_URL}/api/admin/users?${queryParams}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
 
       if (!response.ok) {
-        throw new Error((await response.json()).message || "Failed to fetch users")
+        throw new Error(
+          (await response.json()).message || 'Failed to fetch users'
+        )
       }
 
       const { data } = await response.json()
-      if (!data) throw new Error("Failed to fetch users")
+      if (!data) throw new Error('Failed to fetch users')
 
       setUsers(data.content || [])
       setPagination(prev => ({
         ...prev,
         totalElements: data.totalElements || 0,
-        totalPages: data.totalPages || 0
+        totalPages: data.totalPages || 0,
       }))
-
     } catch (error: any) {
-      console.error("Error fetching users:", error)
+      console.error('Error fetching users:', error)
       toast({
-        title: "Error",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
       })
       setUsers([])
       setPagination(prev => ({
         ...prev,
         totalElements: 0,
-        totalPages: 0
+        totalPages: 0,
       }))
       if (pagination.currentPage === 0) {
         setUserStats({ total: 0, active: 0, banned: 0 })
@@ -242,45 +256,53 @@ export function UserManagement() {
     setPagination(prev => ({
       ...prev,
       pageSize: newSize,
-      currentPage: 0
+      currentPage: 0,
     }))
   }
 
-  const handleUpdateUserStatus = async (userId: string, newStatus: "active" | "banned") => {
+  const handleUpdateUserStatus = async (
+    userId: string,
+    newStatus: 'active' | 'banned'
+  ) => {
     try {
       const token = getToken()
       if (!token) {
         toast({
-          title: "Error",
-          description: "No auth token",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No auth token',
+          variant: 'destructive',
         })
         return
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}/status`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: new URLSearchParams({ status: newStatus }),
-      })
+      const response = await fetch(
+        `${BACKEND_URL}/api/admin/users/${userId}/status`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: new URLSearchParams({ status: newStatus }),
+        }
+      )
 
       if (!response.ok) {
-        throw new Error((await response.json()).message || "Failed to update user status")
+        throw new Error(
+          (await response.json()).message || 'Failed to update user status'
+        )
       }
 
-      setUsers(users.map((u) => 
-        u.id === userId ? { ...u, status: newStatus } : u
-      ))
+      setUsers(
+        users.map(u => (u.id === userId ? { ...u, status: newStatus } : u))
+      )
 
       toast({
         description: `User status updated to ${newStatus}`,
       })
     } catch (error: any) {
-      console.error("Error updating status:", error)
+      console.error('Error updating status:', error)
       toast({
-        title: "Error",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
       })
     }
   }
@@ -290,31 +312,33 @@ export function UserManagement() {
       const token = getToken()
       if (!token) {
         toast({
-          title: "Error",
-          description: "No auth token",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No auth token',
+          variant: 'destructive',
         })
         return
       }
 
       const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (!response.ok) {
-        throw new Error((await response.json()).message || "Failed to delete user")
+        throw new Error(
+          (await response.json()).message || 'Failed to delete user'
+        )
       }
 
-      setUsers(users.filter((u) => u.id !== userId))
-      toast({ description: "User deleted successfully" })
+      setUsers(users.filter(u => u.id !== userId))
+      toast({ description: 'User deleted successfully' })
       fetchUsers()
     } catch (error: any) {
-      console.error("Error deleting user:", error)
+      console.error('Error deleting user:', error)
       toast({
-        title: "Error",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
       })
     }
   }
@@ -324,28 +348,33 @@ export function UserManagement() {
       const token = getToken()
       if (!token) {
         toast({
-          title: "Error",
-          description: "No auth token",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No auth token',
+          variant: 'destructive',
         })
         return
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}/detail`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `${BACKEND_URL}/api/admin/users/${userId}/detail`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
 
       if (!response.ok) {
-        throw new Error((await response.json()).message || "Failed to access user profile")
+        throw new Error(
+          (await response.json()).message || 'Failed to access user profile'
+        )
       }
 
       router.push(`/admin/users/${userId}/detail`)
     } catch (error: any) {
-      console.error("Error accessing profile:", error)
+      console.error('Error accessing profile:', error)
       toast({
-        title: "Error",
-        description: error.message || "Failed to access user profile",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to access user profile',
+        variant: 'destructive',
       })
     }
   }
@@ -353,62 +382,71 @@ export function UserManagement() {
   // Computed values
   const displayedUsers = users.filter(user => {
     if (!searchTerm) return true
-    return user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    return (
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   })
 
   // Render helpers
-  const renderStatsCard = (title: string, value: number, icon: React.ReactNode) => (
+  const renderStatsCard = (
+    title: string,
+    value: number,
+    icon: React.ReactNode
+  ) => (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+        <CardTitle className='text-sm font-medium'>{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className='text-2xl font-bold'>{value}</div>
       </CardContent>
     </Card>
   )
 
   const renderPaginationControls = () => (
-    <div className="flex items-center justify-between space-x-2 py-4">
-      <div className="flex-1 text-sm text-muted-foreground">
-        {displayedUsers.length > 0 ? (
-          `Showing ${pagination.currentPage * pagination.pageSize + 1} to ${Math.min(
-            (pagination.currentPage + 1) * pagination.pageSize,
-            pagination.totalElements
-          )} of ${pagination.totalElements} ${activeTab}s`
-        ) : (
-          `No ${activeTab}s found`
-        )}
+    <div className='flex items-center justify-between space-x-2 py-4'>
+      <div className='flex-1 text-sm text-muted-foreground'>
+        {displayedUsers.length > 0
+          ? `Showing ${pagination.currentPage * pagination.pageSize + 1} to ${Math.min(
+              (pagination.currentPage + 1) * pagination.pageSize,
+              pagination.totalElements
+            )} of ${pagination.totalElements} ${activeTab}s`
+          : `No ${activeTab}s found`}
       </div>
-      <div className="flex items-center space-x-2">
+      <div className='flex items-center space-x-2'>
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={() => handlePageChange(pagination.currentPage - 1)}
-          disabled={pagination.currentPage === 0 || pagination.totalElements === 0}
+          disabled={
+            pagination.currentPage === 0 || pagination.totalElements === 0
+          }
         >
           Previous
         </Button>
         {pagination.totalElements > 0 && (
-          <div className="flex items-center justify-center text-sm font-medium">
+          <div className='flex items-center justify-center text-sm font-medium'>
             Page {pagination.currentPage + 1} of {pagination.totalPages}
           </div>
         )}
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={() => handlePageChange(pagination.currentPage + 1)}
-          disabled={pagination.currentPage >= pagination.totalPages - 1 || pagination.totalElements === 0}
+          disabled={
+            pagination.currentPage >= pagination.totalPages - 1 ||
+            pagination.totalElements === 0
+          }
         >
           Next
         </Button>
-        <Select 
-          value={pagination.pageSize.toString()} 
-          onValueChange={(value) => handlePageSizeChange(Number(value))}
+        <Select
+          value={pagination.pageSize.toString()}
+          onValueChange={value => handlePageSizeChange(Number(value))}
         >
-          <SelectTrigger className="w-[110px]">
+          <SelectTrigger className='w-[110px]'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -425,14 +463,14 @@ export function UserManagement() {
 
   // Helper functions
   const formatJoinDate = (date: string | undefined) => {
-    if (!date) return "-";
+    if (!date) return '-'
     try {
-      const dateObj = new Date(date);
-      if (isNaN(dateObj.getTime())) return "-";
-      return format(dateObj, "dd/MM/yyyy");
+      const dateObj = new Date(date)
+      if (isNaN(dateObj.getTime())) return '-'
+      return format(dateObj, 'dd/MM/yyyy')
     } catch (error) {
-      console.error("Invalid date:", date);
-      return "-";
+      console.error('Invalid date:', date)
+      return '-'
     }
   }
 
@@ -441,34 +479,37 @@ export function UserManagement() {
       const token = getToken()
       if (!token) {
         toast({
-          title: "Error",
-          description: "No auth token",
-          variant: "destructive",
+          title: 'Error',
+          description: 'No auth token',
+          variant: 'destructive',
         })
         return
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-          name: data.email.split('@')[0],
-          role: "MANAGER"
-        }),
-      })
+      const response = await fetch(
+        `${BACKEND_URL}/api/admin/users/create-manager`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+          }),
+        }
+      )
 
       if (!response.ok) {
-        throw new Error((await response.json()).message || "Failed to create manager")
+        throw new Error(
+          (await response.json()).message || 'Failed to create manager'
+        )
       }
 
       const responseData = await response.json()
       if (!responseData.data) {
-        throw new Error("Failed to create manager")
+        throw new Error('Failed to create manager')
       }
 
       await fetchUsers()
@@ -476,22 +517,24 @@ export function UserManagement() {
       form.reset()
 
       toast({
-        description: responseData.message || "Manager created successfully",
+        title: 'Manager Created',
+        description:
+          'An email with login credentials has been sent to the manager.',
       })
     } catch (error: any) {
-      console.error("Error creating manager:", error)
+      console.error('Error creating manager:', error)
       toast({
-        title: "Error",
-        description: error.message || "Failed to create manager",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to create manager',
+        variant: 'destructive',
       })
     }
   }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='text-center space-y-3'>
           <p>Loading...</p>
         </div>
       </div>
@@ -499,139 +542,165 @@ export function UserManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       <Toaster />
-      
+
       {/* Stats Cards */}
-      <div className={`grid gap-4 md:grid-cols-2 ${activeTab === "learner" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+      <div
+        className={`grid gap-4 md:grid-cols-2 ${activeTab === 'learner' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+      >
         {renderStatsCard(
-          activeTab === "learner" ? "Total Learners" : "Total Managers",
+          activeTab === 'learner' ? 'Total Learners' : 'Total Managers',
           userStats.total,
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className='h-4 w-4 text-muted-foreground' />
         )}
         {renderStatsCard(
-          "Active",
+          'Active',
           userStats.active,
-          <CheckCircle className="h-4 w-4 text-green-600" />
+          <CheckCircle className='h-4 w-4 text-green-600' />
         )}
-        {activeTab === "learner" && renderStatsCard(
-          "Banned",
-          userStats.banned,
-          <Ban className="h-4 w-4 text-red-600" />
-        )}
+        {activeTab === 'learner' &&
+          renderStatsCard(
+            'Banned',
+            userStats.banned,
+            <Ban className='h-4 w-4 text-red-600' />
+          )}
         {renderStatsCard(
-          activeTab === "learner" ? "Enrolled Courses" : "Managed Courses",
+          activeTab === 'learner' ? 'Enrolled Courses' : 'Managed Courses',
           0,
-          <GraduationCap className="h-4 w-4 text-blue-600" />
+          <GraduationCap className='h-4 w-4 text-blue-600' />
         )}
       </div>
 
       {/* User Management with Tabs */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className='flex items-center justify-between'>
             <div>
               <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage user accounts, roles, and permissions</CardDescription>
+              <CardDescription>
+                Manage user accounts, roles, and permissions
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="learner" className="space-y-4" onValueChange={(value) => {
-            setActiveTab(value)
-            setSearchTerm("") // Reset search when changing tabs
-            setSelectedStatus("all") // Reset status filter when changing tabs
-          }}>
+          <Tabs
+            defaultValue='learner'
+            className='space-y-4'
+            onValueChange={value => {
+              setActiveTab(value)
+              setSearchTerm('') // Reset search when changing tabs
+              setSelectedStatus('all') // Reset status filter when changing tabs
+            }}
+          >
             <TabsList>
-              <TabsTrigger value="learner">Learners</TabsTrigger>
-              <TabsTrigger value="manager">Managers</TabsTrigger>
+              <TabsTrigger value='learner'>Learners</TabsTrigger>
+              <TabsTrigger value='manager'>Managers</TabsTrigger>
             </TabsList>
 
             {/* Learner Tab Content */}
-            <TabsContent value="learner">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                    placeholder="Search learners..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select 
-              value={selectedStatus} 
+            <TabsContent value='learner'>
+              <div className='flex items-center space-x-2 mb-4'>
+                <div className='relative flex-1'>
+                  <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
+                  <Input
+                    placeholder='Search learners...'
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className='pl-8'
+                  />
+                </div>
+                <Select
+                  value={selectedStatus}
                   onValueChange={setSelectedStatus}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
+                >
+                  <SelectTrigger className='w-[150px]'>
+                    <SelectValue placeholder='Filter by status' />
+                  </SelectTrigger>
+                  <SelectContent>
                     {STATUS_OPTIONS.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
                     ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Join Date</TableHead>
-                <TableHead>Enrolled Courses</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Join Date</TableHead>
+                    <TableHead>Enrolled Courses</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {displayedUsers
-                    .filter(user => user.role === "learner")
-                    .map((user) => (
+                    .filter(user => user.role === 'learner')
+                    .map(user => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user.avatar || "/placeholder.svg?height=32&width=32"} />
+                        <TableCell className='font-medium'>
+                          <div className='flex items-center space-x-3'>
+                            <Avatar className='h-8 w-8'>
+                              <AvatarImage
+                                src={
+                                  user.avatar ||
+                                  '/placeholder.svg?height=32&width=32'
+                                }
+                              />
                               <AvatarFallback>
                                 {user.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
+                                  ? user.name
+                                      .split(' ')
+                                      .map(n => n[0])
+                                      .join('')
+                                  : user.email?.charAt(0).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-muted-foreground">{user.email}</div>
+                              <div className='font-medium'>{user.name}</div>
+                              <div className='text-sm text-muted-foreground'>
+                                {user.email}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                            {user.status === "active" ? "Active" : "Banned"}
+                          <Badge
+                            variant={
+                              user.status === 'active'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                          >
+                            {user.status === 'active' ? 'Active' : 'Banned'}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
                         <TableCell>{user.enrolledcourses || 0}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className='text-right'>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant='ghost' className='h-8 w-8 p-0'>
+                                <MoreHorizontal className='h-4 w-4' />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewProfile(user.id)}>
-                                <Eye className="mr-2 h-4 w-4" />
+                            <DropdownMenuContent align='end'>
+                              <DropdownMenuItem
+                                onClick={() => handleViewProfile(user.id)}
+                              >
+                                <Eye className='mr-2 h-4 w-4' />
                                 View Profile
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                  ))}
+                    ))}
                 </TableBody>
               </Table>
 
@@ -639,20 +708,23 @@ export function UserManagement() {
             </TabsContent>
 
             {/* Manager Tab Content */}
-            <TabsContent value="manager" className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <TabsContent value='manager' className='space-y-4'>
+              <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center space-x-2'>
+                  <div className='relative flex-1'>
+                    <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
                     <Input
-                      placeholder="Search managers..."
+                      placeholder='Search managers...'
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className='pl-8'
                     />
                   </div>
                 </div>
-                <Dialog open={isCreateManagerOpen} onOpenChange={setIsCreateManagerOpen}>
+                <Dialog
+                  open={isCreateManagerOpen}
+                  onOpenChange={setIsCreateManagerOpen}
+                >
                   <DialogTrigger asChild>
                     <Button>Create Manager</Button>
                   </DialogTrigger>
@@ -660,19 +732,32 @@ export function UserManagement() {
                     <DialogHeader>
                       <DialogTitle>Create New Manager</DialogTitle>
                       <DialogDescription>
-                        Add a new manager account. They will receive an email with their login credentials.
+                        Add a new manager account by entering their information.
                       </DialogDescription>
+                      <div className='text-sm text-muted-foreground'>
+                        A temporary password will be generated and sent to this
+                        email address.
+                      </div>
                     </DialogHeader>
                     <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onCreateManager)} className="space-y-4">
+                      <form
+                        onSubmit={form.handleSubmit(onCreateManager)}
+                        className='space-y-4'
+                      >
                         <FormField
                           control={form.control}
-                          name="email"
+                          name='name'
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel>
+                                Name <span className='text-destructive'>*</span>
+                              </FormLabel>
                               <FormControl>
-                                <Input placeholder="manager@example.com" {...field} />
+                                <Input
+                                  placeholder='Enter manager name'
+                                  required
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -680,32 +765,36 @@ export function UserManagement() {
                         />
                         <FormField
                           control={form.control}
-                          name="password"
+                          name='email'
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Password</FormLabel>
+                              <FormLabel>
+                                Email{' '}
+                                <span className='text-destructive'>*</span>
+                              </FormLabel>
                               <FormControl>
-                                <Input type="password" {...field} />
+                                <Input
+                                  placeholder='manager@example.com'
+                                  required
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="confirmPassword"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Confirm Password</FormLabel>
-                              <FormControl>
-                                <Input type="password" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter>
-                          <Button type="submit">Create Manager</Button>
+                        <DialogFooter className='gap-2 sm:gap-0'>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            onClick={() => {
+                              setIsCreateManagerOpen(false)
+                              form.reset()
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type='submit'>Create Manager</Button>
                         </DialogFooter>
                       </form>
                     </Form>
@@ -720,89 +809,113 @@ export function UserManagement() {
                     <TableHead>Status</TableHead>
                     <TableHead>Join Date</TableHead>
                     <TableHead>Managed Courses</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className='text-right'>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayedUsers
-                    .filter(user => user.role === "manager")
-                    .map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar || "/placeholder.svg?height=32&width=32"} />
-                        <AvatarFallback>
-                          {user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.status === "active" ? "default" : "destructive"}>
-                      {user.status === "active" ? "Active" : "Banned"}
-                    </Badge>
-                  </TableCell>
+                    .filter(user => user.role === 'manager')
+                    .map(user => (
+                      <TableRow key={user.id}>
+                        <TableCell className='font-medium'>
+                          <div className='flex items-center space-x-3'>
+                            <Avatar className='h-8 w-8'>
+                              <AvatarImage
+                                src={
+                                  user.avatar ||
+                                  '/placeholder.svg?height=32&width=32'
+                                }
+                              />
+                              <AvatarFallback>
+                                {user.name
+                                  ? user.name
+                                      .split(' ')
+                                      .map(n => n[0])
+                                      .join('')
+                                  : user.email?.charAt(0).toUpperCase() ||
+                                    'User'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className='font-medium'>{user.name}</div>
+                              <div className='text-sm text-muted-foreground'>
+                                {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              user.status === 'active'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                          >
+                            {user.status === 'active' ? 'Active' : 'Banned'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
                         <TableCell>{user.enrolledcourses || 0}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewProfile(user.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem 
-                              onSelect={(e) => e.preventDefault()} 
-                                    className="text-red-600 cursor-pointer"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete Manager
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the manager account
-                                and remove all associated data from our servers.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="bg-red-600 hover:bg-red-700"
+                        <TableCell className='text-right'>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant='ghost' className='h-8 w-8 p-0'>
+                                <MoreHorizontal className='h-4 w-4' />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align='end'>
+                              <DropdownMenuItem
+                                onClick={() => handleViewProfile(user.id)}
                               >
+                                <Eye className='mr-2 h-4 w-4' />
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={e => e.preventDefault()}
+                                    className='text-red-600 cursor-pointer'
+                                  >
+                                    <Trash2 className='mr-2 h-4 w-4' />
+                                    Delete Manager
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Are you absolutely sure?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will
+                                      permanently delete the manager account and
+                                      remove all associated data from our
+                                      servers.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(user.id)}
+                                      className='bg-red-600 hover:bg-red-700'
+                                    >
                                       Delete Permanently
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
 
-          {renderPaginationControls()}
+              {renderPaginationControls()}
             </TabsContent>
           </Tabs>
         </CardContent>

@@ -1,5 +1,5 @@
-import { httpClient } from "@/api/http-client"
-import { ApiResponse } from "@/types/common"
+import { httpClient } from '@/api/http-client'
+import { ApiResponse } from '@/types/common'
 
 interface PaymentRequestDTO {
   courseId: number
@@ -29,18 +29,29 @@ interface PaymentStatusResponse {
 }
 
 export const paymentApi = {
-  createPayment: async (data: PaymentRequestDTO): Promise<ApiResponse<PaymentResponseDTO>> => {
-    const response = await httpClient.post("/api/payments/init", data)
+  createPayment: async (
+    data: PaymentRequestDTO
+  ): Promise<ApiResponse<PaymentResponseDTO>> => {
+    const response = await httpClient.post('/api/payments/init', data)
     return response.data
   },
 
-  checkPaymentStatus: async (transactionCode: string): Promise<PaymentStatusResponse> => {
-    const response = await httpClient.get(`/api/payments/${transactionCode}/payment-status`)
+  checkPaymentStatus: async (
+    transactionCode: string
+  ): Promise<PaymentStatusResponse> => {
+    const response = await httpClient.get(
+      `/api/payments/${transactionCode}/payment-status`
+    )
     return response.data
   },
 
-  updatePaymentStatus: async (transactionCode: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.patch(`/api/payments/${transactionCode}/expired`, {})
+  updatePaymentStatus: async (
+    transactionCode: string
+  ): Promise<ApiResponse<void>> => {
+    const response = await httpClient.patch(
+      `/api/payments/${transactionCode}/expired`,
+      {}
+    )
     return response.data
-  }
-} 
+  },
+}

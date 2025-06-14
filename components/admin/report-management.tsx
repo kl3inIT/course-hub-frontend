@@ -1,6 +1,6 @@
 'use client'
 
-import { reportApi } from '@/api/report-api'
+import { reportApi } from '@/services/report-api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {

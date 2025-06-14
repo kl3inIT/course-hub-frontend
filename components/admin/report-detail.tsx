@@ -1,8 +1,8 @@
 'use client'
 
-import { commentApi } from '@/api/comment-api'
-import { reportApi } from '@/api/report-api'
-import { userApi } from '@/api/user-api'
+import { commentApi } from '@/services/comment-api'
+import { reportApi } from '@/services/report-api'
+import { userApi } from '@/services/user-api'
 import {
   AlertDialog,
   AlertDialogAction,

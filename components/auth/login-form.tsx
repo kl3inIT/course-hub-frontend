@@ -22,7 +22,7 @@ import { GoogleSignInButton } from './google-signin-button'
 import { ForgotPasswordModal } from './forgot-password-modal'
 import { useAuth } from '@/context/auth-context'
 import { useRouter } from 'next/navigation'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 // Function to decode JWT token
 function parseJwt(token: string) {

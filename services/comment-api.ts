@@ -1,4 +1,4 @@
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 import { CommentRequestDTO, CommentResponseDTO } from '@/types/comment'
 import { ApiResponse } from '@/types/common'
 

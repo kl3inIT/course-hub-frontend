@@ -2,7 +2,7 @@
 
 import type React from 'react'
 import { createContext, useContext, useState, useEffect } from 'react'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 // Định nghĩa các role có trong hệ thống
 export type UserRole = 'learner' | 'manager' | 'admin'

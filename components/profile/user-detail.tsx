@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { MessageSquare } from 'lucide-react'
-import { userApi } from '@/api/user-api'
+import { userApi } from '@/services/user-api'
 import type { UserDetail, Course, UserActivity } from '@/types/user'
 
 const S3_URL = 'https://course-hub-resourses.s3.amazonaws.com'

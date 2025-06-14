@@ -2,8 +2,8 @@
 
 import { use, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { courseApi } from '@/api/course-api'
-import { lessonApi } from '@/api/lesson-api'
+import { courseApi } from '@/services/course-api'
+import { lessonApi } from '@/services/lesson-api'
 import { Navbar } from '@/components/layout/navbar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Button } from '@/components/ui/button'

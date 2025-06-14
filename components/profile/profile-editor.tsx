@@ -48,7 +48,7 @@ import {
   Trash2,
   AlertTriangle,
 } from 'lucide-react'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import { ProfileData } from '@/types/user'
 

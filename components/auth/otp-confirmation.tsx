@@ -22,7 +22,7 @@ import {
   RefreshCw,
   ArrowLeft,
 } from 'lucide-react'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 interface OTPConfirmationProps {
   type:

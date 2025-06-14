@@ -1,8 +1,8 @@
 'use client'
 
-import { categoryApi } from '@/api/category-api'
-import { courseApi } from '@/api/course-api'
-import { userApi } from '@/api/user-api'
+import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
+import { userApi } from '@/services/user-api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {

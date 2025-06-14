@@ -1,4 +1,4 @@
-import { discountApi } from '@/api/discount-api'
+import { discountApi } from '@/services/discount-api'
 import { Coupon, CouponSearchParams, PaginationState } from '@/types/discount'
 import { transformCoupon } from '@/utils/transform'
 import { useCallback, useState } from 'react'

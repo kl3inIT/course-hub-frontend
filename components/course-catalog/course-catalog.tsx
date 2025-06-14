@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Search, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
-import { courseApi } from '@/api/course-api'
-import { categoryApi } from '@/api/category-api'
+import { courseApi } from '@/services/course-api'
+import { categoryApi } from '@/services/category-api'
 import { useSearchParams } from 'next/navigation'
 import {
   CourseResponseDTO,

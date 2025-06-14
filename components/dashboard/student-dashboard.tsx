@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { CompletionCertificate } from '../learning/completion-certificate'
-import { courseApi } from '@/api/course-api'
+import { courseApi } from '@/services/course-api'
 import { DashboardCourseResponseDTO } from '@/types/course'
 import { toast } from 'sonner'
 import { CourseCard } from './course-card'

@@ -1,4 +1,4 @@
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import { ModuleRequestDTO, ModuleResponseDTO } from '@/types/module'
 

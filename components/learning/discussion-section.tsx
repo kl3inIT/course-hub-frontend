@@ -1,7 +1,7 @@
 'use client'
 
-import { commentApi } from '@/api/comment-api'
-import { reportApi } from '@/api/report-api'
+import { commentApi } from '@/services/comment-api'
+import { reportApi } from '@/services/report-api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

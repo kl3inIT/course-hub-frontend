@@ -24,6 +24,8 @@ const PUBLIC_ENDPOINTS = [
   '/api/courses/search',
   '/api/courses/featured',
   '/api/courses/categories',
+  '/api/courses/search/advanced-search',
+  '/api/courses/search/stats',
 
   // Category endpoints
   '/api/categories',

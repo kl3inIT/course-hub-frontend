@@ -11,24 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Slider } from '@/components/ui/slider'
-import {
-  Search,
-  X,
-  SlidersHorizontal,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
-import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
+import { Search, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { courseApi } from '@/api/course-api'
 import { categoryApi } from '@/api/category-api'
-import { CourseCard } from './course-card'
 import { useSearchParams } from 'next/navigation'
-import { CourseResponseDTO } from '@/types/course'
+import {
+  CourseResponseDTO,
+  CourseSearchStatsResponseDTO,
+  CourseSearchParams,
+} from '@/types/course'
 import { CategoryResponseDTO } from '@/types/category'
 import { useDebounce } from '@/hooks/use-debounce'
+import { CoursesCatalogSection } from './courses-catalog-section'
+import { CourseFilterSidebar } from './course-filter-sidebar'
 
 const levels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED']
 const sortOptions = [
@@ -47,11 +42,16 @@ export function CourseCatalog() {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([])
   const [priceFilter, setPriceFilter] = useState<string>('all')
   const [priceRange, setPriceRange] = useState([0, 200])
+  const [minRating, setMinRating] = useState<number | undefined>()
+  const [isFree, setIsFree] = useState<boolean | undefined>()
+  const [isDiscounted, setIsDiscounted] = useState<boolean | undefined>()
   const [sortBy, setSortBy] = useState('relevance')
   const [showFilters, setShowFilters] = useState(false)
 
   const [courses, setCourses] = useState<CourseResponseDTO[]>([])
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
+  const [searchStats, setSearchStats] =
+    useState<CourseSearchStatsResponseDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -100,6 +100,27 @@ export function CourseCatalog() {
     }
   }, [searchParams])
 
+  // Load search stats
+  useEffect(() => {
+    const loadSearchStats = async () => {
+      try {
+        const statsResponse = await courseApi.getSearchStats()
+        if (statsResponse.data) {
+          setSearchStats(statsResponse.data)
+          // Update price range based on stats
+          setPriceRange([
+            statsResponse.data.minPrice,
+            statsResponse.data.maxPrice,
+          ])
+        }
+      } catch (err) {
+        console.error('Error loading search stats:', err)
+      }
+    }
+
+    loadSearchStats()
+  }, [])
+
   // Load courses based on filters and pagination
   useEffect(() => {
     const loadCourses = async () => {
@@ -108,49 +129,47 @@ export function CourseCatalog() {
         setLoading(currentPage === 0)
         setError(null)
 
-        // Build search parameters for server-side filtering
-        const searchParams: any = {
+        // Build search parameters for advanced search
+        const searchParams: CourseSearchParams = {
           page: currentPage,
           size: pageSize,
+          searchTerm: debouncedSearchTerm || undefined,
+          categoryId:
+            selectedCategories.length > 0
+              ? categories.find(cat => cat.name === selectedCategories[0])?.id
+              : undefined,
+          level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+          minPrice: priceFilter === 'paid' ? priceRange[0] : undefined,
+          maxPrice: priceFilter === 'free' ? 0 : priceRange[1],
+          minRating: minRating,
+          isFree: isFree,
+          isDiscounted: isDiscounted,
+          sortBy:
+            sortBy === 'price-low'
+              ? 'price'
+              : sortBy === 'price-high'
+                ? 'price'
+                : sortBy === 'newest'
+                  ? 'createdDate'
+                  : sortBy === 'rating'
+                    ? 'averageRating'
+                    : undefined,
+          sortDirection:
+            sortBy === 'price-low'
+              ? 'asc'
+              : sortBy === 'price-high'
+                ? 'desc'
+                : sortBy === 'newest'
+                  ? 'desc'
+                  : sortBy === 'rating'
+                    ? 'desc'
+                    : undefined,
         }
-
-        if (debouncedSearchTerm) searchParams.search = debouncedSearchTerm
-
-        // Convert category name to ID for backend
-        if (selectedCategories.length > 0) {
-          const selectedCategory = categories.find(
-            cat => cat.name === selectedCategories[0]
-          )
-          if (selectedCategory) {
-            searchParams.category = selectedCategory.id
-          }
-        }
-
-        if (selectedLevels.length > 0) searchParams.level = selectedLevels[0]
-
-        // Handle price filters
-        if (priceFilter === 'free') {
-          searchParams.maxPrice = 0
-        } else if (priceFilter === 'paid') {
-          searchParams.minPrice = 0.01
-        }
-
-        if (priceFilter !== 'free') {
-          if (priceRange[0] > 0) searchParams.minPrice = priceRange[0]
-          if (priceRange[1] < 1000) searchParams.maxPrice = priceRange[1]
-        }
-
-        // Add sorting
-        if (sortBy === 'price-low') searchParams.sort = 'price,asc'
-        else if (sortBy === 'price-high') searchParams.sort = 'price,desc'
-        else if (sortBy === 'newest') searchParams.sort = 'id,desc'
-        else if (sortBy === 'popularity')
-          searchParams.sort = 'totalStudents,desc'
 
         console.log('Search params being sent:', searchParams)
 
-        // Use searchCourses instead of getAllCourses for server-side filtering
-        const coursesResponse = await courseApi.searchCourses(searchParams)
+        // Use advancedSearch for server-side filtering
+        const coursesResponse = await courseApi.advancedSearch(searchParams)
 
         if (coursesResponse.data?.content) {
           setCourses(coursesResponse.data.content)
@@ -175,6 +194,9 @@ export function CourseCatalog() {
     selectedLevels,
     priceFilter,
     priceRange,
+    minRating,
+    isFree,
+    isDiscounted,
     sortBy,
     categories,
   ])
@@ -188,6 +210,9 @@ export function CourseCatalog() {
     selectedLevels,
     priceFilter,
     priceRange,
+    minRating,
+    isFree,
+    isDiscounted,
     sortBy,
   ])
 
@@ -213,6 +238,9 @@ export function CourseCatalog() {
     setSelectedLevels([])
     setPriceFilter('all')
     setPriceRange([0, 200])
+    setMinRating(undefined)
+    setIsFree(undefined)
+    setIsDiscounted(undefined)
     setSortBy('relevance')
     setCurrentPage(0)
   }
@@ -221,7 +249,10 @@ export function CourseCatalog() {
     selectedCategories.length +
     selectedLevels.length +
     (priceFilter !== 'all' ? 1 : 0) +
-    (searchTerm ? 1 : 0)
+    (searchTerm ? 1 : 0) +
+    (minRating ? 1 : 0) +
+    (isFree ? 1 : 0) +
+    (isDiscounted ? 1 : 0)
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
@@ -363,18 +394,9 @@ export function CourseCatalog() {
       {/* Results Summary */}
       <div className='flex items-center justify-between'>
         <div className='text-sm text-muted-foreground'>
-          Showing {courses.length} of {totalElements} courses
-          {searchTerm && (
-            <span className='ml-1'>
-              for "
-              <span className='font-medium text-foreground'>{searchTerm}</span>"
-            </span>
-          )}
-          {totalPages > 1 && (
-            <span className='ml-1'>
-              (Page {currentPage + 1} of {totalPages})
-            </span>
-          )}
+          <span>
+            <b>{totalElements}</b> courses found
+          </span>
         </div>
         {activeFiltersCount > 0 && (
           <Button variant='ghost' size='sm' onClick={clearAllFilters}>
@@ -431,142 +453,66 @@ export function CourseCatalog() {
               />
             </Badge>
           )}
+          {minRating && (
+            <Badge variant='secondary' className='flex items-center gap-1'>
+              Rating: {minRating}+
+              <X
+                className='h-3 w-3 cursor-pointer'
+                onClick={() => setMinRating(undefined)}
+              />
+            </Badge>
+          )}
+          {isFree && (
+            <Badge variant='secondary' className='flex items-center gap-1'>
+              Free Courses
+              <X
+                className='h-3 w-3 cursor-pointer'
+                onClick={() => setIsFree(undefined)}
+              />
+            </Badge>
+          )}
+          {isDiscounted && (
+            <Badge variant='secondary' className='flex items-center gap-1'>
+              Discounted
+              <X
+                className='h-3 w-3 cursor-pointer'
+                onClick={() => setIsDiscounted(undefined)}
+              />
+            </Badge>
+          )}
         </div>
       )}
 
       <div className='flex gap-6'>
         {/* Fixed Filters Sidebar */}
-        <div className='hidden lg:block w-64 space-y-6 p-4 border rounded-lg bg-card'>
-          <h3 className='font-semibold'>Filters</h3>
-
-          {/* Category Filter */}
-          <div className='space-y-3'>
-            <h4 className='font-medium'>Category</h4>
-            {categories.length > 0 ? (
-              categories.map(category => (
-                <div key={category.id} className='flex items-center space-x-2'>
-                  <Checkbox
-                    id={category.name}
-                    checked={selectedCategories.includes(category.name)}
-                    onCheckedChange={checked =>
-                      handleCategoryChange(category.name, checked as boolean)
-                    }
-                  />
-                  <label
-                    htmlFor={category.name}
-                    className='text-sm cursor-pointer'
-                  >
-                    {category.name}{' '}
-                    {category.courseCount && `(${category.courseCount})`}
-                  </label>
-                </div>
-              ))
-            ) : (
-              <p className='text-sm text-muted-foreground'>
-                No categories available
-              </p>
-            )}
-          </div>
-
-          {/* Level Filter */}
-          <div className='space-y-3'>
-            <h4 className='font-medium'>Skill Level</h4>
-            {levels.map(level => (
-              <div key={level} className='flex items-center space-x-2'>
-                <Checkbox
-                  id={level}
-                  checked={selectedLevels.includes(level)}
-                  onCheckedChange={checked =>
-                    handleLevelChange(level, checked as boolean)
-                  }
-                />
-                <label htmlFor={level} className='text-sm cursor-pointer'>
-                  {level}
-                </label>
-              </div>
-            ))}
-          </div>
-
-          {/* Price Filter */}
-          <div className='space-y-3'>
-            <h4 className='font-medium'>Price</h4>
-            <Select value={priceFilter} onValueChange={setPriceFilter}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All Courses</SelectItem>
-                <SelectItem value='free'>Free</SelectItem>
-                <SelectItem value='paid'>Paid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Price Range */}
-          {priceFilter !== 'free' && (
-            <div className='space-y-3'>
-              <h4 className='font-medium'>Price Range</h4>
-              <div className='px-2'>
-                <Slider
-                  value={priceRange}
-                  onValueChange={setPriceRange}
-                  max={200}
-                  min={0}
-                  step={10}
-                  className='w-full'
-                />
-                <div className='flex justify-between text-xs text-muted-foreground mt-1'>
-                  <span>${priceRange[0]}</span>
-                  <span>${priceRange[1]}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Course Grid */}
+        <CourseFilterSidebar
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onCategoryChange={handleCategoryChange}
+          levels={levels}
+          selectedLevels={selectedLevels}
+          onLevelChange={handleLevelChange}
+          minRating={minRating}
+          setMinRating={setMinRating}
+          priceFilter={priceFilter}
+          setPriceFilter={setPriceFilter}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          searchStats={searchStats}
+          isDiscounted={isDiscounted}
+          setIsDiscounted={setIsDiscounted}
+          isFree={isFree}
+          setIsFree={setIsFree}
+        />
+        {/* Course Grid Section */}
         <div className='flex-1'>
-          {loadingPage && (
-            <div className='flex items-center justify-center py-8'>
-              <Loader2 className='h-6 w-6 animate-spin mr-2' />
-              <span className='text-muted-foreground'>
-                Loading page {currentPage + 1}...
-              </span>
-            </div>
-          )}
-
-          {!loadingPage && courses.length > 0 ? (
-            <>
-              <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-                {courses.map(course => (
-                  <CourseCard
-                    key={course.id}
-                    course={course}
-                    variant='default'
-                    showInstructor={true}
-                  />
-                ))}
-              </div>
-
-              {renderPagination()}
-            </>
-          ) : (
-            !loadingPage && (
-              <div className='text-center py-12'>
-                <div className='space-y-4'>
-                  <div className='text-6xl'>🔍</div>
-                  <h3 className='text-xl font-semibold'>No courses found</h3>
-                  <p className='text-muted-foreground max-w-md mx-auto'>
-                    We couldn't find any courses matching your search criteria.
-                    Try adjusting your filters or search terms.
-                  </p>
-                  <Button onClick={clearAllFilters} variant='outline'>
-                    Clear all filters
-                  </Button>
-                </div>
-              </div>
-            )
-          )}
+          <CoursesCatalogSection
+            courses={courses}
+            loading={loadingPage}
+            error={error}
+            onRetry={() => window.location.reload()}
+            renderPagination={renderPagination}
+          />
         </div>
       </div>
     </div>

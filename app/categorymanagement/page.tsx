@@ -1,5 +1,4 @@
 'use client'
-import { CoursesCatalogSection } from '@/components/courses/courses-catalog-section'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
@@ -23,7 +22,6 @@ export default function CategoryManagementPage() {
           </h1>
         </div>
         <div className='bg-white rounded-3xl shadow-xl p-10'>
-          <CoursesCatalogSection managementView />
         </div>
       </div>
     </div>

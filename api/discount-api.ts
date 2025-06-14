@@ -8,7 +8,7 @@ import {
   CouponUpdateRequestDTO,
   DiscountRequestDTO,
   DiscountResponseDTO,
-  PaginatedCouponResponse
+  PaginatedCouponResponse,
 } from '@/types/discount'
 
 export const discountApi = {
@@ -20,17 +20,24 @@ export const discountApi = {
   },
 
   // Coupon Management APIs
-  getCoupons: async (params?: CouponSearchParams): Promise<ApiResponse<PaginatedCouponResponse>> => {
+  getCoupons: async (
+    params?: CouponSearchParams
+  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
     const response = await httpClient.get('/api/discounts', { params })
     return response.data
   },
 
-  getMyCoupons: async (params: { courseId: number; isActive: number }): Promise<ApiResponse<ApplicableCoupon[]>> => {
+  getMyCoupons: async (params: {
+    courseId: number
+    isActive: number
+  }): Promise<ApiResponse<ApplicableCoupon[]>> => {
     const response = await httpClient.get('/api/discounts/my', { params })
     return response.data
   },
 
-  createCoupon: async (data: CouponCreateRequestDTO): Promise<ApiResponse<Coupon>> => {
+  createCoupon: async (
+    data: CouponCreateRequestDTO
+  ): Promise<ApiResponse<Coupon>> => {
     const response = await httpClient.post('/api/discounts', data)
     return response.data
   },

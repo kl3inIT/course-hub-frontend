@@ -68,7 +68,7 @@ import {
   Tag,
   Trash2,
   Users,
-  X
+  X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -79,8 +79,10 @@ export function CouponManagement() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingCourses, setLoadingCourses] = useState(false)
-  const [visibleCodes, setVisibleCodes] = useState<{[key: string]: boolean}>({})
-  
+  const [visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
+    {}
+  )
+
   // Pagination state
   const [pagination, setPagination] = useState({
     page: 0,
@@ -90,9 +92,11 @@ export function CouponManagement() {
     first: true,
     last: true,
   })
-  
+
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'active' | 'inactive'
+  >('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterCourse, setFilterCourse] = useState<string>('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -108,7 +112,7 @@ export function CouponManagement() {
     usage: 0,
     categoryIds: [],
     courseIds: [],
-    code: ''
+    code: '',
   })
   const { toast } = useToast()
 
@@ -116,7 +120,9 @@ export function CouponManagement() {
   const [showAllSelectedCourses, setShowAllSelectedCourses] = useState(false)
 
   // Add a new state for application scope
-  const [applicationScope, setApplicationScope] = useState<'none' | 'all' | 'specific'>('none')
+  const [applicationScope, setApplicationScope] = useState<
+    'none' | 'all' | 'specific'
+  >('none')
 
   // Fetch data on component mount
   useEffect(() => {
@@ -137,19 +143,19 @@ export function CouponManagement() {
       setFormData(prev => ({
         ...prev,
         categoryIds: categories.map(cat => Number(cat.id)),
-        courseIds: courses.map(course => Number(course.id))
+        courseIds: courses.map(course => Number(course.id)),
       }))
     } else if (applicationScope === 'specific') {
       setFormData(prev => ({
         ...prev,
         categoryIds: [],
-        courseIds: []
+        courseIds: [],
       }))
     } else {
       setFormData(prev => ({
         ...prev,
         categoryIds: [],
-        courseIds: []
+        courseIds: [],
       }))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,52 +164,54 @@ export function CouponManagement() {
   const fetchCoupons = async (page = 0) => {
     try {
       setLoadingCoupons(true)
-      
+
       // Build search params
       const searchParams: CouponSearchParams = {
         page,
         size: pagination.size,
       }
-      
+
       // Add filters
       if (filterStatus !== 'all') {
         searchParams.isActive = filterStatus === 'active' ? 1 : 0
       }
-      
+
       if (filterCategory !== 'all') {
         searchParams.categoryId = Number(filterCategory)
       }
-      
+
       if (filterCourse !== 'all') {
         searchParams.courseId = Number(filterCourse)
       }
-      
+
       const response = await discountApi.getCoupons(searchParams)
       const backendData = response.data
-      
+
       // Transform backend coupons to frontend format
-      const transformedCoupons: Coupon[] = backendData.content.map(backendCoupon => {
-        return {
-          id: backendCoupon.id.toString(),
-          description: backendCoupon.description,
-          percentage: backendCoupon.percentage,
-          startDate: backendCoupon.startDate,
-          endDate: backendCoupon.endDate,
-          isActive: backendCoupon.isActive,
-          usage: backendCoupon.usage,
-          quantity: backendCoupon.quantity,
-          availableQuantity: backendCoupon.availableQuantity,
-          categoryIds: backendCoupon.categoryIds,
-          courseIds: backendCoupon.courseIds,
-          totalCategory: backendCoupon.categoryIds?.length || 0,
-          totalCourse: backendCoupon.courseIds?.length || 0,
-          code: backendCoupon.code,
+      const transformedCoupons: Coupon[] = backendData.content.map(
+        backendCoupon => {
+          return {
+            id: backendCoupon.id.toString(),
+            description: backendCoupon.description,
+            percentage: backendCoupon.percentage,
+            startDate: backendCoupon.startDate,
+            endDate: backendCoupon.endDate,
+            isActive: backendCoupon.isActive,
+            usage: backendCoupon.usage,
+            quantity: backendCoupon.quantity,
+            availableQuantity: backendCoupon.availableQuantity,
+            categoryIds: backendCoupon.categoryIds,
+            courseIds: backendCoupon.courseIds,
+            totalCategory: backendCoupon.categoryIds?.length || 0,
+            totalCourse: backendCoupon.courseIds?.length || 0,
+            code: backendCoupon.code,
+          }
         }
-      })
-      
+      )
+
       setCoupons(transformedCoupons)
       console.log('Transformed coupons:', transformedCoupons)
-      
+
       // Update pagination state
       setPagination({
         page: backendData.number,
@@ -213,7 +221,6 @@ export function CouponManagement() {
         first: backendData.first,
         last: backendData.last,
       })
-      
     } catch (error) {
       console.error('Error fetching coupons:', error)
       toast({
@@ -230,14 +237,16 @@ export function CouponManagement() {
     try {
       setLoadingCategories(true)
       const response = await categoryApi.getAllCategories({ size: 100 })
-      
+
       // Transform API response to match our Category interface
-      const transformedCategories: Category[] = response.data.content.map(cat => ({
-        id: cat.id.toString(),
-        name: cat.name,
-        courseCount: cat.courseCount || 0
-      }))
-      
+      const transformedCategories: Category[] = response.data.content.map(
+        cat => ({
+          id: cat.id.toString(),
+          name: cat.name,
+          courseCount: cat.courseCount || 0,
+        })
+      )
+
       setCategories(transformedCategories)
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -255,15 +264,17 @@ export function CouponManagement() {
     try {
       setLoadingCourses(true)
       const response = await courseApi.getAllCourses({ size: 100 })
-      
+
       // Transform API response to match our Course interface
-      const transformedCourses: Course[] = response.data.content.map(course => ({
-        id: course.id.toString(),
-        title: course.title,
-        category: course.category,
-        price: course.price
-      }))
-      
+      const transformedCourses: Course[] = response.data.content.map(
+        course => ({
+          id: course.id.toString(),
+          title: course.title,
+          category: course.category,
+          price: course.price,
+        })
+      )
+
       setCourses(transformedCourses)
     } catch (error) {
       console.error('Error fetching courses:', error)
@@ -279,22 +290,22 @@ export function CouponManagement() {
 
   // Apply client-side search filtering (since backend may not support text search)
   const filteredCoupons = searchTerm
-    ? coupons.filter(coupon => 
+    ? coupons.filter(coupon =>
         coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : coupons
 
   // Helper function to convert local datetime-local string to UTC ISO string
   const convertLocalToUTCISO = (localDateTimeString: string) => {
-    if (!localDateTimeString) return '';
-    const [datePart, timePart] = localDateTimeString.split('T');
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = timePart.split(':').map(Number);
+    if (!localDateTimeString) return ''
+    const [datePart, timePart] = localDateTimeString.split('T')
+    const [year, month, day] = datePart.split('-').map(Number)
+    const [hours, minutes] = timePart.split(':').map(Number)
     // Create a Date object in local time
-    const localDate = new Date(year, month - 1, day, hours, minutes);
+    const localDate = new Date(year, month - 1, day, hours, minutes)
     // Convert to ISO 8601 UTC string
-    return localDate.toISOString();
-  };
+    return localDate.toISOString()
+  }
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -350,15 +361,20 @@ export function CouponManagement() {
 
       let errorMessage = 'An error occurred while processing the coupon'
 
-      if (selectedCoupon) { // Handle update errors
-        if (error.response?.data?.data && typeof error.response.data.data === 'string') {
+      if (selectedCoupon) {
+        // Handle update errors
+        if (
+          error.response?.data?.data &&
+          typeof error.response.data.data === 'string'
+        ) {
           errorMessage = error.response.data.data
         } else if (error.response?.data?.message) {
           errorMessage = error.response.data.message
         } else if (error.message) {
           errorMessage = error.message
         }
-      } else { // Handle create errors (existing logic)
+      } else {
+        // Handle create errors (existing logic)
         if (error.response?.data) {
           const errorData = error.response.data
 
@@ -370,8 +386,7 @@ export function CouponManagement() {
           // Handle other error formats
           else if (errorData.message) {
             errorMessage = errorData.message
-          }
-          else if (errorData.error) {
+          } else if (errorData.error) {
             errorMessage = errorData.error
           }
         }
@@ -425,7 +440,7 @@ export function CouponManagement() {
       usage: 0,
       categoryIds: [],
       courseIds: [],
-      code: ''
+      code: '',
     })
     setSelectedCoupon(null)
   }
@@ -447,7 +462,7 @@ export function CouponManagement() {
       usage: coupon.usage,
       categoryIds: coupon.categoryIds,
       courseIds: coupon.courseIds,
-      code: coupon.code
+      code: coupon.code,
     })
     setIsEditDialogOpen(true)
   }
@@ -455,46 +470,53 @@ export function CouponManagement() {
   // Handle delete
   const handleDelete = async (couponId: string) => {
     try {
-      console.log(`Deleting coupon with ID: ${couponId}`);
+      console.log(`Deleting coupon with ID: ${couponId}`)
 
-      await discountApi.deleteCoupon(couponId);
+      await discountApi.deleteCoupon(couponId)
 
       // Refresh coupon list after successful deletion
-      await fetchCoupons(pagination.page);
+      await fetchCoupons(pagination.page)
 
       toast({
         title: 'Success',
         description: 'Coupon deleted successfully',
         className: 'border-green-500 bg-green-50 text-green-900',
-      });
-    }catch (error: any) {
-      console.log(error.response?.data);
-    
+      })
+    } catch (error: any) {
+      console.log(error.response?.data)
+
       // Lấy message chi tiết nếu có
-      const errorMessage = error.response?.data?.data 
-        || error.response?.data?.message 
-        || 'An unexpected error occurred';
-    
-        toast({
-          title: 'Error',
-          description: (
-            <div style={{ whiteSpace: 'pre-line', fontSize: '14px' }}>
-              {errorMessage}
-            </div>
-          ),
-          variant: 'default',
-          className: 'border-red-500 bg-red-50 text-red-900', 
-        });
+      const errorMessage =
+        error.response?.data?.data ||
+        error.response?.data?.message ||
+        'An unexpected error occurred'
+
+      toast({
+        title: 'Error',
+        description: (
+          <div style={{ whiteSpace: 'pre-line', fontSize: '14px' }}>
+            {errorMessage}
+          </div>
+        ),
+        variant: 'default',
+        className: 'border-red-500 bg-red-50 text-red-900',
+      })
     }
-  };
+  }
 
   // Toggle coupon status
   const toggleStatus = (couponId: string) => {
-    setCoupons(prev => prev.map(coupon => 
-      coupon.id === couponId 
-        ? { ...coupon, isActive: coupon.isActive === 1 ? 0 : 1, updatedAt: new Date().toISOString() }
-        : coupon
-    ))
+    setCoupons(prev =>
+      prev.map(coupon =>
+        coupon.id === couponId
+          ? {
+              ...coupon,
+              isActive: coupon.isActive === 1 ? 0 : 1,
+              updatedAt: new Date().toISOString(),
+            }
+          : coupon
+      )
+    )
   }
 
   // Handle category selection
@@ -506,12 +528,14 @@ export function CouponManagement() {
     if (checked) {
       // Add category
       updatedCategories.push(Number(categoryId))
-      
+
       // Fetch courses for this category
       try {
         const response = await courseApi.getCoursesByCategory(categoryId)
-        const categoryCourses = response.data.map((course: { id: number }) => course.id)
-        
+        const categoryCourses = response.data.map(
+          (course: { id: number }) => course.id
+        )
+
         // Add all courses from this category
         updatedCourses = [...new Set([...updatedCourses, ...categoryCourses])]
       } catch (error) {
@@ -524,13 +548,19 @@ export function CouponManagement() {
       }
     } else {
       // Remove category
-      updatedCategories = updatedCategories.filter(id => id !== Number(categoryId))
-      
+      updatedCategories = updatedCategories.filter(
+        id => id !== Number(categoryId)
+      )
+
       // Remove all courses from this category
       try {
         const response = await courseApi.getCoursesByCategory(categoryId)
-        const categoryCourses = response.data.map((course: { id: number }) => course.id)
-        updatedCourses = updatedCourses.filter(id => !categoryCourses.includes(id))
+        const categoryCourses = response.data.map(
+          (course: { id: number }) => course.id
+        )
+        updatedCourses = updatedCourses.filter(
+          id => !categoryCourses.includes(id)
+        )
       } catch (error) {
         console.error('Error fetching courses for category:', error)
       }
@@ -539,7 +569,7 @@ export function CouponManagement() {
     setFormData({
       ...formData,
       categoryIds: updatedCategories,
-      courseIds: updatedCourses
+      courseIds: updatedCourses,
     })
   }
 
@@ -549,52 +579,59 @@ export function CouponManagement() {
     if (checked) {
       setFormData({
         ...formData,
-        courseIds: [...currentCourses, Number(courseId)]
+        courseIds: [...currentCourses, Number(courseId)],
       })
     } else {
       setFormData({
         ...formData,
-        courseIds: currentCourses.filter(id => id !== Number(courseId))
+        courseIds: currentCourses.filter(id => id !== Number(courseId)),
       })
     }
   }
 
   // Get selected courses display
   const getSelectedCoursesDisplay = () => {
-    const selectedCourses = courses.filter(course => 
+    const selectedCourses = courses.filter(course =>
       formData.courseIds?.includes(Number(course.id))
     )
 
     if (selectedCourses.length === 0) {
-      return <div className="text-sm text-muted-foreground">No courses selected</div>
+      return (
+        <div className='text-sm text-muted-foreground'>No courses selected</div>
+      )
     }
 
-    const displayCourses = showAllSelectedCourses 
-      ? selectedCourses 
+    const displayCourses = showAllSelectedCourses
+      ? selectedCourses
       : selectedCourses.slice(0, 3)
 
     return (
-      <div className="space-y-2">
+      <div className='space-y-2'>
         {displayCourses.map(course => (
-          <div key={course.id} className="flex items-center justify-between text-sm">
+          <div
+            key={course.id}
+            className='flex items-center justify-between text-sm'
+          >
             <span>{course.title}</span>
             <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
+              variant='ghost'
+              size='sm'
+              className='h-6 w-6 p-0'
               onClick={() => handleCourseChange(course.id, false)}
             >
-              <X className="h-4 w-4" />
+              <X className='h-4 w-4' />
             </Button>
           </div>
         ))}
         {selectedCourses.length > 3 && (
           <Button
-            variant="link"
-            className="h-8 px-0"
+            variant='link'
+            className='h-8 px-0'
             onClick={() => setShowAllSelectedCourses(!showAllSelectedCourses)}
           >
-            {showAllSelectedCourses ? 'Show Less' : `Show All (${selectedCourses.length})`}
+            {showAllSelectedCourses
+              ? 'Show Less'
+              : `Show All (${selectedCourses.length})`}
           </Button>
         )}
       </div>
@@ -606,18 +643,14 @@ export function CouponManagement() {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
-      return <Badge className="bg-blue-100 text-blue-800">All Items</Badge>
+      return <Badge className='bg-blue-100 text-blue-800'>All Items</Badge>
     }
     return (
-      <div className="space-y-1">
-        <Badge className="bg-purple-100 text-purple-800">Specific Items</Badge>
-        <div className="text-xs text-gray-600">
-          {totalCategories > 0 && (
-            <div>• {totalCategories} categories</div>
-          )}
-          {totalCourses > 0 && (
-            <div>• {totalCourses} courses</div>
-          )}
+      <div className='space-y-1'>
+        <Badge className='bg-purple-100 text-purple-800'>Specific Items</Badge>
+        <div className='text-xs text-gray-600'>
+          {totalCategories > 0 && <div>• {totalCategories} categories</div>}
+          {totalCourses > 0 && <div>• {totalCourses} courses</div>}
           {totalCategories === 0 && totalCourses === 0 && (
             <div>• No items selected</div>
           )}
@@ -632,31 +665,37 @@ export function CouponManagement() {
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
       return (
-        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg">
-          <div className="font-medium text-sm text-gray-900">All Items</div>
-          <div className="text-xs text-gray-600 mt-1">This coupon applies to all courses on the platform</div>
+        <div className='p-3 bg-white border border-gray-200 rounded shadow-lg'>
+          <div className='font-medium text-sm text-gray-900'>All Items</div>
+          <div className='text-xs text-gray-600 mt-1'>
+            This coupon applies to all courses on the platform
+          </div>
         </div>
       )
     } else {
       return (
-        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs">
-          <div className="font-medium text-sm text-gray-900 mb-2">Specific Items</div>
+        <div className='p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs'>
+          <div className='font-medium text-sm text-gray-900 mb-2'>
+            Specific Items
+          </div>
           {totalCategories > 0 && (
-            <div className="mb-2">
-              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
+            <div className='mb-2'>
+              <div className='text-xs font-medium flex items-center mb-1 text-gray-700'>
                 Categories: {totalCategories} selected
               </div>
             </div>
           )}
           {totalCourses > 0 && (
             <div>
-              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
+              <div className='text-xs font-medium flex items-center mb-1 text-gray-700'>
                 Courses: {totalCourses} selected
               </div>
             </div>
           )}
           {totalCategories === 0 && totalCourses === 0 && (
-            <div className="text-xs text-gray-500">No specific items selected</div>
+            <div className='text-xs text-gray-500'>
+              No specific items selected
+            </div>
           )}
         </div>
       )
@@ -678,7 +717,7 @@ export function CouponManagement() {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -694,11 +733,11 @@ export function CouponManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>
+        return <Badge className='bg-green-100 text-green-800'>Active</Badge>
       case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>
+        return <Badge variant='secondary'>Inactive</Badge>
       default:
-        return <Badge variant="secondary">Unknown</Badge>
+        return <Badge variant='secondary'>Unknown</Badge>
     }
   }
 
@@ -706,79 +745,105 @@ export function CouponManagement() {
   const toggleCodeVisibility = (couponId: string) => {
     setVisibleCodes(prev => ({
       ...prev,
-      [couponId]: !prev[couponId]
+      [couponId]: !prev[couponId],
     }))
   }
 
   // Render form fields
   const renderFormFields = (isEdit = false) => (
-    <div className="grid gap-4 py-4">
-      <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-percentage" : "percentage"}>Percentage (%) *</Label>
+    <div className='grid gap-4 py-4'>
+      <div className='space-y-2'>
+        <Label htmlFor={isEdit ? 'edit-percentage' : 'percentage'}>
+          Percentage (%) *
+        </Label>
         <Input
-          id={isEdit ? "edit-percentage" : "percentage"}
-          type="number"
-          min="1"
-          max="100"
-          placeholder="e.g., 10"
+          id={isEdit ? 'edit-percentage' : 'percentage'}
+          type='number'
+          min='1'
+          max='100'
+          placeholder='e.g., 10'
           value={formData.percentage || ''}
-          onChange={(e) => setFormData({ ...formData, percentage: e.target.value ? Number(e.target.value) : undefined })}
+          onChange={e =>
+            setFormData({
+              ...formData,
+              percentage: e.target.value ? Number(e.target.value) : undefined,
+            })
+          }
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-description" : "description"}>Description</Label>
+      <div className='space-y-2'>
+        <Label htmlFor={isEdit ? 'edit-description' : 'description'}>
+          Description
+        </Label>
         <Textarea
-          id={isEdit ? "edit-description" : "description"}
-          placeholder="Describe your coupon..."
+          id={isEdit ? 'edit-description' : 'description'}
+          placeholder='Describe your coupon...'
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={e =>
+            setFormData({ ...formData, description: e.target.value })
+          }
         />
       </div>
 
       {/* Application Type Section */}
-      <div className="space-y-4 border-t pt-4">
-        <Label className="text-base font-semibold">Application Scope</Label>
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-applicationType" : "applicationType"}>Apply To</Label>
+      <div className='space-y-4 border-t pt-4'>
+        <Label className='text-base font-semibold'>Application Scope</Label>
+        <div className='space-y-2'>
+          <Label htmlFor={isEdit ? 'edit-applicationType' : 'applicationType'}>
+            Apply To
+          </Label>
           <Select
             value={applicationScope}
-            onValueChange={(value: 'none' | 'all' | 'specific') => setApplicationScope(value)}
+            onValueChange={(value: 'none' | 'all' | 'specific') =>
+              setApplicationScope(value)
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select scope" />
+              <SelectValue placeholder='Select scope' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Select scope</SelectItem>
-              <SelectItem value="all">All Items</SelectItem>
-              <SelectItem value="specific">Specific Items</SelectItem>
+              <SelectItem value='none'>Select scope</SelectItem>
+              <SelectItem value='all'>All Items</SelectItem>
+              <SelectItem value='specific'>Specific Items</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Show category/course selection if scope is not 'none' */}
         {(applicationScope === 'all' || applicationScope === 'specific') && (
-          <div className="space-y-4">
+          <div className='space-y-4'>
             {/* Category Selection */}
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>Select Categories</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
+              <div className='grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2'>
                 {loadingCategories ? (
-                  <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
+                  <div className='col-span-2 text-center text-sm text-muted-foreground py-4'>
                     Loading categories...
                   </div>
                 ) : categories.length === 0 ? (
-                  <div className="col-span-2 text-center text-sm text-muted-foreground py-4">
+                  <div className='col-span-2 text-center text-sm text-muted-foreground py-4'>
                     No categories available
                   </div>
                 ) : (
-                  categories.map((category) => (
-                    <div key={category.id} className="flex items-center space-x-2">
+                  categories.map(category => (
+                    <div
+                      key={category.id}
+                      className='flex items-center space-x-2'
+                    >
                       <Checkbox
                         id={`category-${category.id}-${isEdit ? 'edit' : 'create'}`}
-                        checked={formData.categoryIds?.includes(Number(category.id)) || false}
-                        onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
+                        checked={
+                          formData.categoryIds?.includes(Number(category.id)) ||
+                          false
+                        }
+                        onCheckedChange={checked =>
+                          handleCategoryChange(category.id, checked as boolean)
+                        }
                       />
-                      <Label htmlFor={`category-${category.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
+                      <Label
+                        htmlFor={`category-${category.id}-${isEdit ? 'edit' : 'create'}`}
+                        className='text-sm'
+                      >
                         {category.name}
                       </Label>
                     </div>
@@ -788,26 +853,37 @@ export function CouponManagement() {
             </div>
 
             {/* Course Selection */}
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>Select Individual Courses</Label>
-              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border rounded p-2">
+              <div className='grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border rounded p-2'>
                 {loadingCourses ? (
-                  <div className="text-center text-sm text-muted-foreground py-4">
+                  <div className='text-center text-sm text-muted-foreground py-4'>
                     Loading courses...
                   </div>
                 ) : courses.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground py-4">
+                  <div className='text-center text-sm text-muted-foreground py-4'>
                     No courses available
                   </div>
                 ) : (
-                  courses.map((course) => (
-                    <div key={course.id} className="flex items-center space-x-2">
+                  courses.map(course => (
+                    <div
+                      key={course.id}
+                      className='flex items-center space-x-2'
+                    >
                       <Checkbox
                         id={`course-${course.id}-${isEdit ? 'edit' : 'create'}`}
-                        checked={formData.courseIds?.includes(Number(course.id)) || false}
-                        onCheckedChange={(checked) => handleCourseChange(course.id, checked as boolean)}
+                        checked={
+                          formData.courseIds?.includes(Number(course.id)) ||
+                          false
+                        }
+                        onCheckedChange={checked =>
+                          handleCourseChange(course.id, checked as boolean)
+                        }
                       />
-                      <Label htmlFor={`course-${course.id}-${isEdit ? 'edit' : 'create'}`} className="text-sm">
+                      <Label
+                        htmlFor={`course-${course.id}-${isEdit ? 'edit' : 'create'}`}
+                        className='text-sm'
+                      >
                         {course.title}
                       </Label>
                     </div>
@@ -815,25 +891,28 @@ export function CouponManagement() {
                 )}
               </div>
             </div>
-            <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded">
-              <strong>Note:</strong> You can select or unselect any category or course. Choosing "All Items" will select all by default.
+            <div className='text-sm text-muted-foreground bg-blue-50 p-3 rounded'>
+              <strong>Note:</strong> You can select or unselect any category or
+              course. Choosing "All Items" will select all by default.
             </div>
           </div>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-startDate" : "startDate"}>Start Date *</Label>
+      <div className='space-y-2'>
+        <Label htmlFor={isEdit ? 'edit-startDate' : 'startDate'}>
+          Start Date *
+        </Label>
         <Input
-          id={isEdit ? "edit-startDate" : "startDate"}
-          type="datetime-local"
+          id={isEdit ? 'edit-startDate' : 'startDate'}
+          type='datetime-local'
           min={getCurrentLocalDateTime()}
           value={formData.startDate}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const newStartDate = e.target.value
             const startDateTime = new Date(newStartDate)
             const endDateTime = new Date(formData.endDate || '')
-            
+
             // If end time is before or equal to start time, set it to 1 hour after start time
             if (!formData.endDate || endDateTime <= startDateTime) {
               const newEndDateTime = new Date(startDateTime)
@@ -841,92 +920,105 @@ export function CouponManagement() {
               setFormData(prev => ({
                 ...prev,
                 startDate: newStartDate,
-                endDate: formatToLocalDateTime(newEndDateTime)
+                endDate: formatToLocalDateTime(newEndDateTime),
               }))
             } else {
               setFormData(prev => ({
                 ...prev,
-                startDate: newStartDate
+                startDate: newStartDate,
               }))
             }
           }}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={isEdit ? "edit-endDate" : "endDate"}>End Date *</Label>
+      <div className='space-y-2'>
+        <Label htmlFor={isEdit ? 'edit-endDate' : 'endDate'}>End Date *</Label>
         <Input
-          id={isEdit ? "edit-endDate" : "endDate"}
-          type="datetime-local"
+          id={isEdit ? 'edit-endDate' : 'endDate'}
+          type='datetime-local'
           min={formData.startDate || getCurrentLocalDateTime()}
           value={formData.endDate}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const newEndDate = e.target.value
             const startDateTime = new Date(formData.startDate || '')
             const endDateTime = new Date(newEndDate)
-            
+
             // Ensure end time is after start time
             if (endDateTime > startDateTime) {
               setFormData(prev => ({
                 ...prev,
-                endDate: newEndDate
+                endDate: newEndDate,
               }))
             } else {
               // If end time is before or equal to start time, show error
               toast({
-                title: "Invalid End Time",
-                description: "End time must be after start time",
-                variant: "destructive"
+                title: 'Invalid End Time',
+                description: 'End time must be after start time',
+                variant: 'destructive',
               })
             }
           }}
         />
       </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor={isEdit ? "edit-quantity" : "quantity"}>Quantity *</Label>
+
+      <div className='grid grid-cols-2 gap-4'>
+        <div className='space-y-2'>
+          <Label htmlFor={isEdit ? 'edit-quantity' : 'quantity'}>
+            Quantity *
+          </Label>
           <Input
-            id={isEdit ? "edit-quantity" : "quantity"}
-            type="number"
-            min="1"
-            step="1"
-            placeholder="e.g., 100"
+            id={isEdit ? 'edit-quantity' : 'quantity'}
+            type='number'
+            min='1'
+            step='1'
+            placeholder='e.g., 100'
             value={formData.quantity || ''}
-            onChange={(e) => setFormData({ ...formData, quantity: e.target.value ? Number(e.target.value) : undefined })}
+            onChange={e =>
+              setFormData({
+                ...formData,
+                quantity: e.target.value ? Number(e.target.value) : undefined,
+              })
+            }
           />
         </div>
-        <div className="flex items-center space-x-2 pt-8">
+        <div className='flex items-center space-x-2 pt-8'>
           <Switch
-            id={isEdit ? "edit-isActive" : "isActive"}
+            id={isEdit ? 'edit-isActive' : 'isActive'}
             checked={!!formData.isActive}
-            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked ? 1 : 0 })}
+            onCheckedChange={checked =>
+              setFormData({ ...formData, isActive: checked ? 1 : 0 })
+            }
           />
-          <Label htmlFor={isEdit ? "edit-isActive" : "isActive"}>Active</Label>
+          <Label htmlFor={isEdit ? 'edit-isActive' : 'isActive'}>Active</Label>
         </div>
       </div>
     </div>
   )
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Coupon Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className='text-3xl font-bold tracking-tight'>
+            Coupon Management
+          </h1>
+          <p className='text-muted-foreground'>
             Manage discount coupons and promotional codes
           </p>
         </div>
-        <div className="flex gap-2">
-      
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <div className='flex gap-2'>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button onClick={resetForm}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className='mr-2 h-4 w-4' />
                 Create Coupon
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
               <DialogHeader>
                 <DialogTitle>Create New Coupon</DialogTitle>
                 <DialogDescription>
@@ -935,7 +1027,10 @@ export function CouponManagement() {
               </DialogHeader>
               {renderFormFields()}
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button
+                  variant='outline'
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSubmit}>Create Coupon</Button>
@@ -946,45 +1041,47 @@ export function CouponManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className='grid gap-4 md:grid-cols-4'>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Coupons</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Total Coupons</CardTitle>
+            <Percent className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pagination.totalElements}</div>
+            <div className='text-2xl font-bold'>{pagination.totalElements}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Coupons</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>
+              Active Coupons
+            </CardTitle>
+            <Calendar className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className='text-2xl font-bold'>
               {coupons.filter(c => c.isActive).length}
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Total Usage</CardTitle>
+            <Users className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className='text-2xl font-bold'>
               {coupons.reduce((sum, c) => sum + c.usage, 0)}
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Page</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Current Page</CardTitle>
+            <DollarSign className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className='text-2xl font-bold'>
               {pagination.page + 1} / {pagination.totalPages}
             </div>
           </CardContent>
@@ -992,49 +1089,58 @@ export function CouponManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className='flex items-center space-x-4'>
+        <div className='relative flex-1 max-w-sm'>
+          <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
           <Input
-            placeholder="Search coupons..."
+            placeholder='Search coupons...'
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
+            onChange={e => setSearchTerm(e.target.value)}
+            className='pl-8'
           />
         </div>
-        <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-          <SelectTrigger className="w-[150px]">
-            <Filter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Status" />
+        <Select
+          value={filterStatus}
+          onValueChange={(value: any) => setFilterStatus(value)}
+        >
+          <SelectTrigger className='w-[150px]'>
+            <Filter className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Status' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active Only</SelectItem>
-            <SelectItem value="inactive">Inactive Only</SelectItem>
+            <SelectItem value='all'>All Status</SelectItem>
+            <SelectItem value='active'>Active Only</SelectItem>
+            <SelectItem value='inactive'>Inactive Only</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filterCategory} onValueChange={(value: string) => setFilterCategory(value)}>
-          <SelectTrigger className="w-[150px]">
-            <Tag className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Category" />
+        <Select
+          value={filterCategory}
+          onValueChange={(value: string) => setFilterCategory(value)}
+        >
+          <SelectTrigger className='w-[150px]'>
+            <Tag className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Category' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
+            <SelectItem value='all'>All Categories</SelectItem>
+            {categories.map(category => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterCourse} onValueChange={(value: string) => setFilterCourse(value)}>
-          <SelectTrigger className="w-[180px]">
-            <BookOpen className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Course" />
+        <Select
+          value={filterCourse}
+          onValueChange={(value: string) => setFilterCourse(value)}
+        >
+          <SelectTrigger className='w-[180px]'>
+            <BookOpen className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Course' />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Courses</SelectItem>
-            {courses.map((course) => (
+            <SelectItem value='all'>All Courses</SelectItem>
+            {courses.map(course => (
               <SelectItem key={course.id} value={course.id}>
                 {course.title}
               </SelectItem>
@@ -1045,7 +1151,7 @@ export function CouponManagement() {
 
       {/* Coupons Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className='p-0'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -1057,126 +1163,160 @@ export function CouponManagement() {
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
+                <TableHead className='w-[100px]'>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loadingCoupons ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+                  <TableCell colSpan={9} className='text-center py-8'>
+                    <div className='flex items-center justify-center'>
+                      <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2'></div>
                       Loading coupons...
                     </div>
                   </TableCell>
                 </TableRow>
               ) : filteredCoupons.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={9}
+                    className='text-center py-8 text-muted-foreground'
+                  >
                     No coupons found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredCoupons.map((coupon) => (
-                <TableRow key={coupon.id}>
-                  <TableCell className="font-mono">#{coupon.id}</TableCell>
-                  <TableCell>
-                    <div className="font-bold text-lg text-blue-700">
-                      {coupon.percentage}%
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs">
-                      <div className="text-sm">{coupon.description}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="relative">
-                    <div className="group relative">
-                      <div>
-                        {coupon.totalCategory > 0 && <div>{coupon.totalCategory} categories</div>}
-                        {coupon.totalCourse > 0 && <div>{coupon.totalCourse} courses</div>}
-                        {coupon.totalCategory === 0 && coupon.totalCourse === 0 && <div>All Items</div>}
+                filteredCoupons.map(coupon => (
+                  <TableRow key={coupon.id}>
+                    <TableCell className='font-mono'>#{coupon.id}</TableCell>
+                    <TableCell>
+                      <div className='font-bold text-lg text-blue-700'>
+                        {coupon.percentage}%
                       </div>
-                      <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[999]">
-                        <div className="text-sm font-medium mb-2">Applicable Items:</div>
-                        {coupon.totalCategory > 0 && (
-                          <div className="mb-2">
-                            <div className="text-xs font-medium text-gray-700 mb-1">Categories:</div>
-                            <div className="text-xs text-gray-600">
-                              {categories
-                                .filter(cat => coupon.categoryIds.includes(Number(cat.id)))
-                                .map(cat => cat.name)
-                                .join(', ')}
-                            </div>
-                          </div>
-                        )}
-                        {coupon.totalCourse > 0 && (
-                          <div>
-                            <div className="text-xs font-medium text-gray-700 mb-1">Courses:</div>
-                            <div className="text-xs text-gray-600">
-                              {courses
-                                .filter(course => coupon.courseIds.includes(Number(course.id)))
-                                .map(course => course.title)
-                                .join(', ')}
-                            </div>
-                          </div>
-                        )}
-                        {coupon.totalCategory === 0 && coupon.totalCourse === 0 && (
-                          <div className="text-xs text-gray-600">Applies to all items</div>
-                        )}
+                    </TableCell>
+                    <TableCell>
+                      <div className='max-w-xs'>
+                        <div className='text-sm'>{coupon.description}</div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium">{coupon.usage} / {coupon.quantity}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">{formatDate(coupon.startDate)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">{formatDate(coupon.endDate)}</div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(getCouponStatus(coupon))}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(coupon)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the coupon "{coupon.code}".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(coupon.id)}>
+                    </TableCell>
+                    <TableCell className='relative'>
+                      <div className='group relative'>
+                        <div>
+                          {coupon.totalCategory > 0 && (
+                            <div>{coupon.totalCategory} categories</div>
+                          )}
+                          {coupon.totalCourse > 0 && (
+                            <div>{coupon.totalCourse} courses</div>
+                          )}
+                          {coupon.totalCategory === 0 &&
+                            coupon.totalCourse === 0 && <div>All Items</div>}
+                        </div>
+                        <div className='absolute left-0 top-full mt-2 w-64 p-3 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[999]'>
+                          <div className='text-sm font-medium mb-2'>
+                            Applicable Items:
+                          </div>
+                          {coupon.totalCategory > 0 && (
+                            <div className='mb-2'>
+                              <div className='text-xs font-medium text-gray-700 mb-1'>
+                                Categories:
+                              </div>
+                              <div className='text-xs text-gray-600'>
+                                {categories
+                                  .filter(cat =>
+                                    coupon.categoryIds.includes(Number(cat.id))
+                                  )
+                                  .map(cat => cat.name)
+                                  .join(', ')}
+                              </div>
+                            </div>
+                          )}
+                          {coupon.totalCourse > 0 && (
+                            <div>
+                              <div className='text-xs font-medium text-gray-700 mb-1'>
+                                Courses:
+                              </div>
+                              <div className='text-xs text-gray-600'>
+                                {courses
+                                  .filter(course =>
+                                    coupon.courseIds.includes(Number(course.id))
+                                  )
+                                  .map(course => course.title)
+                                  .join(', ')}
+                              </div>
+                            </div>
+                          )}
+                          {coupon.totalCategory === 0 &&
+                            coupon.totalCourse === 0 && (
+                              <div className='text-xs text-gray-600'>
+                                Applies to all items
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='text-sm font-medium'>
+                        {coupon.usage} / {coupon.quantity}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='text-sm'>
+                        {formatDate(coupon.startDate)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className='text-sm'>
+                        {formatDate(coupon.endDate)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(getCouponStatus(coupon))}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant='ghost' className='h-8 w-8 p-0'>
+                            <MoreHorizontal className='h-4 w-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuItem onClick={() => handleEdit(coupon)}>
+                            <Edit className='mr-2 h-4 w-4' />
+                            Edit
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={e => e.preventDefault()}
+                              >
+                                <Trash2 className='mr-2 h-4 w-4' />
                                 Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will
+                                  permanently delete the coupon "{coupon.code}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(coupon.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
             </TableBody>
@@ -1185,27 +1325,30 @@ export function CouponManagement() {
       </Card>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+      <div className='flex items-center justify-between'>
+        <div className='text-sm text-muted-foreground'>
           Showing {pagination.page * pagination.size + 1} to{' '}
-          {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of{' '}
-          {pagination.totalElements} results
+          {Math.min(
+            (pagination.page + 1) * pagination.size,
+            pagination.totalElements
+          )}{' '}
+          of {pagination.totalElements} results
         </div>
-        <div className="flex items-center space-x-2">
+        <div className='flex items-center space-x-2'>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => fetchCoupons(pagination.page - 1)}
             disabled={pagination.first}
           >
             Previous
           </Button>
-          <span className="text-sm">
+          <span className='text-sm'>
             Page {pagination.page + 1} of {pagination.totalPages}
           </span>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => fetchCoupons(pagination.page + 1)}
             disabled={pagination.last}
           >
@@ -1216,16 +1359,17 @@ export function CouponManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
-            <DialogDescription>
-              Update the coupon information
-            </DialogDescription>
+            <DialogDescription>Update the coupon information</DialogDescription>
           </DialogHeader>
           {renderFormFields(true)}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleSubmit}>Update Coupon</Button>
@@ -1235,4 +1379,4 @@ export function CouponManagement() {
       <Toaster />
     </div>
   )
-} 
+}

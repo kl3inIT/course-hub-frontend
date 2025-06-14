@@ -1,7 +1,8 @@
-import { BackendCouponResponse, Coupon } from "@/types/discount"
+import { BackendCouponResponse, Coupon } from '@/types/discount'
 
-export const transformCoupon = (backendCoupon: BackendCouponResponse): Coupon => {
-  
+export const transformCoupon = (
+  backendCoupon: BackendCouponResponse
+): Coupon => {
   return {
     id: backendCoupon.id.toString(),
     code: backendCoupon.code,
@@ -18,4 +19,4 @@ export const transformCoupon = (backendCoupon: BackendCouponResponse): Coupon =>
     categoryIds: backendCoupon.categoryIds || [],
     courseIds: backendCoupon.courseIds || [],
   }
-} 
+}

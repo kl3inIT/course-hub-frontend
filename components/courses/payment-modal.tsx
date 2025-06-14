@@ -40,7 +40,9 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
   const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null)
   const [isEditingDiscount, setIsEditingDiscount] = useState(false)
   const [successfulCode, setSuccessfulCode] = useState<string>('')
-  const [appliedDiscountId, setAppliedDiscountId] = useState<number | null>(null)
+  const [appliedDiscountId, setAppliedDiscountId] = useState<number | null>(
+    null
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { getToken } = useAuth()
@@ -178,7 +180,10 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
     setIsCouponLoading(true)
     setCouponError(null)
     try {
-      const res = await discountApi.getMyCoupons({ courseId: course.id, isActive: 1 })
+      const res = await discountApi.getMyCoupons({
+        courseId: course.id,
+        isActive: 1,
+      })
       setCouponList(res.data || [])
     } catch (err: any) {
       setCouponError('Failed to fetch coupons')
@@ -211,7 +216,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -327,7 +332,8 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                     <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md'>
                       <div className='flex-1'>
                         <p className='text-sm text-green-700'>
-                          Coupon applied: <span className='font-medium'>{successfulCode}</span>
+                          Coupon applied:{' '}
+                          <span className='font-medium'>{successfulCode}</span>
                         </p>
                         <p className='text-xs text-green-600'>
                           You save {appliedDiscount}% on this course
@@ -410,7 +416,9 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
           ) : couponError ? (
             <div className='text-center text-red-500 py-4'>{couponError}</div>
           ) : couponList.length === 0 ? (
-            <div className='text-center py-4'>No coupons available for this course.</div>
+            <div className='text-center py-4'>
+              No coupons available for this course.
+            </div>
           ) : (
             <div className='space-y-2 max-h-60 overflow-y-auto'>
               {couponList.map(coupon => (
@@ -419,9 +427,18 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                   className='border rounded p-3 flex flex-col gap-1 hover:bg-gray-50 cursor-pointer'
                   onClick={() => handleSelectCoupon(coupon)}
                 >
-                  <div className='font-semibold'>{coupon.code} <span className='text-green-600'>-{coupon.percentage}%</span></div>
-                  <div className='text-xs text-gray-600'>{coupon.description}</div>
-                  <div className='text-xs'>Expires: {formatDate(coupon.expiryDate)}</div>
+                  <div className='font-semibold'>
+                    {coupon.code}{' '}
+                    <span className='text-green-600'>
+                      -{coupon.percentage}%
+                    </span>
+                  </div>
+                  <div className='text-xs text-gray-600'>
+                    {coupon.description}
+                  </div>
+                  <div className='text-xs'>
+                    Expires: {formatDate(coupon.expiryDate)}
+                  </div>
                 </div>
               ))}
             </div>

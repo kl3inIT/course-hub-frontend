@@ -16,45 +16,47 @@ export const useCoupon = () => {
     last: true,
   })
 
-  const fetchCoupons = useCallback(async (page = 0, customParams?: CouponSearchParams) => {
-    try {
-      setLoadingCoupons(true)
-      
-      // Use custom params if provided, otherwise build default params
-      const searchParams: CouponSearchParams = {
-        page,
-        size: pagination.size,
-        isActive: 1, // Chỉ lấy coupon đang active
-        ...customParams, // Spread custom params to override defaults if provided
+  const fetchCoupons = useCallback(
+    async (page = 0, customParams?: CouponSearchParams) => {
+      try {
+        setLoadingCoupons(true)
+
+        // Use custom params if provided, otherwise build default params
+        const searchParams: CouponSearchParams = {
+          page,
+          size: pagination.size,
+          isActive: 1, // Chỉ lấy coupon đang active
+          ...customParams, // Spread custom params to override defaults if provided
+        }
+
+        const response = await discountApi.getCoupons(searchParams)
+        const backendData = response.data
+
+        // Transform backend coupons to frontend format
+        const transformedCoupons = backendData.content.map(transformCoupon)
+
+        setCoupons(transformedCoupons)
+
+        // Update pagination state
+        setPagination({
+          page: backendData.number,
+          size: backendData.size,
+          totalElements: backendData.totalElements,
+          totalPages: backendData.totalPages,
+          first: backendData.first,
+          last: backendData.last,
+        })
+      } catch (error) {
+        console.error('Error fetching coupons:', error)
+        toast.error('Failed to load coupons', {
+          description: 'Please try refreshing the page.',
+        })
+      } finally {
+        setLoadingCoupons(false)
       }
-      
-      const response = await discountApi.getCoupons(searchParams)
-      const backendData = response.data
-      
-      // Transform backend coupons to frontend format
-      const transformedCoupons = backendData.content.map(transformCoupon)
-      
-      setCoupons(transformedCoupons)
-      
-      // Update pagination state
-      setPagination({
-        page: backendData.number,
-        size: backendData.size,
-        totalElements: backendData.totalElements,
-        totalPages: backendData.totalPages,
-        first: backendData.first,
-        last: backendData.last,
-      })
-      
-    } catch (error) {
-      console.error('Error fetching coupons:', error)
-      toast.error('Failed to load coupons', {
-        description: 'Please try refreshing the page.'
-      })
-    } finally {
-      setLoadingCoupons(false)
-    }
-  }, [pagination.size]) // Only depend on pagination.size
+    },
+    [pagination.size]
+  ) // Only depend on pagination.size
 
   return {
     coupons,
@@ -62,4 +64,4 @@ export const useCoupon = () => {
     pagination,
     fetchCoupons,
   }
-} 
+}

@@ -43,7 +43,14 @@ import {
 import { useAuth } from '@/context/auth-context'
 import { useCoupon } from '@/hooks/use-coupon'
 import { cn } from '@/lib/utils'
-import { Category, ClaimedCoupon, Coupon, CouponSearchParams, Course, PaginationState } from '@/types/discount'
+import {
+  Category,
+  ClaimedCoupon,
+  Coupon,
+  CouponSearchParams,
+  Course,
+  PaginationState,
+} from '@/types/discount'
 import { transformCoupon } from '@/utils/transform'
 import {
   BookOpen,
@@ -54,7 +61,7 @@ import {
   Globe,
   Search,
   SlidersHorizontal,
-  Tag
+  Tag,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -78,50 +85,58 @@ const Select = ({
   const getLabel = (id: string | null) => {
     if (!id) return null
     const option = options.find(opt => opt.id === id)
-    return option ? 'title' in option ? option.title : option.name : null
+    return option ? ('title' in option ? option.title : option.name) : null
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
-          role="combobox"
+          variant='outline'
+          role='combobox'
           aria-expanded={open}
-          className="w-full justify-between"
+          className='w-full justify-between'
         >
           {selected ? (
-            <span className="truncate">{getLabel(selected)}</span>
+            <span className='truncate'>{getLabel(selected)}</span>
           ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className='text-muted-foreground'>{placeholder}</span>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className='w-full p-0'>
         <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
+          <CommandInput
+            placeholder={`Search ${placeholder.toLowerCase()}...`}
+          />
           <CommandEmpty>{emptyText}</CommandEmpty>
-          <CommandGroup className="max-h-64 overflow-auto">
-            <CommandItem onSelect={() => {
-              onChange(null)
-              setOpen(false)
-            }}>
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                  !selected ? "bg-primary text-primary-foreground" : "opacity-50"
-                )}>
-                  {!selected && <Check className="h-3 w-3" />}
+          <CommandGroup className='max-h-64 overflow-auto'>
+            <CommandItem
+              onSelect={() => {
+                onChange(null)
+                setOpen(false)
+              }}
+            >
+              <div className='flex items-center gap-2'>
+                <div
+                  className={cn(
+                    'flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                    !selected
+                      ? 'bg-primary text-primary-foreground'
+                      : 'opacity-50'
+                  )}
+                >
+                  {!selected && <Check className='h-3 w-3' />}
                 </div>
                 <span>All</span>
               </div>
             </CommandItem>
-            {options.map((option) => {
+            {options.map(option => {
               const value = option.id
               const label = 'title' in option ? option.title : option.name
               const isSelected = selected === value
-              
+
               return (
                 <CommandItem
                   key={value}
@@ -130,12 +145,16 @@ const Select = ({
                     setOpen(false)
                   }}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                      isSelected ? "bg-primary text-primary-foreground" : "opacity-50"
-                    )}>
-                      {isSelected && <Check className="h-3 w-3" />}
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={cn(
+                        'flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                        isSelected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'opacity-50'
+                      )}
+                    >
+                      {isSelected && <Check className='h-3 w-3' />}
                     </div>
                     <span>{label}</span>
                   </div>
@@ -158,16 +177,22 @@ const FilterSidebar = memo(function FilterSidebar({
   onClearFilters,
   onApplyFilter,
 }: {
-  selectedCategories: string | null,
-  selectedCourses: string | null,
-  percentage: string,
-  allCategories: { id: string; name: string }[],
-  allCourses: { id: string; title: string }[],
-  onClearFilters: () => void,
-  onApplyFilter: (filter: { category: string | null, course: string | null, percentage: string }) => void,
+  selectedCategories: string | null
+  selectedCourses: string | null
+  percentage: string
+  allCategories: { id: string; name: string }[]
+  allCourses: { id: string; title: string }[]
+  onClearFilters: () => void
+  onApplyFilter: (filter: {
+    category: string | null
+    course: string | null
+    percentage: string
+  }) => void
 }) {
   const [localPercentage, setLocalPercentage] = useState(percentage)
-  const [localCategory, setLocalCategory] = useState<string | null>(selectedCategories)
+  const [localCategory, setLocalCategory] = useState<string | null>(
+    selectedCategories
+  )
   const [localCourse, setLocalCourse] = useState<string | null>(selectedCourses)
 
   // Sync local state with props when they change
@@ -182,7 +207,12 @@ const FilterSidebar = memo(function FilterSidebar({
     setLocalPercentage(value)
   }
 
-  const handleApplyFilter = () => onApplyFilter({ category: localCategory, course: localCourse, percentage: localPercentage })
+  const handleApplyFilter = () =>
+    onApplyFilter({
+      category: localCategory,
+      course: localCourse,
+      percentage: localPercentage,
+    })
 
   const handleClearFilters = () => {
     setLocalCategory(null)
@@ -214,10 +244,10 @@ const FilterSidebar = memo(function FilterSidebar({
             options={allCategories}
             selected={localCategory}
             onChange={setLocalCategory}
-            placeholder="Select category"
-            emptyText="No categories found."
+            placeholder='Select category'
+            emptyText='No categories found.'
           />
-              </div>
+        </div>
 
         <div className='space-y-3'>
           <Label className='text-base'>Course</Label>
@@ -225,8 +255,8 @@ const FilterSidebar = memo(function FilterSidebar({
             options={allCourses}
             selected={localCourse}
             onChange={setLocalCourse}
-            placeholder="Select course"
-            emptyText="No courses found."
+            placeholder='Select course'
+            emptyText='No courses found.'
           />
         </div>
 
@@ -243,10 +273,7 @@ const FilterSidebar = memo(function FilterSidebar({
           />
         </div>
 
-        <Button 
-          className="w-full" 
-          onClick={handleApplyFilter}
-        >
+        <Button className='w-full' onClick={handleApplyFilter}>
           Apply Filters
         </Button>
       </div>
@@ -273,14 +300,15 @@ export default function CouponsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [myCoupons, setMyCoupons] = useState<Coupon[]>([])
   const [loadingMyCoupons, setLoadingMyCoupons] = useState(false)
-  const [myCouponsPagination, setMyCouponsPagination] = useState<PaginationState>({
-    page: 0,
-    size: 8,
-    totalElements: 0,
-    totalPages: 0,
-    first: true,
-    last: true,
-  })
+  const [myCouponsPagination, setMyCouponsPagination] =
+    useState<PaginationState>({
+      page: 0,
+      size: 8,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+    })
   const router = useRouter()
 
   // Use the custom hook
@@ -293,18 +321,23 @@ export default function CouponsPage() {
         setIsLoading(true)
         const [categoriesResponse, coursesResponse] = await Promise.all([
           categoryApi.getAllCategories({ size: 100 }),
-          courseApi.getAllCourses({ size: 100 })
+          courseApi.getAllCourses({ size: 100 }),
         ])
 
-        const transformedCategories: Category[] = categoriesResponse.data.content.map((cat: { id: number; name: string }) => ({
-          id: cat.id.toString(),
-          name: cat.name
-        }))
-        
-        const transformedCourses: Course[] = coursesResponse.data.content.map((course: { id: number; title: string }) => ({
-          id: course.id.toString(),
-          title: course.title
-        }))
+        const transformedCategories: Category[] =
+          categoriesResponse.data.content.map(
+            (cat: { id: number; name: string }) => ({
+              id: cat.id.toString(),
+              name: cat.name,
+            })
+          )
+
+        const transformedCourses: Course[] = coursesResponse.data.content.map(
+          (course: { id: number; title: string }) => ({
+            id: course.id.toString(),
+            title: course.title,
+          })
+        )
 
         setAllCategories(transformedCategories)
         setCourses(transformedCourses)
@@ -314,7 +347,7 @@ export default function CouponsPage() {
       } catch (error) {
         console.error('Error fetching data:', error)
         toast.error('Failed to load data', {
-          description: 'Please try refreshing the page.'
+          description: 'Please try refreshing the page.',
         })
         setIsLoading(false)
       }
@@ -336,10 +369,17 @@ export default function CouponsPage() {
   }, [filter, pagination.size, fetchCoupons])
 
   // FilterSidebar callbacks
-  const handleApplyFilter = useCallback((newFilter: { category: string | null, course: string | null, percentage: string }) => {
-    setFilter(newFilter)
-    setIsMobileFilterOpen(false)
-  }, [])
+  const handleApplyFilter = useCallback(
+    (newFilter: {
+      category: string | null
+      course: string | null
+      percentage: string
+    }) => {
+      setFilter(newFilter)
+      setIsMobileFilterOpen(false)
+    },
+    []
+  )
 
   const clearFilters = useCallback(() => {
     setFilter({ category: null, course: null, percentage: '' })
@@ -350,70 +390,88 @@ export default function CouponsPage() {
   }, [fetchCoupons])
 
   // Get category and course names
-  const getCategoryNames = useCallback((categoryIds: number[]) => {
-    if (!categoryIds) return ''
-    return allCategories
-      .filter(cat => categoryIds.includes(Number(cat.id)))
-      .map(cat => cat.name)
-      .join(', ')
-  }, [allCategories])
+  const getCategoryNames = useCallback(
+    (categoryIds: number[]) => {
+      if (!categoryIds) return ''
+      return allCategories
+        .filter(cat => categoryIds.includes(Number(cat.id)))
+        .map(cat => cat.name)
+        .join(', ')
+    },
+    [allCategories]
+  )
 
-  const getCourseNames = useCallback((courseIds: number[]) => {
-    if (!courseIds) return ''
-    return allCourses
-      .filter(course => courseIds.includes(Number(course.id)))
-      .map(course => course.title)
-      .join(', ')
-  }, [allCourses])
+  const getCourseNames = useCallback(
+    (courseIds: number[]) => {
+      if (!courseIds) return ''
+      return allCourses
+        .filter(course => courseIds.includes(Number(course.id)))
+        .map(course => course.title)
+        .join(', ')
+    },
+    [allCourses]
+  )
 
   // Filter coupons based on search term
-  const filteredCoupons = useMemo(() => 
-    searchTerm
-      ? coupons.filter(coupon =>
-          coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          coupon.description.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : coupons
-  , [coupons, searchTerm])
+  const filteredCoupons = useMemo(
+    () =>
+      searchTerm
+        ? coupons.filter(
+            coupon =>
+              coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              coupon.description
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase())
+          )
+        : coupons,
+    [coupons, searchTerm]
+  )
 
   // Filter for available coupons based on new criteria
   const availableCoupons = useMemo(() => {
-    const now = new Date();
+    const now = new Date()
     return filteredCoupons.filter(coupon => {
-      const endDate = new Date(coupon.endDate);
-      return coupon.isActive === 1 && endDate > now && coupon.availableQuantity > 0;
-    });
-  }, [filteredCoupons]);
+      const endDate = new Date(coupon.endDate)
+      return (
+        coupon.isActive === 1 && endDate > now && coupon.availableQuantity > 0
+      )
+    })
+  }, [filteredCoupons])
 
   // Fetch my coupons when tab changes to 'my-coupons' or page/filter changes
-  const fetchMyCoupons = useCallback(async (page = 0) => {
-    if (!user) return
-    setLoadingMyCoupons(true)
-    const params: CouponSearchParams = {
-      page,
-      size: myCouponsPagination.size,
-      isActive: 1,
-      ...(filter.category ? { categoryId: Number(filter.category) } : {}),
-      ...(filter.course ? { courseId: Number(filter.course) } : {}),
-      ...(filter.percentage ? { percentage: parseInt(filter.percentage) } : {}),
-    }
-    try {
-      const res = await userApi.getMyCoupons(params)
-      setMyCoupons(res.data.content.map(transformCoupon))
-      setMyCouponsPagination({
-        page: res.data.number,
-        size: res.data.size,
-        totalElements: res.data.totalElements,
-        totalPages: res.data.totalPages,
-        first: res.data.first,
-        last: res.data.last,
-      })
-    } catch {
-      setMyCoupons([])
-    } finally {
-      setLoadingMyCoupons(false)
-    }
-  }, [user, filter, myCouponsPagination.size])
+  const fetchMyCoupons = useCallback(
+    async (page = 0) => {
+      if (!user) return
+      setLoadingMyCoupons(true)
+      const params: CouponSearchParams = {
+        page,
+        size: myCouponsPagination.size,
+        isActive: 1,
+        ...(filter.category ? { categoryId: Number(filter.category) } : {}),
+        ...(filter.course ? { courseId: Number(filter.course) } : {}),
+        ...(filter.percentage
+          ? { percentage: parseInt(filter.percentage) }
+          : {}),
+      }
+      try {
+        const res = await userApi.getMyCoupons(params)
+        setMyCoupons(res.data.content.map(transformCoupon))
+        setMyCouponsPagination({
+          page: res.data.number,
+          size: res.data.size,
+          totalElements: res.data.totalElements,
+          totalPages: res.data.totalPages,
+          first: res.data.first,
+          last: res.data.last,
+        })
+      } catch {
+        setMyCoupons([])
+      } finally {
+        setLoadingMyCoupons(false)
+      }
+    },
+    [user, filter, myCouponsPagination.size]
+  )
 
   useEffect(() => {
     if (activeTab === 'my-coupons' && user) {
@@ -427,15 +485,19 @@ export default function CouponsPage() {
     const totalCourses = coupon.totalCourse || 0
 
     if (totalCategories === 0 && totalCourses === 0) {
-      return <Badge className="bg-blue-100 text-blue-800"><Globe className="w-3 h-3 mr-1" />All Items</Badge>
+      return (
+        <Badge className='bg-blue-100 text-blue-800'>
+          <Globe className='w-3 h-3 mr-1' />
+          All Items
+        </Badge>
+      )
     } else {
       return (
-        <div className="space-y-1">
-          <Badge className="bg-purple-100 text-purple-800">
-            <Tag className="w-3 h-3 mr-1" />
+        <div className='space-y-1'>
+          <Badge className='bg-purple-100 text-purple-800'>
+            <Tag className='w-3 h-3 mr-1' />
             Specific Items
           </Badge>
-          
         </div>
       )
     }
@@ -448,9 +510,11 @@ export default function CouponsPage() {
 
     if (totalCategories === 0 && totalCourses === 0) {
       return (
-        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg">
-          <div className="font-medium text-sm text-gray-900">All Items</div>
-          <div className="text-xs text-gray-600 mt-1">This coupon applies to all courses on the platform</div>
+        <div className='p-3 bg-white border border-gray-200 rounded shadow-lg'>
+          <div className='font-medium text-sm text-gray-900'>All Items</div>
+          <div className='text-xs text-gray-600 mt-1'>
+            This coupon applies to all courses on the platform
+          </div>
         </div>
       )
     } else {
@@ -467,19 +531,21 @@ export default function CouponsPage() {
         : []
 
       return (
-        <div className="p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs">
-          <div className="font-medium text-sm text-gray-900 mb-2">Specific Items</div>
+        <div className='p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs'>
+          <div className='font-medium text-sm text-gray-900 mb-2'>
+            Specific Items
+          </div>
 
           {categoryNames.length > 0 && (
-            <div className="mb-3">
-              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
-                <Tag className="w-3 h-3 mr-1" />
+            <div className='mb-3'>
+              <div className='text-xs font-medium flex items-center mb-1 text-gray-700'>
+                <Tag className='w-3 h-3 mr-1' />
                 Categories ({categoryNames.length})
               </div>
-              <div className="text-xs text-gray-600 pl-4">
+              <div className='text-xs text-gray-600 pl-4'>
                 {categoryNames.map((name, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5" />
+                  <div key={idx} className='flex items-center'>
+                    <span className='w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5' />
                     {name}
                   </div>
                 ))}
@@ -489,14 +555,14 @@ export default function CouponsPage() {
 
           {courseNames.length > 0 && (
             <div>
-              <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
-                <BookOpen className="w-3 h-3 mr-1" />
+              <div className='text-xs font-medium flex items-center mb-1 text-gray-700'>
+                <BookOpen className='w-3 h-3 mr-1' />
                 Courses ({courseNames.length})
               </div>
-              <div className="text-xs text-gray-600 pl-4">
+              <div className='text-xs text-gray-600 pl-4'>
                 {courseNames.map((name, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5" />
+                  <div key={idx} className='flex items-center'>
+                    <span className='w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5' />
                     {name}
                   </div>
                 ))}
@@ -505,7 +571,9 @@ export default function CouponsPage() {
           )}
 
           {totalCategories === 0 && totalCourses === 0 && (
-            <div className="text-xs text-gray-500">No specific items selected</div>
+            <div className='text-xs text-gray-500'>
+              No specific items selected
+            </div>
           )}
         </div>
       )
@@ -527,7 +595,7 @@ export default function CouponsPage() {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -599,7 +667,7 @@ export default function CouponsPage() {
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className='pt-0'>
               <div className='space-y-3'>
                 <div>
                   <p className='text-xl font-bold text-primary'>
@@ -610,7 +678,9 @@ export default function CouponsPage() {
                   </p>
                 </div>
                 <CardDescription className='text-sm flex items-center gap-1'>
-                  <Calendar className="h-3 w-3 text-muted-foreground" /> Valid from {formatDate(coupon.startDate)} to {formatDate(coupon.endDate)}
+                  <Calendar className='h-3 w-3 text-muted-foreground' /> Valid
+                  from {formatDate(coupon.startDate)} to{' '}
+                  {formatDate(coupon.endDate)}
                 </CardDescription>
               </div>
 
@@ -630,7 +700,13 @@ export default function CouponsPage() {
                   <Button
                     size='sm'
                     onClick={() => handleClaimCoupon(coupon)}
-                    disabled={!(coupon.isActive === 1 && new Date(coupon.endDate) > new Date() && coupon.availableQuantity > 0) || isClaimed}
+                    disabled={
+                      !(
+                        coupon.isActive === 1 &&
+                        new Date(coupon.endDate) > new Date() &&
+                        coupon.availableQuantity > 0
+                      ) || isClaimed
+                    }
                     variant={isClaimed ? 'outline' : 'default'}
                     className='ml-2'
                   >
@@ -665,12 +741,8 @@ export default function CouponsPage() {
       >
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <TabsList className='bg-muted/50 p-1 rounded-lg'>
-            <TabsTrigger value='available'>
-              Available
-            </TabsTrigger>
-            <TabsTrigger value='my-coupons'>
-              My Coupons
-            </TabsTrigger>
+            <TabsTrigger value='available'>Available</TabsTrigger>
+            <TabsTrigger value='my-coupons'>My Coupons</TabsTrigger>
           </TabsList>
 
           {/* Search Bar */}
@@ -695,22 +767,22 @@ export default function CouponsPage() {
           >
             <div className='sticky top-24 bg-card rounded-lg border p-4'>
               {isLoading ? (
-                <div className="space-y-4">
-                  <div className="h-8 bg-muted animate-pulse rounded" />
-                  <div className="h-32 bg-muted animate-pulse rounded" />
-                  <div className="h-32 bg-muted animate-pulse rounded" />
-                  <div className="h-20 bg-muted animate-pulse rounded" />
+                <div className='space-y-4'>
+                  <div className='h-8 bg-muted animate-pulse rounded' />
+                  <div className='h-32 bg-muted animate-pulse rounded' />
+                  <div className='h-32 bg-muted animate-pulse rounded' />
+                  <div className='h-20 bg-muted animate-pulse rounded' />
                 </div>
               ) : (
-              <FilterSidebar
+                <FilterSidebar
                   selectedCategories={filter.category}
                   selectedCourses={filter.course}
                   percentage={filter.percentage}
                   allCategories={allCategories}
                   allCourses={allCourses}
-                onClearFilters={clearFilters}
+                  onClearFilters={clearFilters}
                   onApplyFilter={handleApplyFilter}
-              />
+                />
               )}
             </div>
           </div>
@@ -736,22 +808,22 @@ export default function CouponsPage() {
                 </SheetHeader>
                 <div className='py-4'>
                   {isLoading ? (
-                    <div className="space-y-4">
-                      <div className="h-8 bg-muted animate-pulse rounded" />
-                      <div className="h-32 bg-muted animate-pulse rounded" />
-                      <div className="h-32 bg-muted animate-pulse rounded" />
-                      <div className="h-20 bg-muted animate-pulse rounded" />
+                    <div className='space-y-4'>
+                      <div className='h-8 bg-muted animate-pulse rounded' />
+                      <div className='h-32 bg-muted animate-pulse rounded' />
+                      <div className='h-32 bg-muted animate-pulse rounded' />
+                      <div className='h-20 bg-muted animate-pulse rounded' />
                     </div>
                   ) : (
-                  <FilterSidebar
+                    <FilterSidebar
                       selectedCategories={filter.category}
                       selectedCourses={filter.course}
                       percentage={filter.percentage}
                       allCategories={allCategories}
                       allCourses={allCourses}
-                    onClearFilters={clearFilters}
+                      onClearFilters={clearFilters}
                       onApplyFilter={handleApplyFilter}
-                  />
+                    />
                   )}
                 </div>
               </SheetContent>
@@ -765,12 +837,12 @@ export default function CouponsPage() {
               className='mt-0 focus-visible:outline-none'
             >
               {loadingCoupons ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="space-y-4 p-6 border rounded-lg">
-                      <div className="h-6 bg-muted animate-pulse rounded" />
-                      <div className="h-20 bg-muted animate-pulse rounded" />
-                      <div className="h-8 bg-muted animate-pulse rounded" />
+                    <div key={i} className='space-y-4 p-6 border rounded-lg'>
+                      <div className='h-6 bg-muted animate-pulse rounded' />
+                      <div className='h-20 bg-muted animate-pulse rounded' />
+                      <div className='h-8 bg-muted animate-pulse rounded' />
                     </div>
                   ))}
                 </div>
@@ -778,35 +850,38 @@ export default function CouponsPage() {
                 <>
                   <CouponGrid coupons={availableCoupons} />
                   {availableCoupons.length === 0 && (
-                <div className='text-center py-10'>
-                  <p className='text-muted-foreground'>
-                    No available coupons found matching your filters.
-                  </p>
-                </div>
+                    <div className='text-center py-10'>
+                      <p className='text-muted-foreground'>
+                        No available coupons found matching your filters.
+                      </p>
+                    </div>
                   )}
                   {/* Pagination for Available */}
                   {activeTab === 'available' && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
+                    <div className='flex items-center justify-between mt-4'>
+                      <div className='text-sm text-muted-foreground'>
                         Showing {pagination.page * pagination.size + 1} to{' '}
-                        {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of{' '}
-                        {pagination.totalElements} results
+                        {Math.min(
+                          (pagination.page + 1) * pagination.size,
+                          pagination.totalElements
+                        )}{' '}
+                        of {pagination.totalElements} results
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className='flex items-center space-x-2'>
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant='outline'
+                          size='sm'
                           onClick={() => fetchCoupons(pagination.page - 1)}
                           disabled={pagination.first || loadingCoupons}
                         >
                           Previous
                         </Button>
-                        <span className="text-sm">
+                        <span className='text-sm'>
                           Page {pagination.page + 1} of {pagination.totalPages}
                         </span>
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant='outline'
+                          size='sm'
                           onClick={() => fetchCoupons(pagination.page + 1)}
                           disabled={pagination.last || loadingCoupons}
                         >
@@ -824,12 +899,12 @@ export default function CouponsPage() {
               className='mt-0 focus-visible:outline-none'
             >
               {loadingMyCoupons ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="space-y-4 p-6 border rounded-lg">
-                      <div className="h-6 bg-muted animate-pulse rounded" />
-                      <div className="h-20 bg-muted animate-pulse rounded" />
-                      <div className="h-8 bg-muted animate-pulse rounded" />
+                    <div key={i} className='space-y-4 p-6 border rounded-lg'>
+                      <div className='h-6 bg-muted animate-pulse rounded' />
+                      <div className='h-20 bg-muted animate-pulse rounded' />
+                      <div className='h-8 bg-muted animate-pulse rounded' />
                     </div>
                   ))}
                 </div>
@@ -837,39 +912,55 @@ export default function CouponsPage() {
                 <>
                   <CouponGrid coupons={myCoupons} showCopyButton={true} />
                   {myCoupons.length === 0 && (
-                <div className='text-center py-10'>
-                  <p className='text-muted-foreground'>
+                    <div className='text-center py-10'>
+                      <p className='text-muted-foreground'>
                         {searchTerm || filter.category || filter.percentage
-                      ? 'No claimed coupons found matching your filters.'
-                      : "You haven't claimed any coupons yet."}
-                  </p>
-                </div>
+                          ? 'No claimed coupons found matching your filters.'
+                          : "You haven't claimed any coupons yet."}
+                      </p>
+                    </div>
                   )}
                   {/* Pagination for My Coupons */}
                   {activeTab === 'my-coupons' && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
-                        Showing {myCouponsPagination.page * myCouponsPagination.size + 1} to{' '}
-                        {Math.min((myCouponsPagination.page + 1) * myCouponsPagination.size, myCouponsPagination.totalElements)} of{' '}
-                        {myCouponsPagination.totalElements} results
+                    <div className='flex items-center justify-between mt-4'>
+                      <div className='text-sm text-muted-foreground'>
+                        Showing{' '}
+                        {myCouponsPagination.page * myCouponsPagination.size +
+                          1}{' '}
+                        to{' '}
+                        {Math.min(
+                          (myCouponsPagination.page + 1) *
+                            myCouponsPagination.size,
+                          myCouponsPagination.totalElements
+                        )}{' '}
+                        of {myCouponsPagination.totalElements} results
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className='flex items-center space-x-2'>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchMyCoupons(myCouponsPagination.page - 1)}
-                          disabled={myCouponsPagination.first || loadingMyCoupons}
+                          variant='outline'
+                          size='sm'
+                          onClick={() =>
+                            fetchMyCoupons(myCouponsPagination.page - 1)
+                          }
+                          disabled={
+                            myCouponsPagination.first || loadingMyCoupons
+                          }
                         >
                           Previous
                         </Button>
-                        <span className="text-sm">
-                          Page {myCouponsPagination.page + 1} of {myCouponsPagination.totalPages}
+                        <span className='text-sm'>
+                          Page {myCouponsPagination.page + 1} of{' '}
+                          {myCouponsPagination.totalPages}
                         </span>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchMyCoupons(myCouponsPagination.page + 1)}
-                          disabled={myCouponsPagination.last || loadingMyCoupons}
+                          variant='outline'
+                          size='sm'
+                          onClick={() =>
+                            fetchMyCoupons(myCouponsPagination.page + 1)
+                          }
+                          disabled={
+                            myCouponsPagination.last || loadingMyCoupons
+                          }
                         >
                           Next
                         </Button>

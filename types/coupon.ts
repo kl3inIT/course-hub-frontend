@@ -42,4 +42,4 @@ export interface ClaimedCoupon {
   userId: string
   couponId: string
   claimedAt: string
-} 
+}

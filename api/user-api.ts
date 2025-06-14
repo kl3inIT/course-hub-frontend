@@ -2,11 +2,11 @@ import { httpClient } from '@/api/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import { CouponSearchParams, PaginatedCouponResponse } from '@/types/discount'
 import {
-    CreateManagerRequest,
-    ProfileData,
-    User,
-    UserDetail,
-    UserSearchParams,
+  CreateManagerRequest,
+  ProfileData,
+  User,
+  UserDetail,
+  UserSearchParams,
 } from '@/types/user'
 
 export const userApi = {
@@ -57,7 +57,9 @@ export const userApi = {
   },
 
   // Get all coupons of the current user with pagination/filter
-  getMyCoupons: async (params: CouponSearchParams): Promise<ApiResponse<PaginatedCouponResponse>> => {
+  getMyCoupons: async (
+    params: CouponSearchParams
+  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
     const response = await httpClient.get('/api/users/discounts', { params })
     return response.data
   },

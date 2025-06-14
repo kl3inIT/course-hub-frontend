@@ -18,4 +18,4 @@ export default function ManagerCouponsPage() {
       </SidebarProvider>
     </RoleGuard>
   )
-} 
+}

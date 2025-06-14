@@ -59,7 +59,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { categoryApi } from '@/api/category-api'
+import { categoryApi } from '@/services/category-api'
 import { Page } from '@/types/common'
 import {
   CategorySearchParams,

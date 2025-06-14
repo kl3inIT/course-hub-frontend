@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator'
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { GoogleSignInButton } from './google-signin-button'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 export function RegisterForm() {
   const [formData, setFormData] = useState({

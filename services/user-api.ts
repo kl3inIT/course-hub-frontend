@@ -1,13 +1,12 @@
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page } from '@/types/common'
-import { CouponSearchParams, PaginatedCouponResponse } from '@/types/discount'
 import {
-  CreateManagerRequest,
-  ProfileData,
   User,
   UserDetail,
+  ProfileData,
+  CreateManagerRequest,
   UserSearchParams,
-} from '@/types/user'
+} from './types/user'
 
 export const userApi = {
   // Get user's own profile info
@@ -53,20 +52,6 @@ export const userApi = {
       currentPassword,
       newPassword,
     })
-    return response.data
-  },
-
-  // Get all coupons of the current user with pagination/filter
-  getMyCoupons: async (
-    params: CouponSearchParams
-  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
-    const response = await httpClient.get('/api/users/discounts', { params })
-    return response.data
-  },
-
-  // Claim a coupon for the current user
-  claimCoupon: async (couponId: string): Promise<ApiResponse<any>> => {
-    const response = await httpClient.post(`/api/users/discounts/${couponId}`)
     return response.data
   },
 

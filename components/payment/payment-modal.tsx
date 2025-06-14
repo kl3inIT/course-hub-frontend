@@ -1,7 +1,7 @@
 'use client'
 
-import { discountApi } from '@/api/discount-api'
-import { paymentApi } from '@/api/payment-api'
+import { discountApi } from '@/services/discount-api'
+import { paymentApi } from '@/services/payment-api'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,

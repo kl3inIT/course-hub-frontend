@@ -30,9 +30,9 @@ import {
   X,
 } from 'lucide-react'
 import { PaymentModal } from '../payment/payment-modal'
-import { courseApi } from '@/api/course-api'
-import { lessonApi } from '@/api/lesson-api'
-import { enrollmentApi } from '@/api/enrollment-api'
+import { courseApi } from '@/services/course-api'
+import { lessonApi } from '@/services/lesson-api'
+import { enrollmentApi } from '@/services/enrollment-api'
 import { useToast } from '@/hooks/use-toast'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'

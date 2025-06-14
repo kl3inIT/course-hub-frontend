@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { paymentStorage } from '@/utils/payment'
-import { paymentApi } from '@/api/payment-api'
+import { paymentApi } from '@/services/payment-api'
 import { toast } from '@/hooks/use-toast'
 
 interface PaymentResponseDTO {

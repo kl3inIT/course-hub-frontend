@@ -57,19 +57,19 @@ import {
 import { useAuth } from '@/context/auth-context'
 import { DiscussionSection } from './discussion-section'
 import { useToast } from '@/components/ui/use-toast'
-import { courseApi } from '@/api/course-api'
-import { moduleApi } from '@/api/module-api'
-import { lessonApi } from '@/api/lesson-api'
+import { courseApi } from '@/services/course-api'
+import { moduleApi } from '@/services/module-api'
+import { lessonApi } from '@/services/lesson-api'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
-import { progressApi } from '@/api/progress-api'
+import { progressApi } from '@/services/progress-api'
 import {
   LessonProgressDTO,
   UpdateLessonProgressRequestDTO,
 } from '@/types/progress'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { enrollmentApi } from '@/api/enrollment-api'
+import { enrollmentApi } from '@/services/enrollment-api'
 
 interface LessonViewerProps {
   courseId: string

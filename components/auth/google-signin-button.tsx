@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 interface GoogleSignInButtonProps {
   onSuccess?: (user: any) => void

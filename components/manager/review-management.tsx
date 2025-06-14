@@ -31,8 +31,8 @@ import {
   Search,
   RefreshCw,
 } from 'lucide-react'
-import { reviewApi } from '@/api/review-api'
-import { categoryApi } from '@/api/category-api'
+import { reviewApi } from '@/services/review-api'
+import { categoryApi } from '@/services/category-api'
 import { ReviewResponseDTO, ReviewSearchParams } from '@/types/review'
 import { CategoryResponseDTO } from '@/types/category'
 import { Page } from '@/types/common'

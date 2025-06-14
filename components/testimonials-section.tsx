@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Star } from 'lucide-react'
 import { ReviewResponseDTO } from '@/types/review'
-import { reviewApi } from '@/api/review-api'
+import { reviewApi } from '@/services/review-api'
 
 export function TestimonialsSection() {
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])

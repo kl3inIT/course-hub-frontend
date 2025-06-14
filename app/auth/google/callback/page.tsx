@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/context/auth-context'
-import { httpClient } from '@/api/http-client'
+import { httpClient } from '@/services/http-client'
 
 // Hàm giải mã JWT
 function parseJwt(token: string) {

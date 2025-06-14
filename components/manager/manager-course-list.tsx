@@ -60,7 +60,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import Link from 'next/link'
 import { toast } from '@/hooks/use-toast'
-import { courseApi } from '@/api/course-api'
+import { courseApi } from '@/services/course-api'
 import { CourseResponseDTO } from '@/types/course'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 

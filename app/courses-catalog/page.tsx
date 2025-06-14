@@ -1,4 +1,4 @@
-import { CoursesCatalogSection } from '@/components/courses/courses-catalog-section'
+
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
@@ -15,7 +15,6 @@ export default function CoursesCatalogPage() {
               yêu thích của bạn.
             </p>
           </div>
-          <CoursesCatalogSection />
         </div>
       </div>
       <Footer />

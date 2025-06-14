@@ -1,8 +1,8 @@
 'use client'
 
-import { categoryApi } from '@/api/category-api'
-import { courseApi } from '@/api/course-api'
-import { discountApi } from '@/api/discount-api'
+import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
+import { discountApi } from '@/services/discount-api'
 import {
   AlertDialog,
   AlertDialogAction,

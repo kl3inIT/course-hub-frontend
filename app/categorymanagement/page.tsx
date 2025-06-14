@@ -1,5 +1,5 @@
 'use client'
-import { CoursesCatalogSection } from '@/components/course-catalog/courses-catalog-section'
+import { CoursesCatalogSection } from '@/components/courses/courses-catalog-section'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'

@@ -1,7 +1,9 @@
 'use client'
 
-import type React from 'react'
-import { useState, useEffect, useCallback, memo } from 'react'
+import { commentApi } from '@/api/comment-api'
+import { reportApi } from '@/api/report-api'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,25 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import {
-  MessageSquare,
-  ThumbsUp,
-  Reply,
-  Flag,
-  Trash2,
-  MoreVertical,
-  Pencil,
-} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   DropdownMenu,
@@ -38,9 +27,21 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { toast } from 'sonner'
-import { commentApi } from '@/api/comment-api'
+import { Textarea } from '@/components/ui/textarea'
 import { CommentDisplayData, transformComment } from '@/types/comment'
+import {
+  Crown,
+  Flag,
+  MessageSquare,
+  MoreVertical,
+  Pencil,
+  Reply,
+  ThumbsUp,
+  Trash2,
+} from 'lucide-react'
+import type React from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface DiscussionSectionProps {
   courseId: string
@@ -168,24 +169,38 @@ const CommentComponentBase = ({
       className={`space-y-3 ${isReply ? 'ml-8 border-l-2 border-muted pl-4' : ''}`}
     >
       <div className='flex items-start gap-3'>
-        <Avatar className='h-8 w-8'>
-          <AvatarImage
-            src={comment.avatar || `/placeholder.svg?height=32&width=32`}
-          />
-          <AvatarFallback>
-            {comment.author
-              .split(' ')
-              .map(n => n[0])
-              .join('')}
-          </AvatarFallback>
-        </Avatar>
+        <div className='relative'>
+          <Avatar
+            className={`h-8 w-8 ${comment.isManager ? 'ring-2 ring-red-500/70 ring-offset-2 shadow-sm shadow-red-500/20' : ''}`}
+          >
+            <AvatarImage
+              src={comment.avatar || `/placeholder.svg?height=32&width=32`}
+            />
+            <AvatarFallback>
+              {comment.author
+                .split(' ')
+                .map(n => n[0])
+                .join('')}
+            </AvatarFallback>
+          </Avatar>
+          {comment.isManager && (
+            <Crown className='h-3.5 w-3.5 text-yellow-500 absolute -top-1.5 -right-1 fill-yellow-500 transform rotate-45 drop-shadow-sm' />
+          )}
+        </div>
         <div className='flex-1 space-y-2'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>
-              <span className='font-medium text-sm'>{comment.author}</span>
+              <span
+                className={`font-medium text-sm ${comment.isManager ? 'text-red-600' : ''}`}
+              >
+                {comment.author}
+              </span>
               {comment.isManager && (
-                <Badge variant='secondary' className='text-xs'>
-                  Manager
+                <Badge
+                  variant='secondary'
+                  className='text-xs bg-red-100 text-red-700 hover:bg-red-200 transition-colors'
+                >
+                  Admin
                 </Badge>
               )}
               <span className='text-xs text-muted-foreground'>
@@ -420,7 +435,10 @@ const CommentComponentBase = ({
 
 const CommentComponent = memo(CommentComponentBase)
 
-export function DiscussionSection({ lessonId }: DiscussionSectionProps) {
+export function DiscussionSection({
+  courseId,
+  lessonId,
+}: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)
@@ -578,7 +596,21 @@ export function DiscussionSection({ lessonId }: DiscussionSectionProps) {
   const handleReport = useCallback(
     async (commentId: number, reason: string, description?: string) => {
       try {
-        await commentApi.reportComment(commentId, reason, description)
+        let severity: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM'
+
+        // Set severity based on reason
+        if (reason === 'spam') severity = 'LOW'
+        else if (reason === 'inappropriate') severity = 'MEDIUM'
+        else if (reason === 'harassment') severity = 'HIGH'
+
+        await reportApi.createReport({
+          resourceType: 'COMMENT',
+          resourceId: commentId,
+          reason:
+            reason === 'other' ? description?.trim() || 'Other reason' : reason,
+          severity,
+          description: reason === 'other' ? undefined : description?.trim(),
+        })
         toast.success('Report submitted successfully')
       } catch (error) {
         console.error('Error reporting comment:', error)

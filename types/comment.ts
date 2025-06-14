@@ -23,13 +23,14 @@ export interface CommentResponseDTO {
   author: string
   avatar: string
   createdAt: string
-  isManager: boolean
+  manager: boolean
   isHidden: number | null
   likeCount: number
   likedByCurrentUser: boolean
   userId: number
   owner: boolean
   replies: CommentResponseDTO[]
+  lessonId: number
 }
 
 // Interface cho hiển thị trên UI
@@ -61,7 +62,7 @@ export const transformComment = (
     author: comment.author,
     avatar: comment.avatar,
     timestamp: new Date(comment.createdAt).toLocaleString(),
-    isManager: comment.isManager,
+    isManager: comment.manager,
     isHidden: comment.isHidden === 1,
     likeCount: comment.likeCount,
     likedByCurrentUser: comment.likedByCurrentUser,

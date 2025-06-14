@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/context/auth-context'
+import { userApi } from '@/api/user-api'
+import { PaymentHistory } from '@/components/profile/payment-history'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Card,
   CardContent,
@@ -13,12 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
-import { Shield, Save, Camera } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { RoleBadge } from '@/components/ui/role-badge'
-import { PaymentHistory } from '@/components/profile/payment-history'
 import {
   Select,
   SelectContent,
@@ -26,9 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useAuth } from '@/context/auth-context'
+import type { ProfileData } from '@/types/User'
+import { Camera, Save, Shield } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { userApi } from '@/api/user-api'
-import type { ProfileData } from '@/types/user'
 
 // Utils
 const formatDateForInput = (dateString: string | null): string => {
@@ -83,10 +83,16 @@ const useProfileData = () => {
       const response = await userApi.getMyInfo()
       const userData = response.data
 
-      // Format the date when receiving from server
+      // Format the date when receiving from server and ensure no null values
       setProfileData({
-        ...userData,
+        name: userData.name || '',
+        email: userData.email || '',
+        bio: userData.bio || '',
+        phone: userData.phone || '',
+        address: userData.address || '',
+        avatar: userData.avatar || '',
         dateOfBirth: formatDateForInput(userData.dateOfBirth),
+        gender: userData.gender || '',
       })
     } catch (error: any) {
       const errorMessage =
@@ -108,18 +114,26 @@ const useProfileData = () => {
       const result = await userApi.updateProfile(formData)
 
       if (result?.data) {
-        // Format the date when receiving updated data from server
+        // Format the date and ensure no null values when receiving updated data
         setProfileData(prev => ({
-          ...prev,
-          ...result.data,
-          dateOfBirth: formatDateForInput(result.data.dateOfBirth),
+          name: result.data.name || prev.name || '',
+          email: result.data.email || prev.email || '',
+          bio: result.data.bio || prev.bio || '',
+          phone: result.data.phone || prev.phone || '',
+          address: result.data.address || prev.address || '',
+          avatar: result.data.avatar || prev.avatar || '',
+          dateOfBirth:
+            formatDateForInput(result.data.dateOfBirth) ||
+            prev.dateOfBirth ||
+            '',
+          gender: result.data.gender || prev.gender || '',
         }))
 
         updateUser({
           ...user,
-          name: result.data.name,
-          email: result.data.email,
-          avatar: result.data.avatar,
+          name: result.data.name || user?.name || '',
+          email: result.data.email || user?.email || '',
+          avatar: result.data.avatar || user?.avatar || '',
         })
 
         toast.success('Profile updated successfully')

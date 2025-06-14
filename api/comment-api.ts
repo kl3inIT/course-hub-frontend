@@ -1,6 +1,6 @@
 import { httpClient } from '@/api/http-client'
-import { ApiResponse } from '@/types/common'
 import { CommentRequestDTO, CommentResponseDTO } from '@/types/comment'
+import { ApiResponse } from '@/types/common'
 
 export const commentApi = {
   // Get all comments for a lesson
@@ -57,6 +57,13 @@ export const commentApi = {
         description,
       }
     )
+    return response.data
+  },
+
+  getCommentById: async (
+    commentId: number
+  ): Promise<ApiResponse<CommentResponseDTO>> => {
+    const response = await httpClient.get(`/api/comments/${commentId}`)
     return response.data
   },
 

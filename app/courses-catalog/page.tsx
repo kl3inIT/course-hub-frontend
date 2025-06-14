@@ -1,4 +1,4 @@
-import { CoursesCatalogSection } from '@/components/course-catalog/courses-catalog-section'
+import { CoursesCatalogSection } from '@/components/courses/courses-catalog-section'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 

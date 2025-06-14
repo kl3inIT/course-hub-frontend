@@ -1,8 +1,8 @@
 import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { ProtectedRoute } from '@/components/auth/protected-route'
 
+import { ProtectedRoute } from '@/components/auth/protected-route'
 export default function AdminPage() {
   return (
     <ProtectedRoute allowedRoles={['admin']} requireAuth={true}>

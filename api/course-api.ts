@@ -39,21 +39,6 @@ export const courseApi = {
     return response.data
   },
 
-  deleteCourse: async (id: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/api/courses/${id}`)
-    return response.data
-  },
-
-  enrollCourse: async (courseId: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.post(`/api/courses/${courseId}/enroll`)
-    return response.data
-  },
-
-  unenrollCourse: async (courseId: string): Promise<ApiResponse<void>> => {
-    const response = await httpClient.delete(`/api/courses/${courseId}/enroll`)
-    return response.data
-  },
-
   getEnrolledCourses: async (
     params?: CourseSearchParams
   ): Promise<ApiResponse<Page<CourseResponseDTO>>> => {
@@ -90,11 +75,14 @@ export const courseApi = {
         params: {
           page: params?.page ?? 0,
           size: params?.size ?? 20,
-          searchTerm: params?.searchTerm,
-          categoryId: params?.categoryId,
+          sort: params?.sort,
+          search: params?.search,
+          category: params?.category,
           level: params?.level,
           minPrice: params?.minPrice,
           maxPrice: params?.maxPrice,
+          searchTerm: params?.searchTerm,
+          categoryId: params?.categoryId,
           minRating: params?.minRating,
           isFree: params?.isFree,
           isDiscounted: params?.isDiscounted,

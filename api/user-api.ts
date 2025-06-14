@@ -93,5 +93,11 @@ export const userApi = {
       const response = await httpClient.delete(`/api/admin/users/${userId}`)
       return response.data
     },
+
+    // Warn user
+    warnUser: async (userId: number): Promise<ApiResponse<void>> => {
+      const response = await httpClient.post(`/api/admin/users/${userId}/warn`)
+      return response.data
+    },
   },
 }

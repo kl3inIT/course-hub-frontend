@@ -54,11 +54,14 @@ export interface CourseSearchParams {
   page?: number
   size?: number
   sort?: string
-  searchTerm?: string
-  categoryId?: number
+  search?: string
+  category?: string
   level?: string
   minPrice?: number
   maxPrice?: number
+  rating?: number
+  searchTerm?: string
+  categoryId?: number
   minRating?: number
   isFree?: boolean
   isDiscounted?: boolean

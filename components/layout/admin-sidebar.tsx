@@ -1,29 +1,5 @@
 'use client'
 
-import {
-  Home,
-  Settings,
-  Shield,
-  BarChart3,
-  LogOut,
-  Users,
-  CreditCard,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  SidebarMenu,
-} from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,8 +9,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAuth } from '@/context/auth-context'
 import { RoleBadge } from '@/components/ui/role-badge'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
+import { useAuth } from '@/context/auth-context'
+import {
+  BarChart3,
+  CreditCard,
+  Flag,
+  Home,
+  LogOut,
+  Settings,
+  Shield,
+  Users,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const navigationItems = [
   {
@@ -51,6 +52,11 @@ const navigationItems = [
     title: 'Transaction Management',
     url: '/admin/transactions',
     icon: CreditCard,
+  },
+  {
+    title: 'Report Management',
+    url: '/admin/reports',
+    icon: Flag,
   },
   {
     title: 'System Settings',

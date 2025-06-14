@@ -1,34 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,29 +11,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Search,
-  MoreHorizontal,
-  Trash2,
-  Users,
-  GraduationCap,
-  Eye,
-  Ban,
-  CheckCircle,
-} from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/context/auth-context'
-import { useRouter } from 'next/navigation'
-import { Toaster } from '@/components/ui/toaster'
-import { User } from '@/types/user'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -73,6 +31,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   Form,
   FormControl,
   FormField,
@@ -80,28 +45,57 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Toaster } from '@/components/ui/toaster'
+import { useAuth } from '@/context/auth-context'
+import { useToast } from '@/hooks/use-toast'
+import { User } from '@/types/User'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { format } from 'date-fns'
+import {
+  Ban,
+  CheckCircle,
+  Eye,
+  GraduationCap,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 
 const BACKEND_URL = 'http://localhost:8080'
 
 // Add form schema
-const createManagerSchema = z
-  .object({
-    email: z.string().email('Invalid email address'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-      .regex(/[0-9]/, 'Password must contain at least one number'),
-    confirmPassword: z.string(),
-  })
-  .refine(data => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  })
+const createManagerSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .nonempty('Name is required'),
+  email: z
+    .string()
+    .nonempty('Email is required')
+    .email('Invalid email address'),
+})
 
 type CreateManagerForm = z.infer<typeof createManagerSchema>
 
@@ -114,9 +108,8 @@ export function UserManagement() {
   const form = useForm<CreateManagerForm>({
     resolver: zodResolver(createManagerSchema),
     defaultValues: {
+      name: '',
       email: '',
-      password: '',
-      confirmPassword: '',
     },
   })
 
@@ -493,19 +486,20 @@ export function UserManagement() {
         return
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/admin/users`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-          name: data.email.split('@')[0],
-          role: 'MANAGER',
-        }),
-      })
+      const response = await fetch(
+        `${BACKEND_URL}/api/admin/users/create-manager`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+          }),
+        }
+      )
 
       if (!response.ok) {
         throw new Error(
@@ -523,7 +517,9 @@ export function UserManagement() {
       form.reset()
 
       toast({
-        description: responseData.message || 'Manager created successfully',
+        title: 'Manager Created',
+        description:
+          'An email with login credentials has been sent to the manager.',
       })
     } catch (error: any) {
       console.error('Error creating manager:', error)
@@ -550,7 +546,9 @@ export function UserManagement() {
       <Toaster />
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      <div
+        className={`grid gap-4 md:grid-cols-2 ${activeTab === 'learner' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+      >
         {renderStatsCard(
           activeTab === 'learner' ? 'Total Learners' : 'Total Managers',
           userStats.total,
@@ -561,11 +559,12 @@ export function UserManagement() {
           userStats.active,
           <CheckCircle className='h-4 w-4 text-green-600' />
         )}
-        {renderStatsCard(
-          'Banned',
-          userStats.banned,
-          <Ban className='h-4 w-4 text-red-600' />
-        )}
+        {activeTab === 'learner' &&
+          renderStatsCard(
+            'Banned',
+            userStats.banned,
+            <Ban className='h-4 w-4 text-red-600' />
+          )}
         {renderStatsCard(
           activeTab === 'learner' ? 'Enrolled Courses' : 'Managed Courses',
           0,
@@ -655,9 +654,11 @@ export function UserManagement() {
                               />
                               <AvatarFallback>
                                 {user.name
-                                  .split(' ')
-                                  .map(n => n[0])
-                                  .join('')}
+                                  ? user.name
+                                      .split(' ')
+                                      .map(n => n[0])
+                                      .join('')
+                                  : user.email?.charAt(0).toUpperCase() || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -731,9 +732,12 @@ export function UserManagement() {
                     <DialogHeader>
                       <DialogTitle>Create New Manager</DialogTitle>
                       <DialogDescription>
-                        Add a new manager account. They will receive an email
-                        with their login credentials.
+                        Add a new manager account by entering their information.
                       </DialogDescription>
+                      <div className='text-sm text-muted-foreground'>
+                        A temporary password will be generated and sent to this
+                        email address.
+                      </div>
                     </DialogHeader>
                     <Form {...form}>
                       <form
@@ -742,13 +746,16 @@ export function UserManagement() {
                       >
                         <FormField
                           control={form.control}
-                          name='email'
+                          name='name'
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel>
+                                Name <span className='text-destructive'>*</span>
+                              </FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder='manager@example.com'
+                                  placeholder='Enter manager name'
+                                  required
                                   {...field}
                                 />
                               </FormControl>
@@ -758,31 +765,35 @@ export function UserManagement() {
                         />
                         <FormField
                           control={form.control}
-                          name='password'
+                          name='email'
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Password</FormLabel>
+                              <FormLabel>
+                                Email{' '}
+                                <span className='text-destructive'>*</span>
+                              </FormLabel>
                               <FormControl>
-                                <Input type='password' {...field} />
+                                <Input
+                                  placeholder='manager@example.com'
+                                  required
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name='confirmPassword'
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Confirm Password</FormLabel>
-                              <FormControl>
-                                <Input type='password' {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter>
+                        <DialogFooter className='gap-2 sm:gap-0'>
+                          <Button
+                            type='button'
+                            variant='outline'
+                            onClick={() => {
+                              setIsCreateManagerOpen(false)
+                              form.reset()
+                            }}
+                          >
+                            Cancel
+                          </Button>
                           <Button type='submit'>Create Manager</Button>
                         </DialogFooter>
                       </form>
@@ -817,9 +828,12 @@ export function UserManagement() {
                               />
                               <AvatarFallback>
                                 {user.name
-                                  .split(' ')
-                                  .map(n => n[0])
-                                  .join('')}
+                                  ? user.name
+                                      .split(' ')
+                                      .map(n => n[0])
+                                      .join('')
+                                  : user.email?.charAt(0).toUpperCase() ||
+                                    'User'}
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -831,39 +845,15 @@ export function UserManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Select
-                            value={user.status}
-                            onValueChange={newStatus =>
-                              handleUpdateUserStatus(
-                                user.id,
-                                newStatus as 'active' | 'banned'
-                              )
+                          <Badge
+                            variant={
+                              user.status === 'active'
+                                ? 'default'
+                                : 'destructive'
                             }
                           >
-                            <SelectTrigger className='p-0 h-auto w-auto border-0 bg-transparent hover:bg-accent hover:text-accent-foreground [&>span]:flex [&>span]:items-center'>
-                              <SelectValue>
-                                <Badge
-                                  variant={
-                                    user.status === 'active'
-                                      ? 'default'
-                                      : 'destructive'
-                                  }
-                                >
-                                  {user.status === 'active'
-                                    ? 'Active'
-                                    : 'Banned'}
-                                </Badge>
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='active'>
-                                <Badge variant='default'>Active</Badge>
-                              </SelectItem>
-                              <SelectItem value='banned'>
-                                <Badge variant='destructive'>Banned</Badge>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {user.status === 'active' ? 'Active' : 'Banned'}
+                          </Badge>
                         </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
                         <TableCell>{user.enrolledcourses || 0}</TableCell>

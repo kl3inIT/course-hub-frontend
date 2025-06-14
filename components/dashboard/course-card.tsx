@@ -14,7 +14,7 @@ import { DashboardCourseResponseDTO } from '@/types/course'
 
 interface CourseCardProps {
   course: DashboardCourseResponseDTO
-  type: 'active' | 'completed' | 'certificate'
+  type: 'active' | 'completed' | 'certificate' | 'recommended'
   onViewCertificate?: (course: DashboardCourseResponseDTO) => void
 }
 

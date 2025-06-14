@@ -43,6 +43,49 @@ export function StudentDashboard() {
   const [dashboardCourses, setDashboardCourses] = useState<
     DashboardCourseResponseDTO[]
   >([])
+  const [recommendedCourses, setRecommendedCourses] = useState<
+    DashboardCourseResponseDTO[]
+  >([
+    {
+      title: "Advanced Web Development",
+      description: "Master modern web development with React, Node.js, and TypeScript",
+      thumbnailUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop",
+      category: "Web Development",
+      instructorName: "John Smith",
+      totalDuration: 15,
+      totalLessons: 45,
+      completed: false,
+      enrollDate: new Date().toISOString(),
+      completedDate: null,
+      progress: 0
+    },
+    {
+      title: "Data Science Fundamentals",
+      description: "Learn the basics of data science, statistics, and machine learning",
+      thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop",
+      category: "Data Science",
+      instructorName: "Sarah Johnson",
+      totalDuration: 20,
+      totalLessons: 60,
+      completed: false,
+      enrollDate: new Date().toISOString(),
+      completedDate: null,
+      progress: 0
+    },
+    {
+      title: "Mobile App Development",
+      description: "Build native mobile apps for iOS and Android using React Native",
+      thumbnailUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=2070&auto=format&fit=crop",
+      category: "Mobile Development",
+      instructorName: "Mike Wilson",
+      totalDuration: 18,
+      totalLessons: 50,
+      completed: false,
+      enrollDate: new Date().toISOString(),
+      completedDate: null,
+      progress: 0
+    }
+  ])
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -69,13 +112,14 @@ export function StudentDashboard() {
     }
   }
 
-  const enrolledCourses = dashboardCourses.filter(course => !course.completed)
+  const enrolledCourses = dashboardCourses
+  const activeCourses = dashboardCourses.filter(course => !course.completed)
   const completedCourses = dashboardCourses.filter(course => course.completed)
 
   const totalProgress =
     enrolledCourses.length > 0
       ? enrolledCourses.reduce((acc, course) => acc + course.progress, 0) /
-        enrolledCourses.length
+      enrolledCourses.length
       : 0
 
   const handleViewCertificate = (course: DashboardCourseResponseDTO) => {
@@ -111,7 +155,7 @@ export function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{enrolledCourses.length}</div>
-            <p className='text-xs text-muted-foreground'>Active courses</p>
+            <p className='text-xs text-muted-foreground'>Total enrolled courses</p>
           </CardContent>
         </Card>
 
@@ -171,11 +215,11 @@ export function StudentDashboard() {
 
         {/* Active Courses Tab */}
         <TabsContent value='active' className='space-y-6'>
-          {enrolledCourses.length > 0 ? (
+          {activeCourses.length > 0 ? (
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>Continue Learning</h2>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {enrolledCourses.map((course, index) => (
+                {activeCourses.map((course, index) => (
                   <CourseCard
                     key={`active-${course.title}-${index}`}
                     course={course}
@@ -271,6 +315,50 @@ export function StudentDashboard() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Recommended Courses Section */}
+      <div className='mt-12 space-y-6'>
+        <div>
+          <h2 className='text-2xl font-bold'>Recommended for You</h2>
+          <p className='text-muted-foreground'>Courses we think you'll love based on your interests</p>
+        </div>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+          {recommendedCourses.map((course, index) => (
+            <Card key={`recommended-${course.title}-${index}`} className='overflow-hidden hover:shadow-lg transition-shadow'>
+              <div className='aspect-video bg-muted'>
+                <img
+                  src={course.thumbnailUrl || '/placeholder.svg'}
+                  alt={course.title}
+                  className='w-full h-full object-cover'
+                />
+              </div>
+              <CardHeader>
+                <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
+                <CardDescription>by {course.instructorName}</CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <p className='text-sm text-muted-foreground line-clamp-2'>
+                  {course.description}
+                </p>
+                <div className='flex items-center justify-between'>
+                  <Badge variant='secondary'>{course.category}</Badge>
+                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                    <Clock className='h-4 w-4' />
+                    {course.totalDuration}h • {course.totalLessons} lessons
+                  </div>
+                </div>
+                <Link href={`/courses/${course.title}`}>
+                  <Button className='w-full'>
+                    <Play className='h-4 w-4 mr-2' />
+                    View Course
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Certificate Modal */}
       <Dialog

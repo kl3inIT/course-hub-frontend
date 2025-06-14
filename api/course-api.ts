@@ -134,4 +134,13 @@ export const courseApi = {
     >('/api/courses/dashboard')
     return response.data
   },
+
+  getRecommendedCourses: async (): Promise<
+    ApiResponse<DashboardCourseResponseDTO[]>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<DashboardCourseResponseDTO[]>
+    >('/api/courses/recommended')
+    return response.data
+  },
 }

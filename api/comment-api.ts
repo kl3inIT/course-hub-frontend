@@ -33,17 +33,13 @@ export const commentApi = {
   },
 
   // Delete a comment
-  deleteComment: async (
-    commentId: number
-  ): Promise<ApiResponse<string>> => {
+  deleteComment: async (commentId: number): Promise<ApiResponse<string>> => {
     const response = await httpClient.delete(`/api/comments/${commentId}`)
     return response.data
   },
 
   // Toggle like on a comment
-  toggleLike: async (
-    commentId: number
-  ): Promise<ApiResponse<boolean>> => {
+  toggleLike: async (commentId: number): Promise<ApiResponse<boolean>> => {
     const response = await httpClient.put(`/api/comments/${commentId}/like`)
     return response.data
   },
@@ -79,5 +75,4 @@ export const commentApi = {
       return response.data
     },
   },
-
 }

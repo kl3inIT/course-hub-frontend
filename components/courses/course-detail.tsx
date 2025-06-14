@@ -271,14 +271,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     }
   }
 
-  const handleClosePreview = () => {
-    setShowPreview(false)
-    setPreviewVideoUrl(null)
-    if (videoRef.current) {
-      videoRef.current.pause()
-    }
-  }
-
   if (loading) {
     return (
       <div className='flex items-center justify-center min-h-[400px]'>

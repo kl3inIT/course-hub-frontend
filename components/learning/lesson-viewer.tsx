@@ -133,11 +133,14 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
 
   // Progress tracking
-  const [lessonProgress, setLessonProgress] = useState<LessonProgressDTO | null>(null)
+  const [lessonProgress, setLessonProgress] =
+    useState<LessonProgressDTO | null>(null)
   const [isProgressLoading, setIsProgressLoading] = useState(true)
   const [canAccessLesson, setCanAccessLesson] = useState(true)
   const [accessReason, setAccessReason] = useState<string | null>(null)
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  )
   const lastProgressUpdate = useRef<number>(0)
   const progressUpdateInterval = 10000 // Update progress every 10 seconds
   const [isAccessChecking, setIsAccessChecking] = useState(true)
@@ -347,30 +350,12 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
       const percentage = clickX / width
       const newTime = percentage * duration
       videoRef.current.currentTime = newTime
-      if (!hasSeeked) {
-        toast({
-          title: 'Warning',
-          description:
-            'Seeking in the video will not count towards valid watch time.',
-          variant: 'destructive',
-        })
-        setHasSeeked(true)
-      }
     }
   }
 
   const seekVideo = (seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime += seconds
-      if (!hasSeeked) {
-        toast({
-          title: 'Warning',
-          description:
-            'Seeking in the video will not count towards valid watch time.',
-          variant: 'destructive',
-        })
-        setHasSeeked(true)
-      }
     }
   }
 
@@ -510,8 +495,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         module: prevModule,
         lesson:
           moduleLessons[prevModule.id]?.[
-            moduleLessons[prevModule.id].length - 1
-          ],
+          moduleLessons[prevModule.id].length - 1
+            ],
       }
     }
 
@@ -1167,14 +1152,19 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                       {/* Progress Bar */}
                       <div className='mb-3'>
                         <div
-                          className='w-full h-1 bg-white/30 rounded-full cursor-pointer'
+                          className='w-full h-1 bg-white/30 rounded-full cursor-pointer group relative'
                           onClick={handleProgressClick}
                           ref={progressBarRef}
+                          title='Seeking will not count towards watch time'
                         >
                           <div
                             className='h-full bg-primary rounded-full transition-all duration-150'
                             style={{ width: `${progress}%` }}
                           />
+                          {/* Hover Tooltip */}
+                          <div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-black/90 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap'>
+                            Seeking will not count towards watch time
+                          </div>
                         </div>
                       </div>
 

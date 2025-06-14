@@ -1,10 +1,11 @@
 import { httpClient } from '@/api/http-client'
 import { ApiResponse, Page } from '@/types/common'
+import { CouponSearchParams, PaginatedCouponResponse } from '@/types/discount'
 import {
+  CreateManagerRequest,
+  ProfileData,
   User,
   UserDetail,
-  ProfileData,
-  CreateManagerRequest,
   UserSearchParams,
 } from '@/types/user'
 
@@ -55,6 +56,20 @@ export const userApi = {
     return response.data
   },
 
+  // Get all coupons of the current user with pagination/filter
+  getMyCoupons: async (
+    params: CouponSearchParams
+  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
+    const response = await httpClient.get('/api/users/discounts', { params })
+    return response.data
+  },
+
+  // Claim a coupon for the current user
+  claimCoupon: async (couponId: string): Promise<ApiResponse<any>> => {
+    const response = await httpClient.post(`/api/users/discounts/${couponId}`)
+    return response.data
+  },
+
   // Admin APIs
   admin: {
     // Get all users with pagination and filters
@@ -91,6 +106,12 @@ export const userApi = {
     // Delete user (manager only)
     deleteUser: async (userId: string): Promise<ApiResponse<void>> => {
       const response = await httpClient.delete(`/api/admin/users/${userId}`)
+      return response.data
+    },
+
+    // Warn user
+    warnUser: async (userId: number): Promise<ApiResponse<void>> => {
+      const response = await httpClient.post(`/api/admin/users/${userId}/warn`)
       return response.data
     },
   },

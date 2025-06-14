@@ -1,23 +1,22 @@
 'use client'
 
-import type React from 'react'
-import { useState, useEffect } from 'react'
+import { discountApi } from '@/api/discount-api'
+import { paymentApi } from '@/api/payment-api'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { X, Clock, Video, Star, Users, Loader2 } from 'lucide-react'
-import Image from 'next/image'
 import { useAuth } from '@/context/auth-context'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { discountApi } from '@/api/discount-api'
-import { paymentApi } from '@/api/payment-api'
+import { ApplicableCoupon } from '@/types/discount'
 import { paymentStorage } from '@/utils/payment'
+import { Clock, Loader2, Star, Users, Video, X } from 'lucide-react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -41,10 +40,19 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
   const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null)
   const [isEditingDiscount, setIsEditingDiscount] = useState(false)
   const [successfulCode, setSuccessfulCode] = useState<string>('')
+  const [appliedDiscountId, setAppliedDiscountId] = useState<number | null>(
+    null
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { getToken } = useAuth()
   const router = useRouter()
+
+  // State for coupons
+  const [couponModalOpen, setCouponModalOpen] = useState(false)
+  const [couponList, setCouponList] = useState<ApplicableCoupon[]>([])
+  const [isCouponLoading, setIsCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState<string | null>(null)
 
   const originalPrice = course.price
   const discountedPrice = appliedDiscount
@@ -142,9 +150,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
       const paymentData = {
         courseId: course.id,
         amount: discountedPrice,
-        ...(appliedDiscount && successfulCode
-          ? { discountCode: successfulCode }
-          : {}),
+        ...(appliedDiscountId ? { discountId: appliedDiscountId } : {}),
       }
 
       const response = await paymentApi.createPayment(paymentData)
@@ -167,6 +173,51 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Get coupons when coupon modal opens
+  const fetchCoupons = async () => {
+    setIsCouponLoading(true)
+    setCouponError(null)
+    try {
+      const res = await discountApi.getMyCoupons({
+        courseId: course.id,
+        isActive: 1,
+      })
+      setCouponList(res.data || [])
+    } catch (err: any) {
+      setCouponError('Failed to fetch coupons')
+    } finally {
+      setIsCouponLoading(false)
+    }
+  }
+
+  // When coupon modal opens, fetch coupons
+  useEffect(() => {
+    if (couponModalOpen) fetchCoupons()
+    // eslint-disable-next-line
+  }, [couponModalOpen])
+
+  // When selecting a coupon
+  const handleSelectCoupon = (coupon: ApplicableCoupon) => {
+    setAppliedDiscount(coupon.percentage)
+    setSuccessfulCode(coupon.code || '') // Ensure code is not null
+    setAppliedDiscountId(coupon.id)
+    setIsEditingDiscount(false)
+    setDiscountCode(coupon.code || '')
+    setCouponModalOpen(false)
+    toast.success(`Applied coupon: ${coupon.code || ''}`)
+  }
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   if (loading) {
@@ -281,7 +332,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                     <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-md'>
                       <div className='flex-1'>
                         <p className='text-sm text-green-700'>
-                          Code applied:{' '}
+                          Coupon applied:{' '}
                           <span className='font-medium'>{successfulCode}</span>
                         </p>
                         <p className='text-xs text-green-600'>
@@ -293,44 +344,36 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                         size='sm'
                         onClick={handleEditDiscount}
                       >
-                        Edit
+                        Change
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className='flex gap-2'>
-                    <div className='flex-1 relative'>
-                      <Input
-                        placeholder='Enter discount code'
-                        value={discountCode}
-                        onChange={e => setDiscountCode(e.target.value)}
-                        className='pr-8'
-                        disabled={isApplyingDiscount}
-                      />
-                      {discountCode && (
-                        <button
-                          onClick={handleClearDiscount}
-                          className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
-                          type='button'
-                        >
-                          <X className='h-4 w-4' />
-                        </button>
-                      )}
-                    </div>
                     <Button
-                      onClick={handleApplyDiscount}
+                      className='flex-1'
                       variant='outline'
+                      onClick={() => setCouponModalOpen(true)}
                       disabled={isApplyingDiscount}
                     >
-                      {isApplyingDiscount ? 'Applying...' : 'Apply'}
+                      Select Coupon
                     </Button>
+                    {discountCode && (
+                      <button
+                        onClick={handleClearDiscount}
+                        className='text-gray-400 hover:text-gray-600 px-2'
+                        type='button'
+                      >
+                        <X className='h-4 w-4' />
+                      </button>
+                    )}
                   </div>
                 )}
                 <a
-                  href='/discount-codes'
+                  href='/coupons'
                   className='text-sm text-blue-600 hover:underline'
                 >
-                  👉 View available discount codes
+                  👉 View your discount codes
                 </a>
               </div>
 
@@ -362,6 +405,51 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
           </div>
         </div>
       </DialogContent>
+      {/* Coupon Selection Modal */}
+      <Dialog open={couponModalOpen} onOpenChange={setCouponModalOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Select applicable coupon</DialogTitle>
+          </DialogHeader>
+          {isCouponLoading ? (
+            <div className='text-center py-4'>Loading...</div>
+          ) : couponError ? (
+            <div className='text-center text-red-500 py-4'>{couponError}</div>
+          ) : couponList.length === 0 ? (
+            <div className='text-center py-4'>
+              No coupons available for this course.
+            </div>
+          ) : (
+            <div className='space-y-2 max-h-60 overflow-y-auto'>
+              {couponList.map(coupon => (
+                <div
+                  key={coupon.id}
+                  className='border rounded p-3 flex flex-col gap-1 hover:bg-gray-50 cursor-pointer'
+                  onClick={() => handleSelectCoupon(coupon)}
+                >
+                  <div className='font-semibold'>
+                    {coupon.code}{' '}
+                    <span className='text-green-600'>
+                      -{coupon.percentage}%
+                    </span>
+                  </div>
+                  <div className='text-xs text-gray-600'>
+                    {coupon.description}
+                  </div>
+                  <div className='text-xs'>
+                    Expires: {formatDate(coupon.expiryDate)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className='flex justify-end pt-2'>
+            <Button variant='ghost' onClick={() => setCouponModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

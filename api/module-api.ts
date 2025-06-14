@@ -30,4 +30,11 @@ export const moduleApi = {
     const response = await httpClient.delete(`/api/modules/${moduleId}`)
     return response.data
   },
+
+  getModuleById: async (
+    moduleId: string
+  ): Promise<ApiResponse<ModuleResponseDTO>> => {
+    const response = await httpClient.get(`/api/modules/${moduleId}`)
+    return response.data
+  },
 }

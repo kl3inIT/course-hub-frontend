@@ -60,9 +60,18 @@ export interface CourseSearchParams {
   minPrice?: number
   maxPrice?: number
   rating?: number
+  searchTerm?: string
+  categoryId?: number
+  minRating?: number
+  isFree?: boolean
+  isDiscounted?: boolean
+  status?: string
+  sortBy?: string
+  sortDirection?: string
 }
 
 export interface DashboardCourseResponseDTO {
+  id: number
   title: string
   description: string
   thumbnailUrl: string | null
@@ -74,4 +83,12 @@ export interface DashboardCourseResponseDTO {
   enrollDate: string
   completedDate: string | null
   progress: number
+}
+
+export interface CourseSearchStatsResponseDTO {
+  totalCourses: number
+  minPrice: number
+  maxPrice: number
+  avgRating: number
+  levelStats: Record<string, number>
 }

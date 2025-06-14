@@ -1,6 +1,7 @@
 import { httpClient } from '@/api/http-client'
 import { ApiResponse } from '@/types/common'
 import {
+  ApplicableCoupon,
   Coupon,
   CouponCreateRequestDTO,
   CouponSearchParams,
@@ -21,6 +22,11 @@ export const discountApi = {
   // Coupon Management APIs
   getCoupons: async (params?: CouponSearchParams): Promise<ApiResponse<PaginatedCouponResponse>> => {
     const response = await httpClient.get('/api/discounts', { params })
+    return response.data
+  },
+
+  getMyCoupons: async (params: { courseId: number; isActive: number }): Promise<ApiResponse<ApplicableCoupon[]>> => {
+    const response = await httpClient.get('/api/discounts/my', { params })
     return response.data
   },
 

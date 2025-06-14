@@ -47,15 +47,16 @@ import { Category, ClaimedCoupon, Coupon, CouponSearchParams, Course, Pagination
 import { transformCoupon } from '@/utils/transform'
 import {
   BookOpen,
+  Calendar,
   Check,
   ChevronsUpDown,
-  Copy,
   Gift,
   Globe,
   Search,
   SlidersHorizontal,
   Tag
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -280,6 +281,7 @@ export default function CouponsPage() {
     first: true,
     last: true,
   })
+  const router = useRouter()
 
   // Use the custom hook
   const { coupons, loadingCoupons, pagination, fetchCoupons } = useCoupon()
@@ -374,6 +376,15 @@ export default function CouponsPage() {
       : coupons
   , [coupons, searchTerm])
 
+  // Filter for available coupons based on new criteria
+  const availableCoupons = useMemo(() => {
+    const now = new Date();
+    return filteredCoupons.filter(coupon => {
+      const endDate = new Date(coupon.endDate);
+      return coupon.isActive === 1 && endDate > now && coupon.availableQuantity > 0;
+    });
+  }, [filteredCoupons]);
+
   // Fetch my coupons when tab changes to 'my-coupons' or page/filter changes
   const fetchMyCoupons = useCallback(async (page = 0) => {
     if (!user) return
@@ -410,61 +421,21 @@ export default function CouponsPage() {
     }
   }, [activeTab, user, filter, fetchMyCoupons])
 
-  // Get coupon status
-  const getCouponStatus = (coupon: Coupon) => {
-    if (!coupon.isActive) return 'inactive'
-    const now = new Date()
-    const startDate = new Date(coupon.startDate)
-    const endDate = new Date(coupon.endDate)
-    
-    if (now < startDate) return 'upcoming'
-    if (now > endDate) return 'expired'
-    if (coupon.usedCount >= coupon.usageLimit) return 'exhausted'
-    return 'active'
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>
-      case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>
-      case 'upcoming':
-        return <Badge className="bg-blue-100 text-blue-800">Upcoming</Badge>
-      case 'expired':
-        return <Badge className="bg-red-100 text-red-800">Expired</Badge>
-      case 'exhausted':
-        return <Badge className="bg-orange-100 text-orange-800">Exhausted</Badge>
-      default:
-        return <Badge variant="secondary">Unknown</Badge>
-    }
-  }
-
   // Get applicable items display
   const getApplicableItemsDisplay = (coupon: Coupon) => {
-    if (coupon.applicationType === 'all') {
+    const totalCategories = coupon.totalCategory || 0
+    const totalCourses = coupon.totalCourse || 0
+
+    if (totalCategories === 0 && totalCourses === 0) {
       return <Badge className="bg-blue-100 text-blue-800"><Globe className="w-3 h-3 mr-1" />All Items</Badge>
     } else {
-      const totalCategories = coupon.totalCategory || 0
-      const totalCourses = coupon.totalCourse || 0
-
       return (
         <div className="space-y-1">
           <Badge className="bg-purple-100 text-purple-800">
             <Tag className="w-3 h-3 mr-1" />
             Specific Items
           </Badge>
-          <div className="text-xs text-gray-600">
-            {totalCategories > 0 && (
-              <div>• {totalCategories} categories</div>
-            )}
-            {totalCourses > 0 && (
-              <div>• {totalCourses} courses</div>
-            )}
-            {totalCategories === 0 && totalCourses === 0 && (
-              <div>• No items selected</div>
-            )}
-          </div>
+          
         </div>
       )
     }
@@ -472,7 +443,10 @@ export default function CouponsPage() {
 
   // Get detailed tooltip content for applicable items
   const getApplicableItemsTooltip = (coupon: Coupon) => {
-    if (coupon.applicationType === 'all') {
+    const totalCategories = coupon.totalCategory || 0
+    const totalCourses = coupon.totalCourse || 0
+
+    if (totalCategories === 0 && totalCourses === 0) {
       return (
         <div className="p-3 bg-white border border-gray-200 rounded shadow-lg">
           <div className="font-medium text-sm text-gray-900">All Items</div>
@@ -480,7 +454,7 @@ export default function CouponsPage() {
         </div>
       )
     } else {
-      const categoryNames = coupon.categoryIds?.length 
+      const categoryNames = coupon.categoryIds?.length
         ? allCategories
             .filter(cat => coupon.categoryIds?.includes(Number(cat.id)))
             .map(cat => cat.name)
@@ -495,7 +469,7 @@ export default function CouponsPage() {
       return (
         <div className="p-3 bg-white border border-gray-200 rounded shadow-lg max-w-xs">
           <div className="font-medium text-sm text-gray-900 mb-2">Specific Items</div>
-          
+
           {categoryNames.length > 0 && (
             <div className="mb-3">
               <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
@@ -512,7 +486,7 @@ export default function CouponsPage() {
               </div>
             </div>
           )}
-          
+
           {courseNames.length > 0 && (
             <div>
               <div className="text-xs font-medium flex items-center mb-1 text-gray-700">
@@ -529,8 +503,8 @@ export default function CouponsPage() {
               </div>
             </div>
           )}
-          
-          {categoryNames.length === 0 && courseNames.length === 0 && (
+
+          {totalCategories === 0 && totalCourses === 0 && (
             <div className="text-xs text-gray-500">No specific items selected</div>
           )}
         </div>
@@ -548,7 +522,13 @@ export default function CouponsPage() {
 
   // Format date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN')
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   // Handle claim coupon
@@ -617,67 +597,57 @@ export default function CouponsPage() {
                 <CardTitle className='text-lg font-bold'>
                   {coupon.code}
                 </CardTitle>
-                {getStatusBadge(getCouponStatus(coupon))}
               </div>
-              <CardDescription className='text-sm'>
-                Valid until {formatDate(coupon.endDate)}
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className='space-y-4'>
+            <CardContent className="pt-0">
+              <div className='space-y-3'>
                 <div>
                   <p className='text-xl font-bold text-primary'>
-                    {coupon.discountValue}% OFF
+                    {coupon.percentage}% OFF
                   </p>
                   <p className='text-sm text-muted-foreground line-clamp-2'>
                     {coupon.description}
                   </p>
                 </div>
+                <CardDescription className='text-sm flex items-center gap-1'>
+                  <Calendar className="h-3 w-3 text-muted-foreground" /> Valid from {formatDate(coupon.startDate)} to {formatDate(coupon.endDate)}
+                </CardDescription>
+              </div>
 
-                <div className='flex items-center justify-between'>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        {getApplicableItemsDisplay(coupon)}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {getApplicableItemsTooltip(coupon)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+              <div className='flex items-center justify-between mt-4'>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      {getApplicableItemsDisplay(coupon)}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {getApplicableItemsTooltip(coupon)}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-                  {!showCopyButton ? (
-                    <Button
-                      size='sm'
-                      onClick={() => handleClaimCoupon(coupon)}
-                      disabled={!coupon.isActive || isClaimed}
-                      variant={isClaimed ? 'outline' : 'default'}
-                      className='ml-2'
-                    >
-                      <Gift className='h-4 w-4 mr-1' />
-                      {isClaimed ? 'Claimed' : 'Get'}
-                    </Button>
-                  ) : (
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className='ml-2'
-                    >
-                      {copiedCodes[coupon.code] ? (
-                        <>
-                          <Check className='h-4 w-4 mr-1' />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className='h-4 w-4 mr-1' />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
+                {!showCopyButton ? (
+                  <Button
+                    size='sm'
+                    onClick={() => handleClaimCoupon(coupon)}
+                    disabled={!(coupon.isActive === 1 && new Date(coupon.endDate) > new Date() && coupon.availableQuantity > 0) || isClaimed}
+                    variant={isClaimed ? 'outline' : 'default'}
+                    className='ml-2'
+                  >
+                    <Gift className='h-4 w-4 mr-1' />
+                    {isClaimed ? 'Claimed' : 'Get'}
+                  </Button>
+                ) : (
+                  <Button
+                    size='sm'
+                    variant='default'
+                    onClick={() => router.push('/courses')}
+                    className='ml-2'
+                  >
+                    <BookOpen className='h-4 w-4 mr-1' />
+                    Use Now
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -806,8 +776,8 @@ export default function CouponsPage() {
                 </div>
               ) : (
                 <>
-                  <CouponGrid coupons={filteredCoupons} />
-                  {filteredCoupons.length === 0 && (
+                  <CouponGrid coupons={availableCoupons} />
+                  {availableCoupons.length === 0 && (
                 <div className='text-center py-10'>
                   <p className='text-muted-foreground'>
                     No available coupons found matching your filters.

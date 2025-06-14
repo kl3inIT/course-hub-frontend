@@ -45,49 +45,39 @@ export interface ClaimedCoupon {
 
 export interface Coupon {
   id: string
-  code: string
   description: string
-  discountType: 'percentage'
-  discountValue: number
-  minimumAmount?: number
-  maximumDiscount?: number
-  applicationType: 'all' | 'specific'
-  applicableCategories: string[]
-  applicableCourses: string[]
+  percentage: number
+  totalCategory: number
+  totalCourse: number
+  usage: number
+  quantity: number
+  availableQuantity: number
+  categoryIds: number[]
+  courseIds: number[]
   startDate: string
   endDate: string
-  usageLimit: number
-  usedCount: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  // Backend specific fields
-  totalCategory?: number
-  totalCourse?: number
-  categoryIds?: number[]
-  courseIds?: number[]
+  isActive: number
+  code: string
 }
 
 // Coupon API Request/Response Types
 export interface CouponCreateRequestDTO {
-  code: string
   description?: string
-  expiryDate: string
+  startDate: string
+  endDate: string
   percentage: number
-  isActive: number // 1 for active, 0 for inactive
-  isGlobal: number // 1 for all items, 0 for specific items
+  isActive: number
   quantity: number
   categoryIds?: number[]
   courseIds?: number[]
 }
 
 export interface CouponUpdateRequestDTO {
-  code: string
   description?: string
-  expiryDate: string
+  startDate: string
+  endDate: string
   percentage: number
-  isActive: number // 1 for active, 0 for inactive
-  isGlobal: number // 1 for all items, 0 for specific items
+  isActive: number
   quantity: number
   categoryIds?: number[]
   courseIds?: number[]
@@ -105,17 +95,19 @@ export interface CouponSearchParams {
 // Backend Coupon Response (from API)
 export interface BackendCouponResponse {
   id: number
-  code: string
   description: string
   percentage: number
   totalCategory: number
   totalCourse: number
+  usage: number
+  quantity: number
+  availableQuantity: number
   categoryIds: number[]
   courseIds: number[]
-  usage: string // format: "used/total" e.g. "0/12312"
-  expiryTime: string
+  startDate: string
+  endDate: string
   isActive: number
-  isGlobal: number
+  code: string
 }
 
 // Paginated Response from Backend
@@ -146,6 +138,19 @@ export interface PaginatedCouponResponse {
   numberOfElements: number
   first: boolean
   empty: boolean
+}
+
+export interface ApplicableCoupon {
+  id: number
+  code: string | null
+  percentage: number
+  description: string
+  startDate: string | null
+  expiryDate: string
+  quantity: number
+  isActive: number
+  isGlobal: number | null
+  isValid: boolean | null
 }
 
 export interface FilterSidebarProps {

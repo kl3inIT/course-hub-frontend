@@ -2,11 +2,11 @@ import { httpClient } from '@/api/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import { CouponSearchParams, PaginatedCouponResponse } from '@/types/discount'
 import {
-  CreateManagerRequest,
-  ProfileData,
-  User,
-  UserDetail,
-  UserSearchParams,
+    CreateManagerRequest,
+    ProfileData,
+    User,
+    UserDetail,
+    UserSearchParams,
 } from '@/types/user'
 
 export const userApi = {

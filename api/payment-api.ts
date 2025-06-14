@@ -4,7 +4,7 @@ import { ApiResponse } from '@/types/common'
 interface PaymentRequestDTO {
   courseId: number
   amount: number
-  discountCode?: string
+  discountId?: number
 }
 
 interface PaymentResponseDTO {

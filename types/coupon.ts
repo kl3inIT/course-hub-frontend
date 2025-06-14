@@ -10,17 +10,19 @@ export interface Course {
 
 export interface Coupon {
   id: string
-  code: string
-  discount: number
   description: string
-  validUntil: string
-  isActive: boolean
-  isClaimed?: boolean
-  scope: {
-    type: 'all' | 'categories' | 'specific_course'
-    categories?: Category[]
-    course?: Course
-  }
+  percentage: number
+  totalCategory: number
+  totalCourse: number
+  usage: number
+  quantity: number
+  availableQuantity: number
+  categoryIds: number[]
+  courseIds: number[]
+  startDate: string
+  endDate: string
+  isActive: number
+  code: string
 }
 
 export interface FilterSidebarProps {

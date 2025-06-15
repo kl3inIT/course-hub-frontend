@@ -34,17 +34,15 @@ import {
   DollarSign,
   Download,
   Loader2,
-  Maximize,
-  Minimize,
   RefreshCw,
   Star,
   TrendingUp,
-  Users,
+  Users
 } from 'lucide-react'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
-import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from 'recharts'
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import '../../styles/date-range-custom.css'
 import { ChartConfig } from '../ui/chart'
 const { RangePicker } = DatePicker
@@ -56,12 +54,46 @@ interface ChartContainerProps {
 }
 
 const revenueData = [
-  { month: 'Jan', revenue: 12400, enrollments: 234 },
-  { month: 'Feb', revenue: 15600, enrollments: 289 },
-  { month: 'Mar', revenue: 18900, enrollments: 356 },
-  { month: 'Apr', revenue: 16700, enrollments: 312 },
-  { month: 'May', revenue: 21300, enrollments: 398 },
-  { month: 'Jun', revenue: 25100, enrollments: 445 },
+  {
+    id: 1,
+    courseName: 'ReactJS Basic',
+    revenue: 12000000,
+    previousRevenue: 10500000,
+    growth: 14.3,
+    orders: 50,
+    newStudents: 45,
+    revenueShare: 32
+  },
+  {
+    id: 2,
+    courseName: 'Python Beginner',
+    revenue: 8500000,
+    previousRevenue: 8800000,
+    growth: -3.4,
+    orders: 36,
+    newStudents: 28,
+    revenueShare: 22
+  },
+  {
+    id: 3,
+    courseName: 'SQL & Database',
+    revenue: 6250000,
+    previousRevenue: 5000000,
+    growth: 25,
+    orders: 27,
+    newStudents: 20,
+    revenueShare: 17
+  },
+  {
+    id: 4,
+    courseName: 'UI/UX Design',
+    revenue: 4000000,
+    previousRevenue: 3600000,
+    growth: 11.1,
+    orders: 14,
+    newStudents: 13,
+    revenueShare: 10
+  }
 ]
 
 const coursePerformanceData = [
@@ -82,10 +114,38 @@ const coursePerformanceData = [
 ]
 
 const studentActivityData = [
-  { week: 'Week 1', active: 1200, new: 89 },
-  { week: 'Week 2', active: 1350, new: 123 },
-  { week: 'Week 3', active: 1180, new: 95 },
-  { week: 'Week 4', active: 1420, new: 167 },
+  {
+    id: 1,
+    courseName: 'React Fundamentals',
+    newStudents: 15,
+    previousCompletion: 8 ,
+    growth: 10,
+    reviewRate: 85
+  },
+  {
+    id: 2,
+    courseName: 'Node.js Backend',
+    newStudents: 12,
+    previousCompletion: 65,
+    growth: 5,
+    reviewRate: 72
+  },
+  {
+    id: 3,
+    courseName: 'CSS Mastery',
+    newStudents: 8,
+    previousCompletion: 60,
+    growth: 8,
+    reviewRate: 90
+  },
+  {
+    id: 4,
+    courseName: 'Advanced JS',
+    newStudents: 20,
+    previousCompletion: 75,
+    growth: 12,
+    reviewRate: 80
+  }
 ]
 
 const categoryData = [
@@ -181,6 +241,8 @@ export function ManagerAnalytics() {
   const [selectedCategoryForCourses, setSelectedCategoryForCourses] = useState<CategoryDetailDTO | null>(null)
   const [categoryCourses, setCategoryCourses] = useState<CourseResponseDTO[]>([])
   const [loadingCategoryCourses, setLoadingCategoryCourses] = useState(false)
+  const [selectedDateRange, setSelectedDateRange] = useState<[Date, Date] | null>(null)
+  const [previousPeriodLabel, setPreviousPeriodLabel] = useState('Previous Month')
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -194,7 +256,7 @@ export function ManagerAnalytics() {
 
   const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0)
   const totalEnrollments = revenueData.reduce(
-    (sum, item) => sum + item.enrollments,
+    (sum, item) => sum + item.orders,
     0
   )
   const avgRating =
@@ -297,6 +359,16 @@ export function ManagerAnalytics() {
 
   const totalCategoryCoursesRevenue = categoryCourses.reduce((sum, course) => sum + (course.finalPrice || 0), 0)
 
+  const handleDateRangeChange = (dates: [Date, Date] | null) => {
+    setSelectedDateRange(dates)
+    if (dates) {
+      const daysDiff = Math.ceil((dates[1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24))
+      setPreviousPeriodLabel(`${daysDiff} Days Ago`)
+    } else {
+      setPreviousPeriodLabel('Previous Month')
+    }
+  }
+
   return (
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
@@ -307,7 +379,6 @@ export function ManagerAnalytics() {
           </p>
         </div>
         <div className='flex space-x-2 items-center'>
-          {/* Date Range Picker */}
           <div className='relative'>
             <RangePicker
               style={{ borderRadius: 8, minWidth: 240 }}
@@ -315,6 +386,7 @@ export function ManagerAnalytics() {
               format="DD/MM/YYYY"
               allowClear
               separator={null}
+              onChange={(dates) => handleDateRangeChange(dates as [Date, Date] | null)}
               panelRender={panel => (
                 <div style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
                   {panel}
@@ -425,144 +497,36 @@ export function ManagerAnalytics() {
       </div>
 
       {/* Charts */}
-      <Tabs defaultValue='courses' className='space-y-4'>
-        <TabsList>
-          <TabsTrigger value='courses'>Course Performance</TabsTrigger>
-          <TabsTrigger value='activity'>Student Activity</TabsTrigger>
-          <TabsTrigger value='trends'>Revenue Trends</TabsTrigger>
-        </TabsList>
-
-<TabsContent value="courses" className="space-y-4">
-  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-    {/* Course Table */}
-    <Card className="w-full rounded-lg border p-2 md:p-6">
-      <CardContent className="min-h-[500px] flex flex-col items-center">
-        {loadingCategory ? (
-          <div className="text-center py-8">Loading...</div>
-        ) : (
-          <div className={
-            isCourseFullscreen
-              ? 'fixed inset-0 z-50 bg-white bg-opacity-95 flex flex-col items-center justify-center p-8 overflow-auto'
-              : 'mt-8 relative w-full'
-          }>
-            <div className={
-              isCourseFullscreen
-                ? 'w-full max-w-7xl mx-auto'
-                : 'w-full mx-auto'
-            }>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Course Details</h2>
-                <div className="flex gap-2">
-                  <label className="flex items-center text-sm">
-                    Show
-                    <select
-                      value={courseRowsPerPage}
-                      onChange={e => {
-                        setCourseRowsPerPage(Number(e.target.value))
-                        setCoursePage(1)
-                      }}
-                      className="border rounded px-2 py-1 ml-2"
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={-1}>All</option>
-                    </select>
-                    <span className="ml-2">
-                      {isCourseFullscreen ? 'Zoom Out' : 'Zoom In'}
-                    </span>
-                  </label>
-                  <button
-                    className="p-2 rounded-full hover:bg-gray-200"
-                    onClick={() => setIsCourseFullscreen(!isCourseFullscreen)}
-                    title={isCourseFullscreen ? 'Zoom Out' : 'Zoom In'}
-                  >
-                    {isCourseFullscreen ? (
-                      <Minimize className="h-6 w-6" />
-                    ) : (
-                      <Maximize className="h-6 w-6" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="w-full overflow-x-auto">
-                <table className="min-w-[800px] border bg-white table-fixed text-xs md:text-sm">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '6%', minWidth: '50px' }}>ID</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '18%', minWidth: '150px' }}>Name</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '10%', minWidth: '80px' }}>Students</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '10%', minWidth: '80px' }}>Rating</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '12%', minWidth: '100px' }}>Revenue</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '12%', minWidth: '100px' }}>Revenue %</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '10%', minWidth: '80px' }}>Reviews</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '10%', minWidth: '80px' }}>Level</th>
-                      <th className="px-3 py-2 border text-center font-semibold whitespace-nowrap" style={{ width: '12%', minWidth: '110px' }}>Completion %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedCourseData.map((course, idx) => (
-                      <tr key={idx}>
-                        <td className="border px-3 py-2 align-top text-center whitespace-nowrap">{courseRowsPerPage === -1 ? idx + 1 : (coursePage - 1) * courseRowsPerPage + idx + 1}</td>
-                        <td className="border px-3 py-2 align-top whitespace-nowrap">{course.course}</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">{course.enrollments}</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">{course.rating}</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">${course.revenue?.toLocaleString('en-US')}</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">{((course.revenue / totalRevenue) * 100).toFixed(1)}%</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">{Math.floor(course.enrollments * 0.3)}</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">Beginner</td>
-                        <td className="border px-3 py-2 text-center whitespace-nowrap">{Math.floor(Math.random() * 30 + 70)}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-4 justify-center">
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                disabled={coursePage === 1}
-                onClick={() => setCoursePage(coursePage - 1)}
-              >
-                Previous
-              </button>
-              {Array.from({ length: totalCoursePages }, (_, idx) => (
-                <button
-                  key={idx}
-                  className={`px-2 py-1 border rounded ${coursePage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                  onClick={() => setCoursePage(idx + 1)}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                disabled={coursePage === totalCoursePages}
-                onClick={() => setCoursePage(coursePage + 1)}
-              >
-                Next
-              </button>
-            </div>
+      <Tabs defaultValue='category' className='space-y-4'>
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="text-sm font-medium text-gray-500">Category Analysis:</div>
+            <TabsList>
+              <TabsTrigger value='category'>Category Overview</TabsTrigger>
+            </TabsList>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <div className="flex items-center space-x-2">
+            <div className="text-sm font-medium text-gray-500">Course Analysis:</div>
+            <TabsList>
+              <TabsTrigger value='course'>Course Details</TabsTrigger>
+              <TabsTrigger value='student'>Student Activity</TabsTrigger>
+              <TabsTrigger value='revenue'>Revenue Trends</TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
-    {/* Category Table */}
-    <Card className="w-full rounded-lg border p-2 md:p-6">
-      <CardContent className="min-h-[500px] flex flex-col items-center">
-        {loadingCategory ? (
-          <div className="text-center py-8">Loading...</div>
-        ) : (
-          <div className={isCategoryFullscreen
-              ? 'fixed inset-0 z-50 bg-white bg-opacity-95 flex flex-col items-center justify-center p-8 overflow-auto'
-              : 'mt-8 relative w-full'}>
-            <div className={isCategoryFullscreen
-                ? 'w-full max-w-7xl mx-auto'
-                : 'w-full mx-auto'}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Category Details</h2>
-                <div className="flex gap-2">
+        <div className="min-h-[800px]">
+          {/* Category Tab */}
+          <TabsContent value="category" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Category Overview</CardTitle>
+                <CardDescription>
+                  Analysis of course categories and their performance metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-end mb-4">
                   <label className="flex items-center text-sm">
                     Show
                     <select
@@ -578,191 +542,393 @@ export function ManagerAnalytics() {
                       <option value={20}>20</option>
                       <option value={-1}>All</option>
                     </select>
-                    <span className="ml-2">
-                      {isCategoryFullscreen ? 'Zoom Out' : 'Zoom In'}
-                    </span>
                   </label>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Average Rating</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">% of Revenue</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Students</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paginatedData.map((cat, idx) => (
+                        <tr
+                          key={cat.categoryId}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleCategoryRowClick(cat)}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                            {rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                            {(cat.categoryName || '').replace(/\n|\r|\r\n/g, ' ')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                            {(cat.description || '').replace(/\n|\r|\r\n/g, ' ')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.averageRating}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${cat.totalRevenue?.toLocaleString('en-US')}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                            {((cat.totalRevenue / totalRevenue) * 100).toFixed(1)}%
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.totalStudents}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex items-center gap-2 mt-4 justify-center">
                   <button
-                    className="p-2 rounded-full hover:bg-gray-200"
-                    onClick={() => setIsCategoryFullscreen(!isCategoryFullscreen)}
-                    title={isCategoryFullscreen ? 'Zoom Out' : 'Zoom In'}
+                    className="px-2 py-1 border rounded disabled:opacity-50"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
                   >
-                    {isCategoryFullscreen ? (
-                      <Minimize className="h-6 w-6" />
-                    ) : (
-                      <Maximize className="h-6 w-6" />
-                    )}
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, idx) => (
+                    <button
+                      key={idx}
+                      className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                      onClick={() => setPage(idx + 1)}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                  <button
+                    className="px-2 py-1 border rounded disabled:opacity-50"
+                    disabled={page === totalPages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next
                   </button>
                 </div>
-              </div>
-              <div className="w-full overflow-x-auto">
-                <table className="min-w-[800px] border bg-white table-fixed text-xs md:text-sm">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-1 py-1 border text-center" style={{ width: '5%', minWidth: '40px' }}>ID</th>
-                      <th className="px-1 py-1 border" style={{ width: '10%', minWidth: '80px' }}>Name</th>
-                      <th className="px-1 py-1 border" style={{ width: '16%', minWidth: '90px' }}>Details</th>
-                      <th className="px-1 py-1 border text-center" style={{ width: '9%', minWidth: '50px' }}>Average Rating</th>
-                      <th className="px-1 py-1 border text-center" style={{ width: '9%', minWidth: '60px' }}>Revenue</th>
-                      <th className="px-1 py-1 border text-center" style={{ width: '9%', minWidth: '50px' }}>% of Revenue</th>
-                      <th className="px-1 py-1 border text-center" style={{ width: '10%', minWidth: '70px' }}>Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.map((cat, idx) => (
-                      <tr
-                        key={cat.categoryId}
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => handleCategoryRowClick(cat)}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Course Tab */}
+          <TabsContent value="course" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Details</CardTitle>
+                <CardDescription>
+                  Detailed analysis of individual course performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-end mb-4">
+                  <label className="flex items-center text-sm">
+                    Show
+                    <select
+                      value={courseRowsPerPage}
+                      onChange={e => {
+                        setCourseRowsPerPage(Number(e.target.value))
+                        setCoursePage(1)
+                      }}
+                      className="border rounded px-2 py-1 ml-2"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={-1}>All</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue %</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completion %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {coursePerformanceData.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedCourseData.map((course, idx) => (
+                          <tr key={idx}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{courseRowsPerPage === -1 ? idx + 1 : (coursePage - 1) * courseRowsPerPage + idx + 1}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.course}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.enrollments}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.rating}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${course.revenue?.toLocaleString('en-US')}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{((course.revenue / totalRevenue) * 100).toFixed(1)}%</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{Math.floor(course.enrollments * 0.3)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">Beginner</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{Math.floor(Math.random() * 30 + 70)}%</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {coursePerformanceData.length > 0 && (
+                  <div className="flex items-center gap-2 mt-4 justify-center">
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={coursePage === 1}
+                      onClick={() => setCoursePage(coursePage - 1)}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalCoursePages }, (_, idx) => (
+                      <button
+                        key={idx}
+                        className={`px-2 py-1 border rounded ${coursePage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setCoursePage(idx + 1)}
                       >
-                        <td className="border px-1 py-1 align-top text-center" style={{ width: '5%', minWidth: '40px' }}>
-                          {isCategoryFullscreen ? (
-                            <div>{rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}</div>
-                          ) : (
-                            <div className="line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                              {rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}
-                            </div>
-                          )}
-                        </td>
-                        <td className="border px-1 py-1 align-top" style={{ width: '15%', minWidth: '80px' }}>
-                          <div className="line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {(cat.categoryName || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </div>
-                        </td>
-                        <td className="border px-1 py-1 align-top" style={{ width: '15%', minWidth: '90px' }}>
-                          <div className="line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {(cat.description || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </div>
-                        </td>
-                        <td className="border px-1 py-1 text-center" style={{ width: '8%', minWidth: '50px' }}>{cat.courseCount}</td>
-                        <td className="border px-1 py-1 text-center" style={{ width: '8%', minWidth: '60px' }}>{cat.averageRating}</td>
-                        <td className="border px-1 py-1 text-center" style={{ width: '7%', minWidth: '50px' }}>{cat.totalStudents}</td>
-                        <td className="border px-1 py-1 text-center" style={{ width: '10%', minWidth: '70px' }}>${cat.totalRevenue?.toLocaleString('en-US')}</td>
-                      </tr>
+                        {idx + 1}
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-4 justify-center">
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </button>
-              {Array.from({ length: totalPages }, (_, idx) => (
-                <button
-                  key={idx}
-                  className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                  onClick={() => setPage(idx + 1)}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-              <button
-                className="px-2 py-1 border rounded disabled:opacity-50"
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  </div>
-</TabsContent>
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={coursePage === totalCoursePages}
+                      onClick={() => setCoursePage(coursePage + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-
-        <TabsContent value='activity' className='space-y-4'>
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Activity</CardTitle>
-              <CardDescription>
-                Weekly active users and new registrations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Week</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active Users</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Users</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Growth Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {studentActivityData.map((data, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{data.week}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{data.active}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{data.new}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {index > 0 ? 
-                            `${(((data.active - studentActivityData[index-1].active) / studentActivityData[index-1].active) * 100).toFixed(1)}%` 
-                            : 'N/A'}
-                        </td>
+          {/* Student Tab */}
+          <TabsContent value="student" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Student Activity</CardTitle>
+                <CardDescription>
+                  Course-specific student engagement and completion metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-end mb-4">
+                  <label className="flex items-center text-sm">
+                    Show
+                    <select
+                      value={rowsPerPage}
+                      onChange={e => {
+                        setRowsPerPage(Number(e.target.value))
+                        setPage(1)
+                      }}
+                      className="border rounded px-2 py-1 ml-2"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={-1}>All</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">New Students</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{previousPeriodLabel}</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Growth (%)</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completed (%)</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Review Rate (%)</th>
                       </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {studentActivityData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        studentActivityData.map((data) => {
+                          const growthRate = ((data.newStudents - data.previousCompletion) / data.previousCompletion) * 100;
+                          return (
+                            <tr key={data.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.newStudents}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.previousCompletion}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                growthRate >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {growthRate >= 0 ? '+' : ''}{growthRate.toFixed(1)}%
+                              </td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                data.growth >= 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {data.growth >= 0 ? '+' : ''}{data.growth}%
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.reviewRate}%</td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {studentActivityData.length > 0 && (
+                  <div className="flex items-center gap-2 mt-4 justify-center">
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, idx) => (
+                      <button
+                        key={idx}
+                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setPage(idx + 1)}
+                      >
+                        {idx + 1}
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === totalPages}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value='trends' className='space-y-4'>
-          <Card>
-            <CardHeader>
-              <CardTitle>Revenue Trends</CardTitle>
-              <CardDescription>
-                Monthly revenue and enrollment trends
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  revenue: {
-                    label: 'Revenue ($)',
-                    color: 'hsl(var(--chart-1))',
-                  },
-                  enrollments: {
-                    label: 'Enrollments',
-                    color: 'hsl(var(--chart-2))',
-                  },
-                }}
-                className='h-[400px]'
-              >
-                <LineChart data={revenueData}>
-                  <CartesianGrid strokeDasharray='3 3' />
-                  <XAxis dataKey='month' />
-                  <YAxis yAxisId='left' />
-                  <YAxis yAxisId='right' orientation='right' />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    yAxisId='left'
-                    type='monotone'
-                    dataKey='revenue'
-                    stroke='var(--color-revenue)'
-                    strokeWidth={2}
-                  />
-                  <Line
-                    yAxisId='right'
-                    type='monotone'
-                    dataKey='enrollments'
-                    stroke='var(--color-enrollments)'
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Revenue Tab */}
+          <TabsContent value="revenue" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Trends</CardTitle>
+                <CardDescription>
+                  Course-specific revenue performance and growth analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-end mb-4">
+                  <label className="flex items-center text-sm">
+                    Show
+                    <select
+                      value={rowsPerPage}
+                      onChange={e => {
+                        setRowsPerPage(Number(e.target.value))
+                        setPage(1)
+                      }}
+                      className="border rounded px-2 py-1 ml-2"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={-1}>All</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{previousPeriodLabel}</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Growth (%)</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">New Students</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue Share (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {revenueData.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        revenueData.map((data) => (
+                          <tr key={data.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.revenue.toLocaleString('vi-VN')} ₫
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.previousRevenue.toLocaleString('vi-VN')} ₫
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                              data.growth >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {data.growth >= 0 ? '+' : ''}{data.growth}%
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.orders}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.newStudents}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.revenueShare}%
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {revenueData.length > 0 && (
+                  <div className="flex items-center gap-2 mt-4 justify-center">
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, idx) => (
+                      <button
+                        key={idx}
+                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setPage(idx + 1)}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === totalPages}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
       <Dialog open={showCategoryCoursesDialog} onOpenChange={setShowCategoryCoursesDialog}>
         <DialogContent className='sm:max-w-4xl p-6'>

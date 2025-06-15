@@ -109,8 +109,54 @@ const coursePerformanceData = [
     revenue: 35640,
     rating: 4.9,
   },
-  { course: 'Node.js Backend', enrollments: 567, revenue: 17010, rating: 4.7 },
-  { course: 'CSS Mastery', enrollments: 445, revenue: 13350, rating: 4.6 },
+  { 
+    course: 'Node.js Backend', 
+    enrollments: 567, 
+    revenue: 17010, 
+    rating: 4.7 
+  },
+  { 
+    course: 'CSS Mastery', 
+    enrollments: 445, 
+    revenue: 13350, 
+    rating: 4.6 
+  },
+  {
+    course: 'Python Programming',
+    enrollments: 789,
+    revenue: 23670,
+    rating: 4.8,
+  },
+  {
+    course: 'Database Design',
+    enrollments: 456,
+    revenue: 18240,
+    rating: 4.7,
+  },
+  {
+    course: 'UI/UX Design Fundamentals',
+    enrollments: 678,
+    revenue: 20340,
+    rating: 4.9,
+  },
+  {
+    course: 'Mobile App Development',
+    enrollments: 543,
+    revenue: 16290,
+    rating: 4.6,
+  },
+  {
+    course: 'Cloud Computing Basics',
+    enrollments: 432,
+    revenue: 12960,
+    rating: 4.7,
+  },
+  {
+    course: 'DevOps Essentials',
+    enrollments: 345,
+    revenue: 10350,
+    rating: 4.8,
+  }
 ]
 
 const studentActivityData = [
@@ -520,13 +566,13 @@ export function ManagerAnalytics() {
           <TabsContent value="category" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Category Overview</CardTitle>
-                <CardDescription>
-                  Analysis of course categories and their performance metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Category Overview</CardTitle>
+                    <CardDescription>
+                      Analysis of course categories and their performance metrics
+                    </CardDescription>
+                  </div>
                   <label className="flex items-center text-sm">
                     Show
                     <select
@@ -544,13 +590,15 @@ export function ManagerAnalytics() {
                     </select>
                   </label>
                 </div>
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">Details</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Average Rating</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">% of Revenue</th>
@@ -558,57 +606,69 @@ export function ManagerAnalytics() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {paginatedData.map((cat, idx) => (
-                        <tr
-                          key={cat.categoryId}
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleCategoryRowClick(cat)}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                            {rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}
+                      {paginatedData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                            No data available
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                            {(cat.categoryName || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                            {(cat.description || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.averageRating}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${cat.totalRevenue?.toLocaleString('en-US')}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                            {((cat.totalRevenue / totalRevenue) * 100).toFixed(1)}%
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.totalStudents}</td>
                         </tr>
-                      ))}
+                      ) : (
+                        paginatedData.map((cat, idx) => (
+                          <tr
+                            key={cat.categoryId}
+                            className="cursor-pointer hover:bg-gray-50"
+                            onClick={() => handleCategoryRowClick(cat)}
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900">
+                              {(cat.categoryName || '').replace(/\n|\r|\r\n/g, ' ')}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-left text-gray-900">
+                              <div className="line-clamp-2">
+                                {(cat.description || '').replace(/\n|\r|\r\n/g, ' ')}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.averageRating}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${cat.totalRevenue?.toLocaleString('en-US')}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {((cat.totalRevenue / totalRevenue) * 100).toFixed(1)}%
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.totalStudents}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
-                <div className="flex items-center gap-2 mt-4 justify-center">
-                  <button
-                    className="px-2 py-1 border rounded disabled:opacity-50"
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalPages }, (_, idx) => (
+                {paginatedData.length > 0 && (
+                  <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
-                      key={idx}
-                      className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                      onClick={() => setPage(idx + 1)}
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
                     >
-                      {idx + 1}
+                      Previous
                     </button>
-                  ))}
-                  <button
-                    className="px-2 py-1 border rounded disabled:opacity-50"
-                    disabled={page === totalPages}
-                    onClick={() => setPage(page + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
+                    {Array.from({ length: totalPages }, (_, idx) => (
+                      <button
+                        key={idx}
+                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setPage(idx + 1)}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                    <button
+                      className="px-2 py-1 border rounded disabled:opacity-50"
+                      disabled={page === totalPages}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -617,13 +677,13 @@ export function ManagerAnalytics() {
           <TabsContent value="course" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Course Details</CardTitle>
-                <CardDescription>
-                  Detailed analysis of individual course performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Course Details</CardTitle>
+                    <CardDescription>
+                      Detailed analysis of individual course performance
+                    </CardDescription>
+                  </div>
                   <label className="flex items-center text-sm">
                     Show
                     <select
@@ -641,6 +701,8 @@ export function ManagerAnalytics() {
                     </select>
                   </label>
                 </div>
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -716,13 +778,13 @@ export function ManagerAnalytics() {
           <TabsContent value="student" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Student Activity</CardTitle>
-                <CardDescription>
-                  Course-specific student engagement and completion metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Student Activity</CardTitle>
+                    <CardDescription>
+                      Course-specific student engagement and completion metrics
+                    </CardDescription>
+                  </div>
                   <label className="flex items-center text-sm">
                     Show
                     <select
@@ -740,6 +802,8 @@ export function ManagerAnalytics() {
                     </select>
                   </label>
                 </div>
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -822,13 +886,13 @@ export function ManagerAnalytics() {
           <TabsContent value="revenue" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Trends</CardTitle>
-                <CardDescription>
-                  Course-specific revenue performance and growth analysis
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Revenue Trends</CardTitle>
+                    <CardDescription>
+                      Course-specific revenue performance and growth analysis
+                    </CardDescription>
+                  </div>
                   <label className="flex items-center text-sm">
                     Show
                     <select
@@ -846,6 +910,8 @@ export function ManagerAnalytics() {
                     </select>
                   </label>
                 </div>
+              </CardHeader>
+              <CardContent>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">

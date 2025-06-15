@@ -48,6 +48,7 @@ import {
 import { Page } from '@/types/common'
 import {
   BookOpen,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   Edit,
@@ -106,7 +107,7 @@ export function CategoryManagement() {
       setTotalCourses(totalCoursesCount)
     } catch (error: any) {
       console.error('Failed to fetch total courses:', error)
-      toast('Lỗi', {
+      toast.error('Lỗi', {
         description: `Không thể tải dữ liệu: ${error.message || 'Lỗi không xác định'}`,
       })
     }
@@ -131,7 +132,7 @@ export function CategoryManagement() {
       setPagination(response.data)
     } catch (error) {
       console.error('Failed to fetch categories:', error)
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to fetch categories. Please try again.',
       })
     } finally {
@@ -179,8 +180,9 @@ export function CategoryManagement() {
       setIsCreateDialogOpen(false)
       setNameError('')
       setDescriptionError('')
-      toast('✅ Category created successfully.', {
+      toast.success('Category created successfully.', {
         description: `Category ${newCategory.name} has been created successfully.`,
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
       })
       fetchCategories(
         pagination.number,
@@ -189,7 +191,7 @@ export function CategoryManagement() {
       )
       fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to create category. Please try again.',
       })
     }
@@ -223,8 +225,9 @@ export function CategoryManagement() {
       setEditDescriptionError('')
       setEditNameTouched(false)
       setEditDescriptionTouched(false)
-      toast('✅ Category updated successfully!', {
+      toast.success(`Category ${selectedCategory.name} has been updated successfully!`, {
         description: `Category ${selectedCategory.name} has been updated successfully!`,
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
       })
       fetchCategories(
         pagination.number,
@@ -233,7 +236,7 @@ export function CategoryManagement() {
       )
       fetchTotalCourses()
     } catch (error) {
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to update category. Please try again.',
       })
     }
@@ -242,7 +245,7 @@ export function CategoryManagement() {
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return
     if (categoryToDelete.courseCount > 0) {
-      toast('❌ Không thể xoá danh mục', {
+      toast.error('❌ Không thể xoá danh mục', {
         description: `Danh mục "${categoryToDelete.name}" đang có ${categoryToDelete.courseCount} khoá học. Hãy chuyển hoặc xoá các khoá học trước!`,
       })
       setIsDeleteDialogOpen(false)
@@ -251,7 +254,8 @@ export function CategoryManagement() {
     }
     try {
       await categoryApi.deleteCategory(categoryToDelete.id.toString())
-      toast('✅ Category deleted', {
+      toast.success('Category deleted', {
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
         description: (
           <span>
             Category&nbsp;
@@ -351,6 +355,7 @@ export function CategoryManagement() {
             onOpenChange={open => {
               setIsCreateDialogOpen(open)
               if (open) {
+                setNewCategory({ name: '', description: '' })
                 setNameError('')
                 setDescriptionError('')
                 setNameTouched(false)
@@ -370,7 +375,7 @@ export function CategoryManagement() {
                 Add Category
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent key={isCreateDialogOpen ? 'add-category-open' : 'add-category-closed'}>
               <DialogHeader>
                 <DialogTitle>Create New Category</DialogTitle>
                 <DialogDescription>
@@ -585,6 +590,7 @@ export function CategoryManagement() {
                           size='icon'
                           onClick={e => {
                             e.stopPropagation()
+                            e.preventDefault()
                             openDeleteDialog(category)
                           }}
                           title='Delete'
@@ -645,7 +651,21 @@ export function CategoryManagement() {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={open => {
+          setIsEditDialogOpen(open)
+          if (!open) {
+            // Khi dialog đóng, reset newCategory và các lỗi/touched state
+            setNewCategory({ name: '', description: '' })
+            setSelectedCategory(null) // Đảm bảo selectedCategory cũng được reset
+            setEditNameError('')
+            setEditDescriptionError('')
+            setEditNameTouched(false)
+            setEditDescriptionTouched(false)
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
@@ -737,7 +757,6 @@ export function CategoryManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription className='space-y-2'>
-              <p>
                 This action cannot be undone. This will permanently delete the
                 category
                 <span
@@ -747,7 +766,6 @@ export function CategoryManagement() {
                   "{categoryToDelete?.name}"
                 </span>
                 .
-              </p>
               {categoryToDelete && categoryToDelete.courseCount > 0 && (
                 <div className='bg-red-50 border border-red-200 rounded-md p-3 mt-3'>
                   <p className='text-red-800 font-medium'>
@@ -772,7 +790,11 @@ export function CategoryManagement() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCategory}
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                handleDeleteCategory()
+              }}
               className={`${
                 !!categoryToDelete && categoryToDelete.courseCount > 0
                   ? 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'

@@ -15,7 +15,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
 import { addDays } from 'date-fns'
+import ExcelJS from 'exceljs'
 import {
   BookOpen,
   DollarSign,
@@ -42,6 +44,7 @@ import {
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
+import { toast } from 'react-hot-toast'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import '../../styles/date-range-custom.css'
 import { ChartConfig } from '../ui/chart'
@@ -258,6 +261,14 @@ export function ManagerAnalytics() {
   ]
   const [timeRange, setTimeRange] = useState('6m')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [exportOptions, setExportOptions] = useState({
+    category: { checked: true, rowCount: 10 },
+    course: { checked: true, rowCount: 10 },
+    student: { checked: true, rowCount: 10 },
+    revenue: { checked: true, rowCount: 10 }
+  })
+  const [exportDateRange, setExportDateRange] = useState<[Date, Date] | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
@@ -272,6 +283,10 @@ export function ManagerAnalytics() {
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [coursePage, setCoursePage] = useState(1)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(5)
+  const [studentPage, setStudentPage] = useState(1)
+  const [studentRowsPerPage, setStudentRowsPerPage] = useState(5)
+  const [revenuePage, setRevenuePage] = useState(1)
+  const [revenueRowsPerPage, setRevenueRowsPerPage] = useState(5)
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const [pieOuterRadius, setPieOuterRadius] = useState(120)
   const [show, setShow] = useState(false)
@@ -295,9 +310,159 @@ export function ManagerAnalytics() {
     setTimeout(() => setIsRefreshing(false), 1000)
   }
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsExporting(true)
-    setTimeout(() => setIsExporting(false), 2000)
+    try {
+      // Tạo dữ liệu xuất dựa trên các tùy chọn
+      const exportData = {
+        dateRange: exportDateRange,
+        options: exportOptions,
+        data: {
+          category: exportOptions.category.checked ? 
+                      (exportOptions.category.rowCount === -1 ? categoryDetails : categoryDetails.slice(0, exportOptions.category.rowCount)) 
+                      : [],
+          course: exportOptions.course.checked ? 
+                    (exportOptions.course.rowCount === -1 ? coursePerformanceData : coursePerformanceData.slice(0, exportOptions.course.rowCount)) 
+                    : [],
+          student: exportOptions.student.checked ? 
+                     (exportOptions.student.rowCount === -1 ? studentActivityData : studentActivityData.slice(0, exportOptions.student.rowCount)) 
+                     : [],
+          revenue: exportOptions.revenue.checked ? 
+                     (exportOptions.revenue.rowCount === -1 ? revenueData : revenueData.slice(0, exportOptions.revenue.rowCount)) 
+                     : []
+        }
+      }
+
+      console.log('Export Options:', exportOptions) // Debug: Kiểm tra các tùy chọn được chọn
+      console.log('Export Data prepared:', exportData.data) // Debug: Kiểm tra dữ liệu sau khi chuẩn bị
+
+      // Tạo file Excel
+      const workbook = new ExcelJS.Workbook()
+      
+      if (exportOptions.category.checked) {
+        console.log('Adding Category Sheet...') // Debug
+        const categorySheet = workbook.addWorksheet('Categories')
+        categorySheet.columns = [
+          { header: 'ID', key: 'categoryId', width: 10 },
+          { header: 'Category Name', key: 'categoryName', width: 30 },
+          { header: 'Description', key: 'description', width: 50 },
+          { header: 'Average Rating', key: 'averageRating', width: 15 },
+          { header: 'Revenue', key: 'totalRevenue', width: 15 },
+          { header: 'Total Students', key: 'totalStudents', width: 15 }
+        ]
+        exportData.data.category.forEach(cat => {
+          console.log('Adding category row:', cat) // Debug: Log từng hàng được thêm
+          categorySheet.addRow({
+            categoryId: cat.categoryId,
+            categoryName: cat.categoryName,
+            description: cat.description,
+            averageRating: cat.averageRating,
+            totalRevenue: cat.totalRevenue,
+            totalStudents: cat.totalStudents
+          })
+        })
+      }
+
+      if (exportOptions.course.checked) {
+        console.log('Adding Course Sheet...') // Debug
+        const courseSheet = workbook.addWorksheet('Courses')
+        courseSheet.columns = [
+          { header: 'Course Name', key: 'course', width: 30 },
+          { header: 'Students', key: 'enrollments', width: 15 },
+          { header: 'Rating', key: 'rating', width: 15 },
+          { header: 'Revenue', key: 'revenue', width: 15 },
+          { header: 'Revenue %', key: 'revenueShare', width: 15 },
+          { header: 'Reviews', key: 'reviews', width: 15 },
+          { header: 'Level', key: 'level', width: 15 },
+          { header: 'Completion %', key: 'completion', width: 15 }
+        ]
+        exportData.data.course.forEach(course => {
+          console.log('Adding course row:', course) // Debug: Log từng hàng được thêm
+          courseSheet.addRow({
+            course: course.course,
+            enrollments: course.enrollments,
+            rating: course.rating,
+            revenue: course.revenue,
+            revenueShare: ((course.revenue / totalRevenue) * 100),
+            reviews: Math.floor(course.enrollments * 0.3),
+            level: 'Beginner',
+            completion: Math.floor(Math.random() * 30 + 70),
+          })
+        })
+      }
+
+      if (exportOptions.student.checked) {
+        console.log('Adding Student Activity Sheet...') // Debug
+        const studentSheet = workbook.addWorksheet('Student Activity')
+        studentSheet.columns = [
+          { header: 'Course Name', key: 'courseName', width: 30 },
+          { header: 'New Students', key: 'newStudents', width: 15 },
+          { header: 'Previous Period', key: 'previousCompletion', width: 15 },
+          { header: 'Growth %', key: 'growth', width: 15 },
+          { header: 'Completed %', key: 'completedPercentage', width: 15 },
+          { header: 'Review Rate %', key: 'reviewRate', width: 15 }
+        ]
+        exportData.data.student.forEach(data => {
+          const growthRate = ((data.newStudents - data.previousCompletion) / data.previousCompletion) * 100
+          console.log('Adding student activity row:', data) // Debug: Log từng hàng được thêm
+          studentSheet.addRow({
+            courseName: data.courseName,
+            newStudents: data.newStudents,
+            previousCompletion: data.previousCompletion,
+            growth: growthRate,
+            completedPercentage: data.growth,
+            reviewRate: data.reviewRate,
+          })
+        })
+      }
+
+      if (exportOptions.revenue.checked) {
+        console.log('Adding Revenue Sheet...') // Debug
+        const revenueSheet = workbook.addWorksheet('Revenue')
+        revenueSheet.columns = [
+          { header: 'Course Name', key: 'courseName', width: 30 },
+          { header: 'Revenue', key: 'revenue', width: 20 },
+          { header: 'Previous Period', key: 'previousRevenue', width: 20 },
+          { header: 'Growth %', key: 'growth', width: 15 },
+          { header: 'Orders', key: 'orders', width: 15 },
+          { header: 'New Students', key: 'newStudents', width: 15 },
+          { header: 'Revenue Share %', key: 'revenueShare', width: 15 }
+        ]
+        exportData.data.revenue.forEach(data => {
+          console.log('Adding revenue row:', data) // Debug: Log từng hàng được thêm
+          revenueSheet.addRow({
+            courseName: data.courseName,
+            revenue: data.revenue,
+            previousRevenue: data.previousRevenue,
+            growth: data.growth,
+            orders: data.orders,
+            newStudents: data.newStudents,
+            revenueShare: data.revenueShare,
+          })
+        })
+      }
+
+      // Xuất file
+      console.log('Total worksheets in workbook before writing:', workbook.worksheets.length) // Debug: Kiểm tra số lượng sheet
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Xuất báo cáo thành công!')
+      setShowExportDialog(false)
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Lỗi khi xuất báo cáo')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0)
@@ -388,6 +553,22 @@ export function ManagerAnalytics() {
       ? coursePerformanceData
       : coursePerformanceData.slice((coursePage - 1) * courseRowsPerPage, coursePage * courseRowsPerPage)
 
+  // Pagination logic for student activity table
+  const totalStudentRows = studentActivityData.length
+  const totalStudentPages = studentRowsPerPage === -1 ? 1 : Math.ceil(totalStudentRows / studentRowsPerPage)
+  const paginatedStudentData =
+    studentRowsPerPage === -1
+      ? studentActivityData
+      : studentActivityData.slice((studentPage - 1) * studentRowsPerPage, studentPage * studentRowsPerPage)
+
+  // Pagination logic for revenue trends table
+  const totalRevenueRows = revenueData.length
+  const totalRevenuePages = revenueRowsPerPage === -1 ? 1 : Math.ceil(totalRevenueRows / revenueRowsPerPage)
+  const paginatedRevenueData =
+    revenueRowsPerPage === -1
+      ? revenueData
+      : revenueData.slice((revenuePage - 1) * revenueRowsPerPage, revenuePage * revenueRowsPerPage)
+
   const handleCategoryRowClick = async (category: CategoryDetailDTO) => {
     setSelectedCategoryForCourses(category)
     setShowCategoryCoursesDialog(true)
@@ -454,7 +635,7 @@ export function ManagerAnalytics() {
           </Select>
           <Button
             variant='outline'
-            onClick={handleExport}
+            onClick={() => setShowExportDialog(true)}
             disabled={isExporting}
           >
             <Download
@@ -788,10 +969,10 @@ export function ManagerAnalytics() {
                   <label className="flex items-center text-sm">
                     Show
                     <select
-                      value={rowsPerPage}
+                      value={studentRowsPerPage}
                       onChange={e => {
-                        setRowsPerPage(Number(e.target.value))
-                        setPage(1)
+                        setStudentRowsPerPage(Number(e.target.value))
+                        setStudentPage(1)
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -818,14 +999,14 @@ export function ManagerAnalytics() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {studentActivityData.length === 0 ? (
+                      {paginatedStudentData.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                             No data available
                           </td>
                         </tr>
                       ) : (
-                        studentActivityData.map((data) => {
+                        paginatedStudentData.map((data) => {
                           const growthRate = ((data.newStudents - data.previousCompletion) / data.previousCompletion) * 100;
                           return (
                             <tr key={data.id}>
@@ -851,28 +1032,28 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {studentActivityData.length > 0 && (
+                {paginatedStudentData.length > 0 && (
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
+                      disabled={studentPage === 1}
+                      onClick={() => setStudentPage(studentPage - 1)}
                     >
                       Previous
                     </button>
-                    {Array.from({ length: totalPages }, (_, idx) => (
+                    {Array.from({ length: totalStudentPages }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setPage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${studentPage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setStudentPage(idx + 1)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === totalPages}
-                      onClick={() => setPage(page + 1)}
+                      disabled={studentPage === totalStudentPages}
+                      onClick={() => setStudentPage(studentPage + 1)}
                     >
                       Next
                     </button>
@@ -896,10 +1077,10 @@ export function ManagerAnalytics() {
                   <label className="flex items-center text-sm">
                     Show
                     <select
-                      value={rowsPerPage}
+                      value={revenueRowsPerPage}
                       onChange={e => {
-                        setRowsPerPage(Number(e.target.value))
-                        setPage(1)
+                        setRevenueRowsPerPage(Number(e.target.value))
+                        setRevenuePage(1)
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -927,14 +1108,14 @@ export function ManagerAnalytics() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {revenueData.length === 0 ? (
+                      {paginatedRevenueData.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                             No data available
                           </td>
                         </tr>
                       ) : (
-                        revenueData.map((data) => (
+                        paginatedRevenueData.map((data) => (
                           <tr key={data.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
@@ -964,28 +1145,28 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {revenueData.length > 0 && (
+                {paginatedRevenueData.length > 0 && (
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
+                      disabled={revenuePage === 1}
+                      onClick={() => setRevenuePage(revenuePage - 1)}
                     >
                       Previous
                     </button>
-                    {Array.from({ length: totalPages }, (_, idx) => (
+                    {Array.from({ length: totalRevenuePages }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setPage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${revenuePage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setRevenuePage(idx + 1)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === totalPages}
-                      onClick={() => setPage(page + 1)}
+                      disabled={revenuePage === totalRevenuePages}
+                      onClick={() => setRevenuePage(revenuePage + 1)}
                     >
                       Next
                     </button>
@@ -1085,6 +1266,96 @@ export function ManagerAnalytics() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent key="export-dialog" className="sm:max-w-[500px] p-6">
+          <DialogHeader>
+            <DialogTitle>Xuất báo cáo phân tích</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="space-y-4">
+              <div className="font-semibold text-lg border-b pb-2 mb-4">Chọn dữ liệu xuất:</div>
+              <div className="grid grid-cols-1 gap-y-4">
+                {Object.keys(exportOptions).map((key) => (
+                  <div key={key} className="flex flex-col gap-2 p-3 border rounded-md shadow-sm">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={key} 
+                        checked={Boolean(exportOptions[key as keyof typeof exportOptions].checked)}
+                        onCheckedChange={(value) => 
+                          setExportOptions(prev => ({
+                            ...prev,
+                            [key]: { ...prev[key as keyof typeof prev], checked: value === true }
+                          }))
+                        }
+                      />
+                      <label htmlFor={key} className="capitalize text-base font-medium flex-1 cursor-pointer">
+                        {key === 'category' ? 'Categories' : ''}
+                        {key === 'course' ? 'Courses' : ''}
+                        {key === 'student' ? 'Student Activity' : ''}
+                        {key === 'revenue' ? 'Revenue Trends' : ''}
+                      </label>
+                    </div>
+                    {exportOptions[key as keyof typeof exportOptions].checked && (
+                      <div className="pl-7 mt-2">
+                        <div className="font-medium text-sm mb-1">Số lượng dữ liệu:</div>
+                        <Select
+                          value={exportOptions[key as keyof typeof exportOptions].rowCount.toString()}
+                          onValueChange={(value) => 
+                            setExportOptions(prev => ({
+                              ...prev,
+                              [key]: { ...prev[key as keyof typeof prev], rowCount: Number(value) }
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5 hàng</SelectItem>
+                            <SelectItem value="10">10 hàng</SelectItem>
+                            <SelectItem value="20">20 hàng</SelectItem>
+                            <SelectItem value="-1">Tất cả</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="font-semibold text-lg border-b pb-2 mb-4">Khoảng thời gian:</div>
+              <RangePicker
+                style={{ width: '100%' }}
+                placeholder={['Từ ngày', 'Đến ngày']}
+                format="DD/MM/YYYY"
+                onChange={(dates) => setExportDateRange(dates as [Date, Date] | null)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleExport}
+              disabled={isExporting || !Object.values(exportOptions).some(o => o.checked)}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang xuất...
+                </>
+              ) : (
+                'Xuất báo cáo'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

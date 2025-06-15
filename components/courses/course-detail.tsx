@@ -4,6 +4,7 @@ import { courseApi } from '@/api/course-api'
 import { enrollmentApi } from '@/api/enrollment-api'
 import { lessonApi } from '@/api/lesson-api'
 import { reviewApi } from '@/api/review-api'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,15 +23,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { Page } from '@/types/common'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { LessonResponseDTO } from '@/types/lesson'
@@ -42,14 +40,13 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  Flag,
   Loader2,
   Lock,
   Play,
   PlayCircle,
-  Star,
+  Star
 } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { PaymentModal } from '../payment/payment-modal'
@@ -83,6 +80,14 @@ const formatDate = (dateString: string): string => {
   }
 }
 
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return ''
+  const d = new Date(dateString)
+  const date = d.toLocaleDateString('en-GB') // dd/mm/yyyy
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // HH:mm
+  return `${time} ${date}`
+}
+
 export function CourseDetail({ courseId }: CourseDetailProps) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -105,26 +110,18 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     useState<EnrollmentStatusResponseDTO | null>(null)
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
   const router = useRouter()
-  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
-  const [reviewLoading, setReviewLoading] = useState(false)
-  const [reviewError, setReviewError] = useState<string | null>(null)
-  const [reviewPage, setReviewPage] = useState<Page<ReviewResponseDTO> | null>(
-    null
-  )
-  const [expandedReviewIds, setExpandedReviewIds] = useState<number[]>([])
-  const [reportModal, setReportModal] = useState<{
-    open: boolean
-    reviewId?: number
-  }>({ open: false })
-  const [reportReason, setReportReason] = useState('')
-  const [reportError, setReportError] = useState('')
-  const [reportLoading, setReportLoading] = useState(false)
   const [previewLesson, setPreviewLesson] = useState<LessonResponseDTO | null>(
     null
   )
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
+  const [reviewPage, setReviewPage] = useState(0)
+  const [reviewTotalPages, setReviewTotalPages] = useState(1)
+  const [expandedComments, setExpandedComments] = useState<{[id:number]: boolean}>({})
+  const [showReport, setShowReport] = useState(false)
+  const [reportText, setReportText] = useState('')
 
   const checkEnrollmentStatus = async (courseId: string) => {
     if (!user) {
@@ -265,31 +262,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     })
   }
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      setReviewLoading(true)
-      setReviewError(null)
-      try {
-        const res = await reviewApi.getAllReviews({
-          courseId: Number(courseId),
-          page: 0,
-          size: 10,
-          sortBy: 'modifiedDate',
-          direction: 'DESC',
-        })
-        setReviewPage(res.data)
-        setReviews(res.data.content)
-      } catch (err) {
-        setReviewError('Failed to load reviews')
-      } finally {
-        setReviewLoading(false)
-      }
-    }
-    if (courseId) {
-      fetchReviews()
-    }
-  }, [courseId])
-
   // Add preview video handling
   const handlePreviewClick = async (lesson: LessonResponseDTO) => {
     if (!lesson.isPreview) {
@@ -322,6 +294,26 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     if (videoRef.current) {
       videoRef.current.pause()
     }
+  }
+
+  // Fetch reviews for this course
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await reviewApi.getAllReviews({ courseId: Number(courseId), page: reviewPage, size: 6, sortBy: 'createdDate', direction: 'DESC' })
+        setReviews(res.data.content)
+        setReviewTotalPages(res.data.totalPages)
+      } catch (err) {
+        setReviews([])
+      }
+    }
+    fetchReviews()
+  }, [courseId, reviewPage])
+
+  const renderStars = (rating: number) => {
+    return [...Array(5)].map((_, i) => (
+      <Star key={i} className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+    ))
   }
 
   if (loading) {
@@ -645,165 +637,82 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         <TabsContent value='reviews' className='space-y-6'>
           <div className='flex items-center justify-between'>
             <h3 className='text-2xl font-semibold'>Student Reviews</h3>
+            <div className='flex items-center gap-2'>
+              <Star className='h-5 w-5 fill-yellow-400 text-yellow-400' />
+              <span className='text-xl font-semibold'>
+                {course.averageRating?.toFixed(1) || '0.0'}
+              </span>
+              <span className='text-muted-foreground'>
+                ({course.totalReviews} reviews)
+              </span>
+            </div>
           </div>
 
           <div className='space-y-4'>
-            {reviewLoading ? (
-              <div className='text-center text-muted-foreground'>
-                Loading reviews...
-              </div>
-            ) : reviewError ? (
-              <div className='text-center text-destructive'>{reviewError}</div>
-            ) : reviews.length === 0 ? (
+            {reviews.length === 0 && (
               <Card>
-                <CardContent className='p-6'>
-                  <div className='text-center text-muted-foreground'>
-                    No reviews yet. Be the first to review this course!
-                  </div>
+                <CardContent className='p-6 text-center text-muted-foreground'>
+                  No reviews yet. Be the first to review this course!
                 </CardContent>
               </Card>
-            ) : (
-              reviews.map(review => {
-                const isExpanded = expandedReviewIds.includes(review.id)
-                const handleToggleExpand = () => {
-                  setExpandedReviewIds(prev =>
-                    isExpanded
-                      ? prev.filter(id => id !== review.id)
-                      : [...prev, review.id]
-                  )
-                }
-                const handleOpenReport = () => {
-                  setReportModal({ open: true, reviewId: review.id })
-                  setReportReason('')
-                  setReportError('')
-                }
-                return (
-                  <Card
-                    key={review.id}
-                    className='rounded-xl shadow-sm border border-gray-200'
-                  >
-                    <CardContent className='p-5 pb-4 relative'>
-                      <div className='flex items-start gap-4'>
-                        {/* Avatar */}
-                        <div
-                          className='w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border-4'
-                          style={{ borderColor: '#1e293b' }}
-                        >
-                          <Link
-                            href={`/profile/${review.userId}`}
-                            className='block w-12 h-12'
-                          >
-                            {review.userAvatar ? (
-                              <Image
-                                src={review.userAvatar}
-                                alt={review.userName}
-                                width={48}
-                                height={48}
-                                className='object-cover w-full h-full'
-                                onError={e => {
-                                  e.currentTarget.src =
-                                    '/placeholder.svg?height=48&width=48'
-                                }}
-                              />
-                            ) : (
-                              <div
-                                className='w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold border-4'
-                                style={{ borderColor: '#1e293b' }}
-                              >
-                                {review.userName?.charAt(0) || '?'}
-                              </div>
-                            )}
-                          </Link>
-                        </div>
-                        {/* Info + comment */}
-                        <div className='flex-1'>
-                          <div className='flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3'>
-                            <Link
-                              href={`/profile/${review.userId}`}
-                              className='font-semibold text-base sm:text-lg text-gray-900 hover:underline'
-                            >
-                              {review.userName}
-                            </Link>
-                            <div className='flex items-center gap-1'>
-                              {[...Array(5)].map((_, idx) => (
-                                <Star
-                                  key={idx}
-                                  className={`h-4 w-4 ${idx < review.star ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                                />
-                              ))}
-                            </div>
-                            <span className='text-xs text-muted-foreground sm:ml-auto'>
-                              {(() => {
-                                const d = new Date(review.createdDate)
-                                return (
-                                  d.toLocaleTimeString('vi-VN', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  }) +
-                                  ' ' +
-                                  d.toLocaleDateString('vi-VN', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                  })
-                                )
-                              })()}
-                            </span>
-                          </div>
-                          <div className='mt-2 flex items-center justify-between'>
-                            <div
-                              className={`text-gray-800 text-sm sm:text-base whitespace-pre-line ${isExpanded ? '' : 'line-clamp-2'}`}
-                              style={{ maxWidth: '90%' }}
-                            >
-                              {review.comment}
-                            </div>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className='flex items-center gap-1 text-sm ml-2 hover:bg-red-50 group'
-                              title='Báo cáo'
-                              onClick={handleOpenReport}
-                            >
-                              {/* Flag icon outline */}
-                              <svg
-                                xmlns='http://www.w3.org/2000/svg'
-                                fill='none'
-                                viewBox='0 0 24 24'
-                                strokeWidth={1.5}
-                                stroke='currentColor'
-                                className='w-5 h-5 group-hover:text-red-500 transition-colors'
-                              >
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  d='M3 3v18'
-                                />
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  d='M3 5h13l-1.5 4L16 13H3'
-                                />
-                              </svg>
-                              Report
-                            </Button>
-                          </div>
-                          {/* See more/less */}
-                          {review.comment && review.comment.length > 80 && (
-                            <button
-                              className='text-xs text-primary mt-1 ml-1 hover:underline focus:outline-none'
-                              onClick={handleToggleExpand}
-                            >
-                              {isExpanded ? 'See less' : 'See more'}
-                            </button>
-                          )}
+            )}
+            {reviews.map(review => {
+              const isExpanded = expandedComments[review.id]
+              return (
+                <Card key={review.id} className='border border-gray-200 rounded-xl shadow-sm'>
+                  <CardContent className='p-5'>
+                    <div className='flex items-start justify-between mb-2'>
+                      <div className='flex items-center gap-4'>
+                        <Avatar className='w-12 h-12'>
+                          <AvatarImage src={review.userAvatar || '/placeholder.svg'} />
+                          <AvatarFallback>{review.userName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className='font-semibold text-base'>{review.userName}</div>
+                          <div className='flex mt-1'>{renderStars(review.star)}</div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
-            )}
+                      <div className="flex flex-col items-end gap-1 min-w-[110px]">
+                        <span className='text-xs text-gray-500'>{formatDateTime(review.createdDate)}</span>
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          className='text-gray-500 hover:text-red-500 p-0 h-auto'
+                          onClick={() => setShowReport(true)}
+                        >
+                          <Flag className='mr-1 h-4 w-4' />Report
+                        </Button>
+                      </div>
+                    </div>
+                    <div className='mt-2'>
+                      <p
+                        className={`text-sm text-gray-700 bg-gray-50 rounded px-3 py-2${isExpanded ? '' : ' line-clamp-2 overflow-hidden break-all max-h-[3.2rem]'}`}
+                        style={{ minHeight: 40 }}
+                      >
+                        {review.comment}
+                      </p>
+                      {review.comment && review.comment.length > 120 && (
+                        <button
+                          className='text-blue-600 text-xs mt-1 font-medium underline cursor-pointer hover:text-blue-800 transition-colors'
+                          onClick={() => setExpandedComments(prev => ({ ...prev, [review.id]: !isExpanded }))}
+                        >
+                          {isExpanded ? 'See less' : 'See more'}
+                        </button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
+          {/* Pagination for reviews */}
+          {reviewTotalPages > 1 && (
+            <div className='flex justify-center items-center gap-4 mt-6'>
+              <Button variant='outline' size='sm' onClick={() => setReviewPage(p => Math.max(0, p - 1))} disabled={reviewPage === 0}>Previous</Button>
+              <span>Page {reviewPage + 1} of {reviewTotalPages}</span>
+              <Button variant='outline' size='sm' onClick={() => setReviewPage(p => Math.min(reviewTotalPages - 1, p + 1))} disabled={reviewPage === reviewTotalPages - 1}>Next</Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -855,89 +764,33 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         }}
       />
 
-      {/* Report Modal */}
-      <Dialog
-        open={reportModal.open}
-        onOpenChange={open => {
-          // Luôn cho phép đóng modal khi ấn Cancel, X hoặc click ngoài
-          setReportModal(v => ({ ...v, open }))
-          setReportError('')
-        }}
-      >
-        <DialogContent className='max-w-md'>
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className='text-lg'>Report Review</DialogTitle>
+            <DialogTitle>Report a problem you encountered during your experience.</DialogTitle>
           </DialogHeader>
-          <div className='mb-2'>
-            <Textarea
-              value={reportReason}
-              onChange={e => {
-                setReportReason(e.target.value)
-                if (e.target.value.trim().length === 0)
-                  setReportError('Reason is required')
-                else if (e.target.value.length > 200)
-                  setReportError('Maximum 200 characters')
-                else setReportError('')
-              }}
-              placeholder='Enter your reason (1-200 characters)'
-              rows={4}
-              maxLength={200}
-              className={reportError ? 'border-red-500' : ''}
-            />
-            <div className='flex justify-between items-center mt-1'>
-              <span className='text-xs text-muted-foreground'>
-                {reportReason.length}/200
-              </span>
-              {reportError && (
-                <span className='text-xs text-red-500'>{reportError}</span>
-              )}
-            </div>
+          <textarea
+            className="w-full border rounded p-2 mt-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Please describe the issue you encountered (max 200 characters)..."
+            maxLength={200}
+            rows={4}
+            value={reportText}
+            onChange={e => setReportText(e.target.value)}
+          />
+          <div className="text-right text-xs text-gray-500 mt-1 mb-2">
+            {reportText.length} / 200
           </div>
-          <DialogFooter>
-            <Button
-              variant='outline'
-              onClick={() => setReportModal({ open: false })}
-              disabled={reportLoading}
-            >
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => { setShowReport(false); setReportText('') }}>
               Cancel
             </Button>
             <Button
-              onClick={async () => {
-                if (!reportReason.trim()) {
-                  setReportError('Please enter a reason')
-                  return
-                }
-                if (reportReason.length > 200) {
-                  setReportError('Maximum 200 characters')
-                  return
-                }
-                setReportLoading(true)
-                // Fake send to admin
-                setTimeout(() => {
-                  console.log('[REPORT_TO_ADMIN]', {
-                    reviewId: reportModal.reviewId,
-                    reason: reportReason,
-                  })
-                  setReportLoading(false)
-                  setReportModal({ open: false })
-                  setReportReason('')
-                  setReportError('')
-                  toast({
-                    title: 'Report sent successfully!',
-                    description: 'Your report has been sent to admin.',
-                    variant: 'default',
-                  })
-                }, 1000)
-              }}
-              disabled={
-                reportLoading ||
-                !reportReason.trim() ||
-                reportReason.length > 200
-              }
+              onClick={() => { setShowReport(false); setReportText('') }}
+              disabled={reportText.trim().length === 0}
             >
-              {reportLoading ? 'Sending...' : 'Send'}
+              Send
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

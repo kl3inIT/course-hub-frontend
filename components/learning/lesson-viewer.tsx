@@ -2,20 +2,12 @@
 
 import type React from 'react'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter, useParams, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { courseApi } from '@/api/course-api'
+import { enrollmentApi } from '@/api/enrollment-api'
+import { lessonApi } from '@/api/lesson-api'
+import { progressApi } from '@/api/progress-api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,52 +16,54 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  BookOpen,
-  FileText,
-  Download,
-  CheckCircle,
-  Clock,
-  Users,
-  Star,
-  ChevronDown,
-  ChevronRight,
-  Home,
-  AlertCircle,
-  RefreshCw,
-  Monitor,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
-  RotateCw,
-  Volume2,
-  VolumeX,
-} from 'lucide-react'
-import { useAuth } from '@/context/auth-context'
-import { DiscussionSection } from './discussion-section'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/use-toast'
-import { courseApi } from '@/api/course-api'
-import { moduleApi } from '@/api/module-api'
-import { lessonApi } from '@/api/lesson-api'
+import { useAuth } from '@/context/auth-context'
 import { CourseDetailsResponseDTO } from '@/types/course'
-import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
-import { progressApi } from '@/api/progress-api'
+import { ModuleResponseDTO } from '@/types/module'
 import {
   LessonProgressDTO,
   UpdateLessonProgressRequestDTO,
 } from '@/types/progress'
-import { ProtectedRoute } from '@/components/auth/protected-route'
-import { enrollmentApi } from '@/api/enrollment-api'
+import {
+  AlertCircle,
+  BookOpen,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Home,
+  Maximize2,
+  Minimize2,
+  Monitor,
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  RotateCw,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { DiscussionSection } from './discussion-section'
 
 interface LessonViewerProps {
   courseId: string

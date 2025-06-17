@@ -147,8 +147,6 @@ export function CourseCatalog() {
         else if (sortBy === 'popularity')
           searchParams.sort = 'totalStudents,desc'
 
-        console.log('Search params being sent:', searchParams)
-
         // Use searchCourses instead of getAllCourses for server-side filtering
         const coursesResponse = await courseApi.searchCourses(searchParams)
 

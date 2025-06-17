@@ -127,50 +127,50 @@ export function CourseCard({
 
   // Certificate card
   return (
-    <Card className='overflow-hidden hover:shadow-lg transition-shadow'>
-      <CardHeader className='bg-gradient-to-r from-blue-500 to-purple-600 text-white'>
-        <div className='flex items-center justify-between'>
-          <Award className='h-8 w-8' />
-          <Badge variant='secondary' className='bg-white/20 text-white'>
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+      <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+        <div className="flex items-center justify-between">
+          <Award className="h-8 w-8" />
+          <Badge variant="secondary" className="bg-white/20 text-white">
             Certificate
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className='p-6 space-y-4'>
+      <CardContent className="p-6 flex-1 flex flex-col">
         <div>
-          <h3 className='font-bold text-lg line-clamp-2'>{course.title}</h3>
-          <p className='text-sm text-muted-foreground'>
+          <h3 className="font-bold text-lg line-clamp-2">{course.title}</h3>
+          <p className="text-sm text-muted-foreground">
             by {course.instructorName}
           </p>
         </div>
 
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2 text-sm'>
-            <Calendar className='h-4 w-4 text-muted-foreground' />
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>Completed: {formatDate(course.completedDate || '')}</span>
           </div>
-          <div className='text-xs text-muted-foreground'>
+          <div className="text-xs text-muted-foreground">
             Category: {course.category}
           </div>
         </div>
 
-        <div className='flex gap-2'>
+        <div className="mt-auto flex gap-2">
           <Button
-            variant='outline'
-            size='sm'
+            variant="outline"
+            size="sm"
             onClick={() => onViewCertificate?.(course)}
-            className='flex-1'
+            className="flex-1"
           >
-            <Eye className='h-4 w-4 mr-2' />
+            <Eye className="h-4 w-4 mr-2" />
             View
           </Button>
           <Button
-            variant='outline'
-            size='sm'
+            variant="outline"
+            size="sm"
             onClick={() => onViewCertificate?.(course)}
-            className='flex-1'
+            className="flex-1"
           >
-            <Eye className='h-4 w-4 mr-2' />
+            <Eye className="h-4 w-4 mr-2" />
             Download
           </Button>
         </div>

@@ -25,10 +25,11 @@ import {
 import { courseApi } from '@/api/course-api'
 import { categoryApi } from '@/api/category-api'
 import { CourseCard } from './course-card'
-import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { CoursesList } from './courses-list'
+import { CoursesFilter } from './courses-filter'
 import { CourseResponseDTO } from '@/types/course'
 import { CategoryResponseDTO } from '@/types/category'
-import { toast } from 'sonner'
 
 const levels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED']
 const PAGE_SIZE = 6
@@ -38,23 +39,21 @@ export function CoursesCatalogSection({
 }: {
   managementView?: boolean
 }) {
-  const searchParams = useSearchParams()
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // States
-  const [inputValue, setInputValue] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
-  const [priceFilter, setPriceFilter] = useState<string>('all')
-  const [priceRange, setPriceRange] = useState([0, 500])
+  // Chỉ dùng duy nhất state filters
+  const [filters, setFilters] = useState({
+    searchTerm: '',
+    selectedCategory: null as string | null,
+    selectedLevel: null as string | null,
+    priceFilter: 'all',
+    priceRange: [0, 500] as [number, number],
+  })
   const [courses, setCourses] = useState<CourseResponseDTO[]>([])
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingCourses, setLoadingCourses] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -64,111 +63,58 @@ export function CoursesCatalogSection({
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const response = await categoryApi.getAllCategories({
-          page: 0,
-          size: 100,
-        })
-
-        if (response.data?.content) {
-          setCategories(response.data.content)
-        }
-      } catch (err: any) {
-        console.error('Error loading categories:', err)
+        const response = await categoryApi.getAllCategories({ page: 0, size: 100 })
+        if (response.data?.content) setCategories(response.data.content)
+      } catch (err) {
         toast.error('Error', { description: 'Failed to load categories' })
       } finally {
         setLoading(false)
       }
     }
-
     loadCategories()
   }, [])
-
-  // Handle initial category from URL
-  useEffect(() => {
-    const categoryFromUrl = searchParams.get('category')
-    if (categoryFromUrl) {
-      setSelectedCategory(categoryFromUrl)
-    }
-  }, [searchParams])
 
   // Load courses based on filters
   useEffect(() => {
     const loadCourses = async () => {
       if (categories.length === 0) return
-
       try {
         setLoadingCourses(true)
         setError(null)
-
         const params: any = {
           page: currentPage,
           size: pageSize,
-          sort: 'id,desc', // Mới nhất trước
+          sort: 'id,desc',
         }
-
-        if (searchTerm.trim()) {
-          params.search = searchTerm.trim()
+        if (filters.searchTerm.trim()) params.search = filters.searchTerm.trim()
+        if (filters.selectedCategory) params.category = filters.selectedCategory
+        if (filters.selectedLevel) params.level = filters.selectedLevel
+        if (filters.priceFilter === 'free') params.maxPrice = 0
+        else if (filters.priceFilter === 'paid') params.minPrice = 0.01
+        if (filters.priceFilter !== 'free') {
+          if (filters.priceRange[0] > 0) params.minPrice = filters.priceRange[0]
+          if (filters.priceRange[1] < 500) params.maxPrice = filters.priceRange[1]
         }
-
-        if (selectedCategory) {
-          const categoryObj = categories.find(
-            cat =>
-              cat.name === selectedCategory ||
-              cat.id.toString() === selectedCategory
-          )
-          if (categoryObj) {
-            params.category = categoryObj.id
-          }
-        }
-
-        if (selectedLevel) {
-          params.level = selectedLevel
-        }
-
-        // Handle price filters
-        if (priceFilter === 'free') {
-          params.maxPrice = 0
-        } else if (priceFilter === 'paid') {
-          params.minPrice = 0.01
-        }
-
-        if (priceFilter !== 'free') {
-          if (priceRange[0] > 0) params.minPrice = priceRange[0]
-          if (priceRange[1] < 500) params.maxPrice = priceRange[1]
-        }
-
-        console.log('Loading courses with params:', params)
         const response = await courseApi.searchCourses(params)
-
         if (response.data?.content) {
           setCourses(response.data.content)
           setTotalPages(response.data.totalPages)
           setTotalElements(response.data.totalElements)
         }
-      } catch (err: any) {
-        console.error('Error loading courses:', err)
+      } catch (err) {
         setError('Failed to load courses. Please try again.')
         toast.error('Error', { description: 'Failed to load courses' })
       } finally {
         setLoadingCourses(false)
       }
     }
-
     loadCourses()
-  }, [
-    currentPage,
-    searchTerm,
-    selectedCategory,
-    selectedLevel,
-    priceFilter,
-    priceRange,
-    categories,
-  ])
+  }, [currentPage, filters, categories])
 
-  // Reset to first page when filters/search change
+  // Reset to first page khi filter thay đổi
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchTerm, selectedCategory, selectedLevel, priceFilter, priceRange])
+  }, [filters])
 
   // Scroll functions for category menu
   const scrollLeft = () => {
@@ -185,29 +131,30 @@ export function CoursesCatalogSection({
 
   // Only allow 1 category
   const handleCategoryChange = (categoryName: string) => {
-    setSelectedCategory(categoryName === selectedCategory ? null : categoryName)
+    setFilters(prev => ({ ...prev, selectedCategory: categoryName === prev.selectedCategory ? null : categoryName }))
   }
 
   // Only allow 1 level
   const handleLevelChange = (level: string) => {
-    setSelectedLevel(level === selectedLevel ? null : level)
+    setFilters(prev => ({ ...prev, selectedLevel: level === prev.selectedLevel ? null : level }))
   }
 
   // Only allow 1 price filter
   const handlePriceFilterChange = (value: string) => {
-    setPriceFilter(value)
-    if (value === 'free') setPriceRange([0, 0])
-    else setPriceRange([0, 500])
+    setFilters(prev => ({ ...prev, priceFilter: value }))
+    if (value === 'free') setFilters(prev => ({ ...prev, priceRange: [0, 0] }))
+    else setFilters(prev => ({ ...prev, priceRange: [0, 500] }))
   }
 
   // Clear all filters
   const clearFilters = () => {
-    setSearchTerm('')
-    setInputValue('')
-    setSelectedCategory(null)
-    setSelectedLevel(null)
-    setPriceFilter('all')
-    setPriceRange([0, 500])
+    setFilters(prev => ({
+      searchTerm: '',
+      selectedCategory: null,
+      selectedLevel: null,
+      priceFilter: 'all',
+      priceRange: [0, 500],
+    }))
     setCurrentPage(0)
   }
 
@@ -221,7 +168,7 @@ export function CoursesCatalogSection({
   // Search only on Enter
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      setSearchTerm(inputValue)
+      setFilters(prev => ({ ...prev, searchTerm: (e.target as HTMLInputElement).value }))
     }
   }
 
@@ -312,10 +259,10 @@ export function CoursesCatalogSection({
   }
 
   const activeFiltersCount =
-    (selectedCategory ? 1 : 0) +
-    (selectedLevel ? 1 : 0) +
-    (priceFilter !== 'all' ? 1 : 0) +
-    (searchTerm ? 1 : 0)
+    (filters.selectedCategory ? 1 : 0) +
+    (filters.selectedLevel ? 1 : 0) +
+    (filters.priceFilter !== 'all' ? 1 : 0) +
+    (filters.searchTerm ? 1 : 0)
 
   return (
     <div className={managementView ? 'relative' : ''}>
@@ -346,8 +293,8 @@ export function CoursesCatalogSection({
               <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5' />
               <Input
                 placeholder='Tìm kiếm khóa học, giảng viên hoặc từ khóa...'
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
+                value={filters.searchTerm}
+                onChange={e => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
                 onKeyDown={handleInputKeyDown}
                 className='pl-12 h-12 text-base'
               />
@@ -372,30 +319,24 @@ export function CoursesCatalogSection({
               {/* Category Filter */}
               <div className='space-y-3'>
                 <h4 className='font-medium'>Category</h4>
-                <div className='max-h-72 overflow-y-auto flex flex-col gap-2 pr-1'>
-                  {categories.slice(0, 6).map(category => (
-                    <Button
-                      key={category.id}
-                      variant={
-                        selectedCategory === category.name
-                          ? 'default'
-                          : 'outline'
-                      }
-                      size='lg'
-                      onClick={() => handleCategoryChange(category.name)}
-                      className='whitespace-nowrap w-full text-base font-semibold justify-start'
+                <div className='flex flex-wrap gap-2 mb-4'>
+                  <button
+                    type='button'
+                    className={filters.selectedCategory === null ? 'active border font-bold px-3 py-1 rounded' : 'border px-3 py-1 rounded'}
+                    onClick={() => setFilters(prev => ({ ...prev, selectedCategory: null }))}
+                  >
+                    All
+                  </button>
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      type='button'
+                      className={filters.selectedCategory === String(cat.id) ? 'active border font-bold px-3 py-1 rounded' : 'border px-3 py-1 rounded'}
+                      onClick={() => setFilters(prev => ({ ...prev, selectedCategory: String(cat.id) }))}
                     >
-                      {category.name}{' '}
-                      <span className='ml-2 text-xs text-muted-foreground'>
-                        ({category.courseCount || 0})
-                      </span>
-                    </Button>
+                      {cat.name}
+                    </button>
                   ))}
-                  {categories.length > 6 && (
-                    <span className='text-muted-foreground text-xs flex items-center'>
-                      Scroll for more...
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -406,7 +347,7 @@ export function CoursesCatalogSection({
                   <div key={level} className='flex items-center space-x-2'>
                     <Checkbox
                       id={`level-${level}`}
-                      checked={selectedLevel === level}
+                      checked={filters.selectedLevel === level}
                       onCheckedChange={() => handleLevelChange(level)}
                     />
                     <label
@@ -423,7 +364,7 @@ export function CoursesCatalogSection({
               <div className='space-y-3'>
                 <h4 className='font-medium'>Price</h4>
                 <Select
-                  value={priceFilter}
+                  value={filters.priceFilter}
                   onValueChange={handlePriceFilterChange}
                 >
                   <SelectTrigger>
@@ -442,8 +383,8 @@ export function CoursesCatalogSection({
                 <h4 className='font-medium'>Price Range</h4>
                 <div className='px-2'>
                   <Slider
-                    value={priceRange}
-                    onValueChange={setPriceRange}
+                    value={filters.priceRange}
+                    onValueChange={val => setFilters(prev => ({ ...prev, priceRange: val as [number, number] }))}
                     max={500}
                     min={0}
                     step={10}
@@ -451,238 +392,10 @@ export function CoursesCatalogSection({
                     minStepsBetweenThumbs={1}
                   />
                   <div className='flex justify-between text-xs text-muted-foreground mt-1'>
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+                    <span>${filters.priceRange[0]}</span>
+                    <span>${filters.priceRange[1]}</span>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Main Content */}
-            <div className='flex-1 space-y-6'>
-              {/* Category Menu Scroll (Mobile) */}
-              <div className='lg:hidden'>
-                <div className='flex items-center space-x-4'>
-                  <div className='flex items-center space-x-2'>
-                    <Filter className='h-5 w-5 text-muted-foreground' />
-                    <span className='font-medium text-sm'>Category:</span>
-                  </div>
-
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8 shrink-0'
-                    onClick={scrollLeft}
-                  >
-                    <ChevronLeft className='h-4 w-4' />
-                  </Button>
-
-                  <div
-                    ref={scrollRef}
-                    className='flex-1 overflow-x-auto scrollbar-hide'
-                    style={{
-                      scrollBehavior: 'smooth',
-                      msOverflowStyle: 'none',
-                      scrollbarWidth: 'none',
-                    }}
-                  >
-                    <div className='flex space-x-3 py-2 px-1'>
-                      <Button
-                        variant={
-                          selectedCategory === null ? 'default' : 'outline'
-                        }
-                        size='sm'
-                        onClick={() => setSelectedCategory(null)}
-                        className='whitespace-nowrap shrink-0'
-                      >
-                        All
-                        {selectedCategory === null && (
-                          <Badge variant='secondary' className='ml-2 text-xs'>
-                            {totalElements}
-                          </Badge>
-                        )}
-                      </Button>
-
-                      {categories.map(category => (
-                        <Button
-                          key={category.id}
-                          variant={
-                            selectedCategory === category.name
-                              ? 'default'
-                              : 'outline'
-                          }
-                          size='sm'
-                          onClick={() => handleCategoryChange(category.name)}
-                          className='whitespace-nowrap shrink-0 flex items-center gap-2'
-                        >
-                          {category.name}
-                          <Badge variant='secondary' className='text-xs'>
-                            {category.courseCount || 0}
-                          </Badge>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    className='h-8 w-8 shrink-0'
-                    onClick={scrollRight}
-                  >
-                    <ChevronRight className='h-4 w-4' />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Active Filters */}
-              {activeFiltersCount > 0 && (
-                <div className='flex items-center gap-3'>
-                  <span className='text-sm text-muted-foreground'>
-                    Active filters:
-                  </span>
-                  <div className='flex flex-wrap gap-2'>
-                    {searchTerm && (
-                      <Badge
-                        variant='secondary'
-                        className='flex items-center gap-1'
-                      >
-                        Search: {searchTerm}
-                        <X
-                          className='h-3 w-3 cursor-pointer'
-                          onClick={() => setSearchTerm('')}
-                        />
-                      </Badge>
-                    )}
-                    {selectedCategory && (
-                      <Badge
-                        variant='secondary'
-                        className='flex items-center gap-1'
-                      >
-                        {selectedCategory}
-                        <X
-                          className='h-3 w-3 cursor-pointer'
-                          onClick={() => setSelectedCategory(null)}
-                        />
-                      </Badge>
-                    )}
-                    {selectedLevel && (
-                      <Badge
-                        variant='secondary'
-                        className='flex items-center gap-1'
-                      >
-                        {selectedLevel}
-                        <X
-                          className='h-3 w-3 cursor-pointer'
-                          onClick={() => setSelectedLevel(null)}
-                        />
-                      </Badge>
-                    )}
-                    {priceFilter !== 'all' && (
-                      <Badge
-                        variant='secondary'
-                        className='flex items-center gap-1'
-                      >
-                        {priceFilter === 'free' ? 'Free' : 'Paid'}
-                        <X
-                          className='h-3 w-3 cursor-pointer'
-                          onClick={() => handlePriceFilterChange('all')}
-                        />
-                      </Badge>
-                    )}
-                  </div>
-                  <Button variant='ghost' size='sm' onClick={clearFilters}>
-                    <X className='h-4 w-4 mr-1' />
-                    Clear all
-                  </Button>
-                </div>
-              )}
-
-              {/* Results Summary */}
-              <div className='flex items-center justify-between'>
-                <div className='text-sm text-muted-foreground'>
-                  {loadingCourses ? (
-                    <div className='flex items-center gap-2'>
-                      <Loader2 className='h-4 w-4 animate-spin' />
-                      Loading...
-                    </div>
-                  ) : (
-                    <>
-                      Showing {courses.length} out of {totalElements} courses
-                      {totalPages > 1 && (
-                        <span className='ml-1'>
-                          (Page {currentPage + 1} / {totalPages})
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Course Grid */}
-              <div className='min-h-[500px]'>
-                {error ? (
-                  <div className='flex items-center justify-center min-h-[400px]'>
-                    <div className='text-center space-y-4'>
-                      <div className='text-6xl'>⚠️</div>
-                      <h3 className='text-xl font-semibold'>Error occurred</h3>
-                      <p className='text-muted-foreground max-w-md mx-auto'>
-                        {error}
-                      </p>
-                      <Button
-                        onClick={() => window.location.reload()}
-                        variant='outline'
-                      >
-                        Try again
-                      </Button>
-                    </div>
-                  </div>
-                ) : loadingCourses ? (
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                    {[...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className='bg-card rounded-lg p-4 animate-pulse'
-                      >
-                        <div className='bg-muted h-40 rounded mb-4'></div>
-                        <div className='bg-muted h-4 rounded mb-2 w-3/4'></div>
-                        <div className='bg-muted h-3 rounded mb-1 w-1/2'></div>
-                        <div className='bg-muted h-3 rounded w-1/3'></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : courses.length > 0 ? (
-                  <>
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                      {courses.map(course => (
-                        <CourseCard
-                          key={course.id}
-                          course={course}
-                          variant='default'
-                          showInstructor={true}
-                        />
-                      ))}
-                    </div>
-
-                    {renderPagination()}
-                  </>
-                ) : (
-                  <div className='text-center py-12'>
-                    <div className='space-y-4'>
-                      <div className='text-6xl'>🔍</div>
-                      <h3 className='text-xl font-semibold'>
-                        No courses found
-                      </h3>
-                      <p className='text-muted-foreground max-w-md mx-auto'>
-                        No courses found that match your search criteria. Please
-                        try changing the keyword or category.
-                      </p>
-                      <Button onClick={clearFilters} variant='outline'>
-                        Clear filters
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

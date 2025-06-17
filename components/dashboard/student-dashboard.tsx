@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Card,
   CardContent,
@@ -45,50 +45,13 @@ export function StudentDashboard() {
   >([])
   const [recommendedCourses, setRecommendedCourses] = useState<
     DashboardCourseResponseDTO[]
-  >([
-    {
-      title: "Advanced Web Development",
-      description: "Master modern web development with React, Node.js, and TypeScript",
-      thumbnailUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=2072&auto=format&fit=crop",
-      category: "Web Development",
-      instructorName: "John Smith",
-      totalDuration: 15,
-      totalLessons: 45,
-      completed: false,
-      enrollDate: new Date().toISOString(),
-      completedDate: null,
-      progress: 0
-    },
-    {
-      title: "Data Science Fundamentals",
-      description: "Learn the basics of data science, statistics, and machine learning",
-      thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop",
-      category: "Data Science",
-      instructorName: "Sarah Johnson",
-      totalDuration: 20,
-      totalLessons: 60,
-      completed: false,
-      enrollDate: new Date().toISOString(),
-      completedDate: null,
-      progress: 0
-    },
-    {
-      title: "Mobile App Development",
-      description: "Build native mobile apps for iOS and Android using React Native",
-      thumbnailUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=2070&auto=format&fit=crop",
-      category: "Mobile Development",
-      instructorName: "Mike Wilson",
-      totalDuration: 18,
-      totalLessons: 50,
-      completed: false,
-      enrollDate: new Date().toISOString(),
-      completedDate: null,
-      progress: 0
-    }
-  ])
+  >([])
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const certificateRef = useRef<HTMLDivElement>(null)
+  const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
+  const hiddenCertificateRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -97,6 +60,7 @@ export function StudentDashboard() {
     }
 
     fetchDashboardCourses()
+    fetchRecommendedCourses()
   }, [])
 
   const fetchDashboardCourses = async () => {
@@ -109,6 +73,16 @@ export function StudentDashboard() {
       toast.error('Failed to load dashboard courses')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchRecommendedCourses = async () => {
+    try {
+      const response = await courseApi.getRecommendedCourses()
+      setRecommendedCourses(response.data)
+    } catch (error) {
+      console.error('Error fetching recommended courses:', error)
+      toast.error('Failed to load recommended courses')
     }
   }
 
@@ -133,6 +107,31 @@ export function StudentDashboard() {
       month: 'long',
       day: 'numeric',
     })
+  }
+
+  const handleDownloadPDF = async () => {
+    if (user && selectedCertificate) {
+      setShowHiddenCertificate(true)
+      setTimeout(async () => {
+        if (hiddenCertificateRef.current) {
+          const html2pdf = (await import('html2pdf.js')).default;
+          const opt = {
+            margin: 0,
+            filename: `certificate-${selectedCertificate.title}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+          };
+          html2pdf().set(opt).from(hiddenCertificateRef.current).save();
+        }
+        setShowHiddenCertificate(false)
+      }, 200)
+    }
+  }
+
+  // Debug: log user khi render certificate ẩn
+  if (showHiddenCertificate && user) {
+    console.log('DEBUG user for certificate:', user)
   }
 
   return (
@@ -285,7 +284,7 @@ export function StudentDashboard() {
           {completedCourses.length > 0 ? (
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>My Certificates</h2>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch'>
                 {completedCourses.map((course, index) => (
                   <CourseCard
                     key={`certificate-${course.title}-${index}`}
@@ -325,7 +324,7 @@ export function StudentDashboard() {
 
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
           {recommendedCourses.map((course, index) => (
-            <Card key={`recommended-${course.title}-${index}`} className='overflow-hidden hover:shadow-lg transition-shadow'>
+            <Card key={`recommended-${course.title}-${index}`} className='overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col'>
               <div className='aspect-video bg-muted'>
                 <img
                   src={course.thumbnailUrl || '/placeholder.svg'}
@@ -333,28 +332,32 @@ export function StudentDashboard() {
                   className='w-full h-full object-cover'
                 />
               </div>
-              <CardHeader>
-                <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
-                <CardDescription>by {course.instructorName}</CardDescription>
-              </CardHeader>
-              <CardContent className='space-y-4'>
-                <p className='text-sm text-muted-foreground line-clamp-2'>
-                  {course.description}
-                </p>
-                <div className='flex items-center justify-between'>
-                  <Badge variant='secondary'>{course.category}</Badge>
-                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                    <Clock className='h-4 w-4' />
-                    {course.totalDuration}h • {course.totalLessons} lessons
+              <div className='flex flex-col flex-1'>
+                <CardHeader>
+                  <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
+                  <CardDescription>by {course.instructorName}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-1">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                      {course.description}
+                    </p>
                   </div>
-                </div>
-                <Link href={`/courses/${course.title}`}>
-                  <Button className='w-full'>
-                    <Play className='h-4 w-4 mr-2' />
-                    View Course
-                  </Button>
-                </Link>
-              </CardContent>
+                  <div className="flex items-center justify-between mb-4 w-full">
+                    <Badge variant="secondary">{course.category}</Badge>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      {course.totalDuration}h • {course.totalLessons} lessons
+                    </div>
+                  </div>
+                  <Link href={`/courses/${course.title}`}>
+                    <Button className="w-full">
+                      <Play className="h-4 w-4 mr-2" />
+                      View Course
+                    </Button>
+                  </Link>
+                </CardContent>
+              </div>
             </Card>
           ))}
         </div>
@@ -377,32 +380,90 @@ export function StudentDashboard() {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedCertificate && (
-            <div className='space-y-6'>
-              <CompletionCertificate
-                courseTitle={selectedCertificate.title}
-                instructor={selectedCertificate.instructorName}
-                completionDate={
-                  new Date(selectedCertificate.completedDate || '')
-                }
-                studentName={user?.name || user?.email || 'Student'}
-                certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-              />
-
-              <div className='flex justify-center gap-4'>
+          {selectedCertificate && user && (
+            <div className='space-y-6 flex flex-col items-center'>
+              <div ref={certificateRef}>
+                <CompletionCertificate
+                  courseTitle={selectedCertificate.title}
+                  instructor={selectedCertificate.instructorName}
+                  completionDate={
+                    selectedCertificate.completedDate
+                      ? new Date(selectedCertificate.completedDate)
+                      : undefined
+                  }
+                  studentName={user.name || user.email || 'Student'}
+                  certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+                />
+              </div>
+              <div className='flex justify-center gap-4 mt-0'>
                 <Button variant='outline' className='flex items-center gap-2'>
                   <Share2 className='h-4 w-4' />
                   Share Certificate
                 </Button>
-                <Button className='flex items-center gap-2'>
+                <Button className='flex items-center gap-2' onClick={handleDownloadPDF}>
                   <Download className='h-4 w-4' />
                   Download PDF
                 </Button>
               </div>
             </div>
           )}
+          {selectedCertificate && !user && (
+            <div className='flex justify-center items-center min-h-[200px]'>
+              <span>Loading user information...</span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
+
+      {/* Render certificate ẩn ngoài modal để export PDF */}
+      {showHiddenCertificate && user && selectedCertificate && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: 0,
+            width: '300px',
+            height: '1123px',
+            background: 'white',
+            margin: 0,
+            padding: 0,
+            boxSizing: 'border-box',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            ref={hiddenCertificateRef}
+            style={{
+              width: '100px',
+              background: 'white',
+              margin: 'auto',
+              padding: 0,
+              boxSizing: 'border-box',
+              boxShadow: '0 0 24px 0 #e0e0e0',
+              borderRadius: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CompletionCertificate
+              courseTitle={selectedCertificate.title}
+              instructor={selectedCertificate.instructorName}
+              completionDate={
+                selectedCertificate.completedDate
+                  ? new Date(selectedCertificate.completedDate)
+                  : undefined
+              }
+              studentName={user.name || user.email || 'Student'}
+              certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

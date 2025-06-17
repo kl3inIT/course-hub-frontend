@@ -1,6 +1,6 @@
 'use client'
 
-import { categoryApi } from '@/api/category-api'
+import { analyticsApi } from '@/api/analytics-api'
 import { courseApi } from '@/api/course-api'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CategoryChartDTO, CategoryDetailDTO } from '@/types/category'
+import { CategoryDetailDTO } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
@@ -272,15 +272,14 @@ export function ManagerAnalytics() {
   const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
-  const [isCategoryFullscreen, setIsCategoryFullscreen] = useState(false)
-  const [isCourseFullscreen, setIsCourseFullscreen] = useState(false)
   const [loadingCategory, setLoadingCategory] = useState(false)
-  const [categoryChart, setCategoryChart] = useState<CategoryChartDTO[]>([])
-  const [categoryDetails, setCategoryDetails] = useState<CategoryDetailDTO[]>(
-    []
-  )
-  const [page, setPage] = useState(1)
+  const [categoryDetails, setCategoryDetails] = useState<CategoryDetailDTO[]>([])
+  const [totalCategoryElements, setTotalCategoryElements] = useState(0)
+  const [totalCategoryPages, setTotalCategoryPages] = useState(1)
+  const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [sortCategoryBy, setSortCategoryBy] = useState("id")
+  const [sortCategoryDirection, setSortCategoryDirection] = useState("asc")
   const [coursePage, setCoursePage] = useState(1)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(5)
   const [studentPage, setStudentPage] = useState(1)
@@ -302,7 +301,7 @@ export function ManagerAnalytics() {
   const [selectedCategoryForCourses, setSelectedCategoryForCourses] = useState<CategoryDetailDTO | null>(null)
   const [categoryCourses, setCategoryCourses] = useState<CourseResponseDTO[]>([])
   const [loadingCategoryCourses, setLoadingCategoryCourses] = useState(false)
-  const [selectedDateRange, setSelectedDateRange] = useState<[Date, Date] | null>(null)
+  const [selectedDateRange, setSelectedDateRange] = useState<[Date | null, Date | null]>([null, null])
   const [previousPeriodLabel, setPreviousPeriodLabel] = useState('Previous Month')
 
   const handleRefresh = () => {
@@ -343,22 +342,22 @@ export function ManagerAnalytics() {
         console.log('Adding Category Sheet...') // Debug
         const categorySheet = workbook.addWorksheet('Categories')
         categorySheet.columns = [
-          { header: 'ID', key: 'categoryId', width: 10 },
-          { header: 'Category Name', key: 'categoryName', width: 30 },
+          { header: 'ID', key: 'id', width: 10 },
+          { header: 'Category Name', key: 'name', width: 30 },
           { header: 'Description', key: 'description', width: 50 },
-          { header: 'Average Rating', key: 'averageRating', width: 15 },
           { header: 'Revenue', key: 'totalRevenue', width: 15 },
-          { header: 'Total Students', key: 'totalStudents', width: 15 }
+          { header: 'Total Students', key: 'totalStudents', width: 15 },
+          { header: 'Revenue Proportion', key: 'revenueProportion', width: 15 },
         ]
         exportData.data.category.forEach(cat => {
           console.log('Adding category row:', cat) // Debug: Log từng hàng được thêm
           categorySheet.addRow({
-            categoryId: cat.categoryId,
-            categoryName: cat.categoryName,
+            id: cat.id,
+            name: cat.name,
             description: cat.description,
-            averageRating: cat.averageRating,
             totalRevenue: cat.totalRevenue,
-            totalStudents: cat.totalStudents
+            totalStudents: cat.totalStudents,
+            revenueProportion: cat.revenueProportion,
           })
         })
       }
@@ -501,23 +500,27 @@ export function ManagerAnalytics() {
     // ... thêm các category khác nếu muốn
   ]
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoadingCategory(true)
-      try {
-        const [chart, details] = await Promise.all([
-          categoryApi.getCategoryChart(),
-          categoryApi.getCategoryDetails(),
-        ])
-        console.log('categoryChart', chart) // Log dữ liệu chart
-        setCategoryChart(chart)
-        setCategoryDetails(details)
-      } finally {
-        setLoadingCategory(false)
-      }
+  const handleFilter = async () => {
+    let params: any = {};
+    if (timeRange === 'custom' && selectedDateRange[0] && selectedDateRange[1]) {
+      params.startDate = selectedDateRange[0].toISOString().split('T')[0];
+      params.endDate = selectedDateRange[1].toISOString().split('T')[0];
+    } else {
+      params.range = timeRange;
     }
-    fetchData()
-  }, [])
+    params.page = page;
+    params.size = rowsPerPage === -1 ? 100000 : rowsPerPage;
+
+    const res = await analyticsApi.getCategoryAnalyticsDetails(params);
+    setCategoryDetails(res.data.content);
+    setTotalCategoryElements(res.data.totalElements);
+    setTotalCategoryPages(res.data.totalPages);
+  };
+
+  useEffect(() => {
+    handleFilter();
+    // eslint-disable-next-line
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     function updateRadius() {
@@ -533,17 +536,11 @@ export function ManagerAnalytics() {
     return () => window.removeEventListener('resize', updateRadius)
   }, [])
 
-  const filteredCategoryChart = categoryChart.filter(
-    item => item.percentage > 0
-  )
 
   // Pagination logic for category detail table
-  const totalRows = categoryDetails.length
-  const totalPages = rowsPerPage === -1 ? 1 : Math.ceil(totalRows / rowsPerPage)
-  const paginatedData =
-    rowsPerPage === -1
-      ? categoryDetails
-      : categoryDetails.slice((page - 1) * rowsPerPage, page * rowsPerPage)
+  const paginatedData = categoryDetails
+  const totalRows = totalCategoryElements
+  const totalPages = totalCategoryPages
 
   // Pagination logic for course detail table  
   const totalCourseRows = coursePerformanceData.length
@@ -574,7 +571,7 @@ export function ManagerAnalytics() {
     setShowCategoryCoursesDialog(true)
     setLoadingCategoryCourses(true)
     try {
-      const response = await courseApi.getCoursesByCategory(category.categoryId.toString())
+      const response = await courseApi.getCoursesByCategory(category.id.toString())
       setCategoryCourses(response.data)
     } catch (error) {
       console.error('Error fetching courses by category:', error)
@@ -587,7 +584,10 @@ export function ManagerAnalytics() {
   const totalCategoryCoursesRevenue = categoryCourses.reduce((sum, course) => sum + (course.finalPrice || 0), 0)
 
   const handleDateRangeChange = (dates: [Date, Date] | null) => {
-    setSelectedDateRange(dates)
+    setSelectedDateRange([
+      dates ? dates[0] : null,
+      dates ? dates[1] : null,
+    ])
     if (dates) {
       const daysDiff = Math.ceil((dates[1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24))
       setPreviousPeriodLabel(`${daysDiff} Days Ago`)
@@ -606,26 +606,11 @@ export function ManagerAnalytics() {
           </p>
         </div>
         <div className='flex space-x-2 items-center'>
-          <div className='relative'>
-            <RangePicker
-              style={{ borderRadius: 8, minWidth: 240 }}
-              placeholder={['Pick a date range', '']}
-              format="DD/MM/YYYY"
-              allowClear
-              separator={null}
-              onChange={(dates) => handleDateRangeChange(dates as [Date, Date] | null)}
-              panelRender={panel => (
-                <div style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-                  {panel}
-                </div>
-              )}
-            />
-          </div>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className='w-[140px]'>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" sideOffset={4}>
               <SelectItem value='7d'>Last 7 days</SelectItem>
               <SelectItem value='30d'>Last 30 days</SelectItem>
               <SelectItem value='90d'>Last 90 days</SelectItem>
@@ -633,16 +618,31 @@ export function ManagerAnalytics() {
               <SelectItem value='1y'>Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant='outline'
-            onClick={() => setShowExportDialog(true)}
-            disabled={isExporting}
-          >
-            <Download
-              className={`mr-2 h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`}
-            />
-            Export
+          <RangePicker
+            format="YYYY-MM-DD"
+            onChange={(dates) => {
+              setSelectedDateRange([
+                (dates && dates[0] ? dates[0].toDate() : null) as Date | null,
+                (dates && dates[1] ? dates[1].toDate() : null) as Date | null,
+              ]);
+              setTimeRange('custom');
+            }}
+          />
+          <Button onClick={handleFilter} disabled={timeRange !== 'custom' || !selectedDateRange[0] || !selectedDateRange[1]}>
+            Lọc
           </Button>
+          <div className="relative">
+            <Button
+              variant='outline'
+              onClick={() => setShowExportDialog(true)}
+              disabled={isExporting}
+            >
+              <Download
+                className={`mr-2 h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`}
+              />
+              Export
+            </Button>
+          </div>
           <Button onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw
               className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -754,13 +754,13 @@ export function ManagerAnalytics() {
                       Analysis of course categories and their performance metrics
                     </CardDescription>
                   </div>
-                  <label className="flex items-center text-sm">
-                    Show
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm">Show</label>
                     <select
                       value={rowsPerPage}
                       onChange={e => {
-                        setRowsPerPage(Number(e.target.value))
-                        setPage(1)
+                        setRowsPerPage(Number(e.target.value));
+                        setPage(0); // reset về trang đầu
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -769,7 +769,8 @@ export function ManagerAnalytics() {
                       <option value={20}>20</option>
                       <option value={-1}>All</option>
                     </select>
-                  </label>
+                    <span className="text-sm"></span>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -780,43 +781,60 @@ export function ManagerAnalytics() {
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">Details</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Average Rating</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">% of Revenue</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Students</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue (VND)</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue Proportion (%)</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {paginatedData.length === 0 ? (
+                      {loadingCategory ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                            <Loader2 className="h-5 w-5 animate-spin mx-auto" /> Loading categories...
+                          </td>
+                        </tr>
+                      ) : paginatedData.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                             No data available
                           </td>
                         </tr>
                       ) : (
-                        paginatedData.map((cat, idx) => (
+                        paginatedData.map((cat) => (
                           <tr
-                            key={cat.categoryId}
+                            key={cat.id}
                             className="cursor-pointer hover:bg-gray-50"
                             onClick={() => handleCategoryRowClick(cat)}
                           >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                              {rowsPerPage === -1 ? idx + 1 : (page - 1) * rowsPerPage + idx + 1}
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {cat.id}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900">
-                              {(cat.categoryName || '').replace(/\n|\r|\r\n/g, ' ')}
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900">
+                              {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
                             </td>
-                            <td className="px-6 py-4 text-sm text-left text-gray-900">
+                            <td className="px-6 py-3 text-sm text-left text-gray-900">
                               <div className="line-clamp-2">
                                 {(cat.description || '').replace(/\n|\r|\r\n/g, ' ')}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.averageRating}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${cat.totalRevenue?.toLocaleString('en-US')}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
-                              {((cat.totalRevenue / totalRevenue) * 100).toFixed(1)}%
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">{cat.courseCount || 0}</td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">{cat.totalStudents}</td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {cat.totalRevenue?.toLocaleString('vi-VN')} ₫
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{cat.totalStudents}</td>
+                            <td
+                              className={
+                                `px-6 py-3 whitespace-nowrap text-sm text-center ` +
+                                (cat.revenueProportion === 0
+                                  ? 'text-black'
+                                  : cat.revenueProportion > 0 && cat.revenueProportion <= 20
+                                  ? 'text-red-600'
+                                  : 'text-green-600')
+                              }
+                            >
+                              {cat.revenueProportion.toFixed(2)}%
+                            </td>
                           </tr>
                         ))
                       )}
@@ -827,7 +845,7 @@ export function ManagerAnalytics() {
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === 1}
+                      disabled={page === 0}
                       onClick={() => setPage(page - 1)}
                     >
                       Previous
@@ -835,15 +853,15 @@ export function ManagerAnalytics() {
                     {Array.from({ length: totalPages }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${page === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setPage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${page === idx ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setPage(idx)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={page === totalPages}
+                      disabled={page === totalPages - 1}
                       onClick={() => setPage(page + 1)}
                     >
                       Next
@@ -1180,7 +1198,7 @@ export function ManagerAnalytics() {
       <Dialog open={showCategoryCoursesDialog} onOpenChange={setShowCategoryCoursesDialog}>
         <DialogContent className='sm:max-w-4xl p-6'>
           <DialogHeader>
-            <DialogTitle>Courses in {selectedCategoryForCourses?.categoryName}</DialogTitle>
+            <DialogTitle>Courses in {selectedCategoryForCourses?.name}</DialogTitle>
           </DialogHeader>
           {loadingCategoryCourses ? (
             <div className='flex items-center justify-center py-8'>
@@ -1197,7 +1215,7 @@ export function ManagerAnalytics() {
               <Card>
                 <CardHeader>
                   <CardTitle>Revenue Distribution</CardTitle>
-                  <CardDescription>Breakdown of revenue by course within {selectedCategoryForCourses?.categoryName}</CardDescription>
+                  <CardDescription>Breakdown of revenue by course within {selectedCategoryForCourses?.name}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer config={{}} className='h-[250px]'>
@@ -1314,7 +1332,7 @@ export function ManagerAnalytics() {
                           <SelectTrigger className="w-[150px]">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent position="popper" sideOffset={4}>
                             <SelectItem value="5">5 hàng</SelectItem>
                             <SelectItem value="10">10 hàng</SelectItem>
                             <SelectItem value="20">20 hàng</SelectItem>

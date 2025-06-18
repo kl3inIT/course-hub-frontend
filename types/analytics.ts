@@ -18,3 +18,13 @@ export interface CourseAnalyticsDetailResponseDTO {
   reviews: number
   level: string
 }
+
+export interface StudentAnalyticsDetailResponseDTO {
+  id: number
+  courseName: string
+  newStudents: number
+  previousCompletion: number
+  growth: number
+  reviews: number
+  avgRating: number
+}

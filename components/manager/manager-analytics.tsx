@@ -17,15 +17,8 @@ import {
 } from '@/components/ui/chart'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO } from '@/types/analytics'
+import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
@@ -41,7 +34,7 @@ import {
   TrendingUp,
   Users
 } from 'lucide-react'
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
 import { toast } from 'react-hot-toast'
@@ -96,41 +89,6 @@ const revenueData = [
     orders: 14,
     newStudents: 13,
     revenueShare: 10
-  }
-]
-
-const studentActivityData = [
-  {
-    id: 1,
-    courseName: 'React Fundamentals',
-    newStudents: 15,
-    previousCompletion: 8 ,
-    growth: 10,
-    reviewRate: 85
-  },
-  {
-    id: 2,
-    courseName: 'Node.js Backend',
-    newStudents: 12,
-    previousCompletion: 65,
-    growth: 5,
-    reviewRate: 72
-  },
-  {
-    id: 3,
-    courseName: 'CSS Mastery',
-    newStudents: 8,
-    previousCompletion: 60,
-    growth: 8,
-    reviewRate: 90
-  },
-  {
-    id: 4,
-    courseName: 'Advanced JS',
-    newStudents: 20,
-    previousCompletion: 75,
-    growth: 12,
-    reviewRate: 80
   }
 ]
 
@@ -227,9 +185,14 @@ export function ManagerAnalytics() {
   const [coursePage, setCoursePage] = useState(0)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(5)
   
-  // Other pagination states
-  const [studentPage, setStudentPage] = useState(1)
+  // Student Analytics State
+  const [loadingStudent, setLoadingStudent] = useState(false)
+  const [studentDetails, setStudentDetails] = useState<StudentAnalyticsDetailResponseDTO[]>([])
+  const [totalStudentElements, setTotalStudentElements] = useState(0)
+  const [studentPage, setStudentPage] = useState(0)
   const [studentRowsPerPage, setStudentRowsPerPage] = useState(5)
+  
+  // Other pagination states
   const [revenuePage, setRevenuePage] = useState(1)
   const [revenueRowsPerPage, setRevenueRowsPerPage] = useState(5)
   const chartContainerRef = useRef<HTMLDivElement>(null)
@@ -256,6 +219,44 @@ export function ManagerAnalytics() {
     setTimeout(() => setIsRefreshing(false), 1000)
   }
 
+  const handleExportClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    
+    // Temporarily disable pointer events to prevent multiple clicks
+    const button = e.currentTarget as HTMLButtonElement;
+    button.style.pointerEvents = 'none';
+    
+    // Lock scroll position
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    
+    setShowExportDialog(true);
+    
+    // Re-enable pointer events after a short delay
+    setTimeout(() => {
+      button.style.pointerEvents = '';
+    }, 100);
+    
+    return false;
+  }, []);
+
+  const handleCloseExportDialog = useCallback(() => {
+    // Restore scroll position
+    const scrollY = document.body.style.top;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    if (scrollY) {
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    }
+    
+    setShowExportDialog(false);
+  }, []);
+
   const handleExport = async () => {
     setIsExporting(true)
     try {
@@ -271,7 +272,7 @@ export function ManagerAnalytics() {
                     (exportOptions.course.rowCount === -1 ? courseDetails : courseDetails.slice(0, exportOptions.course.rowCount)) 
                     : [],
           student: exportOptions.student.checked ? 
-                     (exportOptions.student.rowCount === -1 ? studentActivityData : studentActivityData.slice(0, exportOptions.student.rowCount)) 
+                     (exportOptions.student.rowCount === -1 ? studentDetails : studentDetails.slice(0, exportOptions.student.rowCount)) 
                      : [],
           revenue: exportOptions.revenue.checked ? 
                      (exportOptions.revenue.rowCount === -1 ? revenueData : revenueData.slice(0, exportOptions.revenue.rowCount)) 
@@ -345,19 +346,18 @@ export function ManagerAnalytics() {
           { header: 'New Students', key: 'newStudents', width: 15 },
           { header: 'Previous Period', key: 'previousCompletion', width: 15 },
           { header: 'Growth %', key: 'growth', width: 15 },
-          { header: 'Completed %', key: 'completedPercentage', width: 15 },
-          { header: 'Review Rate %', key: 'reviewRate', width: 15 }
+          { header: 'Reviews', key: 'reviews', width: 15 },
+          { header: 'Avg Rating', key: 'avgRating', width: 15 }
         ]
         exportData.data.student.forEach(data => {
-          const growthRate = ((data.newStudents - data.previousCompletion) / data.previousCompletion) * 100
           console.log('Adding student activity row:', data) // Debug: Log từng hàng được thêm
           studentSheet.addRow({
             courseName: data.courseName,
             newStudents: data.newStudents,
             previousCompletion: data.previousCompletion,
-            growth: growthRate,
-            completedPercentage: data.growth,
-            reviewRate: data.reviewRate,
+            growth: data.growth,
+            reviews: data.reviews,
+            avgRating: data.avgRating,
           })
         })
       }
@@ -401,11 +401,11 @@ export function ManagerAnalytics() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
 
-      toast.success('Xuất báo cáo thành công!')
-      setShowExportDialog(false)
+      toast.success('Export completed successfully!')
+      handleCloseExportDialog()
     } catch (error) {
       console.error('Export error:', error)
-      toast.error('Lỗi khi xuất báo cáo')
+      toast.error('Error exporting report')
     } finally {
       setIsExporting(false)
     }
@@ -503,8 +503,42 @@ export function ManagerAnalytics() {
     }
   };
 
+  const handleStudentFilter = async () => {
+    setLoadingStudent(true)
+    try {
+      let params: any = {};
+      if (timeRange === 'custom' && selectedDateRange[0] && selectedDateRange[1]) {
+        // Sử dụng local date format để tránh timezone issues
+        params.startDate = selectedDateRange[0].getFullYear() + '-' + 
+                          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(selectedDateRange[0].getDate()).padStart(2, '0');
+        params.endDate = selectedDateRange[1].getFullYear() + '-' + 
+                        String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(selectedDateRange[1].getDate()).padStart(2, '0');
+      } else {
+        params.range = timeRange;
+      }
+      // Load tất cả dữ liệu một lần để tránh reload khi chuyển trang
+      params.page = 0;
+      params.size = 500; // Load all data
+
+      console.log('Student filter params:', params); // Debug log
+
+      const res = await analyticsApi.getStudentAnalyticsDetails(params);
+      setStudentDetails(res.data.content);
+      setTotalStudentElements(res.data.totalElements);
+      // Reset về trang đầu khi filter
+      setStudentPage(0);
+    } catch (error) {
+      console.error('Error fetching student analytics:', error)
+      toast.error('Lỗi khi tải dữ liệu student analytics')
+    } finally {
+      setLoadingStudent(false)
+    }
+  };
+
   const handleFilter = async () => {
-    await Promise.all([handleCategoryFilter(), handleCourseFilter()])
+    await Promise.all([handleCategoryFilter(), handleCourseFilter(), handleStudentFilter()])
   };
 
   useEffect(() => {
@@ -515,7 +549,7 @@ export function ManagerAnalytics() {
   // Load both category and course data when component mounts
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([handleCategoryFilter(), handleCourseFilter()]);
+      await Promise.all([handleCategoryFilter(), handleCourseFilter(), handleStudentFilter()]);
       hasMountedRef.current = true;
     };
     loadInitialData();
@@ -544,6 +578,40 @@ export function ManagerAnalytics() {
     return () => window.removeEventListener('resize', updateRadius)
   }, [])
 
+  useEffect(() => {
+    // Disable smooth scrolling and scroll anchoring when component mounts
+    const originalScrollBehavior = document.documentElement.style.scrollBehavior
+    const originalOverflowAnchor = document.body.style.overflowAnchor
+    
+    // Force disable all scroll behaviors
+    document.documentElement.style.scrollBehavior = 'auto'
+    document.body.style.scrollBehavior = 'auto'
+    document.body.style.overflowAnchor = 'none'
+    document.documentElement.style.overflowAnchor = 'none'
+    
+    // Add CSS to prevent layout shifts
+    document.body.style.contain = 'layout style'
+    document.documentElement.style.contain = 'layout style'
+    
+    // Prevent scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual'
+    }
+    
+    return () => {
+      // Restore original scroll behavior when component unmounts
+      document.documentElement.style.scrollBehavior = originalScrollBehavior
+      document.body.style.scrollBehavior = ''
+      document.body.style.overflowAnchor = originalOverflowAnchor
+      document.documentElement.style.overflowAnchor = ''
+      document.body.style.contain = ''
+      document.documentElement.style.contain = ''
+      
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto'
+      }
+    }
+  }, [])
 
   // Pagination logic for category detail table
   const paginatedData = categoryDetails
@@ -558,12 +626,12 @@ export function ManagerAnalytics() {
     : courseDetails.slice(coursePage * courseRowsPerPage, (coursePage + 1) * courseRowsPerPage)
 
   // Pagination logic for student activity table
-  const totalStudentRows = studentActivityData.length
+  const totalStudentRows = studentDetails.length
   const totalStudentPages = studentRowsPerPage === -1 ? 1 : Math.ceil(totalStudentRows / studentRowsPerPage)
   const paginatedStudentData =
     studentRowsPerPage === -1
-      ? studentActivityData
-      : studentActivityData.slice((studentPage - 1) * studentRowsPerPage, studentPage * studentRowsPerPage)
+      ? studentDetails
+      : studentDetails.slice(studentPage * studentRowsPerPage, (studentPage + 1) * studentRowsPerPage)
 
   // Pagination logic for revenue trends table
   const totalRevenueRows = revenueData.length
@@ -604,58 +672,91 @@ export function ManagerAnalytics() {
   }
 
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-between'>
+    <div 
+      className='space-y-6' 
+      style={{ 
+        scrollBehavior: 'auto',
+        scrollMarginTop: 0,
+        scrollPaddingTop: 0,
+        overflowAnchor: 'none'
+      }}
+      onScroll={(e) => e.preventDefault()}
+    >
+      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
         <div>
           <h1 className='text-3xl font-bold'>Analytics Dashboard</h1>
           <p className='text-muted-foreground'>
             Track your course performance and student engagement
           </p>
         </div>
-        <div className='flex space-x-2 items-center'>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className='w-[140px]'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" sideOffset={4}>
-              <SelectItem value='7d'>Last 7 days</SelectItem>
-              <SelectItem value='30d'>Last 30 days</SelectItem>
-              <SelectItem value='90d'>Last 90 days</SelectItem>
-              <SelectItem value='6m'>Last 6 months</SelectItem>
-              <SelectItem value='1y'>Last year</SelectItem>
-            </SelectContent>
-          </Select>
-          <RangePicker
-            format="YYYY-MM-DD"
-            onChange={(dates) => {
-              setSelectedDateRange([
-                (dates && dates[0] ? dates[0].toDate() : null) as Date | null,
-                (dates && dates[1] ? dates[1].toDate() : null) as Date | null,
-              ]);
-              setTimeRange('custom');
-            }}
-          />
-          <Button onClick={handleFilter} disabled={timeRange !== 'custom' || !selectedDateRange[0] || !selectedDateRange[1]}>
-            Lọc
-          </Button>
-          <div className="relative">
-            <Button
-              variant='outline'
-              onClick={() => setShowExportDialog(true)}
+        
+        {/* Controls Section */}
+        <div className='flex flex-wrap items-center gap-3 p-4 rounded-lg'>
+          {/* Time Range Selector */}
+          <div className='flex items-center gap-2'>
+            <label className='text-sm font-medium text-gray-700 whitespace-nowrap'>Time Range:</label>
+            <select 
+              value={timeRange} 
+              onChange={(e) => setTimeRange(e.target.value)}
+              className='h-10 min-w-[140px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+            >
+              <option value='7d'>Last 7 days</option>
+              <option value='30d'>Last 30 days</option>
+              <option value='90d'>Last 90 days</option>
+              <option value='6m'>Last 6 months</option>
+              <option value='1y'>Last year</option>
+            </select>
+          </div>
+
+          {/* Date Range Picker */}
+          <div className='flex items-center gap-2'>
+            <label className='text-sm font-medium text-gray-700 whitespace-nowrap'>Custom Range:</label>
+            <RangePicker
+              format="YYYY-MM-DD"
+              placeholder={['Start date', 'End date']}
+              className='h-10'
+              onChange={(dates) => {
+                setSelectedDateRange([
+                  (dates && dates[0] ? dates[0].toDate() : null) as Date | null,
+                  (dates && dates[1] ? dates[1].toDate() : null) as Date | null,
+                ]);
+                setTimeRange('custom');
+              }}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className='flex items-center gap-2 ml-2'>
+            <button
+              onClick={handleFilter} 
+              disabled={timeRange !== 'custom' || !selectedDateRange[0] || !selectedDateRange[1]}
+              className='h-10 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
+            >
+              <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z' />
+              </svg>
+              Filter
+            </button>
+            
+            <button
+              type="button"
+              className='h-10 px-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
+              onClick={handleExportClick}
               disabled={isExporting}
             >
-              <Download
-                className={`mr-2 h-4 w-4 ${isExporting ? 'animate-bounce' : ''}`}
-              />
-              Export
-            </Button>
+              <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
+            
+            <button
+              onClick={handleRefresh} 
+              disabled={isRefreshing}
+              className='h-10 px-4 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
-          <Button onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
-            />
-            Refresh
-          </Button>
         </div>
       </div>
 
@@ -1023,7 +1124,7 @@ export function ManagerAnalytics() {
                       value={studentRowsPerPage}
                       onChange={e => {
                         setStudentRowsPerPage(Number(e.target.value))
-                        setStudentPage(1)
+                        setStudentPage(0)
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -1045,65 +1146,70 @@ export function ManagerAnalytics() {
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">New Students</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{previousPeriodLabel}</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Growth (%)</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completed (%)</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Review Rate (%)</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Rating</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {paginatedStudentData.length === 0 ? (
+                      {loadingStudent ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                            <Loader2 className="h-5 w-5 animate-spin mx-auto" /> Loading student analytics...
+                          </td>
+                        </tr>
+                      ) : paginatedStudentData.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                             No data available
                           </td>
                         </tr>
                       ) : (
-                        paginatedStudentData.map((data) => {
-                          const growthRate = ((data.newStudents - data.previousCompletion) / data.previousCompletion) * 100;
-                          return (
-                            <tr key={data.id}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.newStudents}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.previousCompletion}</td>
-                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                                growthRate >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {growthRate >= 0 ? '+' : ''}{growthRate.toFixed(1)}%
-                              </td>
-                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                                data.growth >= 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {data.growth >= 0 ? '+' : ''}{data.growth}%
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.reviewRate}%</td>
-                            </tr>
-                          );
-                        })
+                        paginatedStudentData.map((data) => (
+                          <tr key={data.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.newStudents}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.previousCompletion}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                              data.growth === 0 
+                                ? 'text-black' 
+                                : data.growth > 0 
+                                ? 'text-green-600' 
+                                : 'text-red-600'
+                            }`}>
+                              {data.growth > 0 ? '+' : ''}{data.growth}%
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
+                              {data.reviews}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.avgRating}</td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
                 </div>
-                {paginatedStudentData.length > 0 && (
+                {studentDetails.length > 0 && (
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={studentPage === 1}
+                      disabled={studentPage === 0}
                       onClick={() => setStudentPage(studentPage - 1)}
                     >
                       Previous
                     </button>
-                    {Array.from({ length: totalStudentPages }, (_, idx) => (
+                    {Array.from({ length: Math.ceil(totalStudentRows / studentRowsPerPage) }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${studentPage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setStudentPage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${studentPage === idx ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setStudentPage(idx)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={studentPage === totalStudentPages}
+                      disabled={studentPage === Math.ceil(totalStudentRows / studentRowsPerPage) - 1}
                       onClick={() => setStudentPage(studentPage + 1)}
                     >
                       Next
@@ -1228,8 +1334,8 @@ export function ManagerAnalytics() {
           </TabsContent>
         </div>
       </Tabs>
-      <Dialog open={showCategoryCoursesDialog} onOpenChange={setShowCategoryCoursesDialog}>
-        <DialogContent className='sm:max-w-4xl p-6'>
+      <Dialog open={showCategoryCoursesDialog} onOpenChange={setShowCategoryCoursesDialog} modal>
+        <DialogContent className='sm:max-w-4xl p-6 max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Courses in {selectedCategoryForCourses?.name}</DialogTitle>
           </DialogHeader>
@@ -1321,14 +1427,18 @@ export function ManagerAnalytics() {
       </Dialog>
 
       {/* Export Dialog */}
-      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent key="export-dialog" className="sm:max-w-[500px] p-6">
+      <Dialog open={showExportDialog} onOpenChange={(open) => {
+        if (!open) {
+          handleCloseExportDialog();
+        }
+      }} modal>
+        <DialogContent key="export-dialog" className="sm:max-w-[500px] p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Xuất báo cáo phân tích</DialogTitle>
+            <DialogTitle>Export Analytics Report</DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="space-y-4">
-              <div className="font-semibold text-lg border-b pb-2 mb-4">Chọn dữ liệu xuất:</div>
+              <div className="font-semibold text-lg border-b pb-2 mb-4">Select data to export:</div>
               <div className="grid grid-cols-1 gap-y-4">
                 {Object.keys(exportOptions).map((key) => (
                   <div key={key} className="flex flex-col gap-2 p-3 border rounded-md shadow-sm">
@@ -1352,26 +1462,22 @@ export function ManagerAnalytics() {
                     </div>
                     {exportOptions[key as keyof typeof exportOptions].checked && (
                       <div className="pl-7 mt-2">
-                        <div className="font-medium text-sm mb-1">Số lượng dữ liệu:</div>
-                        <Select
+                        <div className="font-medium text-sm mb-1">Number of rows:</div>
+                        <select
                           value={exportOptions[key as keyof typeof exportOptions].rowCount.toString()}
-                          onValueChange={(value) => 
+                          onChange={(e) => 
                             setExportOptions(prev => ({
                               ...prev,
-                              [key]: { ...prev[key as keyof typeof prev], rowCount: Number(value) }
+                              [key]: { ...prev[key as keyof typeof prev], rowCount: Number(e.target.value) }
                             }))
                           }
+                          className="w-[150px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <SelectTrigger className="w-[150px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent position="popper" sideOffset={4}>
-                            <SelectItem value="5">5 hàng</SelectItem>
-                            <SelectItem value="10">10 hàng</SelectItem>
-                            <SelectItem value="20">20 hàng</SelectItem>
-                            <SelectItem value="-1">Tất cả</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <option value="5">5 rows</option>
+                          <option value="10">10 rows</option>
+                          <option value="20">20 rows</option>
+                          <option value="-1">All</option>
+                        </select>
                       </div>
                     )}
                   </div>
@@ -1380,30 +1486,41 @@ export function ManagerAnalytics() {
             </div>
 
             <div className="space-y-4">
-              <div className="font-semibold text-lg border-b pb-2 mb-4">Khoảng thời gian:</div>
+              <div className="font-semibold text-lg border-b pb-2 mb-4">Date Range:</div>
               <RangePicker
                 style={{ width: '100%' }}
-                placeholder={['Từ ngày', 'Đến ngày']}
+                placeholder={['From date', 'To date']}
                 format="DD/MM/YYYY"
                 onChange={(dates) => setExportDateRange(dates as [Date, Date] | null)}
               />
             </div>
           </div>
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
-              Hủy
+            <Button 
+              variant="outline" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCloseExportDialog();
+              }}
+            >
+              Cancel
             </Button>
             <Button 
-              onClick={handleExport}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleExport();
+              }}
               disabled={isExporting || !Object.values(exportOptions).some(o => o.checked)}
             >
               {isExporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang xuất...
+                  Exporting...
                 </>
               ) : (
-                'Xuất báo cáo'
+                'Export Report'
               )}
             </Button>
           </DialogFooter>

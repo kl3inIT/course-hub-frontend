@@ -114,6 +114,7 @@ export function ManagerAnalytics() {
     revenue: { checked: true, rowCount: 10 }
   })
   const [exportDateRange, setExportDateRange] = useState<[Date, Date] | null>(null)
+  const [exportTimeRange, setExportTimeRange] = useState('6m')
   const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
@@ -215,71 +216,113 @@ export function ManagerAnalytics() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      // Tạo dữ liệu xuất dựa trên các tùy chọn
-      const exportData = {
-        dateRange: exportDateRange,
-        options: exportOptions,
-        data: {
-          category: exportOptions.category.checked ? 
-                      (exportOptions.category.rowCount === -1 ? categoryDetails : categoryDetails.slice(0, exportOptions.category.rowCount)) 
-                      : [],
-          course: exportOptions.course.checked ? 
-                    (exportOptions.course.rowCount === -1 ? courseDetails : courseDetails.slice(0, exportOptions.course.rowCount)) 
-                    : [],
-          student: exportOptions.student.checked ? 
-                     (exportOptions.student.rowCount === -1 ? studentDetails : studentDetails.slice(0, exportOptions.student.rowCount)) 
-                     : [],
-          revenue: exportOptions.revenue.checked ? 
-                     (exportOptions.revenue.rowCount === -1 ? revenueDetails : revenueDetails.slice(0, exportOptions.revenue.rowCount)) 
-                     : []
-        }
+      // 1. Determine export parameters
+      let exportParams: any = {};
+      
+      if (exportDateRange && exportDateRange[0] && exportDateRange[1]) {
+        // Use custom date range if provided
+        exportParams.startDate = exportDateRange[0].getFullYear() + '-' + 
+                                String(exportDateRange[0].getMonth() + 1).padStart(2, '0') + '-' + 
+                                String(exportDateRange[0].getDate()).padStart(2, '0');
+        exportParams.endDate = exportDateRange[1].getFullYear() + '-' + 
+                              String(exportDateRange[1].getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(exportDateRange[1].getDate()).padStart(2, '0');
+      } else {
+        // Use time range
+        exportParams.range = exportTimeRange;
+      }
+      
+      // Set size to get all data for export
+      exportParams.page = 0;
+      exportParams.size = 1000;
+
+      console.log('Export params:', exportParams); // Debug
+
+      // 2. Fetch fresh data from API for export
+      const exportPromises = [];
+      
+      if (exportOptions.category.checked) {
+        exportPromises.push(analyticsApi.getCategoryAnalyticsDetails(exportParams));
+      }
+      if (exportOptions.course.checked) {
+        exportPromises.push(analyticsApi.getCourseAnalyticsDetails(exportParams));
+      }
+      if (exportOptions.student.checked) {
+        exportPromises.push(analyticsApi.getStudentAnalyticsDetails(exportParams));
+      }
+      if (exportOptions.revenue.checked) {
+        exportPromises.push(analyticsApi.getRevenueAnalyticsDetails(exportParams));
       }
 
-      console.log('Export Options:', exportOptions) // Debug: Kiểm tra các tùy chọn được chọn
-      console.log('Export Data prepared:', exportData.data) // Debug: Kiểm tra dữ liệu sau khi chuẩn bị
+      const results = await Promise.all(exportPromises);
+      
+      // 3. Map results to export data
+      let resultIndex = 0;
+      const freshExportData = {
+        category: (exportOptions.category.checked ? 
+                    (exportOptions.category.rowCount === -1 ? 
+                      results[resultIndex++].data.content : 
+                      results[resultIndex++].data.content.slice(0, exportOptions.category.rowCount)) 
+                    : []) as any[],
+        course: (exportOptions.course.checked ? 
+                  (exportOptions.course.rowCount === -1 ? 
+                    results[resultIndex++].data.content : 
+                    results[resultIndex++].data.content.slice(0, exportOptions.course.rowCount)) 
+                  : []) as any[],
+        student: (exportOptions.student.checked ? 
+                   (exportOptions.student.rowCount === -1 ? 
+                     results[resultIndex++].data.content : 
+                     results[resultIndex++].data.content.slice(0, exportOptions.student.rowCount)) 
+                   : []) as any[],
+        revenue: (exportOptions.revenue.checked ? 
+                   (exportOptions.revenue.rowCount === -1 ? 
+                     results[resultIndex++].data.content : 
+                     results[resultIndex++].data.content.slice(0, exportOptions.revenue.rowCount)) 
+                   : []) as any[]
+      }
 
-      // Tạo file Excel
+      console.log('Fresh export data:', freshExportData); // Debug
+
+      // 4. Create Excel file
       const workbook = new ExcelJS.Workbook()
       
       if (exportOptions.category.checked) {
-        console.log('Adding Category Sheet...') // Debug
         const categorySheet = workbook.addWorksheet('Categories')
         categorySheet.columns = [
-          { header: 'ID', key: 'id', width: 10 },
-          { header: 'Category Name', key: 'name', width: 30 },
+          { header: 'Category ID', key: 'id', width: 12 },
+          { header: 'Category Name', key: 'name', width: 35 },
           { header: 'Description', key: 'description', width: 50 },
-          { header: 'Revenue', key: 'totalRevenue', width: 15 },
+          { header: 'Total Courses', key: 'courseCount', width: 15 },
           { header: 'Total Students', key: 'totalStudents', width: 15 },
-          { header: 'Revenue Proportion', key: 'revenueProportion', width: 15 },
+          { header: 'Total Revenue (VND)', key: 'totalRevenue', width: 25 },
+          { header: 'Revenue Share (%)', key: 'revenueProportion', width: 18 },
         ]
-        exportData.data.category.forEach(cat => {
-          console.log('Adding category row:', cat) // Debug: Log từng hàng được thêm
+        freshExportData.category.forEach((cat: any) => {
           categorySheet.addRow({
             id: cat.id,
             name: cat.name,
             description: cat.description,
-            totalRevenue: cat.totalRevenue,
+            courseCount: cat.courseCount || 0,
             totalStudents: cat.totalStudents,
+            totalRevenue: cat.totalRevenue,
             revenueProportion: cat.revenueProportion,
           })
         })
       }
 
       if (exportOptions.course.checked) {
-        console.log('Adding Course Sheet...') // Debug
         const courseSheet = workbook.addWorksheet('Courses')
         courseSheet.columns = [
           { header: 'Course ID', key: 'courseId', width: 15 },
-          { header: 'Course Name', key: 'courseName', width: 30 },
-          { header: 'Students', key: 'students', width: 15 },
-          { header: 'Rating', key: 'rating', width: 15 },
-          { header: 'Revenue', key: 'revenue', width: 15 },
-          { header: 'Revenue %', key: 'revenuePercent', width: 15 },
-          { header: 'Reviews', key: 'reviews', width: 15 },
-          { header: 'Level', key: 'level', width: 15 }
+          { header: 'Course Name', key: 'courseName', width: 45 },
+          { header: 'Total Students', key: 'students', width: 15 },
+          { header: 'Average Rating', key: 'rating', width: 15 },
+          { header: 'Total Revenue (VND)', key: 'revenue', width: 25 },
+          { header: 'Revenue Share (%)', key: 'revenuePercent', width: 18 },
+          { header: 'Total Reviews', key: 'reviews', width: 15 },
+          { header: 'Course Level', key: 'level', width: 15 }
         ]
-        exportData.data.course.forEach(course => {
-          console.log('Adding course row:', course) // Debug: Log từng hàng được thêm
+        freshExportData.course.forEach((course: any) => {
           courseSheet.addRow({
             courseId: course.courseId,
             courseName: course.courseName,
@@ -294,19 +337,19 @@ export function ManagerAnalytics() {
       }
 
       if (exportOptions.student.checked) {
-        console.log('Adding Student Activity Sheet...') // Debug
         const studentSheet = workbook.addWorksheet('Student Activity')
         studentSheet.columns = [
-          { header: 'Course Name', key: 'courseName', width: 30 },
+          { header: 'Course ID', key: 'id', width: 15 },
+          { header: 'Course Name', key: 'courseName', width: 45 },
           { header: 'New Students', key: 'newStudents', width: 15 },
-          { header: 'Previous Period', key: 'previousCompletion', width: 15 },
-          { header: 'Growth %', key: 'growth', width: 15 },
-          { header: 'Reviews', key: 'reviews', width: 15 },
-          { header: 'Avg Rating', key: 'avgRating', width: 15 }
+          { header: 'Previously', key: 'previousCompletion', width: 15 },
+          { header: 'Growth Rate (%)', key: 'growth', width: 16 },
+          { header: 'Total Reviews', key: 'reviews', width: 15 },
+          { header: 'Average Rating', key: 'avgRating', width: 16 }
         ]
-        exportData.data.student.forEach(data => {
-          console.log('Adding student activity row:', data) // Debug: Log từng hàng được thêm
+        freshExportData.student.forEach((data: any) => {
           studentSheet.addRow({
+            id: data.id,
             courseName: data.courseName,
             newStudents: data.newStudents,
             previousCompletion: data.previousCompletion,
@@ -318,20 +361,20 @@ export function ManagerAnalytics() {
       }
 
       if (exportOptions.revenue.checked) {
-        console.log('Adding Revenue Sheet...') // Debug
-        const revenueSheet = workbook.addWorksheet('Revenue')
+        const revenueSheet = workbook.addWorksheet('Revenue Trends')
         revenueSheet.columns = [
-          { header: 'Course Name', key: 'courseName', width: 30 },
-          { header: 'Revenue', key: 'revenue', width: 20 },
-          { header: 'Previous Period', key: 'previousRevenue', width: 20 },
-          { header: 'Growth %', key: 'growth', width: 15 },
-          { header: 'Orders', key: 'orders', width: 15 },
+          { header: 'Course ID', key: 'id', width: 15 },
+          { header: 'Course Name', key: 'courseName', width: 45 },
+          { header: 'Current Revenue (VND)', key: 'revenue', width: 25 },
+          { header: 'Previously (VND)', key: 'previousRevenue', width: 20 },
+          { header: 'Growth Rate (%)', key: 'growth', width: 16 },
+          { header: 'Total Orders', key: 'orders', width: 15 },
           { header: 'New Students', key: 'newStudents', width: 15 },
-          { header: 'Revenue Share %', key: 'revenueShare', width: 15 }
+          { header: 'Revenue Share (%)', key: 'revenueShare', width: 18 }
         ]
-        exportData.data.revenue.forEach(data => {
-          console.log('Adding revenue row:', data) // Debug: Log từng hàng được thêm
+        freshExportData.revenue.forEach((data: any) => {
           revenueSheet.addRow({
+            id: data.id,
             courseName: data.courseName,
             revenue: data.revenue,
             previousRevenue: data.previousRevenue,
@@ -343,14 +386,18 @@ export function ManagerAnalytics() {
         })
       }
 
-      // Xuất file
-      console.log('Total worksheets in workbook before writing:', workbook.worksheets.length) // Debug: Kiểm tra số lượng sheet
+      // 5. Generate filename with date info
+      const dateInfo = exportDateRange && exportDateRange[0] && exportDateRange[1] 
+        ? `${exportDateRange[0].toLocaleDateString('en-GB')}_to_${exportDateRange[1].toLocaleDateString('en-GB')}`
+        : exportTimeRange;
+      
+      // 6. Export file
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.xlsx`
+      a.download = `analytics-report-${dateInfo}-${new Date().toISOString().split('T')[0]}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -360,7 +407,7 @@ export function ManagerAnalytics() {
       handleCloseExportDialog()
     } catch (error) {
       console.error('Export error:', error)
-      toast.error('Error exporting report')
+      toast.error('Error exporting report. Please try again.')
     } finally {
       setIsExporting(false)
     }
@@ -1017,7 +1064,7 @@ export function ManagerAnalytics() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue (VND)</th>
@@ -1045,7 +1092,7 @@ export function ManagerAnalytics() {
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
                               {course.courseId}
                             </td>
-                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900">
                               {course.courseName}
                             </td>
                             <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
@@ -1146,7 +1193,7 @@ export function ManagerAnalytics() {
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">New Students</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{previousPeriodLabel}</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Previously</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Growth (%)</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Rating</th>
@@ -1169,7 +1216,7 @@ export function ManagerAnalytics() {
                         paginatedStudentData.map((data) => (
                           <tr key={data.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900">{data.courseName}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.newStudents}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.previousCompletion}</td>
                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
@@ -1257,9 +1304,9 @@ export function ManagerAnalytics() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{previousPeriodLabel}</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Previously</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Growth (%)</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">New Students</th>
@@ -1283,7 +1330,7 @@ export function ManagerAnalytics() {
                         paginatedRevenueData.map((data) => (
                           <tr key={data.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{data.courseName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900">{data.courseName}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
                               {data.revenue.toLocaleString('vi-VN')} ₫
                             </td>
@@ -1444,17 +1491,23 @@ export function ManagerAnalytics() {
           handleCloseExportDialog();
         }
       }} modal>
-        <DialogContent key="export-dialog" className="sm:max-w-[500px] p-6 max-h-[90vh] overflow-y-auto">
+        <DialogContent key="export-dialog" className="sm:max-w-[600px] p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Export Analytics Report</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-800">Export Analytics Report</DialogTitle>
+            <p className="text-sm text-gray-600 mt-2">Configure your export settings and download comprehensive analytics data</p>
           </DialogHeader>
+          
           <div className="grid gap-6 py-4">
+            {/* Data Selection Section */}
             <div className="space-y-4">
-              <div className="font-semibold text-lg border-b pb-2 mb-4">Select data to export:</div>
-              <div className="grid grid-cols-1 gap-y-4">
+              <div className="flex items-center gap-2 border-b pb-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-sm"></div>
+                <span className="font-semibold text-lg text-gray-800">Select Data to Export</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
                 {Object.keys(exportOptions).map((key) => (
-                  <div key={key} className="flex flex-col gap-2 p-3 border rounded-md shadow-sm">
-                    <div className="flex items-center space-x-2">
+                  <div key={key} className="flex flex-col gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors bg-gray-50/50">
+                    <div className="flex items-center space-x-3">
                       <Checkbox 
                         id={key} 
                         checked={Boolean(exportOptions[key as keyof typeof exportOptions].checked)}
@@ -1464,17 +1517,18 @@ export function ManagerAnalytics() {
                             [key]: { ...prev[key as keyof typeof prev], checked: value === true }
                           }))
                         }
+                        className="w-5 h-5"
                       />
-                      <label htmlFor={key} className="capitalize text-base font-medium flex-1 cursor-pointer">
-                        {key === 'category' ? 'Categories' : ''}
-                        {key === 'course' ? 'Courses' : ''}
-                        {key === 'student' ? 'Student Activity' : ''}
-                        {key === 'revenue' ? 'Revenue Trends' : ''}
+                      <label htmlFor={key} className="text-base font-medium flex-1 cursor-pointer text-gray-700">
+                        {key === 'category' ? '📊 Categories Analytics' : ''}
+                        {key === 'course' ? '📚 Course Performance' : ''}
+                        {key === 'student' ? '👥 Student Activity' : ''}
+                        {key === 'revenue' ? '💰 Revenue Trends' : ''}
                       </label>
                     </div>
                     {exportOptions[key as keyof typeof exportOptions].checked && (
-                      <div className="pl-7 mt-2">
-                        <div className="font-medium text-sm mb-1">Number of rows:</div>
+                      <div className="ml-8 mt-2">
+                        <label className="block text-sm font-medium text-gray-600 mb-2">Number of records:</label>
                         <select
                           value={exportOptions[key as keyof typeof exportOptions].rowCount.toString()}
                           onChange={(e) => 
@@ -1483,12 +1537,13 @@ export function ManagerAnalytics() {
                               [key]: { ...prev[key as keyof typeof prev], rowCount: Number(e.target.value) }
                             }))
                           }
-                          className="w-[150px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-[200px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         >
-                          <option value="5">5 rows</option>
-                          <option value="10">10 rows</option>
-                          <option value="20">20 rows</option>
-                          <option value="-1">All</option>
+                          <option value="5">First 5 records</option>
+                          <option value="10">First 10 records</option>
+                          <option value="20">First 20 records</option>
+                          <option value="50">First 50 records</option>
+                          <option value="-1">All records</option>
                         </select>
                       </div>
                     )}
@@ -1497,17 +1552,79 @@ export function ManagerAnalytics() {
               </div>
             </div>
 
+            {/* Time Range Section */}
             <div className="space-y-4">
-              <div className="font-semibold text-lg border-b pb-2 mb-4">Date Range:</div>
-              <RangePicker
-                style={{ width: '100%' }}
-                placeholder={['From date', 'To date']}
-                format="DD/MM/YYYY"
-                onChange={(dates) => setExportDateRange(dates as [Date, Date] | null)}
-              />
+              <div className="flex items-center gap-2 border-b pb-2">
+                <div className="w-4 h-4 bg-green-500 rounded-sm"></div>
+                <span className="font-semibold text-lg text-gray-800">Time Range</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Time Range Selector */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">Quick Select:</label>
+                  <select
+                    value={exportTimeRange}
+                    onChange={(e) => {
+                      setExportTimeRange(e.target.value);
+                      if (e.target.value !== 'custom') {
+                        setExportDateRange(null); // Clear custom date when using quick select
+                      }
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="90d">Last 90 days</option>
+                    <option value="6m">Last 6 months</option>
+                    <option value="1y">Last year</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+                </div>
+
+                {/* Custom Date Range */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">Custom Date Range:</label>
+                  <RangePicker
+                    style={{ width: '100%' }}
+                    placeholder={['Start date', 'End date']}
+                    format="DD/MM/YYYY"
+                    onChange={(dates) => {
+                      setExportDateRange(dates as [Date, Date] | null);
+                      if (dates) {
+                        setExportTimeRange('custom');
+                      }
+                    }}
+                    disabled={exportTimeRange !== 'custom'}
+                    className={exportTimeRange !== 'custom' ? 'opacity-50' : ''}
+                  />
+                </div>
+              </div>
+              
+              {/* Time Range Preview */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-blue-800">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
+                  </svg>
+                  <span className="text-sm font-medium">Export Period:</span>
+                </div>
+                <p className="text-sm text-blue-700 mt-1">
+                  {exportDateRange && exportDateRange[0] && exportDateRange[1] 
+                    ? `${exportDateRange[0].toLocaleDateString('en-GB')} - ${exportDateRange[1].toLocaleDateString('en-GB')}`
+                    : exportTimeRange === '7d' ? 'Last 7 days'
+                    : exportTimeRange === '30d' ? 'Last 30 days'  
+                    : exportTimeRange === '90d' ? 'Last 90 days'
+                    : exportTimeRange === '6m' ? 'Last 6 months'
+                    : exportTimeRange === '1y' ? 'Last year'
+                    : 'Please select a time range'
+                  }
+                </p>
+              </div>
             </div>
           </div>
-          <DialogFooter className="mt-6">
+          
+          <DialogFooter className="mt-6 gap-3">
             <Button 
               variant="outline" 
               onClick={(e) => {
@@ -1515,6 +1632,7 @@ export function ManagerAnalytics() {
                 e.stopPropagation();
                 handleCloseExportDialog();
               }}
+              className="px-6"
             >
               Cancel
             </Button>
@@ -1525,6 +1643,7 @@ export function ManagerAnalytics() {
                 handleExport();
               }}
               disabled={isExporting || !Object.values(exportOptions).some(o => o.checked)}
+              className="px-6 bg-blue-600 hover:bg-blue-700"
             >
               {isExporting ? (
                 <>
@@ -1532,7 +1651,10 @@ export function ManagerAnalytics() {
                   Exporting...
                 </>
               ) : (
-                'Export Report'
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Report
+                </>
               )}
             </Button>
           </DialogFooter>

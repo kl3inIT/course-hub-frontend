@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CategoryDetailDTO } from '@/types/analytics'
+import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
@@ -96,69 +96,6 @@ const revenueData = [
     orders: 14,
     newStudents: 13,
     revenueShare: 10
-  }
-]
-
-const coursePerformanceData = [
-  {
-    course: 'React Fundamentals',
-    enrollments: 1234,
-    revenue: 24680,
-    rating: 4.8,
-  },
-  {
-    course: 'Advanced JavaScript',
-    enrollments: 892,
-    revenue: 35640,
-    rating: 4.9,
-  },
-  { 
-    course: 'Node.js Backend', 
-    enrollments: 567, 
-    revenue: 17010, 
-    rating: 4.7 
-  },
-  { 
-    course: 'CSS Mastery', 
-    enrollments: 445, 
-    revenue: 13350, 
-    rating: 4.6 
-  },
-  {
-    course: 'Python Programming',
-    enrollments: 789,
-    revenue: 23670,
-    rating: 4.8,
-  },
-  {
-    course: 'Database Design',
-    enrollments: 456,
-    revenue: 18240,
-    rating: 4.7,
-  },
-  {
-    course: 'UI/UX Design Fundamentals',
-    enrollments: 678,
-    revenue: 20340,
-    rating: 4.9,
-  },
-  {
-    course: 'Mobile App Development',
-    enrollments: 543,
-    revenue: 16290,
-    rating: 4.6,
-  },
-  {
-    course: 'Cloud Computing Basics',
-    enrollments: 432,
-    revenue: 12960,
-    rating: 4.7,
-  },
-  {
-    course: 'DevOps Essentials',
-    enrollments: 345,
-    revenue: 10350,
-    rating: 4.8,
   }
 ]
 
@@ -272,6 +209,8 @@ export function ManagerAnalytics() {
   const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  
+  // Category Analytics State
   const [loadingCategory, setLoadingCategory] = useState(false)
   const [categoryDetails, setCategoryDetails] = useState<CategoryDetailDTO[]>([])
   const [totalCategoryElements, setTotalCategoryElements] = useState(0)
@@ -280,14 +219,22 @@ export function ManagerAnalytics() {
   const [rowsPerPage, setRowsPerPage] = useState(5)
   const [sortCategoryBy, setSortCategoryBy] = useState("id")
   const [sortCategoryDirection, setSortCategoryDirection] = useState("asc")
-  const [coursePage, setCoursePage] = useState(1)
+  
+  // Course Analytics State
+  const [loadingCourse, setLoadingCourse] = useState(false)
+  const [courseDetails, setCourseDetails] = useState<CourseAnalyticsDetailResponseDTO[]>([])
+  const [totalCourseElements, setTotalCourseElements] = useState(0)
+  const [coursePage, setCoursePage] = useState(0)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(5)
+  
+  // Other pagination states
   const [studentPage, setStudentPage] = useState(1)
   const [studentRowsPerPage, setStudentRowsPerPage] = useState(5)
   const [revenuePage, setRevenuePage] = useState(1)
   const [revenueRowsPerPage, setRevenueRowsPerPage] = useState(5)
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const [pieOuterRadius, setPieOuterRadius] = useState(120)
+  const hasMountedRef = useRef(false)
   const [show, setShow] = useState(false)
   const [dateRange, setDateRange] = useState([
     {
@@ -321,7 +268,7 @@ export function ManagerAnalytics() {
                       (exportOptions.category.rowCount === -1 ? categoryDetails : categoryDetails.slice(0, exportOptions.category.rowCount)) 
                       : [],
           course: exportOptions.course.checked ? 
-                    (exportOptions.course.rowCount === -1 ? coursePerformanceData : coursePerformanceData.slice(0, exportOptions.course.rowCount)) 
+                    (exportOptions.course.rowCount === -1 ? courseDetails : courseDetails.slice(0, exportOptions.course.rowCount)) 
                     : [],
           student: exportOptions.student.checked ? 
                      (exportOptions.student.rowCount === -1 ? studentActivityData : studentActivityData.slice(0, exportOptions.student.rowCount)) 
@@ -366,26 +313,26 @@ export function ManagerAnalytics() {
         console.log('Adding Course Sheet...') // Debug
         const courseSheet = workbook.addWorksheet('Courses')
         courseSheet.columns = [
-          { header: 'Course Name', key: 'course', width: 30 },
-          { header: 'Students', key: 'enrollments', width: 15 },
+          { header: 'Course ID', key: 'courseId', width: 15 },
+          { header: 'Course Name', key: 'courseName', width: 30 },
+          { header: 'Students', key: 'students', width: 15 },
           { header: 'Rating', key: 'rating', width: 15 },
           { header: 'Revenue', key: 'revenue', width: 15 },
-          { header: 'Revenue %', key: 'revenueShare', width: 15 },
+          { header: 'Revenue %', key: 'revenuePercent', width: 15 },
           { header: 'Reviews', key: 'reviews', width: 15 },
-          { header: 'Level', key: 'level', width: 15 },
-          { header: 'Completion %', key: 'completion', width: 15 }
+          { header: 'Level', key: 'level', width: 15 }
         ]
         exportData.data.course.forEach(course => {
           console.log('Adding course row:', course) // Debug: Log từng hàng được thêm
           courseSheet.addRow({
-            course: course.course,
-            enrollments: course.enrollments,
+            courseId: course.courseId,
+            courseName: course.courseName,
+            students: course.students,
             rating: course.rating,
             revenue: course.revenue,
-            revenueShare: ((course.revenue / totalRevenue) * 100),
-            reviews: Math.floor(course.enrollments * 0.3),
-            level: 'Beginner',
-            completion: Math.floor(Math.random() * 30 + 70),
+            revenuePercent: course.revenuePercent,
+            reviews: course.reviews,
+            level: course.level,
           })
         })
       }
@@ -464,14 +411,14 @@ export function ManagerAnalytics() {
     }
   }
 
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0)
-  const totalEnrollments = revenueData.reduce(
-    (sum, item) => sum + item.orders,
+  const totalRevenue = courseDetails.reduce((sum, item) => sum + item.revenue, 0)
+  const totalEnrollments = courseDetails.reduce(
+    (sum, item) => sum + item.students,
     0
   )
-  const avgRating =
-    coursePerformanceData.reduce((sum, item) => sum + item.rating, 0) /
-    coursePerformanceData.length
+  const avgRating = courseDetails.length > 0 
+    ? courseDetails.reduce((sum, item) => sum + item.rating, 0) / courseDetails.length
+    : 0
 
   // Dữ liệu mẫu cho categories (bạn thay bằng API nếu có)
   const categories = [
@@ -500,16 +447,21 @@ export function ManagerAnalytics() {
     // ... thêm các category khác nếu muốn
   ]
 
-  const handleFilter = async () => {
+  const handleCategoryFilter = async () => {
     let params: any = {};
     if (timeRange === 'custom' && selectedDateRange[0] && selectedDateRange[1]) {
-      params.startDate = selectedDateRange[0].toISOString().split('T')[0];
-      params.endDate = selectedDateRange[1].toISOString().split('T')[0];
+      // Sử dụng local date format để tránh timezone issues
+      params.startDate = selectedDateRange[0].getFullYear() + '-' + 
+                        String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(selectedDateRange[0].getDate()).padStart(2, '0');
+      params.endDate = selectedDateRange[1].getFullYear() + '-' + 
+                      String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(selectedDateRange[1].getDate()).padStart(2, '0');
     } else {
       params.range = timeRange;
     }
     params.page = page;
-    params.size = rowsPerPage === -1 ? 100000 : rowsPerPage;
+    params.size = rowsPerPage === -1 ? 1000 : rowsPerPage;
 
     const res = await analyticsApi.getCategoryAnalyticsDetails(params);
     setCategoryDetails(res.data.content);
@@ -517,10 +469,66 @@ export function ManagerAnalytics() {
     setTotalCategoryPages(res.data.totalPages);
   };
 
+  const handleCourseFilter = async () => {
+    setLoadingCourse(true)
+    try {
+      let params: any = {};
+      if (timeRange === 'custom' && selectedDateRange[0] && selectedDateRange[1]) {
+        // Sử dụng local date format để tránh timezone issues
+        params.startDate = selectedDateRange[0].getFullYear() + '-' + 
+                          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(selectedDateRange[0].getDate()).padStart(2, '0');
+        params.endDate = selectedDateRange[1].getFullYear() + '-' + 
+                        String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(selectedDateRange[1].getDate()).padStart(2, '0');
+      } else {
+        params.range = timeRange;
+      }
+      // Load tất cả dữ liệu một lần để tránh reload khi chuyển trang
+      params.page = 0;
+      params.size = 500; // Load all data
+
+      console.log('Course filter params:', params); // Debug log
+
+      const res = await analyticsApi.getCourseAnalyticsDetails(params);
+      setCourseDetails(res.data.content);
+      setTotalCourseElements(res.data.totalElements);
+      // Reset về trang đầu khi filter
+      setCoursePage(0);
+    } catch (error) {
+      console.error('Error fetching course analytics:', error)
+      toast.error('Lỗi khi tải dữ liệu course analytics')
+    } finally {
+      setLoadingCourse(false)
+    }
+  };
+
+  const handleFilter = async () => {
+    await Promise.all([handleCategoryFilter(), handleCourseFilter()])
+  };
+
   useEffect(() => {
-    handleFilter();
+    handleCategoryFilter();
     // eslint-disable-next-line
   }, [page, rowsPerPage]);
+
+  // Load both category and course data when component mounts
+  useEffect(() => {
+    const loadInitialData = async () => {
+      await Promise.all([handleCategoryFilter(), handleCourseFilter()]);
+      hasMountedRef.current = true;
+    };
+    loadInitialData();
+    // eslint-disable-next-line
+  }, []);
+
+  // Reload both category and course data when timeRange changes (after initial mount)
+  useEffect(() => {
+    if (hasMountedRef.current && timeRange) {
+      handleFilter();
+    }
+    // eslint-disable-next-line
+  }, [timeRange]);
 
   useEffect(() => {
     function updateRadius() {
@@ -542,13 +550,12 @@ export function ManagerAnalytics() {
   const totalRows = totalCategoryElements
   const totalPages = totalCategoryPages
 
-  // Pagination logic for course detail table  
-  const totalCourseRows = coursePerformanceData.length
+  // Pagination logic for course detail table - Client-side
+  const totalCourseRows = courseDetails.length
   const totalCoursePages = courseRowsPerPage === -1 ? 1 : Math.ceil(totalCourseRows / courseRowsPerPage)
-  const paginatedCourseData =
-    courseRowsPerPage === -1
-      ? coursePerformanceData
-      : coursePerformanceData.slice((coursePage - 1) * courseRowsPerPage, coursePage * courseRowsPerPage)
+  const paginatedCourseData = courseRowsPerPage === -1 
+    ? courseDetails 
+    : courseDetails.slice(coursePage * courseRowsPerPage, (coursePage + 1) * courseRowsPerPage)
 
   // Pagination logic for student activity table
   const totalStudentRows = studentActivityData.length
@@ -661,7 +668,7 @@ export function ManagerAnalytics() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              ${totalRevenue.toLocaleString('en-US')}
+              {totalRevenue.toLocaleString('vi-VN')} ₫
             </div>
             <div className='flex items-center text-xs text-green-600'>
               <TrendingUp className='mr-1 h-3 w-3' />
@@ -697,7 +704,7 @@ export function ManagerAnalytics() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {coursePerformanceData.length}
+              {courseDetails.length}
             </div>
             <div className='flex items-center text-xs text-green-600'>
               <TrendingUp className='mr-1 h-3 w-3' />
@@ -889,7 +896,7 @@ export function ManagerAnalytics() {
                       value={courseRowsPerPage}
                       onChange={e => {
                         setCourseRowsPerPage(Number(e.target.value))
-                        setCoursePage(1)
+                        setCoursePage(0) // Reset về trang đầu
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -910,43 +917,69 @@ export function ManagerAnalytics() {
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue (VND)</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue %</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completion %</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {coursePerformanceData.length === 0 ? (
+                      {loadingCourse ? (
                         <tr>
-                          <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                          <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                            <Loader2 className="h-5 w-5 animate-spin mx-auto" /> Loading courses...
+                          </td>
+                        </tr>
+                      ) : courseDetails.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                             No data available
                           </td>
                         </tr>
                       ) : (
                         paginatedCourseData.map((course, idx) => (
-                          <tr key={idx}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{courseRowsPerPage === -1 ? idx + 1 : (coursePage - 1) * courseRowsPerPage + idx + 1}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.course}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.enrollments}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{course.rating}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">${course.revenue?.toLocaleString('en-US')}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{((course.revenue / totalRevenue) * 100).toFixed(1)}%</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{Math.floor(course.enrollments * 0.3)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">Beginner</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{Math.floor(Math.random() * 30 + 70)}%</td>
+                          <tr key={course.courseId}>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.courseId}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.courseName}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.students}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.rating?.toFixed(1) || '0.0'}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.revenue?.toLocaleString('vi-VN') || '0'} ₫
+                            </td>
+                            <td className={`px-6 py-3 whitespace-nowrap text-sm text-center ${
+                              course.revenuePercent === 0
+                                ? 'text-black'
+                                : course.revenuePercent > 0 && course.revenuePercent <= 20
+                                ? 'text-red-600'
+                                : 'text-green-600'
+                            }`}>
+                              {course.revenuePercent?.toFixed(2)}%
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.reviews}
+                            </td>
+                            <td className="px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900">
+                              {course.level || 'N/A'}
+                            </td>
                           </tr>
                         ))
                       )}
                     </tbody>
                   </table>
                 </div>
-                {coursePerformanceData.length > 0 && (
+                {courseDetails.length > 0 && (
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={coursePage === 1}
+                      disabled={coursePage === 0}
                       onClick={() => setCoursePage(coursePage - 1)}
                     >
                       Previous
@@ -954,15 +987,15 @@ export function ManagerAnalytics() {
                     {Array.from({ length: totalCoursePages }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${coursePage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setCoursePage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${coursePage === idx ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setCoursePage(idx)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={coursePage === totalCoursePages}
+                      disabled={coursePage === totalCoursePages - 1}
                       onClick={() => setCoursePage(coursePage + 1)}
                     >
                       Next
@@ -1273,7 +1306,7 @@ export function ManagerAnalytics() {
                             <td className='border px-2 py-2 align-top'>{course.title}</td>
                             <td className='border px-2 py-2 text-center align-top'>{course.totalStudents}</td>
                             <td className='border px-2 py-2 text-center align-top'>{course.averageRating?.toFixed(1) || 'N/A'}</td>
-                            <td className='border px-2 py-2 text-center align-top'>${course.finalPrice?.toLocaleString('en-US') || '0.00'}</td>
+                            <td className='border px-2 py-2 text-center align-top'>{course.finalPrice?.toLocaleString('vi-VN') || '0'} ₫</td>
                             <td className='border px-2 py-2 text-center align-top'>{Math.floor(Math.random() * 30 + 70)}%</td>
                           </tr>
                         ))}

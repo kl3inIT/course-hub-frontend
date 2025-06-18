@@ -1,12 +1,44 @@
 import { ModuleResponseDTO } from './module'
 
+// Request DTOs
 export interface CourseRequestDTO {
   title: string
   description: string
   price: number
-  discount?: number
   level: string
   categoryCode: number
+}
+
+export interface CourseCreationRequestDTO {
+  title: string
+  description: string
+  price: number
+  level: string
+  categoryCode: number
+}
+
+export interface CourseUpdateRequestDTO {
+  title?: string
+  description?: string
+  price?: number
+  discount?: number
+  level?: string
+  status?: string
+  categoryCode?: number
+}
+
+// Response DTOs
+export interface CourseCreateUpdateResponseDTO {
+  id: number
+  title: string
+  description: string
+  price: number
+  discount: number | null
+  thumbnailUrl: string | null
+  category: string
+  level: string
+  status: string
+  managerId?: number
 }
 
 export interface CourseResponseDTO {

@@ -2,6 +2,9 @@ import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import {
   CourseRequestDTO,
+  CourseCreationRequestDTO,
+  CourseUpdateRequestDTO,
+  CourseCreateUpdateResponseDTO,
   CourseResponseDTO,
   CourseSearchParams,
   CourseDetailsResponseDTO,
@@ -14,8 +17,10 @@ export const courseApi = {
   getAllCoursesByStatus: async (
     params?: CourseSearchParams
   ): Promise<ManagerCourseResponseDTO[]> => {
-    const response = await httpClient.get('/api/courses/status/courses', { params });
-    return response.data.data;
+    const response = await httpClient.get('/api/courses/status/courses', {
+      params,
+    })
+    return response.data.data
   },
 
   getCourseById: async (
@@ -26,16 +31,16 @@ export const courseApi = {
   },
 
   createCourse: async (
-    data: CourseRequestDTO
-  ): Promise<ApiResponse<CourseResponseDTO>> => {
+    data: CourseCreationRequestDTO
+  ): Promise<ApiResponse<CourseCreateUpdateResponseDTO>> => {
     const response = await httpClient.post('/api/courses', data)
     return response.data
   },
 
   updateCourse: async (
     id: string,
-    data: CourseRequestDTO
-  ): Promise<ApiResponse<CourseResponseDTO>> => {
+    data: CourseUpdateRequestDTO
+  ): Promise<ApiResponse<CourseCreateUpdateResponseDTO>> => {
     const response = await httpClient.put(`/api/courses/${id}`, data)
     return response.data
   },
@@ -141,6 +146,18 @@ export const courseApi = {
 
   getCourseStatuses: async (): Promise<ApiResponse<Record<string, string>>> => {
     const response = await httpClient.get('/api/courses/status/statuses')
+    return response.data
+  },
+
+  getCourseLevels: async (): Promise<ApiResponse<Record<string, string>>> => {
+    const response = await httpClient.get('/api/courses/levels/levels')
+    return response.data
+  },
+
+  archiveCourse: async (courseId: string): Promise<ApiResponse<string>> => {
+    const response = await httpClient.patch(
+      `/api/courses/courses/${courseId}/archive`
+    )
     return response.data
   },
 }

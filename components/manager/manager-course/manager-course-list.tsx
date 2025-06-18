@@ -93,7 +93,11 @@ export function ManagerCourseList() {
         const res = await courseApi.getCourseStatuses()
         if (res.data) setStatusList(res.data)
       } catch (e) {
-        setStatusList({ PUBLISHED: 'Published', DRAFT: 'Draft', ARCHIVED: 'Archived' })
+        setStatusList({
+          PUBLISHED: 'Published',
+          DRAFT: 'Draft',
+          ARCHIVED: 'Archived',
+        })
       }
     }
     fetchStatuses()
@@ -119,7 +123,9 @@ export function ManagerCourseList() {
   }, [statusFilter, categoryFilter])
 
   // Reset page về 0 khi filter/search/sort thay đổi
-  useEffect(() => { setPage(0) }, [statusFilter, categoryFilter, searchTerm, sortBy, sortOrder])
+  useEffect(() => {
+    setPage(0)
+  }, [statusFilter, categoryFilter, searchTerm, sortBy, sortOrder])
 
   // Get unique categories for filter
   const categories = useMemo(() => {
@@ -147,7 +153,9 @@ export function ManagerCourseList() {
           comparison = (a.rating || 0) - (b.rating || 0)
           break
         case 'lastUpdatedDate':
-          comparison = new Date(a.lastUpdatedDate).getTime() - new Date(b.lastUpdatedDate).getTime()
+          comparison =
+            new Date(a.lastUpdatedDate).getTime() -
+            new Date(b.lastUpdatedDate).getTime()
           break
         case 'status':
           comparison = a.status.localeCompare(b.status)
@@ -171,13 +179,18 @@ export function ManagerCourseList() {
   const total = filteredAndSortedCourses.length
 
   // Thống kê
-  const totalEnrollments = courses.reduce((sum, course) => sum + Number(course.totalEnrollments), 0)
+  const totalEnrollments = courses.reduce(
+    (sum, course) => sum + Number(course.totalEnrollments),
+    0
+  )
   const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
   const draftCourses = courses.filter(c => c.status === 'DRAFT').length
   const archivedCourses = courses.filter(c => c.status === 'ARCHIVED').length
   const averageRating =
-    courses.filter(c => (c.rating || 0) > 0).reduce((sum, course) => sum + (course.rating || 0), 0) /
-      (courses.filter(c => (c.rating || 0) > 0).length || 1)
+    courses
+      .filter(c => (c.rating || 0) > 0)
+      .reduce((sum, course) => sum + (course.rating || 0), 0) /
+    (courses.filter(c => (c.rating || 0) > 0).length || 1)
 
   const handleRefresh = async () => {
     try {
@@ -219,7 +232,8 @@ export function ManagerCourseList() {
     } catch (err) {
       toast({
         title: 'Deletion Failed',
-        description: err instanceof Error ? err.message : 'An unexpected error occurred',
+        description:
+          err instanceof Error ? err.message : 'An unexpected error occurred',
         variant: 'destructive',
       })
     } finally {
@@ -280,19 +294,38 @@ export function ManagerCourseList() {
     <div>
       <div className='mb-8'>
         <h1 className='text-3xl font-bold tracking-tight'>Course Management</h1>
-        <p className='text-muted-foreground text-lg mt-1'>Organize and manage your courses for better navigation and discovery.</p>
+        <p className='text-muted-foreground text-lg mt-1'>
+          Organize and manage your courses for better navigation and discovery.
+        </p>
       </div>
       <div className='flex items-center justify-between mb-6'>
-        <Tabs value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(0); }} className='mr-4'>
+        <Tabs
+          value={statusFilter}
+          onValueChange={v => {
+            setStatusFilter(v)
+            setPage(0)
+          }}
+          className='mr-4'
+        >
           <TabsList>
             {Object.entries(statusList).map(([key, label]) => (
-              <TabsTrigger key={key} value={key}>{label}</TabsTrigger>
+              <TabsTrigger key={key} value={key}>
+                {label}
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
         <div className='flex gap-2'>
-          <Button variant='outline' onClick={handleRefresh} disabled={isRefreshing}>Refresh</Button>
-          <Button asChild><Link href='/manager/courses/create'>Create Course</Link></Button>
+          <Button
+            variant='outline'
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            Refresh
+          </Button>
+          <Button asChild>
+            <Link href='/manager/create'>Create Course</Link>
+          </Button>
         </div>
       </div>
       <div className='grid gap-4 md:grid-cols-4 mb-6'>
@@ -303,38 +336,55 @@ export function ManagerCourseList() {
           <CardContent>
             <div className='text-2xl font-bold'>{courses.length}</div>
             <p className='text-xs text-muted-foreground'>
-              {publishedCourses} published, {draftCourses} draft, {archivedCourses} archived
+              {publishedCourses} published, {draftCourses} draft,{' '}
+              {archivedCourses} archived
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Total Enrollments</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              Total Enrollments
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{totalEnrollments.toLocaleString()}</div>
+            <div className='text-2xl font-bold'>
+              {totalEnrollments.toLocaleString()}
+            </div>
             <p className='text-xs text-muted-foreground'>Across all courses</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Average Rating</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              Average Rating
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{averageRating.toFixed(1)}</div>
-            <p className='text-xs text-muted-foreground'>From student reviews</p>
+            <p className='text-xs text-muted-foreground'>
+              From student reviews
+            </p>
           </CardContent>
         </Card>
       </div>
       <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 mb-4'>
-        <Select value={categoryFilter} onValueChange={v => { setCategoryFilter(v); setPage(0); }}>
+        <Select
+          value={categoryFilter}
+          onValueChange={v => {
+            setCategoryFilter(v)
+            setPage(0)
+          }}
+        >
           <SelectTrigger className='w-full md:w-[200px]'>
             <SelectValue placeholder='Category' />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>All Categories</SelectItem>
             {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -353,16 +403,39 @@ export function ManagerCourseList() {
           <TableHeader>
             <TableRow>
               <TableHead className='w-[320px]'>Course</TableHead>
-              <TableHead className='text-center cursor-pointer hover:bg-muted/50' onClick={() => handleSort('status')}>Status</TableHead>
-              <TableHead className='text-right cursor-pointer hover:bg-muted/50' onClick={() => handleSort('enrollments')}>Enrollments</TableHead>
-              <TableHead className='text-right cursor-pointer hover:bg-muted/50' onClick={() => handleSort('rating')}>Rating</TableHead>
-              <TableHead className='cursor-pointer hover:bg-muted/50' onClick={() => handleSort('lastUpdatedDate')}>Last Updated</TableHead>
+              <TableHead
+                className='text-center cursor-pointer hover:bg-muted/50'
+                onClick={() => handleSort('status')}
+              >
+                Status
+              </TableHead>
+              <TableHead
+                className='text-right cursor-pointer hover:bg-muted/50'
+                onClick={() => handleSort('enrollments')}
+              >
+                Enrollments
+              </TableHead>
+              <TableHead
+                className='text-right cursor-pointer hover:bg-muted/50'
+                onClick={() => handleSort('rating')}
+              >
+                Rating
+              </TableHead>
+              <TableHead
+                className='cursor-pointer hover:bg-muted/50'
+                onClick={() => handleSort('lastUpdatedDate')}
+              >
+                Last Updated
+              </TableHead>
               <TableHead className='w-16 text-center'>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {pagedCourses.map(course => (
-              <TableRow key={course.id} className='hover:bg-muted/40 transition'>
+              <TableRow
+                key={course.id}
+                className='hover:bg-muted/40 transition'
+              >
                 <TableCell>
                   <div className='flex items-center space-x-3'>
                     <Avatar className='h-12 w-12 shadow'>
@@ -370,15 +443,27 @@ export function ManagerCourseList() {
                       <AvatarFallback>{course.title[0]}</AvatarFallback>
                     </Avatar>
                     <div className='min-w-0'>
-                      <div className='font-semibold truncate text-base'>{course.title}</div>
-                      <div className='text-sm text-muted-foreground truncate max-w-xs'>{course.description}</div>
-                      <div className='text-xs text-muted-foreground'>{course.category}</div>
+                      <div className='font-semibold truncate text-base'>
+                        {course.title}
+                      </div>
+                      <div className='text-sm text-muted-foreground truncate max-w-xs'>
+                        {course.description}
+                      </div>
+                      <div className='text-xs text-muted-foreground'>
+                        {course.category}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className='text-center'>
                   <Badge
-                    variant={course.status === 'DRAFT' ? 'secondary' : course.status === 'ARCHIVED' ? 'destructive' : 'default'}
+                    variant={
+                      course.status === 'DRAFT'
+                        ? 'secondary'
+                        : course.status === 'ARCHIVED'
+                          ? 'destructive'
+                          : 'default'
+                    }
                     className={
                       course.status === 'PUBLISHED'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-none'
@@ -389,27 +474,39 @@ export function ManagerCourseList() {
                   </Badge>
                 </TableCell>
                 <TableCell className='text-right'>
-                  <span className='font-medium'>{Number(course.totalEnrollments).toLocaleString()}</span>
-                  <span className='text-xs text-muted-foreground ml-1'>students</span>
+                  <span className='font-medium'>
+                    {Number(course.totalEnrollments).toLocaleString()}
+                  </span>
+                  <span className='text-xs text-muted-foreground ml-1'>
+                    students
+                  </span>
                 </TableCell>
                 <TableCell className='text-right'>
                   {course.rating !== null && course.rating > 0 ? (
                     <div className='flex items-center justify-end gap-1'>
                       <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
-                      <span className='font-semibold'>{(course.rating ?? 0).toFixed(1)}</span>
+                      <span className='font-semibold'>
+                        {(course.rating ?? 0).toFixed(1)}
+                      </span>
                     </div>
                   ) : (
                     <span className='text-muted-foreground'>No ratings</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className='text-sm'>{new Date(course.lastUpdatedDate).toLocaleDateString()}</div>
+                  <div className='text-sm'>
+                    {new Date(course.lastUpdatedDate).toLocaleDateString()}
+                  </div>
                 </TableCell>
                 <TableCell className='text-center'>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant='ghost' size='icon' className='rounded-full hover:bg-accent'>
-                        <MoreVertical className='h-5 w-5'/>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='rounded-full hover:bg-accent'
+                      >
+                        <MoreVertical className='h-5 w-5' />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
@@ -442,18 +539,34 @@ export function ManagerCourseList() {
           <div className='text-center py-12'>
             <div className='text-5xl mb-2'>📚</div>
             <div className='font-semibold text-lg mb-1'>No courses found</div>
-            <p className='text-muted-foreground mb-4'>Try adjusting your search criteria or create a new course.</p>
+            <p className='text-muted-foreground mb-4'>
+              Try adjusting your search criteria or create a new course.
+            </p>
             <Button className='mt-2' asChild>
-              <Link href='/manager/courses/create'>Create New Course</Link>
+              <Link href='/manager/create'>Create New Course</Link>
             </Button>
           </div>
         )}
       </div>
       {/* Pagination */}
       <div className='flex items-center justify-between mt-6'>
-        <Button variant='outline' disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Previous</Button>
-        <span className='text-sm text-muted-foreground'>Page {page + 1} of {Math.ceil(total / pageSize) || 1}</span>
-        <Button variant='outline' disabled={(page + 1) * pageSize >= total} onClick={() => setPage(p => p + 1)}>Next</Button>
+        <Button
+          variant='outline'
+          disabled={page === 0}
+          onClick={() => setPage(p => Math.max(0, p - 1))}
+        >
+          Previous
+        </Button>
+        <span className='text-sm text-muted-foreground'>
+          Page {page + 1} of {Math.ceil(total / pageSize) || 1}
+        </span>
+        <Button
+          variant='outline'
+          disabled={(page + 1) * pageSize >= total}
+          onClick={() => setPage(p => p + 1)}
+        >
+          Next
+        </Button>
       </div>
       <AlertDialog
         open={deleteDialog.open}
@@ -465,12 +578,18 @@ export function ManagerCourseList() {
             <AlertDialogDescription className='space-y-2'>
               {deleteDialog.course && (
                 <>
-                  <p>This action cannot be undone. This will permanently delete the course:</p>
+                  <p>
+                    This action cannot be undone. This will permanently delete
+                    the course:
+                  </p>
                   <p className='font-semibold'>"{deleteDialog.course.title}"</p>
                   <p>This will also:</p>
                   <ul className='list-disc list-inside space-y-1 text-sm'>
                     <li>Remove all course materials and content</li>
-                    <li>Unenroll all {Number(deleteDialog.course.totalEnrollments)} students</li>
+                    <li>
+                      Unenroll all{' '}
+                      {Number(deleteDialog.course.totalEnrollments)} students
+                    </li>
                     <li>Delete all student progress data</li>
                   </ul>
                 </>
@@ -480,7 +599,9 @@ export function ManagerCourseList() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteDialog.course && handleDeleteCourse(deleteDialog.course)}
+              onClick={() =>
+                deleteDialog.course && handleDeleteCourse(deleteDialog.course)
+              }
               disabled={deleting}
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >

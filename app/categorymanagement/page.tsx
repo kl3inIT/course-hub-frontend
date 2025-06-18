@@ -21,8 +21,7 @@ export default function CategoryManagementPage() {
             Course List by Category
           </h1>
         </div>
-        <div className='bg-white rounded-3xl shadow-xl p-10'>
-        </div>
+        <div className='bg-white rounded-3xl shadow-xl p-10'></div>
       </div>
     </div>
   )

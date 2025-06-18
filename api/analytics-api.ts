@@ -1,5 +1,5 @@
 import { httpClient } from '@/api/http-client'
-import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
+import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, RevenueAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { ApiResponse, Page, PaginationParams } from '@/types/common'
 
 export type CategoryAnalyticsSearchParams = PaginationParams & {
@@ -15,6 +15,12 @@ export type CourseAnalyticsSearchParams = PaginationParams & {
 }
 
 export type StudentAnalyticsSearchParams = PaginationParams & {
+  startDate?: string
+  endDate?: string
+  range?: string
+}
+
+export type RevenueAnalyticsSearchParams = PaginationParams & {
   startDate?: string
   endDate?: string
   range?: string
@@ -39,6 +45,13 @@ export const analyticsApi = {
     params?: StudentAnalyticsSearchParams
   ): Promise<ApiResponse<Page<StudentAnalyticsDetailResponseDTO>>> => {
     const response = await httpClient.get('/api/analytics/students/details', { params })
+    return response.data
+  },
+
+  getRevenueAnalyticsDetails: async (
+    params?: RevenueAnalyticsSearchParams
+  ): Promise<ApiResponse<Page<RevenueAnalyticsDetailResponseDTO>>> => {
+    const response = await httpClient.get('/api/analytics/revenue/details', { params })
     return response.data
   },
 }

@@ -28,3 +28,14 @@ export interface StudentAnalyticsDetailResponseDTO {
   reviews: number
   avgRating: number
 }
+
+export interface RevenueAnalyticsDetailResponseDTO {
+  id: number
+  courseName: string
+  revenue: number
+  previousRevenue: number
+  growth: number
+  orders: number
+  newStudents: number
+  revenueShare: number
+}

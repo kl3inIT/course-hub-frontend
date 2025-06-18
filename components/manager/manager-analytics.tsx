@@ -18,7 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
+import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, RevenueAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
@@ -48,56 +48,6 @@ interface ChartContainerProps {
   config: ChartConfig
   className?: string
 }
-
-const revenueData = [
-  {
-    id: 1,
-    courseName: 'ReactJS Basic',
-    revenue: 12000000,
-    previousRevenue: 10500000,
-    growth: 14.3,
-    orders: 50,
-    newStudents: 45,
-    revenueShare: 32
-  },
-  {
-    id: 2,
-    courseName: 'Python Beginner',
-    revenue: 8500000,
-    previousRevenue: 8800000,
-    growth: -3.4,
-    orders: 36,
-    newStudents: 28,
-    revenueShare: 22
-  },
-  {
-    id: 3,
-    courseName: 'SQL & Database',
-    revenue: 6250000,
-    previousRevenue: 5000000,
-    growth: 25,
-    orders: 27,
-    newStudents: 20,
-    revenueShare: 17
-  },
-  {
-    id: 4,
-    courseName: 'UI/UX Design',
-    revenue: 4000000,
-    previousRevenue: 3600000,
-    growth: 11.1,
-    orders: 14,
-    newStudents: 13,
-    revenueShare: 10
-  }
-]
-
-const categoryData = [
-  { name: 'Web Development', value: 45, color: '#8884d8' },
-  { name: 'Programming', value: 30, color: '#82ca9d' },
-  { name: 'Backend', value: 15, color: '#ffc658' },
-  { name: 'Design', value: 10, color: '#ff7300' },
-]
 
 // Custom label cho PieChart để tránh dính chữ
 const renderCustomizedLabel = ({
@@ -192,9 +142,14 @@ export function ManagerAnalytics() {
   const [studentPage, setStudentPage] = useState(0)
   const [studentRowsPerPage, setStudentRowsPerPage] = useState(5)
   
-  // Other pagination states
-  const [revenuePage, setRevenuePage] = useState(1)
+  // Revenue Analytics State
+  const [loadingRevenue, setLoadingRevenue] = useState(false)
+  const [revenueDetails, setRevenueDetails] = useState<RevenueAnalyticsDetailResponseDTO[]>([])
+  const [totalRevenueElements, setTotalRevenueElements] = useState(0)
+  const [revenuePage, setRevenuePage] = useState(0)
   const [revenueRowsPerPage, setRevenueRowsPerPage] = useState(5)
+  
+  // Other pagination states
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const [pieOuterRadius, setPieOuterRadius] = useState(120)
   const hasMountedRef = useRef(false)
@@ -275,7 +230,7 @@ export function ManagerAnalytics() {
                      (exportOptions.student.rowCount === -1 ? studentDetails : studentDetails.slice(0, exportOptions.student.rowCount)) 
                      : [],
           revenue: exportOptions.revenue.checked ? 
-                     (exportOptions.revenue.rowCount === -1 ? revenueData : revenueData.slice(0, exportOptions.revenue.rowCount)) 
+                     (exportOptions.revenue.rowCount === -1 ? revenueDetails : revenueDetails.slice(0, exportOptions.revenue.rowCount)) 
                      : []
         }
       }
@@ -537,8 +492,47 @@ export function ManagerAnalytics() {
     }
   };
 
+  const handleRevenueFilter = async () => {
+    setLoadingRevenue(true)
+    try {
+      let params: any = {};
+      if (timeRange === 'custom' && selectedDateRange[0] && selectedDateRange[1]) {
+        // Sử dụng local date format để tránh timezone issues
+        params.startDate = selectedDateRange[0].getFullYear() + '-' + 
+                          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(selectedDateRange[0].getDate()).padStart(2, '0');
+        params.endDate = selectedDateRange[1].getFullYear() + '-' + 
+                        String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(selectedDateRange[1].getDate()).padStart(2, '0');
+      } else {
+        params.range = timeRange;
+      }
+      // Load tất cả dữ liệu một lần để tránh reload khi chuyển trang
+      params.page = 0;
+      params.size = 500; // Load all data
+
+      console.log('Revenue filter params:', params); // Debug log
+
+      const res = await analyticsApi.getRevenueAnalyticsDetails(params);
+      setRevenueDetails(res.data.content);
+      setTotalRevenueElements(res.data.totalElements);
+      // Reset về trang đầu khi filter
+      setRevenuePage(0);
+    } catch (error) {
+      console.error('Error fetching revenue analytics:', error)
+      toast.error('Lỗi khi tải dữ liệu revenue analytics')
+    } finally {
+      setLoadingRevenue(false)
+    }
+  };
+
   const handleFilter = async () => {
-    await Promise.all([handleCategoryFilter(), handleCourseFilter(), handleStudentFilter()])
+    await Promise.all([
+      handleCategoryFilter(),
+      handleCourseFilter(),
+      handleStudentFilter(),
+      handleRevenueFilter()
+    ]);
   };
 
   useEffect(() => {
@@ -549,12 +543,20 @@ export function ManagerAnalytics() {
   // Load both category and course data when component mounts
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([handleCategoryFilter(), handleCourseFilter(), handleStudentFilter()]);
-      hasMountedRef.current = true;
+      try {
+        await Promise.all([
+          handleCategoryFilter(),
+          handleCourseFilter(), 
+          handleStudentFilter(),
+          handleRevenueFilter()
+        ]);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
     };
+
     loadInitialData();
-    // eslint-disable-next-line
-  }, []);
+  }, [timeRange]);
 
   // Reload both category and course data when timeRange changes (after initial mount)
   useEffect(() => {
@@ -634,12 +636,12 @@ export function ManagerAnalytics() {
       : studentDetails.slice(studentPage * studentRowsPerPage, (studentPage + 1) * studentRowsPerPage)
 
   // Pagination logic for revenue trends table
-  const totalRevenueRows = revenueData.length
+  const totalRevenueRows = revenueDetails.length
   const totalRevenuePages = revenueRowsPerPage === -1 ? 1 : Math.ceil(totalRevenueRows / revenueRowsPerPage)
   const paginatedRevenueData =
     revenueRowsPerPage === -1
-      ? revenueData
-      : revenueData.slice((revenuePage - 1) * revenueRowsPerPage, revenuePage * revenueRowsPerPage)
+      ? revenueDetails
+      : revenueDetails.slice(revenuePage * revenueRowsPerPage, (revenuePage + 1) * revenueRowsPerPage)
 
   const handleCategoryRowClick = async (category: CategoryDetailDTO) => {
     setSelectedCategoryForCourses(category)
@@ -1237,7 +1239,7 @@ export function ManagerAnalytics() {
                       value={revenueRowsPerPage}
                       onChange={e => {
                         setRevenueRowsPerPage(Number(e.target.value))
-                        setRevenuePage(1)
+                        setRevenuePage(0)
                       }}
                       className="border rounded px-2 py-1 ml-2"
                     >
@@ -1265,7 +1267,13 @@ export function ManagerAnalytics() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {paginatedRevenueData.length === 0 ? (
+                      {loadingRevenue ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                            <Loader2 className="h-5 w-5 animate-spin mx-auto" /> Loading revenue analytics...
+                          </td>
+                        </tr>
+                      ) : paginatedRevenueData.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                             No data available
@@ -1283,9 +1291,13 @@ export function ManagerAnalytics() {
                               {data.previousRevenue.toLocaleString('vi-VN')} ₫
                             </td>
                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                              data.growth >= 0 ? 'text-green-600' : 'text-red-600'
+                              data.growth === 0 
+                                ? 'text-black' 
+                                : data.growth > 0 
+                                ? 'text-green-600' 
+                                : 'text-red-600'
                             }`}>
-                              {data.growth >= 0 ? '+' : ''}{data.growth}%
+                              {data.growth > 0 ? '+' : ''}{data.growth}%
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">
                               {data.orders}
@@ -1302,11 +1314,11 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {paginatedRevenueData.length > 0 && (
+                {revenueDetails.length > 0 && (
                   <div className="flex items-center gap-2 mt-4 justify-center">
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={revenuePage === 1}
+                      disabled={revenuePage === 0}
                       onClick={() => setRevenuePage(revenuePage - 1)}
                     >
                       Previous
@@ -1314,15 +1326,15 @@ export function ManagerAnalytics() {
                     {Array.from({ length: totalRevenuePages }, (_, idx) => (
                       <button
                         key={idx}
-                        className={`px-2 py-1 border rounded ${revenuePage === idx + 1 ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setRevenuePage(idx + 1)}
+                        className={`px-2 py-1 border rounded ${revenuePage === idx ? 'bg-gray-200 font-bold' : ''}`}
+                        onClick={() => setRevenuePage(idx)}
                       >
                         {idx + 1}
                       </button>
                     ))}
                     <button
                       className="px-2 py-1 border rounded disabled:opacity-50"
-                      disabled={revenuePage === totalRevenuePages}
+                      disabled={revenuePage === totalRevenuePages - 1}
                       onClick={() => setRevenuePage(revenuePage + 1)}
                     >
                       Next

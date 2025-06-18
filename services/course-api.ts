@@ -7,14 +7,15 @@ import {
   CourseDetailsResponseDTO,
   DashboardCourseResponseDTO,
   CourseSearchStatsResponseDTO,
+  ManagerCourseResponseDTO,
 } from '@/types/course'
 
 export const courseApi = {
-  getAllCourses: async (
+  getAllCoursesByStatus: async (
     params?: CourseSearchParams
-  ): Promise<ApiResponse<Page<CourseResponseDTO>>> => {
-    const response = await httpClient.get('/api/courses', { params })
-    return response.data
+  ): Promise<ManagerCourseResponseDTO[]> => {
+    const response = await httpClient.get('/api/courses/status/courses', { params });
+    return response.data.data;
   },
 
   getCourseById: async (
@@ -135,6 +136,11 @@ export const courseApi = {
     const response = await httpClient.get<
       ApiResponse<CourseSearchStatsResponseDTO>
     >('/api/courses/search/stats')
+    return response.data
+  },
+
+  getCourseStatuses: async (): Promise<ApiResponse<Record<string, string>>> => {
+    const response = await httpClient.get('/api/courses/status/statuses')
     return response.data
   },
 }

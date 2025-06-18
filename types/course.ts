@@ -92,3 +92,16 @@ export interface CourseSearchStatsResponseDTO {
   avgRating: number
   levelStats: Record<string, number>
 }
+
+export interface ManagerCourseResponseDTO {
+  id: number
+  title: string
+  description: string
+  thumbnailUrl: string | null
+  category: string
+  lastUpdatedDate: string
+  rating: number | null
+  totalEnrollments: number
+  status: string
+  canEdit: boolean
+}

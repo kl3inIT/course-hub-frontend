@@ -1,4 +1,4 @@
-import { ManagerCourseList } from '@/components/manager/manager-course-list'
+import { ManagerCourseList } from '@/components/manager/manager-course/manager-course-list'
 import { ManagerSidebar } from '@/components/layout/manager-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 

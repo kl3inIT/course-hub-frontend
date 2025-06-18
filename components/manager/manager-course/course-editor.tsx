@@ -73,7 +73,9 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
 
   // Content structure
   const [modules, setModules] = useState<any[]>([])
+  const [originalModules, setOriginalModules] = useState<any[]>([])
   const [loadingModules, setLoadingModules] = useState(false)
+  const [savingContent, setSavingContent] = useState(false)
 
   // Load course data
   useEffect(() => {
@@ -102,19 +104,19 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
         // Convert to form data - only set once to avoid re-renders
         if (!initializedRef.current) {
           setCourseData({
-            title: course.title,
-            description: course.description,
+        title: course.title,
+        description: course.description,
             price: course.price,
             level: course.level,
             categoryCode: categoryCode,
           })
           initializedRef.current = true
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Failed to load course:', error)
         setError('Failed to load course details')
         toast.error('Failed to load course details')
-      } finally {
+    } finally {
         setLoading(false)
       }
     }
@@ -142,14 +144,11 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
 
   const loadModules = useCallback(async () => {
     if (!courseId) return
-
     try {
       setLoadingModules(true)
-
       // Load modules first
       const modulesResponse = await moduleApi.getModulesByCourseId(courseId)
       const modules = modulesResponse.data || []
-
       // Load lessons for each module
       const modulesWithLessons = await Promise.all(
         modules.map(async module => {
@@ -163,7 +162,6 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               duration: lesson.duration || 0,
               lessonId: lesson.id.toString(),
             }))
-
             return {
               id: module.id.toString(),
               title: module.title,
@@ -171,10 +169,6 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               moduleId: module.id.toString(),
             }
           } catch (error) {
-            console.error(
-              `Failed to load lessons for module ${module.id}:`,
-              error
-            )
             return {
               id: module.id.toString(),
               title: module.title,
@@ -184,80 +178,129 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
           }
         })
       )
-
       setModules(modulesWithLessons)
+      // Deep clone for original snapshot
+      setOriginalModules(JSON.parse(JSON.stringify(modulesWithLessons)))
     } catch (error) {
-      console.error('Failed to load modules:', error)
       toast.error('Failed to load course modules')
-      setModules([]) // Set empty array on error
+      setModules([])
+      setOriginalModules([])
     } finally {
       setLoadingModules(false)
     }
   }, [courseId])
 
-  const handleModulesChange = useCallback(
-    async (
-      newModules: any[],
-      action?: 'create' | 'update' | 'delete',
-      data?: any
-    ) => {
-      setModules(newModules)
+  // Only update state, do not call API
+  const handleModulesChange = useCallback((newModules: any[]) => {
+    setModules(newModules)
+  }, [])
 
-      // Handle API calls for different actions
-      if (!courseId) return
-
-      try {
-        switch (action) {
-          case 'create':
-            if (data?.type === 'module') {
-              const moduleData = { title: data.title }
-              await moduleApi.createModule(courseId, moduleData)
-              toast.success('Module created successfully')
-            } else if (data?.type === 'lesson' && data?.moduleId) {
-              const lessonData = {
-                title: data.title,
-                fileName: '',
-                fileType: '',
-              }
-              await lessonApi.prepareUpload(data.moduleId, lessonData)
-              toast.success('Lesson created successfully')
-            }
-            break
-
-          case 'update':
-            if (data?.type === 'module' && data?.moduleId) {
-              const moduleData = { title: data.title }
-              await moduleApi.updateModule(data.moduleId, moduleData)
-            } else if (data?.type === 'lesson' && data?.lessonId) {
-              const lessonData = {
-                title: data.title,
-                duration: data.duration,
-                order: data.order,
-                isPreview: data.isPreview,
-              }
-              await lessonApi.updateLesson(data.lessonId, lessonData)
-            }
-            break
-
-          case 'delete':
-            if (data?.type === 'module' && data?.moduleId) {
-              await moduleApi.deleteModule(data.moduleId)
-              toast.success('Module deleted successfully')
-            } else if (data?.type === 'lesson' && data?.lessonId) {
-              await lessonApi.deleteLesson(data.lessonId)
-              toast.success('Lesson deleted successfully')
-            }
-            break
+  // Best practice: Only call API on Save Content
+  const handleSaveContentStructure = async () => {
+    if (!courseId) return
+    setSavingContent(true)
+    try {
+      // 1. Build lookup maps for original and current
+      const origModulesMap = new Map(
+        originalModules.map((m: any) => [m.moduleId, m])
+      )
+      const currModulesMap = new Map(
+        modules.map((m: any) => [m.moduleId, m])
+      )
+      // 2. Delete removed modules
+      for (const origModule of originalModules) {
+        if (!modules.find((m: any) => m.moduleId === origModule.moduleId)) {
+          await moduleApi.deleteModule(origModule.moduleId)
         }
-      } catch (error) {
-        console.error('Failed to perform action:', error)
-        toast.error('Failed to save changes')
-        // Reload modules on error
-        loadModules()
       }
-    },
-    [courseId, loadModules]
-  )
+      // 3. Create new modules
+      for (const currModule of modules) {
+        if (!currModule.moduleId) {
+          // New module
+          const res = await moduleApi.createModule(courseId, { title: currModule.title })
+          currModule.moduleId = res.data.id.toString()
+          // Also update id for consistency
+          currModule.id = currModule.moduleId
+        } else {
+          // Update title if changed
+          const orig = origModulesMap.get(currModule.moduleId)
+          if (orig && orig.title !== currModule.title) {
+            await moduleApi.updateModule(currModule.moduleId, { title: currModule.title })
+          }
+        }
+      }
+      // 4. Handle lessons for each module
+      for (const currModule of modules) {
+        const origModule: any = originalModules.find((m: any) => m.moduleId === currModule.moduleId) || {}
+        const origTitle = 'title' in origModule ? origModule.title : ''
+        const origLessonsArr = Array.isArray(origModule.lessons) ? origModule.lessons : []
+        const origLessonsMap = new Map(origLessonsArr.map((l: any) => [l.lessonId, l]))
+        // Delete removed lessons
+        for (const origLesson of origLessonsArr) {
+          if (!currModule.lessons.find((l: any) => l.lessonId === origLesson.lessonId)) {
+            await lessonApi.deleteLesson(origLesson.lessonId)
+          }
+        }
+        // Create/update lessons
+        for (const currLesson of currModule.lessons) {
+          if (!currLesson.lessonId) {
+            // New lesson
+            const prepareUploadData = {
+              title: currLesson.title,
+              fileName: currLesson.videoFile?.name ?? '',
+              fileType: currLesson.videoFile?.type ?? '',
+            }
+            const prepareResponse = await lessonApi.prepareUpload(
+              currModule.moduleId,
+              prepareUploadData
+            )
+            const { preSignedPutUrl, lessonId } = prepareResponse.data
+            // Upload video if present
+            if (currLesson.videoFile) {
+              await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest()
+                xhr.open('PUT', preSignedPutUrl, true)
+                xhr.setRequestHeader('Content-Type', currLesson.videoFile.type)
+                xhr.onload = () => resolve()
+                xhr.onerror = () => reject(new Error('Upload failed'))
+                xhr.send(currLesson.videoFile)
+              })
+            }
+            // Confirm upload
+            await lessonApi.completeUpload(lessonId.toString(), { duration: currLesson.duration })
+            currLesson.lessonId = lessonId.toString()
+            currLesson.id = lessonId.toString()
+          } else {
+            // Update if changed
+            const orig = origLessonsMap.get(currLesson.lessonId)
+            if (
+              orig &&
+              typeof orig === 'object' &&
+              orig !== null &&
+              ((('title' in orig ? orig.title : '') !== currLesson.title) ||
+                (('duration' in orig ? orig.duration : 0) !== currLesson.duration))
+            ) {
+              await lessonApi.updateLesson(currLesson.lessonId, {
+                title: currLesson.title,
+                duration: currLesson.duration,
+              })
+            }
+          }
+        }
+        // Update module title if changed
+        if (currModule.moduleId && origTitle !== currModule.title) {
+          await moduleApi.updateModule(currModule.moduleId, { title: currModule.title })
+        }
+      }
+      toast.success('Course content updated successfully!')
+      // Reload modules and update originalModules
+      await loadModules()
+    } catch (error) {
+      toast.error('Failed to save course content')
+    } finally {
+      setSavingContent(false)
+    }
+  }
 
   const handleSaveCourse = async () => {
     if (!isValidCourseData) {
@@ -342,8 +385,8 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
         <div className='flex flex-col items-center space-y-4'>
           <Loader2 className='h-8 w-8 animate-spin' />
           <p className='text-muted-foreground'>Loading course details...</p>
-        </div>
-      </div>
+                </div>
+                  </div>
     )
   }
 
@@ -358,8 +401,8 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
             <ArrowLeft className='h-4 w-4 mr-2' />
             Go Back
           </Button>
-        </div>
-      </div>
+                  </div>
+                </div>
     )
   }
 
@@ -367,7 +410,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
     <RoleGuard allowedRoles={['manager', 'admin']}>
       <div className='space-y-8'>
         {/* Header */}
-        <div className='flex items-center justify-between'>
+                <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-4'>
             <Button
               variant='outline'
@@ -376,20 +419,20 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               <ArrowLeft className='mr-2 h-4 w-4' />
               Back to Courses
             </Button>
-            <div>
+                  <div>
               <h1 className='text-3xl font-bold'>Edit Course</h1>
               <p className='text-muted-foreground'>
                 Update course information and content
-              </p>
-            </div>
-          </div>
+                    </p>
+                  </div>
+                </div>
           <div className='text-right'>
-            <p className='text-sm text-muted-foreground'>
+                    <p className='text-sm text-muted-foreground'>
               Course ID: {originalCourse.id}
-            </p>
+                    </p>
             <p className='font-medium'>{originalCourse.title}</p>
-          </div>
-        </div>
+                  </div>
+                </div>
 
         {/* Course Summary */}
         <CourseSummaryCard
@@ -470,7 +513,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
 
             {/* Action Buttons */}
             <div className='flex gap-4'>
-              <Button
+                        <Button
                 onClick={handleSaveCourse}
                 disabled={saving || !isValidCourseData || !hasChanges()}
                 className='flex-1 md:flex-none md:min-w-[200px]'
@@ -486,17 +529,17 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                     Save Changes
                   </>
                 )}
-              </Button>
+                        </Button>
 
-              <Button
-                variant='outline'
+                    <Button
+                      variant='outline'
                 onClick={() => router.push(`/manager/courses/${courseId}`)}
                 disabled={saving}
-              >
+                    >
                 View Course Details
-              </Button>
-            </div>
-          </TabsContent>
+                    </Button>
+          </div>
+        </TabsContent>
 
           <TabsContent value='content' className='space-y-6'>
             {loadingModules ? (
@@ -507,19 +550,34 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                     Loading course modules...
                   </p>
                 </div>
-              </div>
+          </div>
             ) : (
               <>
                 <div className='flex items-center justify-between'>
                   <div>
                     <h3 className='text-lg font-semibold'>Course Content</h3>
-                    <p className='text-muted-foreground'>
+              <p className='text-muted-foreground'>
                       Manage your course modules and lessons
                     </p>
                   </div>
-                  <Button onClick={loadModules} variant='outline'>
-                    Refresh Content
-                  </Button>
+                  <div className='flex gap-2'>
+                    <Button onClick={loadModules} variant='outline'>
+                      Refresh Content
+                    </Button>
+                    <Button onClick={handleSaveContentStructure} disabled={savingContent}>
+                      {savingContent ? (
+                        <>
+                          <Loader2 className='h-4 w-4 mr-2 animate-spin' />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className='h-4 w-4 mr-2' />
+                          Save Content
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 <CourseModulesEditor
@@ -530,7 +588,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                 />
               </>
             )}
-          </TabsContent>
+        </TabsContent>
 
           <TabsContent value='settings' className='space-y-6'>
             <div className='text-center py-12'>
@@ -540,11 +598,11 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               </p>
               <Button variant='outline' disabled>
                 Coming Soon
-              </Button>
-            </div>
+                      </Button>
+                    </div>
           </TabsContent>
         </Tabs>
-      </div>
+                  </div>
     </RoleGuard>
   )
 }

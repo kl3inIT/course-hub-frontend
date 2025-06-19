@@ -3,23 +3,23 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/context/auth-context'
@@ -32,16 +32,16 @@ import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { LessonResponseDTO } from '@/types/lesson'
 import { ModuleResponseDTO } from '@/types/module'
 import {
-    AlertCircle,
-    CheckCircle,
-    ChevronDown,
-    ChevronRight,
-    Clock,
-    Loader2,
-    Lock,
-    Play,
-    PlayCircle,
-    Star
+  AlertCircle,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Loader2,
+  Lock,
+  Play,
+  PlayCircle,
+  Star
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'

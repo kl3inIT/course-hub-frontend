@@ -1,4 +1,4 @@
-import { CourseDetail } from '@/components/courses/course-detail'
+import { CourseDetail } from '@/components/courses-detail/course-detail'
 import { Navbar } from '@/components/layout/navbar'
 
 export default async function CourseDetailPage({

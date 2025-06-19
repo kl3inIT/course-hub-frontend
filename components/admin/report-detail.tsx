@@ -2,6 +2,7 @@
 
 import { commentApi } from '@/services/comment-api'
 import { reportApi } from '@/services/report-api'
+import { reviewApi } from '@/services/review-api'
 import { userApi } from '@/services/user-api'
 import {
   AlertDialog,
@@ -31,7 +32,11 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { ReportResponse, ReportStatus } from '@/types/report'
+import {
+  ReportResponse,
+  ReportStatus,
+  ResourceLocationDTO,
+} from '@/types/report'
 import { format } from 'date-fns'
 import {
   AlertTriangle,
@@ -47,6 +52,7 @@ import {
   Tag,
   User,
 } from 'lucide-react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -87,18 +93,24 @@ export function ReportDetail() {
   const [notes, setNotes] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [showNotesError, setShowNotesError] = useState(false)
-  const [showDialog, setShowDialog] = useState<'ban' | 'warn' | 'hide' | null>(
-    null
-  )
+  const [showDialog, setShowDialog] = useState<
+    'ban' | 'unban' | 'warn' | 'hide' | 'show' | null
+  >(null)
+  const [hasWarned, setHasWarned] = useState(false)
+  const [resourceLocation, setResourceLocation] =
+    useState<ResourceLocationDTO | null>(null)
 
   const loadReport = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await reportApi.getReportById(reportId)
-      setReport(response.data)
+      const [reportResponse, locationResponse] = await Promise.all([
+        reportApi.getReportById(reportId),
+        reportApi.getResourceLocation(reportId),
+      ])
+      setReport(reportResponse.data)
+      setResourceLocation(locationResponse.data)
     } catch (error) {
-      console.error('Error loading report:', error)
       setError('Failed to load report details')
       toast.error('Failed to load report details')
     } finally {
@@ -160,12 +172,25 @@ export function ReportDetail() {
   const handleBanUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.updateUserStatus(userId, 'banned')
+      await userApi.admin.updateUserStatus(userId.toString(), 'banned')
       toast.success('User has been banned')
       await loadReport()
     } catch (error) {
-      console.error('Error banning user:', error)
       toast.error('Failed to ban user')
+    } finally {
+      setIsProcessing(false)
+      setShowDialog(null)
+    }
+  }
+
+  const handleUnbanUser = async (userId: number) => {
+    setIsProcessing(true)
+    try {
+      await userApi.admin.updateUserStatus(userId.toString(), 'active')
+      toast.success('User has been unbanned')
+      await loadReport()
+    } catch (error) {
+      toast.error('Failed to unban user')
     } finally {
       setIsProcessing(false)
       setShowDialog(null)
@@ -175,11 +200,16 @@ export function ReportDetail() {
   const handleWarnUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.warnUser(userId)
+      await userApi.admin.warnUser(
+        userId,
+        report?.type || undefined,
+        report?.resourceId || undefined
+      )
+      console.log(report?.type, report?.resourceId)
       toast.success('Warning has been issued to user')
+      setHasWarned(true)
       await loadReport()
     } catch (error) {
-      console.error('Error warning user:', error)
       toast.error('Failed to warn user')
     } finally {
       setIsProcessing(false)
@@ -187,20 +217,23 @@ export function ReportDetail() {
     }
   }
 
-  const handleHideContent = async (resourceId: number, type: string) => {
+  const handleContentVisibility = async (
+    resourceId: number,
+    type: string,
+    hide: boolean
+  ) => {
     setIsProcessing(true)
     try {
       if (type === 'COMMENT') {
-        await commentApi.admin.hideComment(resourceId)
-        toast.success(`Comment has been hidden`)
+        await commentApi.admin.setCommentVisibility(resourceId, hide)
+        toast.success(`Comment has been ${hide ? 'hidden' : 'shown'}`)
       } else {
-        // await reviewApi.admin.hideReview(resourceId)
-        toast.success(`Review has been hidden`)
+        await reviewApi.setReviewVisibility(resourceId, hide)
+        toast.success(`Review has been ${hide ? 'hidden' : 'shown'}`)
       }
       await loadReport()
     } catch (error) {
-      console.error('Error hiding content:', error)
-      toast.error(`Failed to hide ${type.toLowerCase()}`)
+      toast.error(`Failed to ${hide ? 'hide' : 'show'} ${type.toLowerCase()}`)
     } finally {
       setIsProcessing(false)
       setShowDialog(null)
@@ -283,7 +316,13 @@ export function ReportDetail() {
                     variant={
                       report.severity === 'HIGH' ? 'destructive' : 'default'
                     }
-                    className='mt-1'
+                    className={cn(
+                      report.severity === 'HIGH'
+                        ? 'bg-red-100 text-red-800 hover:bg-red-100/80 border-red-200'
+                        : report.severity === 'MEDIUM'
+                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 border-orange-200'
+                          : 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 border-blue-200'
+                    )}
                   >
                     {report.severity}
                   </Badge>
@@ -345,14 +384,56 @@ export function ReportDetail() {
               <h3 className='text-lg font-semibold mb-4'>Report Content</h3>
               <div className='space-y-4'>
                 <div className='space-y-2'>
-                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                    <MessageSquare className='h-4 w-4' />
-                    Reason
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                      <MessageSquare className='h-4 w-4' />
+                      Reason
+                    </div>
+                    {resourceLocation && (
+                      <Link
+                        href={
+                          report.type === 'REVIEW'
+                            ? `/courses/${resourceLocation.courseId}`
+                            : `/learn/${resourceLocation.courseId}/${resourceLocation.lessonId}`
+                        }
+                        className='text-sm text-blue-600 hover:underline flex items-center gap-1'
+                        target='_blank'
+                      >
+                        <Eye className='h-4 w-4' />
+                        View {report.type.toLowerCase()}
+                      </Link>
+                    )}
                   </div>
                   <div className='p-4 rounded-lg border bg-muted/50'>
                     {report.reason}
                   </div>
                 </div>
+
+                {resourceLocation && (
+                  <div className='space-y-2'>
+                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                      <Tag className='h-4 w-4' />
+                      Location
+                    </div>
+                    <div className='p-4 rounded-lg border bg-muted/50'>
+                      <div className='space-y-1'>
+                        <p className='text-sm'>
+                          Course: {resourceLocation.courseName}
+                        </p>
+                        {report.type === 'COMMENT' && (
+                          <>
+                            <p className='text-sm'>
+                              Module: {resourceLocation.moduleName}
+                            </p>
+                            <p className='text-sm'>
+                              Lesson: {resourceLocation.lessonName}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {report.description && (
                   <div className='space-y-2'>
@@ -500,35 +581,61 @@ export function ReportDetail() {
           </CardHeader>
           <CardContent>
             <div className='flex flex-wrap gap-4'>
-              <Button
-                variant='outline'
-                className='min-w-[140px] border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground'
-                onClick={() => setShowDialog('ban')}
-                disabled={isProcessing}
-              >
-                <Ban className='mr-2 h-4 w-4' />
-                Ban User
-              </Button>
+              {report.reportedUserStatus === '1' ? (
+                <Button
+                  variant='outline'
+                  className='min-w-[140px] border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground'
+                  onClick={() => setShowDialog('ban')}
+                  disabled={isProcessing}
+                >
+                  <Ban className='mr-2 h-4 w-4' />
+                  Ban User
+                </Button>
+              ) : (
+                <Button
+                  variant='outline'
+                  className='min-w-[140px] border-green-500 text-green-600 hover:bg-green-500 hover:text-white'
+                  onClick={() => setShowDialog('unban')}
+                  disabled={isProcessing}
+                >
+                  <User className='mr-2 h-4 w-4' />
+                  Unban User
+                </Button>
+              )}
 
-              <Button
-                variant='outline'
-                className='min-w-[140px] border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white'
-                onClick={() => setShowDialog('warn')}
-                disabled={isProcessing}
-              >
-                <AlertTriangle className='mr-2 h-4 w-4' />
-                Warn User
-              </Button>
+              {!hasWarned && (
+                <Button
+                  variant='outline'
+                  className='min-w-[140px] border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white'
+                  onClick={() => setShowDialog('warn')}
+                  disabled={isProcessing}
+                >
+                  <AlertTriangle className='mr-2 h-4 w-4' />
+                  Warn User
+                </Button>
+              )}
 
-              <Button
-                variant='outline'
-                className='min-w-[140px]'
-                onClick={() => setShowDialog('hide')}
-                disabled={isProcessing}
-              >
-                <Eye className='mr-2 h-4 w-4' />
-                Hide {report.type === 'COMMENT' ? 'Comment' : 'Review'}
-              </Button>
+              {report.hidden ? (
+                <Button
+                  variant='outline'
+                  className='min-w-[140px] border-green-500 text-green-600 hover:bg-green-500 hover:text-white'
+                  onClick={() => setShowDialog('show')}
+                  disabled={isProcessing}
+                >
+                  <Eye className='mr-2 h-4 w-4' />
+                  Show {report.type === 'COMMENT' ? 'Comment' : 'Review'}
+                </Button>
+              ) : (
+                <Button
+                  variant='outline'
+                  className='min-w-[140px]'
+                  onClick={() => setShowDialog('hide')}
+                  disabled={isProcessing}
+                >
+                  <Eye className='mr-2 h-4 w-4' />
+                  Hide {report.type === 'COMMENT' ? 'Comment' : 'Review'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -554,6 +661,30 @@ export function ReportDetail() {
               onClick={() => handleBanUser(report?.reportedUserId || 0)}
             >
               Ban User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showDialog === 'unban'}
+        onOpenChange={() => setShowDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unban User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unban this user? They will regain access
+              to the platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className='bg-green-500 text-white hover:bg-green-600'
+              onClick={() => handleUnbanUser(report?.reportedUserId || 0)}
+            >
+              Unban User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -597,10 +728,43 @@ export function ReportDetail() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
-                handleHideContent(report?.resourceId || 0, report?.type || '')
+                handleContentVisibility(
+                  report?.resourceId || 0,
+                  report?.type || '',
+                  true
+                )
               }
             >
               Hide Content
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={showDialog === 'show'}
+        onOpenChange={() => setShowDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Show Content</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to show this {report?.type.toLowerCase()}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className='bg-green-500 text-white hover:bg-green-600'
+              onClick={() =>
+                handleContentVisibility(
+                  report?.resourceId || 0,
+                  report?.type || '',
+                  false
+                )
+              }
+            >
+              Show Content
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,7 +3,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { CourseCard } from '../courses/course-card'
+import { CourseCard } from '../course-card'
 
 export function CoursesCatalogSection({
   courses,

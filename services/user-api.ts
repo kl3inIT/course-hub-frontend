@@ -108,8 +108,18 @@ export const userApi = {
     },
 
     // Warn user
-    warnUser: async (userId: number): Promise<ApiResponse<void>> => {
-      const response = await httpClient.post(`/api/admin/users/${userId}/warn`)
+    warnUser: async (
+      userId: number,
+      resourceType?: string,
+      resourceId?: number
+    ): Promise<ApiResponse<void>> => {
+      const response = await httpClient.post(
+        `/api/admin/users/${userId}/warn`,
+        {
+          resourceType,
+          resourceId,
+        }
+      )
       return response.data
     },
   },

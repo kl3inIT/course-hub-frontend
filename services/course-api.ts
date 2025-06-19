@@ -160,4 +160,14 @@ export const courseApi = {
     )
     return response.data
   },
+
+  publishCourse: async (courseId: string): Promise<ApiResponse<string>> => {
+    const response = await httpClient.patch(`/api/courses/${courseId}/publish`)
+    return response.data
+  },
+
+  restoreCourse: async (courseId: string): Promise<ApiResponse<string>> => {
+    const response = await httpClient.patch(`/api/courses/${courseId}/restore`)
+    return response.data
+  },
 }

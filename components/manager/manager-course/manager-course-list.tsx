@@ -522,12 +522,74 @@ export function ManagerCourseList() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem
-                        className='text-destructive'
-                        onClick={() => setDeleteDialog({ open: true, course })}
-                      >
-                        Delete Course
-                      </DropdownMenuItem>
+                      {/* Lifecycle actions */}
+                      {course.status?.toUpperCase() === 'ARCHIVED' && (
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            try {
+                              await courseApi.restoreCourse(course.id.toString())
+                              toast({
+                                title: 'Course Restored',
+                                description: `"${course.title}" has been restored.`,
+                              })
+                              await handleRefresh()
+                            } catch (err) {
+                              toast({
+                                title: 'Restore Failed',
+                                description: err instanceof Error ? err.message : 'An error occurred',
+                                variant: 'destructive',
+                              })
+                            }
+                          }}
+                        >
+                          Restore Course
+                        </DropdownMenuItem>
+                      )}
+                      {course.status?.toUpperCase() === 'DRAFT' && (
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            try {
+                              await courseApi.publishCourse(course.id.toString())
+                              toast({
+                                title: 'Course Published',
+                                description: `"${course.title}" has been published.`,
+                              })
+                              await handleRefresh()
+                            } catch (err) {
+                              toast({
+                                title: 'Publish Failed',
+                                description: err instanceof Error ? err.message : 'An error occurred',
+                                variant: 'destructive',
+                              })
+                            }
+                          }}
+                        >
+                          Publish Course
+                        </DropdownMenuItem>
+                      )}
+                      {(course.status?.toUpperCase() === 'PUBLISHED' || course.status?.toUpperCase() === 'DRAFT') && (
+                        <DropdownMenuItem
+                          className='text-destructive'
+                          onClick={async () => {
+                            try {
+                              await courseApi.archiveCourse(course.id.toString())
+                              toast({
+                                title: 'Course Archived',
+                                description: `"${course.title}" has been archived.`,
+                              })
+                              await handleRefresh()
+                            } catch (err) {
+                              toast({
+                                title: 'Archive Failed',
+                                description: err instanceof Error ? err.message : 'An error occurred',
+                                variant: 'destructive',
+                              })
+                            }
+                          }}
+                        >
+                          Archive Course
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

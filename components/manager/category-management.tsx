@@ -225,10 +225,13 @@ export function CategoryManagement() {
       setEditDescriptionError('')
       setEditNameTouched(false)
       setEditDescriptionTouched(false)
-      toast.success(`Category ${selectedCategory.name} has been updated successfully!`, {
-        description: `Category ${selectedCategory.name} has been updated successfully!`,
-        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
-      })
+      toast.success(
+        `Category ${selectedCategory.name} has been updated successfully!`,
+        {
+          description: `Category ${selectedCategory.name} has been updated successfully!`,
+          icon: <CheckCircle className='h-5 w-5 text-green-500' />,
+        }
+      )
       fetchCategories(
         pagination.number,
         pagination.size,
@@ -375,7 +378,11 @@ export function CategoryManagement() {
                 Add Category
               </Button>
             </DialogTrigger>
-            <DialogContent key={isCreateDialogOpen ? 'add-category-open' : 'add-category-closed'}>
+            <DialogContent
+              key={
+                isCreateDialogOpen ? 'add-category-open' : 'add-category-closed'
+              }
+            >
               <DialogHeader>
                 <DialogTitle>Create New Category</DialogTitle>
                 <DialogDescription>
@@ -757,15 +764,15 @@ export function CategoryManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription className='space-y-2'>
-                This action cannot be undone. This will permanently delete the
-                category
-                <span
-                  className='inline-block max-w-[250px] align-middle ml-1 truncate'
-                  title={categoryToDelete?.name}
-                >
-                  "{categoryToDelete?.name}"
-                </span>
-                .
+              This action cannot be undone. This will permanently delete the
+              category
+              <span
+                className='inline-block max-w-[250px] align-middle ml-1 truncate'
+                title={categoryToDelete?.name}
+              >
+                "{categoryToDelete?.name}"
+              </span>
+              .
               {categoryToDelete && categoryToDelete.courseCount > 0 && (
                 <div className='bg-red-50 border border-red-200 rounded-md p-3 mt-3'>
                   <p className='text-red-800 font-medium'>
@@ -790,7 +797,7 @@ export function CategoryManagement() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation()
                 e.preventDefault()
                 handleDeleteCategory()

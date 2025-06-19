@@ -45,7 +45,7 @@ import {
   Lock,
   Play,
   PlayCircle,
-  Star
+  Star,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -84,7 +84,10 @@ const formatDateTime = (dateString: string) => {
   if (!dateString) return ''
   const d = new Date(dateString)
   const date = d.toLocaleDateString('en-GB') // dd/mm/yyyy
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) // HH:mm
+  const time = d.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }) // HH:mm
   return `${time} ${date}`
 }
 
@@ -119,7 +122,9 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
   const [reviewPage, setReviewPage] = useState(0)
   const [reviewTotalPages, setReviewTotalPages] = useState(1)
-  const [expandedComments, setExpandedComments] = useState<{[id:number]: boolean}>({})
+  const [expandedComments, setExpandedComments] = useState<{
+    [id: number]: boolean
+  }>({})
   const [showReport, setShowReport] = useState(false)
   const [reportText, setReportText] = useState('')
 
@@ -300,7 +305,13 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await reviewApi.getAllReviews({ courseId: Number(courseId), page: reviewPage, size: 6, sortBy: 'createdDate', direction: 'DESC' })
+        const res = await reviewApi.getAllReviews({
+          courseId: Number(courseId),
+          page: reviewPage,
+          size: 6,
+          sortBy: 'createdDate',
+          direction: 'DESC',
+        })
         setReviews(res.data.content)
         setReviewTotalPages(res.data.totalPages)
       } catch (err) {
@@ -312,7 +323,10 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
-      <Star key={i} className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+      <Star
+        key={i}
+        className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+      />
     ))
   }
 
@@ -659,28 +673,45 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             {reviews.map(review => {
               const isExpanded = expandedComments[review.id]
               return (
-                <Card key={review.id} className='border border-gray-200 rounded-xl shadow-sm'>
+                <Card
+                  key={review.id}
+                  className='border border-gray-200 rounded-xl shadow-sm'
+                >
                   <CardContent className='p-5'>
                     <div className='flex items-start justify-between mb-2'>
                       <div className='flex items-center gap-4'>
                         <Avatar className='w-12 h-12'>
-                          <AvatarImage src={review.userAvatar || '/placeholder.svg'} />
-                          <AvatarFallback>{review.userName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarImage
+                            src={review.userAvatar || '/placeholder.svg'}
+                          />
+                          <AvatarFallback>
+                            {review.userName
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className='font-semibold text-base'>{review.userName}</div>
-                          <div className='flex mt-1'>{renderStars(review.star)}</div>
+                          <div className='font-semibold text-base'>
+                            {review.userName}
+                          </div>
+                          <div className='flex mt-1'>
+                            {renderStars(review.star)}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1 min-w-[110px]">
-                        <span className='text-xs text-gray-500'>{formatDateTime(review.createdDate)}</span>
+                      <div className='flex flex-col items-end gap-1 min-w-[110px]'>
+                        <span className='text-xs text-gray-500'>
+                          {formatDateTime(review.createdDate)}
+                        </span>
                         <Button
                           variant='ghost'
                           size='sm'
                           className='text-gray-500 hover:text-red-500 p-0 h-auto'
                           onClick={() => setShowReport(true)}
                         >
-                          <Flag className='mr-1 h-4 w-4' />Report
+                          <Flag className='mr-1 h-4 w-4' />
+                          Report
                         </Button>
                       </div>
                     </div>
@@ -694,7 +725,12 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                       {review.comment && review.comment.length > 120 && (
                         <button
                           className='text-blue-600 text-xs mt-1 font-medium underline cursor-pointer hover:text-blue-800 transition-colors'
-                          onClick={() => setExpandedComments(prev => ({ ...prev, [review.id]: !isExpanded }))}
+                          onClick={() =>
+                            setExpandedComments(prev => ({
+                              ...prev,
+                              [review.id]: !isExpanded,
+                            }))
+                          }
                         >
                           {isExpanded ? 'See less' : 'See more'}
                         </button>
@@ -708,9 +744,27 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           {/* Pagination for reviews */}
           {reviewTotalPages > 1 && (
             <div className='flex justify-center items-center gap-4 mt-6'>
-              <Button variant='outline' size='sm' onClick={() => setReviewPage(p => Math.max(0, p - 1))} disabled={reviewPage === 0}>Previous</Button>
-              <span>Page {reviewPage + 1} of {reviewTotalPages}</span>
-              <Button variant='outline' size='sm' onClick={() => setReviewPage(p => Math.min(reviewTotalPages - 1, p + 1))} disabled={reviewPage === reviewTotalPages - 1}>Next</Button>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setReviewPage(p => Math.max(0, p - 1))}
+                disabled={reviewPage === 0}
+              >
+                Previous
+              </Button>
+              <span>
+                Page {reviewPage + 1} of {reviewTotalPages}
+              </span>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() =>
+                  setReviewPage(p => Math.min(reviewTotalPages - 1, p + 1))
+                }
+                disabled={reviewPage === reviewTotalPages - 1}
+              >
+                Next
+              </Button>
             </div>
           )}
         </TabsContent>
@@ -765,27 +819,38 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       />
 
       <Dialog open={showReport} onOpenChange={setShowReport}>
-        <DialogContent className="max-w-md">
+        <DialogContent className='max-w-md'>
           <DialogHeader>
-            <DialogTitle>Report a problem you encountered during your experience.</DialogTitle>
+            <DialogTitle>
+              Report a problem you encountered during your experience.
+            </DialogTitle>
           </DialogHeader>
           <textarea
-            className="w-full border rounded p-2 mt-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Please describe the issue you encountered (max 200 characters)..."
+            className='w-full border rounded p-2 mt-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary'
+            placeholder='Please describe the issue you encountered (max 200 characters)...'
             maxLength={200}
             rows={4}
             value={reportText}
             onChange={e => setReportText(e.target.value)}
           />
-          <div className="text-right text-xs text-gray-500 mt-1 mb-2">
+          <div className='text-right text-xs text-gray-500 mt-1 mb-2'>
             {reportText.length} / 200
           </div>
-          <div className="flex justify-end gap-2 mt-2">
-            <Button variant="outline" onClick={() => { setShowReport(false); setReportText('') }}>
+          <div className='flex justify-end gap-2 mt-2'>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setShowReport(false)
+                setReportText('')
+              }}
+            >
               Cancel
             </Button>
             <Button
-              onClick={() => { setShowReport(false); setReportText('') }}
+              onClick={() => {
+                setShowReport(false)
+                setReportText('')
+              }}
               disabled={reportText.trim().length === 0}
             >
               Send

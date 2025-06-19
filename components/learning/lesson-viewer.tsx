@@ -59,7 +59,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
-  VolumeX
+  VolumeX,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'

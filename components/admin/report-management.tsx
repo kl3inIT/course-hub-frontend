@@ -92,7 +92,6 @@ function ReportTable({ type, filters }: ReportTableProps) {
       setReports(response.data.content)
       setTotalPages(response.data.totalPages)
     } catch (error) {
-      console.error('Error loading reports:', error)
       setError('Failed to load reports. Please try again later.')
       toast.error('Failed to load reports')
     } finally {
@@ -200,6 +199,13 @@ function ReportTable({ type, filters }: ReportTableProps) {
                     variant={
                       report.severity === 'HIGH' ? 'destructive' : 'default'
                     }
+                    className={cn(
+                      report.severity === 'HIGH'
+                        ? 'bg-red-100 text-red-800 hover:bg-red-100/80 border-red-200'
+                        : report.severity === 'MEDIUM'
+                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 border-orange-200'
+                          : 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 border-blue-200'
+                    )}
                   >
                     {report.severity}
                   </Badge>

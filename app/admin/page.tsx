@@ -6,7 +6,6 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 export default function AdminPage() {
   return (
     <ProtectedRoute allowedRoles={['admin']} requireAuth={true}>
-
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>

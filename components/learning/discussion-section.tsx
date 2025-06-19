@@ -49,10 +49,10 @@ interface DiscussionSectionProps {
 }
 
 const reportReasons = [
-  { id: 'spam', label: 'Spam or advertising' },
-  { id: 'inappropriate', label: 'Inappropriate content' },
-  { id: 'harassment', label: 'Harassment or bullying' },
-  { id: 'other', label: 'Other reason' },
+  { id: 'Spam', label: 'Spam or advertising' },
+  { id: 'Inappropriate', label: 'Inappropriate content' },
+  { id: 'Harassment', label: 'Harassment or bullying' },
+  { id: 'Other', label: 'Other reason' },
 ]
 
 interface CommentComponentProps {
@@ -69,17 +69,16 @@ interface CommentComponentProps {
 }
 
 const CommentComponentBase = ({
-                                comment,
-                                isReply = false,
-                                parentId,
-                                onReply,
-                                onLike,
-                                onReport,
-                                onDelete,
-                                onEdit,
-                                replyTo,
-                                onSubmitReply,
-                              }: CommentComponentProps) => {
+  comment,
+  isReply = false,
+  onReply,
+  onLike,
+  onReport,
+  onDelete,
+  onEdit,
+  replyTo,
+  onSubmitReply,
+}: CommentComponentProps) => {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportDescription, setReportDescription] = useState('')
@@ -436,9 +435,9 @@ const CommentComponentBase = ({
 const CommentComponent = memo(CommentComponentBase)
 
 export function DiscussionSection({
-                                    courseId,
-                                    lessonId,
-                                  }: DiscussionSectionProps) {
+  courseId,
+  lessonId,
+}: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<number | null>(null)
@@ -576,12 +575,12 @@ export function DiscussionSection({
           const updatedReplies = comment.replies.map(reply =>
             reply.id === commentId
               ? {
-                ...reply,
-                likeCount: isLiked
-                  ? reply.likeCount + 1
-                  : reply.likeCount - 1,
-                likedByCurrentUser: isLiked,
-              }
+                  ...reply,
+                  likeCount: isLiked
+                    ? reply.likeCount + 1
+                    : reply.likeCount - 1,
+                  likedByCurrentUser: isLiked,
+                }
               : reply
           )
           return { ...comment, replies: updatedReplies }
@@ -599,22 +598,29 @@ export function DiscussionSection({
         let severity: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM'
 
         // Set severity based on reason
-        if (reason === 'spam') severity = 'LOW'
-        else if (reason === 'inappropriate') severity = 'MEDIUM'
-        else if (reason === 'harassment') severity = 'HIGH'
+        if (reason === 'Spam') severity = 'LOW'
+        else if (reason === 'Inappropriate') severity = 'MEDIUM'
+        else if (reason === 'Harassment') severity = 'HIGH'
+
+        // Combine reason and description if description exists
+        const fullReason = description?.trim()
+          ? `${reason}: ${description.trim()}`
+          : reason
 
         await reportApi.createReport({
           resourceType: 'COMMENT',
           resourceId: commentId,
-          reason:
-            reason === 'other' ? description?.trim() || 'Other reason' : reason,
+          reason: fullReason,
           severity,
-          description: reason === 'other' ? undefined : description?.trim(),
+          description: undefined, // Remove description field since we combined it with reason
         })
         toast.success('Report submitted successfully')
-      } catch (error) {
-        console.error('Error reporting comment:', error)
-        toast.error('Failed to submit report')
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to submit report'
+        toast.error(errorMessage)
       }
     },
     []

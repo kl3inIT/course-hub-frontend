@@ -14,6 +14,7 @@ export interface ReviewResponseDTO extends BaseResponse {
   courseName: string
   star: number
   comment: string
+  isHidden: number
   createdDate: string
   modifiedDate: string
 }

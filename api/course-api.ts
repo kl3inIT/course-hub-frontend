@@ -39,7 +39,6 @@ export const courseApi = {
     return response.data
   },
 
-
   getEnrolledCourses: async (
     params?: CourseSearchParams
   ): Promise<ApiResponse<Page<CourseResponseDTO>>> => {

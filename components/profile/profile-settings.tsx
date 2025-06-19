@@ -25,7 +25,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/context/auth-context'
-import type { ProfileData } from '@/types/User'
+import type { ProfileData } from '@/types/user'
 import { Camera, Save, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -54,7 +54,6 @@ const formatDateForInput = (dateString: string | null): string => {
     // Nếu đã là YYYY-MM-DD
     return dateString
   } catch (error) {
-    console.error('Error formatting date:', error)
     return ''
   }
 }

@@ -15,11 +15,11 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({
-                            children,
-                            allowedRoles,
-                            redirectOnUnauthorized = true,
-                            redirectTo = '/unauthorized',
-                          }: RoleGuardProps) {
+  children,
+  allowedRoles,
+  redirectOnUnauthorized = true,
+  redirectTo = '/unauthorized',
+}: RoleGuardProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 

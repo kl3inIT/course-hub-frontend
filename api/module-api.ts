@@ -37,5 +37,4 @@ export const moduleApi = {
     const response = await httpClient.get(`/api/modules/${moduleId}`)
     return response.data
   },
-
 }

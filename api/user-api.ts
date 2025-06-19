@@ -1,10 +1,10 @@
 import { httpClient } from '@/api/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import {
+  CreateManagerRequest,
+  ProfileData,
   User,
   UserDetail,
-  ProfileData,
-  CreateManagerRequest,
   UserSearchParams,
 } from '@/types/user'
 
@@ -95,8 +95,18 @@ export const userApi = {
     },
 
     // Warn user
-    warnUser: async (userId: number): Promise<ApiResponse<void>> => {
-      const response = await httpClient.post(`/api/admin/users/${userId}/warn`)
+    warnUser: async (
+      userId: number,
+      resourceType?: string,
+      resourceId?: number
+    ): Promise<ApiResponse<void>> => {
+      const response = await httpClient.post(
+        `/api/admin/users/${userId}/warn`,
+        {
+          resourceType,
+          resourceId,
+        }
+      )
       return response.data
     },
   },

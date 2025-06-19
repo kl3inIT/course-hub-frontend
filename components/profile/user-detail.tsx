@@ -29,7 +29,6 @@ const formatDate = (date: string | undefined) => {
   try {
     return format(new Date(date), 'PPP')
   } catch (error) {
-    console.error('Invalid date:', date)
     return '-'
   }
 }
@@ -245,7 +244,6 @@ export function UserDetail({ userId }: { userId: string }) {
         activities: response.data.activities || [],
       })
     } catch (error: any) {
-      console.error('Error fetching user detail:', error)
       toast({
         title: 'Error',
         description: error.message || 'Failed to load user detail',

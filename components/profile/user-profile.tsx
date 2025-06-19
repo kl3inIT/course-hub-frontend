@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Footer } from '@/components/layout/footer'
+import { Navbar } from '@/components/layout/navbar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Navbar } from '@/components/layout/navbar'
-import { Footer } from '@/components/layout/footer'
-import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/context/auth-context'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAuth } from '@/context/auth-context'
+import { useToast } from '@/hooks/use-toast'
 import { useParams, usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 // Mock data for courses
 const MOCK_COURSES = [
@@ -66,55 +66,32 @@ export default function UserProfile() {
   const { getToken } = useAuth()
 
   useEffect(() => {
-    console.log('Current pathname:', pathname)
-    console.log('Current params:', params)
-
     const userId = params?.id
-    console.log('Extracted userId:', userId)
-
     const fetchUserProfile = async () => {
       try {
         const token = getToken()
-        console.log('Auth token exists:', !!token)
-
         if (!token) {
           throw new Error('No auth token')
         }
-
         if (!userId) {
           throw new Error('No user ID provided')
         }
-
         const apiUrl = `${BACKEND_URL}/api/users/profile/${userId}`
-        console.log('Fetching from URL:', apiUrl)
-
         const response = await fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
-
-        console.log('Response received:', {
-          status: response.status,
-          ok: response.ok,
-          statusText: response.statusText,
-        })
-
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          console.error('Error response:', errorData)
           throw new Error(errorData.message || 'Failed to fetch user profile')
         }
-
         const responseData: ResponseGeneral<User> = await response.json()
-        console.log('Response data:', responseData)
-
         setUser({
           ...responseData.data,
           enrolledCourses: MOCK_COURSES,
         })
       } catch (error: any) {
-        console.error('Error in fetchUserProfile:', error)
         toast({
           title: 'Error',
           description: error.message || 'Failed to load user profile',
@@ -125,12 +102,8 @@ export default function UserProfile() {
         setIsLoading(false)
       }
     }
-
     if (params?.id) {
-      console.log('Starting fetch for userId:', params.id)
       fetchUserProfile()
-    } else {
-      console.log('No userId in params, skipping fetch')
     }
   }, [params, pathname, getToken, toast])
 

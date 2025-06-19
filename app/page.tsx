@@ -1,29 +1,33 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import type React from 'react'
+import { useMemo } from 'react'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  BookOpen,
-  Users,
-  Award,
-  Star,
-  Play,
-  CheckCircle,
-  Search,
-} from 'lucide-react'
-import { Navbar } from '@/components/layout/navbar'
-import { CourseCard } from '@/components/courses/course-card'
-import { TestimonialsSection } from '@/components/testimonials-section'
-import { Footer } from '@/components/layout/footer'
 import { categoryApi } from '@/api/category-api'
 import { courseApi } from '@/api/course-api'
+import { CourseCard } from '@/components/courses/course-card'
+import { Footer } from '@/components/layout/footer'
+import { Navbar } from '@/components/layout/navbar'
+import { TestimonialsSection } from '@/components/testimonials-section'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { CategoryResponseDTO } from '@/types/category'
 import { CourseResponseDTO } from '@/types/course'
+import {
+  Award,
+  BookOpen,
+  CheckCircle,
+  Play,
+  Search,
+  Star,
+  Users,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+
+const Earth3D = dynamic(() => import('@/components/Earth3D'), { ssr: false })
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -88,6 +92,18 @@ export default function HomePage() {
     }
   }
 
+  // Trái đất xoay với hiệu ứng vũ trụ
+  const starPositions = useMemo(
+    () =>
+      Array.from({ length: 120 }).map(() => ({
+        cx: Math.random() * 400,
+        cy: Math.random() * 400,
+        r: Math.random() * 2.2 + 0.5,
+        opacity: Math.random() * 0.8 + 0.2,
+      })),
+    []
+  )
+
   return (
     <div className='min-h-screen bg-background'>
       {/* Header with Navigation */}
@@ -97,7 +113,7 @@ export default function HomePage() {
       <section className='relative h-[600px] md:h-[700px] overflow-hidden'>
         <div className='absolute inset-0'>
           <img
-            src='https://img.freepik.com/free-photo/elevated-view-laptop-stationeries-blue-backdrop_23-2147880457.jpg?semt=ais_items_boosted&w=740'
+            src='/assets/universe.jpg'
             alt='Students learning together'
             className='w-full h-full object-cover'
           />
@@ -137,6 +153,28 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+
+        {/* Trái đất xoay với hiệu ứng vũ trụ */}
+        <div className='absolute right-40 top-1/2 -translate-y-1/2 w-[400px] h-[400px] hidden md:flex z-20 pointer-events-none items-center justify-center'>
+          {/* Vầng sáng và vũ trụ */}
+          <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-gradient-to-br from-blue-300/40 via-indigo-300/30 to-purple-400/40 blur-3xl animate-pulse-glow z-10'></div>
+          <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] z-0 pointer-events-none'>
+            <svg
+              width='100%'
+              height='100%'
+              viewBox='0 0 400 400'
+              fill='none'
+              xmlns='http://www.w3.org/2000/svg'
+              className='absolute inset-0'
+            >
+              {/* Starfield */}
+            </svg>
+          </div>
+          {/* Earth 3D: LUÔN để trong div vuông */}
+          <div className='relative z-20 w-[400px] h-[400px] flex items-center justify-center'>
+            <Earth3D />
           </div>
         </div>
       </section>

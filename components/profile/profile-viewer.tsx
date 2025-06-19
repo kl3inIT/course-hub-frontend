@@ -38,7 +38,7 @@ interface ProfileViewerProps {
 
 export function ProfileViewer({ userId }: ProfileViewerProps) {
   const router = useRouter()
-  const { user, hasPermission } = useAuth()
+  // const { user, hasPermission } = useAuth()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isOwnProfile, setIsOwnProfile] = useState(false)
@@ -107,10 +107,10 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
     )
   }
 
-  const canEdit = isOwnProfile || hasPermission('edit_user_accounts')
+  // const canEdit = isOwnProfile || hasPermission('edit_user_accounts')
   const fullName = `${profile.name}`.trim()
-  const joinDate = new Date(profile.createdAt).toLocaleDateString()
-  const lastUpdated = new Date(profile.updatedAt).toLocaleDateString()
+  // const joinDate = new Date(profile.createdAt).toLocaleDateString()
+  // const lastUpdated = new Date(profile.updatedAt).toLocaleDateString()
 
   // Mock data for demonstration
   const mockStats = {
@@ -134,12 +134,12 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
               : 'View profile information'}
           </p>
         </div>
-        {canEdit && (
+        {/* {canEdit && (
           <Button onClick={() => router.push('/profile/edit')}>
             <Edit className='h-4 w-4 mr-2' />
             Edit Profile
           </Button>
-        )}
+        )} */}
       </div>
 
       {/* Profile Header Card */}
@@ -164,7 +164,7 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
                 </h2>
                 <div className='flex items-center justify-center md:justify-start gap-2 mt-2'>
                   <Shield className='h-4 w-4' />
-                  <RoleBadge role={user?.role || 'learner'} />
+                  {/* <RoleBadge role={user?.role || 'learner'} /> */}
                 </div>
               </div>
 
@@ -272,14 +272,14 @@ export function ProfileViewer({ userId }: ProfileViewerProps) {
                     <span className='capitalize'>{profile.gender}</span>
                   </div>
                 )}
-                <div className='flex items-center gap-3'>
+                {/* <div className='flex items-center gap-3'>
                   <Calendar className='h-4 w-4 text-muted-foreground' />
                   <span>Joined {joinDate}</span>
                 </div>
                 <div className='flex items-center gap-3'>
                   <Clock className='h-4 w-4 text-muted-foreground' />
                   <span>Last updated {lastUpdated}</span>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>

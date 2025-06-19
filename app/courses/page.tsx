@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { CourseCatalog } from '@/components/courses/course-catalog'
-=======
 import { CourseCatalog } from '@/components/course-catalog/course-catalog'
->>>>>>> base-project
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 

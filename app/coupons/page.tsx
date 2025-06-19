@@ -1,8 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
-import { courseApi } from '@/services/course-api'
-import { userApi } from '@/services/user-api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,8 +38,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useAuth } from '@/context/auth-context'
-import { useCoupon } from '@/hooks/use-coupon'
+import { useAvailableCoupons } from '@/hooks/use-available-coupons'
 import { cn } from '@/lib/utils'
+import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
+import { discountApi } from '@/services/discount-api'
+import { userApi } from '@/services/user-api'
 import {
   Category,
   ClaimedCoupon,
@@ -311,8 +312,8 @@ export default function CouponsPage() {
     })
   const router = useRouter()
 
-  // Use the custom hook
-  const { coupons, loadingCoupons, pagination, fetchCoupons } = useCoupon()
+  // Replace useCoupon with useAvailableCoupons
+  const { coupons, loadingCoupons, pagination, fetchCoupons } = useAvailableCoupons()
 
   // Fetch data on component mount
   useEffect(() => {
@@ -321,18 +322,18 @@ export default function CouponsPage() {
         setIsLoading(true)
         const [categoriesResponse, coursesResponse] = await Promise.all([
           categoryApi.getAllCategories({ size: 100 }),
-          courseApi.getAllCourses({ size: 100 }),
+          courseApi.getAllCoursesByStatus({ size: 100, status: 'PUBLISHED' }),
         ])
 
         const transformedCategories: Category[] =
-          categoriesResponse.data.content.map(
+          categoriesResponse?.data?.content?.map(
             (cat: { id: number; name: string }) => ({
               id: cat.id.toString(),
               name: cat.name,
             })
-          )
+          ) || []
 
-        const transformedCourses: Course[] = coursesResponse.data.content.map(
+        const transformedCourses: Course[] = (coursesResponse || []).map(
           (course: { id: number; title: string }) => ({
             id: course.id.toString(),
             title: course.title,
@@ -449,20 +450,18 @@ export default function CouponsPage() {
         isActive: 1,
         ...(filter.category ? { categoryId: Number(filter.category) } : {}),
         ...(filter.course ? { courseId: Number(filter.course) } : {}),
-        ...(filter.percentage
-          ? { percentage: parseInt(filter.percentage) }
-          : {}),
+        ...(filter.percentage ? { percentage: parseInt(filter.percentage) } : {}),
       }
       try {
-        const res = await userApi.getMyCoupons(params)
+        const res = await discountApi.getMyCoupons(params)
         setMyCoupons(res.data.content.map(transformCoupon))
         setMyCouponsPagination({
-          page: res.data.number,
-          size: res.data.size,
-          totalElements: res.data.totalElements,
-          totalPages: res.data.totalPages,
-          first: res.data.first,
-          last: res.data.last,
+          page: res.data.page.number,
+          size: res.data.page.size,
+          totalElements: res.data.page.totalElements,
+          totalPages: res.data.page.totalPages,
+          first: res.data.page.number === 0,
+          last: res.data.page.number === res.data.page.totalPages - 1,
         })
       } catch {
         setMyCoupons([])
@@ -856,8 +855,8 @@ export default function CouponsPage() {
                       </p>
                     </div>
                   )}
-                  {/* Pagination for Available */}
-                  {activeTab === 'available' && (
+                  {/* Pagination for Available - Chỉ hiển thị khi có dữ liệu */}
+                  {activeTab === 'available' && pagination.totalElements > 0 && (
                     <div className='flex items-center justify-between mt-4'>
                       <div className='text-sm text-muted-foreground'>
                         Showing {pagination.page * pagination.size + 1} to{' '}
@@ -872,18 +871,18 @@ export default function CouponsPage() {
                           variant='outline'
                           size='sm'
                           onClick={() => fetchCoupons(pagination.page - 1)}
-                          disabled={pagination.first || loadingCoupons}
+                          disabled={pagination.first || loadingCoupons || pagination.totalElements === 0}
                         >
                           Previous
                         </Button>
                         <span className='text-sm'>
-                          Page {pagination.page + 1} of {pagination.totalPages}
+                          Page {pagination.page + 1} of {pagination.totalPages || 1}
                         </span>
                         <Button
                           variant='outline'
                           size='sm'
                           onClick={() => fetchCoupons(pagination.page + 1)}
-                          disabled={pagination.last || loadingCoupons}
+                          disabled={pagination.last || loadingCoupons || pagination.totalElements === 0}
                         >
                           Next
                         </Button>
@@ -920,8 +919,8 @@ export default function CouponsPage() {
                       </p>
                     </div>
                   )}
-                  {/* Pagination for My Coupons */}
-                  {activeTab === 'my-coupons' && (
+                  {/* Pagination for My Coupons - Chỉ hiển thị khi có dữ liệu */}
+                  {activeTab === 'my-coupons' && myCouponsPagination.totalElements > 0 && (
                     <div className='flex items-center justify-between mt-4'>
                       <div className='text-sm text-muted-foreground'>
                         Showing{' '}
@@ -943,14 +942,14 @@ export default function CouponsPage() {
                             fetchMyCoupons(myCouponsPagination.page - 1)
                           }
                           disabled={
-                            myCouponsPagination.first || loadingMyCoupons
+                            myCouponsPagination.first || loadingMyCoupons || myCouponsPagination.totalElements === 0
                           }
                         >
                           Previous
                         </Button>
                         <span className='text-sm'>
                           Page {myCouponsPagination.page + 1} of{' '}
-                          {myCouponsPagination.totalPages}
+                          {myCouponsPagination.totalPages || 1}
                         </span>
                         <Button
                           variant='outline'
@@ -959,7 +958,7 @@ export default function CouponsPage() {
                             fetchMyCoupons(myCouponsPagination.page + 1)
                           }
                           disabled={
-                            myCouponsPagination.last || loadingMyCoupons
+                            myCouponsPagination.last || loadingMyCoupons || myCouponsPagination.totalElements === 0
                           }
                         >
                           Next

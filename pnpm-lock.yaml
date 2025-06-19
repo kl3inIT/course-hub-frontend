@@ -219,6 +219,9 @@ importers:
       '@types/sockjs-client':
         specifier: ^1.5.4
         version: 1.5.4
+      '@types/three':
+        specifier: ^0.177.0
+        version: 0.177.0
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.33.1
         version: 8.33.1(@typescript-eslint/parser@8.33.1(eslint@8.57.1)(typescript@5.0.2))(eslint@8.57.1)(typescript@5.0.2)

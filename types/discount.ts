@@ -58,6 +58,7 @@ export interface Coupon {
   endDate: string
   isActive: number
   code: string
+  status: string
 }
 
 // Coupon API Request/Response Types
@@ -90,6 +91,7 @@ export interface CouponSearchParams {
   categoryId?: number
   courseId?: number
   percentage?: number
+  status?: string
 }
 
 // Backend Coupon Response (from API)
@@ -108,6 +110,7 @@ export interface BackendCouponResponse {
   endDate: string
   isActive: number
   code: string
+  status: string
 }
 
 // Paginated Response from Backend
@@ -199,4 +202,20 @@ export interface PaginationState {
   totalPages: number
   first: boolean
   last: boolean
+}
+
+// Add new type for coupon status response
+export interface CouponStatusResponse {
+  AVAILABLE: string
+  NOT_STARTED: string
+  EXPIRED: string
+  OUT_OF_STOCK: string
+  USED_UP: string
+}
+
+// Add new type for coupon stats response
+export interface CouponStatsResponse {
+  totalDiscounts: string
+  totalUsage: string
+  activeDiscounts: string
 }

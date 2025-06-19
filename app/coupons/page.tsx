@@ -1,8 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
-import { courseApi } from '@/services/course-api'
-import { userApi } from '@/services/user-api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,8 +38,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useAuth } from '@/context/auth-context'
-import { useCoupon } from '@/hooks/use-coupon'
+import { useAvailableCoupons } from '@/hooks/use-available-coupons'
 import { cn } from '@/lib/utils'
+import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
+import { discountApi } from '@/services/discount-api'
+import { userApi } from '@/services/user-api'
 import {
   Category,
   ClaimedCoupon,
@@ -311,8 +312,8 @@ export default function CouponsPage() {
     })
   const router = useRouter()
 
-  // Use the custom hook
-  const { coupons, loadingCoupons, pagination, fetchCoupons } = useCoupon()
+  // Replace useCoupon with useAvailableCoupons
+  const { coupons, loadingCoupons, pagination, fetchCoupons } = useAvailableCoupons()
 
   // Fetch data on component mount
   useEffect(() => {
@@ -449,12 +450,10 @@ export default function CouponsPage() {
         isActive: 1,
         ...(filter.category ? { categoryId: Number(filter.category) } : {}),
         ...(filter.course ? { courseId: Number(filter.course) } : {}),
-        ...(filter.percentage
-          ? { percentage: parseInt(filter.percentage) }
-          : {}),
+        ...(filter.percentage ? { percentage: parseInt(filter.percentage) } : {}),
       }
       try {
-        const res = await userApi.getMyCoupons(params)
+        const res = await discountApi.getMyCoupons(params)
         setMyCoupons(res.data.content.map(transformCoupon))
         setMyCouponsPagination({
           page: res.data.number,

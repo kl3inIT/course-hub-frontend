@@ -1,5 +1,6 @@
 'use client'
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,30 +22,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { courseApi } from '@/services/course-api'
 import { enrollmentApi } from '@/services/enrollment-api'
 import { lessonApi } from '@/services/lesson-api'
+
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { LessonResponseDTO } from '@/types/lesson'
 import { ModuleResponseDTO } from '@/types/module'
+import { CourseReviews } from './course-reviews'
 import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
   ChevronRight,
   Clock,
+  Flag,
   Loader2,
   Lock,
   Play,
   PlayCircle,
-  Star
+  Star,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PaymentModal } from '../payment/payment-modal'
 
 interface CourseDetailProps {
@@ -76,6 +83,17 @@ const formatDate = (dateString: string): string => {
   }
 }
 
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return ''
+  const d = new Date(dateString)
+  const date = d.toLocaleDateString('en-GB') // dd/mm/yyyy
+  const time = d.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }) // HH:mm
+  return `${time} ${date}`
+}
+
 export function CourseDetail({ courseId }: CourseDetailProps) {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -105,6 +123,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [showPreview, setShowPreview] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
+
   const checkEnrollmentStatus = async (courseId: string) => {
     if (!user) {
       setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
@@ -118,7 +137,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         setEnrollmentStatus(response.data)
       }
     } catch (err) {
-      console.error('Error checking enrollment status:', err)
       setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
     } finally {
       setEnrollmentLoading(false)
@@ -132,10 +150,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         setError(null)
 
         const response = await courseApi.getCourseDetails(courseId)
-        console.log('API Response:', response)
-
         if (response) {
-          console.log('Course Data:', response.data)
           setCourse(response.data)
           // Check enrollment status only if user is authenticated
           if (user) {
@@ -143,7 +158,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           }
         }
       } catch (err) {
-        console.error('Error fetching course:', err)
         setError(
           err instanceof Error ? err.message : 'Failed to load course details'
         )
@@ -160,7 +174,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     if (courseId) {
       fetchCourse()
     }
-  }, [courseId, toast, user])
+  }, [courseId, user, toast])
 
   useEffect(() => {
     if (course && course.modules && course.modules.length > 0) {
@@ -168,7 +182,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       setHeroPreviewLoading(true)
       lessonApi
         .getLessonsByModuleId(firstModuleId.toString())
-        .then(res => {
+        .then((res: any) => {
           const lessons = res.data || []
           // Lấy lesson đầu tiên (hoặc lesson preview đầu tiên nếu muốn)
           const previewLesson = lessons[0] // hoặc: lessons.find(l => l.isPreview)
@@ -182,7 +196,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             return null
           }
         })
-        .then(url => {
+        .then((url: any) => {
           if (url) setHeroPreviewUrl(url)
         })
         .catch(() => {
@@ -203,7 +217,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         setModuleLessons(prev => ({ ...prev, [moduleId]: response.data }))
       }
     } catch (err) {
-      console.error('Error fetching lessons:', err)
       toast({
         title: 'Error',
         description: 'Failed to load lessons. Please try again.',
@@ -261,7 +274,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       setPreviewVideoUrl(url)
       setShowPreview(true)
     } catch (error) {
-      console.error('Error loading preview:', error)
       toast({
         title: 'Error',
         description: 'Failed to load preview video.',
@@ -269,6 +281,16 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       })
     }
   }
+
+  const handleClosePreview = () => {
+    setShowPreview(false)
+    setPreviewVideoUrl(null)
+    if (videoRef.current) {
+      videoRef.current.pause()
+    }
+  }
+
+
 
   if (loading) {
     return (
@@ -589,28 +611,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         </TabsContent>
 
         <TabsContent value='reviews' className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <h3 className='text-2xl font-semibold'>Student Reviews</h3>
-            <div className='flex items-center gap-2'>
-              <Star className='h-5 w-5 fill-yellow-400 text-yellow-400' />
-              <span className='text-xl font-semibold'>
-                {course.averageRating?.toFixed(1) || '0.0'}
-              </span>
-              <span className='text-muted-foreground'>
-                ({course.totalReviews} reviews)
-              </span>
-            </div>
-          </div>
-
-          <div className='space-y-4'>
-            <Card>
-              <CardContent className='p-6'>
-                <div className='text-center text-muted-foreground'>
-                  No reviews yet. Be the first to review this course!
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <CourseReviews 
+            courseId={courseId} 
+            averageRating={course.averageRating} 
+            totalReviews={course.totalReviews} 
+          />
         </TabsContent>
       </Tabs>
 
@@ -661,6 +666,8 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           totalStudents: course.totalStudents,
         }}
       />
+
+
     </div>
   )
 }

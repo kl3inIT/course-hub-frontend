@@ -1,29 +1,13 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import {
+  GetReportsParams,
+  ReportListResponse,
   ReportRequest,
   ReportResponse,
   ReportStatusRequest,
+  ResourceLocationDTO,
 } from '@/types/report'
-
-interface GetReportsParams {
-  page?: number
-  size?: number
-  sortBy?: string
-  sortDir?: string
-  type?: string
-  severity?: string
-  status?: string
-  search?: string
-}
-
-interface ReportListResponse {
-  content: ReportResponse[]
-  totalElements: number
-  totalPages: number
-  size: number
-  number: number
-}
 
 export const reportApi = {
   createReport: async (
@@ -69,6 +53,15 @@ export const reportApi = {
 
   getReportById: async (id: number): Promise<ApiResponse<ReportResponse>> => {
     const response = await httpClient.get(`/api/reports/${id}`)
+    return response.data
+  },
+
+  getResourceLocation: async (
+    id: number
+  ): Promise<ApiResponse<ResourceLocationDTO>> => {
+    const response = await httpClient.get(
+      `/api/reports/${id}/resource-location`
+    )
     return response.data
   },
 

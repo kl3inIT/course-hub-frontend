@@ -51,4 +51,14 @@ export const reviewApi = {
     const response = await httpClient.get('/api/reviews/my', { params })
     return response.data
   },
+
+  setReviewVisibility: async (
+    reviewId: number,
+    hide: boolean
+  ): Promise<ApiResponse<string>> => {
+    const response = await httpClient.patch(
+      `/api/reviews/${reviewId}/hide?hide=${hide}`
+    )
+    return response.data
+  },
 }

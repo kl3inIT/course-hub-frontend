@@ -69,9 +69,13 @@ export const commentApi = {
 
   // Admin/Manager APIs
   admin: {
-    // Hide a comment (admin/manager only)
-    hideComment: async (commentId: number): Promise<ApiResponse<string>> => {
-      const response = await httpClient.patch(`/api/comments/${commentId}/hide`)
+    setCommentVisibility: async (
+      commentId: number,
+      hide: boolean
+    ): Promise<ApiResponse<string>> => {
+      const response = await httpClient.patch(
+        `/api/comments/${commentId}/hide?hide=${hide}`
+      )
       return response.data
     },
   },

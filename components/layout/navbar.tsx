@@ -1,6 +1,7 @@
 'use client'
 
 import { categoryApi } from '@/services/category-api'
+import { notificationApi } from '@/services/notification-api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,8 +21,11 @@ import {
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/context/auth-context'
+import { websocketService } from '@/services/websocket-service'
 import { CategoryResponseDTO } from '@/types/category'
+import { NotificationDTO } from '@/types/notification'
 import {
+  Bell,
   BookOpen,
   ChevronDown,
   GraduationCap,
@@ -29,6 +33,7 @@ import {
   Menu,
   Settings,
   Shield,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -39,7 +44,120 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationDTO[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loadingNotifications, setLoadingNotifications] = useState(false)
   const pathname = usePathname()
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!user) return
+    try {
+      setLoadingNotifications(true)
+      const response = await notificationApi.getNotifications({
+        page: 0,
+        size: 10,
+        sortBy: 'createdAt',
+        direction: 'DESC',
+      })
+      const notifications = response.data?.data?.content || []
+      setNotifications(notifications)
+    } catch (error) {
+      setNotifications([])
+    } finally {
+      setLoadingNotifications(false)
+    }
+  }
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    if (!user) return
+    try {
+      const response = await notificationApi.getUnreadCount()
+      const count = response.data?.data || 0
+      setUnreadCount(count)
+    } catch (error) {
+      setUnreadCount(0)
+    }
+  }
+
+  // Mark all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead()
+      setNotifications(prevNotifications =>
+        prevNotifications.map(n => ({ ...n, isRead: 1 }))
+      )
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Failed to mark all as read:', error)
+    }
+  }
+
+  // Mark single notification as read
+  const handleMarkAsRead = async (notificationId: number) => {
+    try {
+      await notificationApi.markAsRead(notificationId)
+      setNotifications(prevNotifications =>
+        prevNotifications.map(n =>
+          n.id === notificationId ? { ...n, isRead: 1 } : n
+        )
+      )
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error('Failed to mark as read:', error)
+    }
+  }
+
+  // Delete single notification
+  const handleDeleteNotification = async (notificationId: number) => {
+    try {
+      await notificationApi.deleteNotification(notificationId)
+      setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch {}
+  }
+
+  // Delete all notifications
+  const handleDeleteAllNotifications = async () => {
+    try {
+      await notificationApi.deleteAllNotifications()
+      setNotifications([])
+      setUnreadCount(0)
+    } catch {}
+  }
+
+  // Connect to WebSocket
+  useEffect(() => {
+    if (!user) return
+    const token = localStorage.getItem('accessToken')
+    if (!token) return
+
+    websocketService.connect(user.id.toString(), token, () => {
+      websocketService.addSubscriber(
+        'notification',
+        (notification: NotificationDTO) => {
+          setNotifications(prev => [notification, ...prev])
+          setUnreadCount(prev => prev + 1)
+        }
+      )
+      websocketService.subscribe(`/user/queue/notifications`, 'notification')
+    })
+
+    // Cleanup
+    return () => {
+      websocketService.removeSubscriber('notification')
+      websocketService.disconnect()
+    }
+  }, [user])
+
+  // Fetch notifications when user is logged in
+  useEffect(() => {
+    if (user) {
+      fetchNotifications()
+      fetchUnreadCount()
+    }
+  }, [user])
 
   // Fetch categories for course dropdown
   useEffect(() => {
@@ -258,6 +376,107 @@ export function Navbar() {
             {/* Desktop User Menu - Keep avatar dropdown with Course Management and Admin Panel */}
             {user ? (
               <div className='hidden lg:flex items-center gap-4'>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      className='relative h-8 w-8 rounded-full'
+                    >
+                      <Bell className='h-5 w-5' />
+                      {unreadCount > 0 && (
+                        <span className='absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center'>
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className='w-80' align='end' forceMount>
+                    <div className='flex items-center justify-between p-2 border-b'>
+                      <h4 className='font-medium'>Notifications</h4>
+                      <div className='flex gap-2'>
+                        {notifications.length > 0 &&
+                          notifications.some(n => !n.isRead) && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 text-xs'
+                              onClick={handleMarkAllAsRead}
+                            >
+                              Mark all as read
+                            </Button>
+                          )}
+                        {notifications.length > 0 &&
+                          notifications.every(n => n.isRead) && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 text-xs text-destructive'
+                              onClick={handleDeleteAllNotifications}
+                            >
+                              Delete all
+                            </Button>
+                          )}
+                      </div>
+                    </div>
+                    <div className='max-h-[300px] overflow-y-auto'>
+                      {loadingNotifications ? (
+                        <div className='p-4 text-center text-sm text-muted-foreground'>
+                          Loading notifications...
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div className='p-4 text-center text-sm text-muted-foreground'>
+                          No notifications
+                        </div>
+                      ) : (
+                        notifications.map(notification => (
+                          <DropdownMenuItem
+                            key={notification.id}
+                            className={`flex flex-col items-start p-3 gap-1 cursor-pointer hover:bg-muted ${!notification.isRead ? 'bg-slate-200' : ''}`}
+                            onClick={() =>
+                              !notification.isRead &&
+                              handleMarkAsRead(notification.id)
+                            }
+                          >
+                            <div className='flex items-center justify-between w-full'>
+                              <div className='flex-1 min-w-0'>
+                                {notification.link ? (
+                                  <Link
+                                    href={notification.link}
+                                    className='text-sm text-blue-600 hover:underline'
+                                  >
+                                    {notification.message}
+                                  </Link>
+                                ) : (
+                                  <p className='text-sm'>
+                                    {notification.message}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant='ghost'
+                                size='icon'
+                                className='ml-2 h-5 w-5 text-destructive'
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  handleDeleteNotification(notification.id)
+                                }}
+                                title='Delete notification'
+                              >
+                                <X className='h-4 w-4' />
+                              </Button>
+                            </div>
+                            <span className='text-xs text-muted-foreground'>
+                              {new Date(
+                                notification.createdAt
+                              ).toLocaleString()}
+                            </span>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <div className='text-sm'>
                   <span className='text-muted-foreground'>Hello, </span>
                   <span className='font-medium'>{user.name}</span>

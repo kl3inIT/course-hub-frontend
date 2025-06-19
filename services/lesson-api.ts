@@ -3,6 +3,7 @@ import { ApiResponse } from '@/types/common'
 import {
   LessonUploadRequestDTO,
   LessonConfirmRequestDTO,
+  LessonUpdateRequestDTO,
   LessonResponseDTO,
   LessonUploadResponseDTO,
 } from '@/types/lesson'
@@ -29,6 +30,15 @@ export const lessonApi = {
       `/api/lessons/${lessonId}/complete-upload`,
       data
     )
+    return response.data
+  },
+
+  // Cập nhật lesson
+  updateLesson: async (
+    lessonId: string,
+    data: LessonUpdateRequestDTO
+  ): Promise<ApiResponse<LessonResponseDTO>> => {
+    const response = await httpClient.put(`/api/lessons/${lessonId}`, data)
     return response.data
   },
 
@@ -70,7 +80,7 @@ export const lessonApi = {
   // Check if lesson is a preview lesson and return the appropriate URL
   getLessonUrl: async (lessonId: string): Promise<string> => {
     const lessonResponse = await lessonApi.getLessonById(lessonId)
-    if (lessonResponse.data.isPreview) {
+    if (lessonResponse.data.isPreview === 1) {
       return await lessonApi.getLessonPreviewUrl(lessonId)
     } else {
       return await lessonApi.getLessonVideoUrl(lessonId)

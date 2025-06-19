@@ -1,8 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
-import { courseApi } from '@/services/course-api'
-import { discountApi } from '@/services/discount-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,21 +51,22 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Toaster } from '@/components/ui/toaster'
 import { useToast } from '@/hooks/use-toast'
-import { Category, Coupon, CouponSearchParams, Course } from '@/types/discount'
+import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
+import { discountApi } from '@/services/discount-api'
+import { Category, Coupon, CouponSearchParams, CouponStatsResponse, CouponStatusResponse, Course } from '@/types/discount'
 import {
   BookOpen,
   Calendar,
-  DollarSign,
   Edit,
   Filter,
   MoreHorizontal,
   Percent,
   Plus,
-  Search,
   Tag,
   Trash2,
   Users,
-  X,
+  X
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -93,10 +91,12 @@ export function CouponManagement() {
     last: true,
   })
 
+  // Thêm state pageSize
+  const [pageSize, setPageSize] = useState(5)
+
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<
-    'all' | 'active' | 'inactive'
-  >('all')
+  const [couponStatuses, setCouponStatuses] = useState<CouponStatusResponse | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterCourse, setFilterCourse] = useState<string>('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -124,17 +124,19 @@ export function CouponManagement() {
     'none' | 'all' | 'specific'
   >('none')
 
+  // Add new state for search percentage
+  const [searchPercentage, setSearchPercentage] = useState<string>('')
+  const [percentageError, setPercentageError] = useState<string>('')
+
+  // Add new state for stats
+  const [stats, setStats] = useState<CouponStatsResponse | null>(null)
+
   // Fetch data on component mount
   useEffect(() => {
     fetchCategories()
     fetchCourses()
     fetchCoupons()
   }, [])
-
-  // Watch filter changes
-  useEffect(() => {
-    fetchCoupons(0) // Reset to first page when filters change
-  }, [filterStatus, filterCategory, filterCourse])
 
   // Update formData.applicationType based on applicationScope
   useEffect(() => {
@@ -161,19 +163,78 @@ export function CouponManagement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationScope, categories, courses])
 
-  const fetchCoupons = async (page = 0) => {
+  // Add useEffect to fetch coupon statuses
+  useEffect(() => {
+    const fetchCouponStatuses = async () => {
+      try {
+        const response = await discountApi.getCouponStatuses()
+        setCouponStatuses(response.data)
+      } catch (error) {
+        console.error('Error fetching coupon statuses:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load coupon statuses',
+          className: 'border-red-500 bg-red-50 text-red-900',
+        })
+      }
+    }
+
+    fetchCouponStatuses()
+  }, [])
+
+  // Add useEffect to fetch stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await discountApi.getCouponStats()
+        setStats(response.data)
+      } catch (error) {
+        console.error('Error fetching coupon stats:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load coupon statistics',
+          className: 'border-red-500 bg-red-50 text-red-900',
+        })
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  // Add validation function for percentage
+  const validatePercentage = (value: string) => {
+    // Remove any non-digit characters
+    const numericValue = value.replace(/[^0-9]/g, '')
+    
+    if (numericValue === '') {
+      setSearchPercentage('')
+      setPercentageError('')
+      return
+    }
+
+    const num = parseInt(numericValue)
+    if (num > 100) {
+      setPercentageError('Percentage cannot exceed 100%')
+      setSearchPercentage('100')
+    } else {
+      setPercentageError('')
+      setSearchPercentage(numericValue)
+    }
+  }
+
+  const fetchCoupons = async (page = 0, size = pageSize) => {
     try {
       setLoadingCoupons(true)
 
       // Build search params
       const searchParams: CouponSearchParams = {
         page,
-        size: pagination.size,
+        size,
       }
 
       // Add filters
       if (filterStatus !== 'all') {
-        searchParams.isActive = filterStatus === 'active' ? 1 : 0
+        searchParams.status = filterStatus
       }
 
       if (filterCategory !== 'all') {
@@ -182,6 +243,10 @@ export function CouponManagement() {
 
       if (filterCourse !== 'all') {
         searchParams.courseId = Number(filterCourse)
+      }
+
+      if (searchPercentage && !percentageError) {
+        searchParams.percentage = Number(searchPercentage)
       }
 
       const response = await discountApi.getCoupons(searchParams)
@@ -205,6 +270,7 @@ export function CouponManagement() {
             totalCategory: backendCoupon.categoryIds?.length || 0,
             totalCourse: backendCoupon.courseIds?.length || 0,
             code: backendCoupon.code,
+            status: backendCoupon.status
           }
         }
       )
@@ -214,13 +280,14 @@ export function CouponManagement() {
 
       // Update pagination state
       setPagination({
-        page: backendData.number,
-        size: backendData.size,
-        totalElements: backendData.totalElements,
-        totalPages: backendData.totalPages,
-        first: backendData.first,
-        last: backendData.last,
+        page: backendData.page.number,
+        size: backendData.page.size,
+        totalElements: backendData.page.totalElements,
+        totalPages: backendData.page.totalPages,
+        first: backendData.page.number === 0,
+        last: backendData.page.number === backendData.page.totalPages - 1,
       })
+      setPageSize(backendData.page.size)
     } catch (error) {
       console.error('Error fetching coupons:', error)
       toast({
@@ -263,15 +330,15 @@ export function CouponManagement() {
   const fetchCourses = async () => {
     try {
       setLoadingCourses(true)
-      const response = await courseApi.getAllCourses({ size: 100 })
+      const response = await courseApi.getAllCoursesByStatus({ size: 100, status: 'PUBLISHED' })
 
-      // Transform API response to match our Course interface
-      const transformedCourses: Course[] = response.data.content.map(
+      // Transform API response to match our Course interface  
+      const transformedCourses: Course[] = response.map(
         course => ({
           id: course.id.toString(),
           title: course.title,
-          category: course.category,
-          price: course.price,
+          category: course.category || '',
+          price: 0, // ManagerCourseResponseDTO doesn't have price field
         })
       )
 
@@ -721,24 +788,38 @@ export function CouponManagement() {
     })
   }
 
-  // Get coupon status
-  const getCouponStatus = (coupon: Coupon) => {
-    if (coupon.isActive === 0) return 'inactive'
-    const now = new Date()
-    const endDate = new Date(coupon.endDate)
-    if (now > endDate) return 'inactive'
-    return 'active'
-  }
+  const getStatusBadge = (status: string, isActive: number) => {
+    const statusBadge = (() => {
+      switch (status) {
+        case 'Available':
+          return <Badge className='bg-green-100 text-green-800'>Available</Badge>
+        case 'Not Started':
+          return <Badge className='bg-blue-100 text-blue-800'>Not Started</Badge>
+        case 'Out of Stock':
+          return <Badge className='bg-yellow-100 text-yellow-800'>Out of Stock</Badge>
+        case 'Used Up':
+          return <Badge className='bg-purple-100 text-purple-800'>Used Up</Badge>
+        case 'Expired':
+          return <Badge className='bg-red-100 text-red-800'>Expired</Badge>
+        default:
+          return <Badge variant='secondary'>Unknown</Badge>
+      }
+    })()
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className='bg-green-100 text-green-800'>Active</Badge>
-      case 'inactive':
-        return <Badge variant='secondary'>Inactive</Badge>
-      default:
-        return <Badge variant='secondary'>Unknown</Badge>
-    }
+    return (
+      <div className="flex items-center gap-2">
+        {statusBadge}
+        {isActive === 1 ? (
+          <div className="flex items-center" title="Active">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-200"></div>
+          </div>
+        ) : (
+          <div className="flex items-center" title="Inactive">
+            <div className="w-3 h-3 rounded-full bg-rose-400 shadow-sm shadow-rose-200"></div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   // Add toggle code visibility function
@@ -995,6 +1076,116 @@ export function CouponManagement() {
     </div>
   )
 
+  // Update the filters section
+  const renderFilters = () => (
+    <div className='w-full flex gap-4'>
+      {/* Percentage filter */}
+      <div className='flex-1 relative max-w-sm'>
+        <Percent className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
+        <div className="space-y-1">
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder='Filter by percentage...'
+            value={searchPercentage}
+            onChange={e => validatePercentage(e.target.value)}
+            className={`pl-8 w-full ${percentageError ? 'border-red-500' : ''}`}
+          />
+          {percentageError && (
+            <p className="text-sm text-red-500">{percentageError}</p>
+          )}
+        </div>
+      </div>
+      {/* Status filter */}
+      <div className='flex-1'>
+        <Select
+          value={filterStatus}
+          onValueChange={(value: string) => setFilterStatus(value)}
+        >
+          <SelectTrigger className='w-full'>
+            <Filter className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Status' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>All Status</SelectItem>
+            {couponStatuses && Object.entries(couponStatuses).map(([key, value]) => (
+              <SelectItem key={key} value={key}>
+                {value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* Category filter */}
+      <div className='flex-1'>
+        <Select
+          value={filterCategory}
+          onValueChange={(value: string) => setFilterCategory(value)}
+        >
+          <SelectTrigger className='w-full'>
+            <Tag className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Category' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* Course filter */}
+      <div className='flex-1'>
+        <Select
+          value={filterCourse}
+          onValueChange={(value: string) => setFilterCourse(value)}
+        >
+          <SelectTrigger className='w-full'>
+            <BookOpen className='mr-2 h-4 w-4' />
+            <SelectValue placeholder='Course' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='all'>All Courses</SelectItem>
+            {courses.map(course => (
+              <SelectItem key={course.id} value={course.id}>
+                {course.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {/* Page size filter */}
+      <div className='flex-1'>
+        <Select
+          value={pageSize.toString()}
+          onValueChange={value => setPageSize(Number(value))}
+        >
+          <SelectTrigger className='w-full'>
+            <SelectValue placeholder='Rows per page' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='5'>5 per page</SelectItem>
+            <SelectItem value='10'>10 per page</SelectItem>
+            <SelectItem value='20'>20 per page</SelectItem>
+            <SelectItem value='50'>50 per page</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {/* Apply Filters button */}
+      <div className='flex-1 flex items-end'>
+        <Button 
+          onClick={() => fetchCoupons(0, pageSize)}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
+          Apply Filters
+        </Button>
+      </div>
+    </div>
+  )
+
   return (
     <div className='space-y-6'>
       {/* Header */}
@@ -1041,14 +1232,14 @@ export function CouponManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-4'>
+      <div className='grid gap-4 md:grid-cols-3'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Coupons</CardTitle>
             <Percent className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{pagination.totalElements}</div>
+            <div className='text-2xl font-bold'>{stats?.totalDiscounts || '0'}</div>
           </CardContent>
         </Card>
         <Card>
@@ -1060,7 +1251,7 @@ export function CouponManagement() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {coupons.filter(c => c.isActive).length}
+              {stats?.activeDiscounts || '0'}
             </div>
           </CardContent>
         </Card>
@@ -1071,83 +1262,14 @@ export function CouponManagement() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {coupons.reduce((sum, c) => sum + c.usage, 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Current Page</CardTitle>
-            <DollarSign className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
-              {pagination.page + 1} / {pagination.totalPages}
+              {stats?.totalUsage || '0'}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className='flex items-center space-x-4'>
-        <div className='relative flex-1 max-w-sm'>
-          <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-          <Input
-            placeholder='Search coupons...'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className='pl-8'
-          />
-        </div>
-        <Select
-          value={filterStatus}
-          onValueChange={(value: any) => setFilterStatus(value)}
-        >
-          <SelectTrigger className='w-[150px]'>
-            <Filter className='mr-2 h-4 w-4' />
-            <SelectValue placeholder='Status' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='all'>All Status</SelectItem>
-            <SelectItem value='active'>Active Only</SelectItem>
-            <SelectItem value='inactive'>Inactive Only</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={filterCategory}
-          onValueChange={(value: string) => setFilterCategory(value)}
-        >
-          <SelectTrigger className='w-[150px]'>
-            <Tag className='mr-2 h-4 w-4' />
-            <SelectValue placeholder='Category' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='all'>All Categories</SelectItem>
-            {categories.map(category => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={filterCourse}
-          onValueChange={(value: string) => setFilterCourse(value)}
-        >
-          <SelectTrigger className='w-[180px]'>
-            <BookOpen className='mr-2 h-4 w-4' />
-            <SelectValue placeholder='Course' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='all'>All Courses</SelectItem>
-            {courses.map(course => (
-              <SelectItem key={course.id} value={course.id}>
-                {course.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {renderFilters()}
 
       {/* Coupons Table */}
       <Card>
@@ -1270,7 +1392,7 @@ export function CouponManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(getCouponStatus(coupon))}
+                      {getStatusBadge(coupon.status, coupon.isActive)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -1324,38 +1446,40 @@ export function CouponManagement() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
-      <div className='flex items-center justify-between'>
-        <div className='text-sm text-muted-foreground'>
-          Showing {pagination.page * pagination.size + 1} to{' '}
-          {Math.min(
-            (pagination.page + 1) * pagination.size,
-            pagination.totalElements
-          )}{' '}
-          of {pagination.totalElements} results
+      {/* Pagination - Chỉ hiển thị khi có dữ liệu */}
+      {pagination.totalElements > 0 && (
+        <div className='flex items-center justify-between'>
+          <div className='text-sm text-muted-foreground'>
+            Showing {pagination.page * pagination.size + 1} to{' '}
+            {Math.min(
+              (pagination.page + 1) * pagination.size,
+              pagination.totalElements
+            )}{' '}
+            of {pagination.totalElements} results
+          </div>
+          <div className='flex items-center space-x-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => fetchCoupons(pagination.page - 1, pageSize)}
+              disabled={pagination.first || loadingCoupons || pagination.totalElements === 0}
+            >
+              Previous
+            </Button>
+            <span className='text-sm'>
+              Page {pagination.page + 1} of {pagination.totalPages || 1}
+            </span>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => fetchCoupons(pagination.page + 1, pageSize)}
+              disabled={pagination.last || loadingCoupons || pagination.totalElements === 0}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-        <div className='flex items-center space-x-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => fetchCoupons(pagination.page - 1)}
-            disabled={pagination.first}
-          >
-            Previous
-          </Button>
-          <span className='text-sm'>
-            Page {pagination.page + 1} of {pagination.totalPages}
-          </span>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => fetchCoupons(pagination.page + 1)}
-            disabled={pagination.last}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

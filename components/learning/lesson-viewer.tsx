@@ -495,8 +495,8 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         module: prevModule,
         lesson:
           moduleLessons[prevModule.id]?.[
-          moduleLessons[prevModule.id].length - 1
-            ],
+            moduleLessons[prevModule.id].length - 1
+          ],
       }
     }
 

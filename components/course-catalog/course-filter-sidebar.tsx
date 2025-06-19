@@ -89,11 +89,9 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
             />
             <label htmlFor={level} className='text-sm cursor-pointer'>
               {level}
-              {searchStats?.levelStats?.[level] && (
-                <span className='text-muted-foreground ml-1'>
-                  ({searchStats.levelStats[level]})
-                </span>
-              )}
+              <span className='text-muted-foreground ml-1'>
+                ({searchStats?.levelStats?.[level] ?? 0})
+              </span>
             </label>
           </div>
         ))}

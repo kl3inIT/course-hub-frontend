@@ -5,10 +5,12 @@ import {
   Coupon,
   CouponCreateRequestDTO,
   CouponSearchParams,
+  CouponStatsResponse,
+  CouponStatusResponse,
   CouponUpdateRequestDTO,
   DiscountRequestDTO,
   DiscountResponseDTO,
-  PaginatedCouponResponse,
+  PaginatedCouponResponse
 } from '@/types/discount'
 
 export const discountApi = {
@@ -27,10 +29,16 @@ export const discountApi = {
     return response.data
   },
 
-  getMyCoupons: async (params: {
-    courseId: number
-    isActive: number
-  }): Promise<ApiResponse<ApplicableCoupon[]>> => {
+  getAvailableCoupons: async (
+    params?: CouponSearchParams
+  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
+    const response = await httpClient.get('/api/discounts/available', { params })
+    return response.data
+  },
+
+  getMyCoupons: async (
+    params: CouponSearchParams
+  ): Promise<ApiResponse<PaginatedCouponResponse>> => {
     const response = await httpClient.get('/api/discounts/my', { params })
     return response.data
   },
@@ -54,9 +62,23 @@ export const discountApi = {
     const response = await httpClient.delete(`/api/discounts/${id}`)
     return response.data
   },
+  // New API to get coupons applicable to a specific course
+  getCouponsForCourse: async (
+    courseId: number
+  ): Promise<ApiResponse<ApplicableCoupon[]>> => {
+    const response = await httpClient.get(`/api/discounts/${courseId}/my`)
+    return response.data
+  },
 
-  toggleCouponStatus: async (id: string): Promise<ApiResponse<Coupon>> => {
-    const response = await httpClient.patch(`/api/coupons/${id}/toggle-status`)
+  // Add new API to get coupon statuses
+  getCouponStatuses: async (): Promise<ApiResponse<CouponStatusResponse>> => {
+    const response = await httpClient.get('/api/discounts/statuses')
+    return response.data
+  },
+
+  // Add new API to get coupon stats
+  getCouponStats: async (): Promise<ApiResponse<CouponStatsResponse>> => {
+    const response = await httpClient.get('/api/discounts/stats')
     return response.data
   },
 }

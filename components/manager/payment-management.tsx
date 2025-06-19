@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,8 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Input } from '@/components/ui/input'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 import {
   Select,
   SelectContent,
@@ -25,46 +34,27 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { paymentApi } from '@/services/payment-api'
+import { PaymentHistoryRequestDTO } from '@/types/payment'
+import { format } from 'date-fns'
 import {
+  ArrowUpDown,
   DollarSign,
   Download,
-  Search,
-  Filter,
-  ArrowUpDown,
-  Eye,
-  Calendar,
+  Filter
 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
-import { format } from 'date-fns'
-import { Calendar as CalendarIcon } from 'lucide-react'
-import { DateRangePicker } from '@/components/ui/date-range-picker'
-import { cn } from '@/lib/utils'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
+import { toast } from 'sonner'
 
 interface Payment {
-  id: string
-  studentName: string
+  id: number
+  transactionCode: string
   courseName: string
+  userName: string | null
   amount: number
-  status: 'completed' | 'pending' | 'failed'
+  status: string
   date: string
-  paymentMethod: string
 }
 
 type SortKey = keyof Payment
@@ -73,80 +63,100 @@ type SortConfig = {
   direction: 'asc' | 'desc'
 } | null
 
-// Sample payment data - replace with actual API data
-const paymentData: Payment[] = [
-  {
-    id: 'PAY-001',
-    studentName: 'John Doe',
-    courseName: 'React Fundamentals',
-    amount: 99.99,
-    status: 'completed',
-    date: '2024-03-15',
-    paymentMethod: 'Credit Card',
-  },
-  {
-    id: 'PAY-002',
-    studentName: 'Jane Smith',
-    courseName: 'Advanced JavaScript',
-    amount: 149.99,
-    status: 'completed',
-    date: '2024-03-14',
-    paymentMethod: 'PayPal',
-  },
-  {
-    id: 'PAY-003',
-    studentName: 'Mike Johnson',
-    courseName: 'Node.js Backend',
-    amount: 199.99,
-    status: 'pending',
-    date: '2024-03-13',
-    paymentMethod: 'Bank Transfer',
-  },
-  // Add more sample data as needed
-]
-
-// Helper function to format date
-const formatDate = (date: Date) => {
-  return format(date, 'yyyy-MM-dd')
-}
-
-// Helper function to check if a date is within a range
-const isWithinRange = (date: string, range: DateRange | undefined) => {
-  if (!range?.from || !range?.to) return true
-  const paymentDate = new Date(date)
-  return paymentDate >= range.from && paymentDate <= range.to
+interface PaymentOverallStats {
+  totalAmount: string
+  successfulPayments: string
+  pendingPayments: string
+  failedPayments: string
 }
 
 export function PaymentManagement() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | Payment['status']>(
-    'all'
-  )
+  const [statusFilter, setStatusFilter] = useState<'all' | string>('all')
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv')
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(5)
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [appliedFilters, setAppliedFilters] = useState<{
+    status: string | undefined;
+    startDate: string | undefined;
+    endDate: string | undefined;
+    nameSearch: string | undefined;
+  }>({
+    status: undefined,
+    startDate: undefined,
+    endDate: undefined,
+    nameSearch: undefined
+  })
+  const [nameSearch, setNameSearch] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
+  const [overallStats, setOverallStats] = useState<PaymentOverallStats>({
+    totalAmount: '0.0',
+    successfulPayments: '0.0',
+    pendingPayments: '0.0',
+    failedPayments: '0.0'
+  })
+  const [pageSizePending, setPageSizePending] = useState(pageSize)
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true)
+      const params: PaymentHistoryRequestDTO = {
+        page: currentPage - 1,
+        size: pageSize,
+        status: appliedFilters.status,
+        startDate: appliedFilters.startDate,
+        endDate: appliedFilters.endDate,
+        nameSearch: appliedFilters.nameSearch,
+      }
+
+      // Gọi cả 2 API cùng lúc
+      const [paymentsResponse, overallResponse] = await Promise.all([
+        paymentApi.getPaymentHistory(params),
+        paymentApi.getPaymentOverall(params)
+      ])
+
+      if (paymentsResponse.data) {
+        setPayments(paymentsResponse.data.content)
+        setTotalElements(paymentsResponse.data.page?.totalElements || 0)
+        setTotalPages(paymentsResponse.data.page?.totalPages || 0)
+      }
+
+      if (overallResponse.data) {
+        setOverallStats(overallResponse.data)
+      }
+    } catch (error) {
+      toast.error('Failed to fetch payments')
+      console.error('Error fetching payments:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPayments()
+  }, [currentPage, pageSize, appliedFilters])
 
   // Calculate total revenue
-  const totalRevenue = paymentData
-    .filter(payment => payment.status === 'completed')
+  const totalRevenue = payments
+    .filter(payment => payment.status === 'Completed')
     .reduce((sum, payment) => sum + payment.amount, 0)
 
-  // Filter payments based on search term, status, and date range
-  const filteredPayments = paymentData.filter(payment => {
+  // Filter payments based on search term
+  const filteredPayments = payments.filter(payment => {
     const matchesSearch =
-      payment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
       payment.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.id.toLowerCase().includes(searchTerm.toLowerCase())
+      payment.transactionCode.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus =
-      statusFilter === 'all' || payment.status === statusFilter
-    const matchesDateRange = isWithinRange(payment.date, dateRange)
-
-    return matchesSearch && matchesStatus && matchesDateRange
+    return matchesSearch
   })
 
   // Calculate filtered total
@@ -154,18 +164,6 @@ export function PaymentManagement() {
     (sum, payment) => sum + payment.amount,
     0
   )
-
-  // Sort payments
-  const sortedPayments = [...filteredPayments].sort((a, b) => {
-    if (!sortConfig) return 0
-
-    const aValue = a[sortConfig.key]
-    const bValue = b[sortConfig.key]
-
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
-    return 0
-  })
 
   const handleSort = (key: SortKey) => {
     setSortConfig(current => {
@@ -179,8 +177,8 @@ export function PaymentManagement() {
     })
   }
 
-  const getStatusColor = (status: Payment['status']) => {
-    switch (status) {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-800'
       case 'pending':
@@ -194,30 +192,30 @@ export function PaymentManagement() {
 
   const handleExport = () => {
     // Get filtered and sorted data
-    const dataToExport = sortedPayments
+    const dataToExport = filteredPayments
 
     if (exportFormat === 'csv') {
       // Create CSV content
       const headers = [
         'ID',
+        'Transaction Code',
         'Student',
         'Course',
         'Amount',
         'Status',
         'Date',
-        'Payment Method',
       ]
       const csvContent = [
         headers.join(','),
         ...dataToExport.map(payment =>
           [
             payment.id,
-            payment.studentName,
+            payment.transactionCode,
+            payment.userName || 'N/A',
             payment.courseName,
             payment.amount,
             payment.status,
             payment.date,
-            payment.paymentMethod,
           ].join(',')
         ),
       ].join('\\n')
@@ -236,18 +234,10 @@ export function PaymentManagement() {
       document.body.removeChild(link)
     } else {
       // For PDF export, you would typically use a library like jsPDF
-      // This is a placeholder for PDF export functionality
       console.log('PDF export not implemented yet')
     }
     setShowExportDialog(false)
   }
-
-  // Pagination calculations
-  const totalItems = filteredPayments.length
-  const totalPages = Math.ceil(totalItems / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const currentItems = sortedPayments.slice(startIndex, endIndex)
 
   // Generate page numbers for pagination
   const getPageNumbers = () => {
@@ -297,6 +287,62 @@ export function PaymentManagement() {
     return pages
   }
 
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      startDate: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd'T'00:00:00") : undefined,
+      endDate: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd'T'23:59:59") : undefined,
+      nameSearch: nameSearch.trim() !== '' ? nameSearch : undefined,
+    })
+    setPageSize(pageSizePending)
+    setCurrentPage(1) // Reset to first page when applying new filters
+  }
+
+  const handleExportToExcel = async () => {
+    try {
+      setIsExporting(true)
+      const params: PaymentHistoryRequestDTO = {
+        page: currentPage - 1,
+        size: pageSize,
+        status: appliedFilters.status,
+        startDate: appliedFilters.startDate,
+        endDate: appliedFilters.endDate,
+        nameSearch: appliedFilters.nameSearch,
+      }
+  
+      const blob = await paymentApi.exportToExcel(params)
+  
+      // Tạo URL từ blob
+      const url = window.URL.createObjectURL(blob)
+  
+      // Tạo link tải xuống
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'payment_report.xlsx'
+      document.body.appendChild(link)
+  
+      // Trigger download
+      link.click()
+  
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+  
+      toast.success('Export successful', {
+        description: 'Your Excel file has been downloaded.'
+      })
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      toast.error('Export failed', {
+        description: 'Failed to export payment data. Please try again.'
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+  
+  
+
   return (
     <div className='space-y-6'>
       {/* Header */}
@@ -307,46 +353,14 @@ export function PaymentManagement() {
             Manage and track all course payments
           </p>
         </div>
-        <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-          <DialogTrigger asChild>
-            <Button className='gap-2'>
-              <Download className='h-4 w-4' />
-              Export Report
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Export Payment Report</DialogTitle>
-              <DialogDescription>
-                Choose your export format and options
-              </DialogDescription>
-            </DialogHeader>
-            <div className='space-y-4 py-4'>
-              <div className='space-y-2'>
-                <label className='text-sm font-medium'>Export Format</label>
-                <Select
-                  value={exportFormat}
-                  onValueChange={(value: 'csv' | 'pdf') =>
-                    setExportFormat(value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select format' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='csv'>CSV</SelectItem>
-                    <SelectItem value='pdf'>PDF</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className='pt-4'>
-                <Button onClick={handleExport} className='w-full'>
-                  Export {filteredPayments.length} Records
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className='gap-2' 
+          onClick={handleExportToExcel}
+          disabled={isExporting}
+        >
+          <Download className='h-4 w-4' />
+          {isExporting ? 'Exporting...' : 'Export to Excel'}
+        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -357,26 +371,9 @@ export function PaymentManagement() {
             <DollarSign className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>${totalRevenue.toFixed(2)}</div>
+            <div className='text-2xl font-bold'>${parseFloat(overallStats.totalAmount).toFixed(2)}</div>
             <p className='text-xs text-muted-foreground'>
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Filtered Total
-            </CardTitle>
-            <DollarSign className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
-              ${filteredTotal.toFixed(2)}
-            </div>
-            <p className='text-xs text-muted-foreground'>
-              {filteredPayments.length} transactions
+              Total completed payments
             </p>
           </CardContent>
         </Card>
@@ -390,15 +387,10 @@ export function PaymentManagement() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {paymentData.filter(p => p.status === 'completed').length}
+              {parseInt(overallStats.successfulPayments)}
             </div>
             <p className='text-xs text-muted-foreground'>
-              {(
-                (paymentData.filter(p => p.status === 'completed').length /
-                  paymentData.length) *
-                100
-              ).toFixed(1)}
-              % success rate
+              Completed transactions
             </p>
           </CardContent>
         </Card>
@@ -412,49 +404,87 @@ export function PaymentManagement() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {paymentData.filter(p => p.status === 'pending').length}
+              {parseInt(overallStats.pendingPayments)}
             </div>
             <p className='text-xs text-muted-foreground'>Requires attention</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>
+              Failed Payments
+            </CardTitle>
+            <DollarSign className='h-4 w-4 text-muted-foreground' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>
+              {parseInt(overallStats.failedPayments)}
+            </div>
+            <p className='text-xs text-muted-foreground'>Failed transactions</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className='flex flex-col gap-4 md:flex-row'>
+      <div className='w-full flex gap-4'>
+        {/* Search */}
         <div className='flex-1'>
-          <div className='relative'>
-            <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-            <Input
-              placeholder='Search by student, course, or payment ID...'
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className='pl-8'
-            />
-          </div>
+          <Input
+            placeholder='Search by name, course, or transaction code...'
+            value={nameSearch}
+            onChange={e => setNameSearch(e.target.value)}
+            className='w-full'
+          />
         </div>
-        <div className='flex gap-2'>
+        {/* Pick range */}
+        <div className='flex-1'>
           <DateRangePicker
             value={dateRange}
             onChange={setDateRange}
-            className='w-[300px]'
+            className='w-full'
           />
+        </div>
+        {/* All status */}
+        <div className='flex-1'>
           <Select
             value={statusFilter}
             onValueChange={(value: typeof statusFilter) =>
               setStatusFilter(value)
             }
           >
-            <SelectTrigger className='w-[180px]'>
+            <SelectTrigger className='w-full'>
               <Filter className='mr-2 h-4 w-4' />
               <SelectValue placeholder='Filter by status' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='all'>All Status</SelectItem>
-              <SelectItem value='completed'>Completed</SelectItem>
-              <SelectItem value='pending'>Pending</SelectItem>
-              <SelectItem value='failed'>Failed</SelectItem>
+              <SelectItem value='Completed'>Completed</SelectItem>
+              <SelectItem value='Pending'>Pending</SelectItem>
+              <SelectItem value='Failed'>Failed</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        {/* Page size */}
+        <div className='flex-1'>
+          <Select
+            value={pageSizePending.toString()}
+            onValueChange={value => setPageSizePending(Number(value))}
+          >
+            <SelectTrigger className='w-full'>
+              <SelectValue placeholder='Rows per page' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='5'>5 per page</SelectItem>
+              <SelectItem value='10'>10 per page</SelectItem>
+              <SelectItem value='20'>20 per page</SelectItem>
+              <SelectItem value='50'>50 per page</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Apply Filter button */}
+        <div className='flex-1 flex items-end'>
+          <Button onClick={handleApplyFilters} className='w-full bg-blue-600 hover:bg-blue-700'>Apply Filter</Button>
         </div>
       </div>
 
@@ -466,25 +496,6 @@ export function PaymentManagement() {
             <CardDescription>
               View and manage all payment transactions
             </CardDescription>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={value => {
-                setPageSize(Number(value))
-                setCurrentPage(1) // Reset to first page when changing page size
-              }}
-            >
-              <SelectTrigger className='w-[120px]'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='5'>5 per page</SelectItem>
-                <SelectItem value='10'>10 per page</SelectItem>
-                <SelectItem value='20'>20 per page</SelectItem>
-                <SelectItem value='50'>50 per page</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -502,10 +513,19 @@ export function PaymentManagement() {
                 </TableHead>
                 <TableHead
                   className='cursor-pointer'
-                  onClick={() => handleSort('studentName')}
+                  onClick={() => handleSort('transactionCode')}
                 >
-                  Student{' '}
-                  {sortConfig?.key === 'studentName' && (
+                  Transaction Code{' '}
+                  {sortConfig?.key === 'transactionCode' && (
+                    <ArrowUpDown className='ml-2 h-4 w-4 inline' />
+                  )}
+                </TableHead>
+                <TableHead
+                  className='cursor-pointer'
+                  onClick={() => handleSort('userName')}
+                >
+                  Email{' '}
+                  {sortConfig?.key === 'userName' && (
                     <ArrowUpDown className='ml-2 h-4 w-4 inline' />
                   )}
                 </TableHead>
@@ -545,145 +565,91 @@ export function PaymentManagement() {
                     <ArrowUpDown className='ml-2 h-4 w-4 inline' />
                   )}
                 </TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentItems.map(payment => (
-                <TableRow key={payment.id}>
-                  <TableCell className='font-medium'>{payment.id}</TableCell>
-                  <TableCell>{payment.studentName}</TableCell>
-                  <TableCell>{payment.courseName}</TableCell>
-                  <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}
-                    >
-                      {payment.status.charAt(0).toUpperCase() +
-                        payment.status.slice(1)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(payment.date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => setSelectedPayment(payment)}
-                        >
-                          <Eye className='h-4 w-4' />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Payment Details</DialogTitle>
-                          <DialogDescription>
-                            Complete information about the payment
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className='space-y-4'>
-                          <div className='grid grid-cols-2 gap-4'>
-                            <div>
-                              <h4 className='font-semibold'>Payment ID</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {payment.id}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Status</h4>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}
-                              >
-                                {payment.status.charAt(0).toUpperCase() +
-                                  payment.status.slice(1)}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Student</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {payment.studentName}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Course</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {payment.courseName}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Amount</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                ${payment.amount.toFixed(2)}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Payment Method</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {payment.paymentMethod}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className='font-semibold'>Date</h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {new Date(payment.date).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    Loading...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredPayments.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    No payments found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredPayments.map(payment => (
+                  <TableRow key={payment.id}>
+                    <TableCell className='font-medium'>{payment.id}</TableCell>
+                    <TableCell>{payment.transactionCode}</TableCell>
+                    <TableCell>{payment.userName || 'N/A'}</TableCell>
+                    <TableCell>{payment.courseName}</TableCell>
+                    <TableCell>${payment.amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}
+                      >
+                        {payment.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(payment.date).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
 
-          {/* Pagination */}
-          <div className='mt-4 flex items-center justify-between'>
-            <div className='text-sm text-muted-foreground'>
-              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{' '}
-              {totalItems} entries
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage(prev => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((page, index) => (
-                  <PaginationItem key={index}>
-                    {page === '...' ? (
-                      <PaginationEllipsis />
-                    ) : (
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page as number)}
-                        isActive={currentPage === page}
-                      >
-                        {page}
-                      </PaginationLink>
-                    )}
+          {/* Pagination - Chỉ hiển thị khi có dữ liệu */}
+          {totalElements > 0 && (
+            <div className='mt-4 flex items-center justify-between'>
+              <div className='text-sm text-muted-foreground'>
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalElements)} of{' '}
+                {totalElements} entries
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() =>
+                        setCurrentPage(prev => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1 || loading || totalElements === 0}
+                    />
                   </PaginationItem>
-                ))}
 
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() =>
-                      setCurrentPage(prev => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+                  {getPageNumbers().map((page, index) => (
+                    <PaginationItem key={index}>
+                      {page === '...' ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          onClick={() => setCurrentPage(page as number)}
+                          isActive={currentPage === page}
+                          disabled={loading}
+                        >
+                          {page}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setCurrentPage(prev => Math.min(totalPages || 1, prev + 1))
+                      }
+                      disabled={currentPage === totalPages || loading || totalElements === 0}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

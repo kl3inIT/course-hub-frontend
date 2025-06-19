@@ -1,7 +1,5 @@
 'use client'
 
-import { discountApi } from '@/services/discount-api'
-import { paymentApi } from '@/services/payment-api'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,6 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/context/auth-context'
+import { discountApi } from '@/services/discount-api'
+import { paymentApi } from '@/services/payment-api'
 import { ApplicableCoupon } from '@/types/discount'
 import { paymentStorage } from '@/utils/payment'
 import { Clock, Loader2, Star, Users, Video, X } from 'lucide-react'
@@ -180,10 +180,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
     setIsCouponLoading(true)
     setCouponError(null)
     try {
-      const res = await discountApi.getMyCoupons({
-        courseId: course.id,
-        isActive: 1,
-      })
+      const res = await discountApi.getCouponsForCourse(course.id)
       setCouponList(res.data || [])
     } catch (err: any) {
       setCouponError('Failed to fetch coupons')

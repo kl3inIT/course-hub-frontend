@@ -1,4 +1,4 @@
-import { CourseCreationForm } from '@/components/manager/course-creation-form'
+import { CourseCreationForm } from '@/components/manager/manager-course/course-creation-form'
 import { Navbar } from '@/components/layout/navbar'
 
 export default function CreateCoursePage() {

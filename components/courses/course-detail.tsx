@@ -1,52 +1,51 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
-  Star,
-  Clock,
-  Play,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  PlayCircle,
-  Loader2,
-  AlertCircle,
-  Lock,
-  X,
-} from 'lucide-react'
-import { PaymentModal } from '../payment/payment-modal'
-import { courseApi } from '@/services/course-api'
-import { lessonApi } from '@/services/lesson-api'
-import { enrollmentApi } from '@/services/enrollment-api'
-import { useToast } from '@/hooks/use-toast'
-import { CourseDetailsResponseDTO } from '@/types/course'
-import { ModuleResponseDTO } from '@/types/module'
-import { LessonResponseDTO } from '@/types/lesson'
-import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
-import { useRouter } from 'next/navigation'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/context/auth-context'
+import { useToast } from '@/hooks/use-toast'
+import { courseApi } from '@/services/course-api'
+import { enrollmentApi } from '@/services/enrollment-api'
+import { lessonApi } from '@/services/lesson-api'
+import { CourseDetailsResponseDTO } from '@/types/course'
+import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
+import { LessonResponseDTO } from '@/types/lesson'
+import { ModuleResponseDTO } from '@/types/module'
+import {
+    AlertCircle,
+    CheckCircle,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    Loader2,
+    Lock,
+    Play,
+    PlayCircle,
+    Star
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { PaymentModal } from '../payment/payment-modal'
 
 interface CourseDetailProps {
   courseId: string

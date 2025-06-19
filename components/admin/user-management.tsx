@@ -65,7 +65,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { User } from '@/types/User'
+import { User } from '@/types/user'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import {

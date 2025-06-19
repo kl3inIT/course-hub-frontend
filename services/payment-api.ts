@@ -1,5 +1,6 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
+import { PageResponse, PaymentHistoryRequestDTO, PaymentHistoryResponseDTO } from '@/types/payment'
 
 interface PaymentRequestDTO {
   courseId: number
@@ -23,6 +24,17 @@ interface UpdatePaymentStatusDTO {
 interface PaymentStatusResponse {
   data: {
     isPaid: boolean
+  }
+  message: string
+  detail: null
+}
+
+interface PaymentOverallResponse {
+  data: {
+    totalAmount: string
+    successfulPayments: string
+    pendingPayments: string
+    failedPayments: string
   }
   message: string
   detail: null
@@ -52,6 +64,31 @@ export const paymentApi = {
       `/api/payments/${transactionCode}/expired`,
       {}
     )
+    return response.data
+  },
+
+  getPaymentHistory: async (
+    params: PaymentHistoryRequestDTO
+  ): Promise<ApiResponse<PageResponse<PaymentHistoryResponseDTO>>> => {
+    const response = await httpClient.get('/api/payments', { params })
+    return response.data
+  },
+
+  exportToExcel: async (params: PaymentHistoryRequestDTO): Promise<Blob> => {
+    const response = await httpClient.get('/api/payments/excel', { 
+      params,
+      responseType: 'blob'
+    })
+    return response.data 
+  },
+
+  getPaymentOverall: async (params: PaymentHistoryRequestDTO): Promise<PaymentOverallResponse> => {
+    const response = await httpClient.get('/api/payments/overall', { params })
+    return response.data
+  },
+
+  getMyPaymentHistory: async (params: PaymentHistoryRequestDTO): Promise<ApiResponse<PageResponse<PaymentHistoryResponseDTO>>> => {
+    const response = await httpClient.get('/api/payments/my', { params })
     return response.data
   },
 }

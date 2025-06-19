@@ -18,6 +18,16 @@ export interface Page<T> {
   number: number
 }
 
+export interface PagedResponse<T> {
+  content: T[]
+  page: {
+    size: number
+    number: number
+    totalElements: number
+    totalPages: number
+  }
+}
+
 export interface PaginationParams {
   page?: number
   size?: number

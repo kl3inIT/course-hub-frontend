@@ -1,5 +1,5 @@
 import { httpClient } from '@/services/http-client'
-import { ApiResponse, Page } from '@/types/common'
+import { ApiResponse, Page, PagedResponse } from '@/types/common'
 import {
   CourseRequestDTO,
   CourseCreationRequestDTO,
@@ -74,8 +74,35 @@ export const courseApi = {
     return response.data
   },
 
+  getAllCourses: async (params?: CourseSearchParams) => {
+    const response = await httpClient.get<ApiResponse<PagedResponse<CourseResponseDTO>>>(
+      '/api/courses',
+      {
+        params: {
+          page: params?.page ?? 0,
+          size: params?.size ?? 20,
+          sort: params?.sort,
+          search: params?.search,
+          category: params?.category,
+          level: params?.level,
+          minPrice: params?.minPrice,
+          maxPrice: params?.maxPrice,
+          searchTerm: params?.searchTerm,
+          categoryId: params?.categoryId,
+          minRating: params?.minRating,
+          isFree: params?.isFree,
+          isDiscounted: params?.isDiscounted,
+          status: params?.status,
+          sortBy: params?.sortBy,
+          sortDirection: params?.sortDirection,
+        },
+      }
+    )
+    return response.data
+  },
+
   advancedSearch: async (params: CourseSearchParams) => {
-    const response = await httpClient.get<ApiResponse<Page<CourseResponseDTO>>>(
+    const response = await httpClient.get<ApiResponse<PagedResponse<CourseResponseDTO>>>(
       '/api/courses/search/advanced-search',
       {
         params: {

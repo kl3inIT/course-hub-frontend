@@ -1,7 +1,5 @@
 'use client'
 
-import { analyticsApi } from '@/services/analytics-api'
-import { courseApi } from '@/services/course-api'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,6 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { analyticsApi } from '@/services/analytics-api'
+import { courseApi } from '@/services/course-api'
 import {
   CategoryDetailDTO,
   CourseAnalyticsDetailResponseDTO,
@@ -33,7 +33,6 @@ import {
 import { CourseResponseDTO } from '@/types/course'
 import { DatePicker } from 'antd'
 import 'antd/dist/reset.css'
-import { addDays } from 'date-fns'
 import ExcelJS from 'exceljs'
 import {
   BookOpen,
@@ -91,20 +90,26 @@ const renderCustomizedLabel = ({
 
 // Hàm format ngày giờ: chỉ hiện ngày/tháng/năm và xuống dòng là giờ:phút:giây
 function formatDateTime(dateString: string) {
-  if (!dateString) return ''
-  const d = new Date(dateString)
-  const date = d.toLocaleDateString('en-GB') // dd/mm/yyyy
-  const time = d.toLocaleTimeString('en-GB') // HH:mm:ss
-  return (
-    <span>
-      {date}
-      <br />
-      {time}
-    </span>
-  )
+  return new Date(dateString).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export function ManagerAnalytics() {
+  // Helper function to convert dayjs to date string
+  const formatDateForAPI = (dateInput: any) => {
+    if (!dateInput) return null
+    const dateObj = dateInput.toDate ? dateInput.toDate() : dateInput
+    return dateObj.getFullYear() +
+      '-' +
+      String(dateObj.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(dateObj.getDate()).padStart(2, '0')
+  }
   const COLORS = [
     '#8884d8',
     '#82ca9d',
@@ -124,9 +129,7 @@ export function ManagerAnalytics() {
     student: { checked: true, rowCount: 10 },
     revenue: { checked: true, rowCount: 10 },
   })
-  const [exportDateRange, setExportDateRange] = useState<[Date, Date] | null>(
-    null
-  )
+  const [exportDateRange, setExportDateRange] = useState<any>(null)
   const [exportTimeRange, setExportTimeRange] = useState('6m')
   const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
@@ -176,13 +179,7 @@ export function ManagerAnalytics() {
   const [pieOuterRadius, setPieOuterRadius] = useState(120)
   const hasMountedRef = useRef(false)
   const [show, setShow] = useState(false)
-  const [dateRange, setDateRange] = useState([
-    {
-      startDate: new Date(),
-      endDate: addDays(new Date(), 7),
-      key: 'selection',
-    },
-  ])
+  const [selectedDateRange, setSelectedDateRange] = useState<any>([null, null])
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showCategoryCoursesDialog, setShowCategoryCoursesDialog] =
     useState(false)
@@ -192,9 +189,6 @@ export function ManagerAnalytics() {
     []
   )
   const [loadingCategoryCourses, setLoadingCategoryCourses] = useState(false)
-  const [selectedDateRange, setSelectedDateRange] = useState<
-    [Date | null, Date | null]
-  >([null, null])
   const [previousPeriodLabel, setPreviousPeriodLabel] =
     useState('Previous Month')
 
@@ -248,19 +242,22 @@ export function ManagerAnalytics() {
       const exportParams: any = {}
 
       if (exportDateRange && exportDateRange[0] && exportDateRange[1]) {
-        // Use custom date range if provided
+        // Use custom date range if provided - convert dayjs to date strings
+        const startDate = exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]
+        const endDate = exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]
+        
         exportParams.startDate =
-          exportDateRange[0].getFullYear() +
+          startDate.getFullYear() +
           '-' +
-          String(exportDateRange[0].getMonth() + 1).padStart(2, '0') +
+          String(startDate.getMonth() + 1).padStart(2, '0') +
           '-' +
-          String(exportDateRange[0].getDate()).padStart(2, '0')
+          String(startDate.getDate()).padStart(2, '0')
         exportParams.endDate =
-          exportDateRange[1].getFullYear() +
+          endDate.getFullYear() +
           '-' +
-          String(exportDateRange[1].getMonth() + 1).padStart(2, '0') +
+          String(endDate.getMonth() + 1).padStart(2, '0') +
           '-' +
-          String(exportDateRange[1].getDate()).padStart(2, '0')
+          String(endDate.getDate()).padStart(2, '0')
       } else {
         // Use time range
         exportParams.range = exportTimeRange
@@ -443,7 +440,7 @@ export function ManagerAnalytics() {
       // 5. Generate filename with date info
       const dateInfo =
         exportDateRange && exportDateRange[0] && exportDateRange[1]
-          ? `${exportDateRange[0].toLocaleDateString('en-GB')}_to_${exportDateRange[1].toLocaleDateString('en-GB')}`
+          ? `${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-GB')}_to_${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-GB')}`
           : exportTimeRange
 
       // 6. Export file
@@ -518,29 +515,20 @@ export function ManagerAnalytics() {
       selectedDateRange[0] &&
       selectedDateRange[1]
     ) {
-      // Sử dụng local date format để tránh timezone issues
-      params.startDate =
-        selectedDateRange[0].getFullYear() +
-        '-' +
-        String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') +
-        '-' +
-        String(selectedDateRange[0].getDate()).padStart(2, '0')
-      params.endDate =
-        selectedDateRange[1].getFullYear() +
-        '-' +
-        String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') +
-        '-' +
-        String(selectedDateRange[1].getDate()).padStart(2, '0')
+      // Sử dụng helper function để convert dayjs to date string
+      params.startDate = formatDateForAPI(selectedDateRange[0])
+      params.endDate = formatDateForAPI(selectedDateRange[1])
     } else {
       params.range = timeRange
     }
-    params.page = page
-    params.size = rowsPerPage === -1 ? 1000 : rowsPerPage
+    // Load all data for client-side pagination
+    params.page = 0
+    params.size = 500
 
     const res = await analyticsApi.getCategoryAnalyticsDetails(params)
-    setCategoryDetails(res.data.content)
-    setTotalCategoryElements(res.data.totalElements)
-    setTotalCategoryPages(res.data.totalPages)
+    setCategoryDetails(res.data.content || [])
+    setTotalCategoryElements(res.data.totalElements || 0)
+    setTotalCategoryPages(res.data.totalPages || 1)
   }
 
   const handleCourseFilter = async () => {
@@ -552,19 +540,9 @@ export function ManagerAnalytics() {
         selectedDateRange[0] &&
         selectedDateRange[1]
       ) {
-        // Sử dụng local date format để tránh timezone issues
-        params.startDate =
-          selectedDateRange[0].getFullYear() +
-          '-' +
-          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[0].getDate()).padStart(2, '0')
-        params.endDate =
-          selectedDateRange[1].getFullYear() +
-          '-' +
-          String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[1].getDate()).padStart(2, '0')
+        // Sử dụng helper function để convert dayjs to date string
+        params.startDate = formatDateForAPI(selectedDateRange[0])
+        params.endDate = formatDateForAPI(selectedDateRange[1])
       } else {
         params.range = timeRange
       }
@@ -575,8 +553,8 @@ export function ManagerAnalytics() {
       console.log('Course filter params:', params) // Debug log
 
       const res = await analyticsApi.getCourseAnalyticsDetails(params)
-      setCourseDetails(res.data.content)
-      setTotalCourseElements(res.data.totalElements)
+      setCourseDetails(res.data.content || [])
+      setTotalCourseElements(res.data.totalElements || 0)
       // Reset về trang đầu khi filter
       setCoursePage(0)
     } catch (error) {
@@ -596,19 +574,9 @@ export function ManagerAnalytics() {
         selectedDateRange[0] &&
         selectedDateRange[1]
       ) {
-        // Sử dụng local date format để tránh timezone issues
-        params.startDate =
-          selectedDateRange[0].getFullYear() +
-          '-' +
-          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[0].getDate()).padStart(2, '0')
-        params.endDate =
-          selectedDateRange[1].getFullYear() +
-          '-' +
-          String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[1].getDate()).padStart(2, '0')
+        // Sử dụng helper function để convert dayjs to date string
+        params.startDate = formatDateForAPI(selectedDateRange[0])
+        params.endDate = formatDateForAPI(selectedDateRange[1])
       } else {
         params.range = timeRange
       }
@@ -619,8 +587,8 @@ export function ManagerAnalytics() {
       console.log('Student filter params:', params) // Debug log
 
       const res = await analyticsApi.getStudentAnalyticsDetails(params)
-      setStudentDetails(res.data.content)
-      setTotalStudentElements(res.data.totalElements)
+      setStudentDetails(res.data.content || [])
+      setTotalStudentElements(res.data.totalElements || 0)
       // Reset về trang đầu khi filter
       setStudentPage(0)
     } catch (error) {
@@ -640,19 +608,9 @@ export function ManagerAnalytics() {
         selectedDateRange[0] &&
         selectedDateRange[1]
       ) {
-        // Sử dụng local date format để tránh timezone issues
-        params.startDate =
-          selectedDateRange[0].getFullYear() +
-          '-' +
-          String(selectedDateRange[0].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[0].getDate()).padStart(2, '0')
-        params.endDate =
-          selectedDateRange[1].getFullYear() +
-          '-' +
-          String(selectedDateRange[1].getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(selectedDateRange[1].getDate()).padStart(2, '0')
+        // Sử dụng helper function để convert dayjs to date string
+        params.startDate = formatDateForAPI(selectedDateRange[0])
+        params.endDate = formatDateForAPI(selectedDateRange[1])
       } else {
         params.range = timeRange
       }
@@ -663,8 +621,8 @@ export function ManagerAnalytics() {
       console.log('Revenue filter params:', params) // Debug log
 
       const res = await analyticsApi.getRevenueAnalyticsDetails(params)
-      setRevenueDetails(res.data.content)
-      setTotalRevenueElements(res.data.totalElements)
+      setRevenueDetails(res.data.content || [])
+      setTotalRevenueElements(res.data.totalElements || 0)
       // Reset về trang đầu khi filter
       setRevenuePage(0)
     } catch (error) {
@@ -684,10 +642,7 @@ export function ManagerAnalytics() {
     ])
   }
 
-  useEffect(() => {
-    handleCategoryFilter()
-    // eslint-disable-next-line
-  }, [page, rowsPerPage]);
+  // Removed useEffect for page/rowsPerPage since we're using client-side pagination now
 
   // Load both category and course data when component mounts
   useEffect(() => {
@@ -739,10 +694,21 @@ export function ManagerAnalytics() {
     }
   }, [])
 
-  // Pagination logic for category detail table
-  const paginatedData = categoryDetails
-  const totalRows = totalCategoryElements
-  const totalPages = totalCategoryPages
+  // Pagination logic for category detail table - Convert to client-side for consistency
+  const totalCategoryRows = categoryDetails.length
+  const totalCategoryPagesClientSide = 
+    rowsPerPage === -1 
+      ? 1 
+      : Math.ceil(totalCategoryRows / rowsPerPage)
+  const paginatedData = 
+    rowsPerPage === -1 
+      ? categoryDetails 
+      : categoryDetails.slice(
+          page * rowsPerPage,
+          (page + 1) * rowsPerPage
+        )
+  const totalRows = totalCategoryRows
+  const totalPages = totalCategoryPagesClientSide
 
   // Pagination logic for course detail table - Client-side
   const totalCourseRows = courseDetails.length
@@ -808,11 +774,11 @@ export function ManagerAnalytics() {
     0
   )
 
-  const handleDateRangeChange = (dates: [Date, Date] | null) => {
-    setSelectedDateRange([dates ? dates[0] : null, dates ? dates[1] : null])
-    if (dates) {
+  const handleDateRangeChange = (dates: any) => {
+    setSelectedDateRange(dates ? [dates[0], dates[1]] : [null, null])
+    if (dates && dates[0] && dates[1]) {
       const daysDiff = Math.ceil(
-        (dates[1].getTime() - dates[0].getTime()) / (1000 * 60 * 60 * 24)
+        (dates[1].toDate().getTime() - dates[0].toDate().getTime()) / (1000 * 60 * 60 * 24)
       )
       setPreviousPeriodLabel(`${daysDiff} Days Ago`)
     } else {
@@ -820,9 +786,83 @@ export function ManagerAnalytics() {
     }
   }
 
+  // Pagination Info Component
+  const PaginationInfo = ({ 
+    currentPage, 
+    totalPages, 
+    totalItems, 
+    itemsPerPage, 
+    onPageChange,
+    dataLength 
+  }: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    itemsPerPage: number
+    onPageChange: (pageNum: number) => void
+    dataLength: number
+  }) => {
+    // Ensure we have valid numbers
+    const safeCurrentPage = currentPage || 0
+    const safeTotalPages = totalPages || 1
+    const safeTotalItems = totalItems || 0
+    const safeItemsPerPage = itemsPerPage || 5
+    const safeDataLength = dataLength || 0
+
+    const startItem = safeTotalItems === 0 ? 0 : safeItemsPerPage === -1 ? 1 : safeCurrentPage * safeItemsPerPage + 1
+    const endItem = safeItemsPerPage === -1 ? safeTotalItems : Math.min((safeCurrentPage + 1) * safeItemsPerPage, safeTotalItems)
+
+    return (
+      <div className='mt-4 space-y-2'>
+        {/* Item Count Info - Always visible */}
+        <div className='text-sm text-gray-600 text-center'>
+          {safeTotalItems === 0 
+            ? 'No items to display'
+            : `Showing ${startItem} to ${endItem} of ${safeTotalItems} items`
+          }
+        </div>
+        
+        {/* Pagination Controls - Only visible if more than 1 page */}
+        {safeTotalPages > 1 && safeDataLength > 0 && (
+          <div className='flex items-center gap-2 justify-center'>
+            <button
+              className='px-3 py-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-white text-gray-700 hover:bg-gray-50'
+              disabled={safeCurrentPage === 0}
+              onClick={() => onPageChange(safeCurrentPage - 1)}
+            >
+              Previous
+            </button>
+            {Array.from({ length: safeTotalPages }, (_, idx) => (
+              <button
+                key={idx}
+                className={`px-3 py-2 border rounded text-sm ${
+                  safeCurrentPage === idx 
+                    ? 'bg-gray-800 text-white border-gray-800' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+                onClick={() => onPageChange(idx)}
+              >
+                {idx + 1}
+              </button>
+            ))}
+            <button
+              className='px-3 py-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-white text-gray-700 hover:bg-gray-50'
+              disabled={safeCurrentPage === safeTotalPages - 1}
+              onClick={() => onPageChange(safeCurrentPage + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className='space-y-6'>
-      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
+      {/* Header - Clean and Simple Layout */}
+      <div className='space-y-4'>
+        {/* Title Section */}
         <div>
           <h1 className='text-3xl font-bold'>Analytics Dashboard</h1>
           <p className='text-muted-foreground'>
@@ -831,7 +871,7 @@ export function ManagerAnalytics() {
         </div>
 
         {/* Controls Section */}
-        <div className='flex flex-wrap items-center gap-3 p-4 rounded-lg'>
+        <div className='flex flex-col md:flex-row md:items-center gap-4 p-4 bg-gray-50 rounded-lg'>
           {/* Time Range Selector */}
           <div className='flex items-center gap-2'>
             <label className='text-sm font-medium text-gray-700 whitespace-nowrap'>
@@ -859,18 +899,21 @@ export function ManagerAnalytics() {
               format='YYYY-MM-DD'
               placeholder={['Start date', 'End date']}
               className='h-10'
-              onChange={dates => {
-                setSelectedDateRange([
-                  (dates && dates[0] ? dates[0].toDate() : null) as Date | null,
-                  (dates && dates[1] ? dates[1].toDate() : null) as Date | null,
-                ])
+              style={{ width: '240px' }}
+              value={selectedDateRange[0] && selectedDateRange[1] 
+                ? [selectedDateRange[0], selectedDateRange[1]]
+                : null
+              }
+              onChange={(dates) => {
+                setSelectedDateRange(dates ? [dates[0], dates[1]] : [null, null])
                 setTimeRange('custom')
               }}
+              allowEmpty
             />
           </div>
 
           {/* Action Buttons */}
-          <div className='flex items-center gap-2 ml-2'>
+          <div className='flex items-center gap-2 md:ml-auto'>
             <button
               onClick={handleFilter}
               disabled={
@@ -1095,14 +1138,14 @@ export function ManagerAnalytics() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedData.map(cat => (
+                      paginatedData.map((cat, index) => (
                         <tr
                           key={cat.id}
                           className='cursor-pointer hover:bg-gray-50'
                           onClick={() => handleCategoryRowClick(cat)}
                         >
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.id}
+                            {rowsPerPage === -1 ? index + 1 : page * rowsPerPage + (index + 1)}
                           </td>
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
                             {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
@@ -1143,33 +1186,14 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {paginatedData.length > 0 && (
-                  <div className='flex items-center gap-2 mt-4 justify-center'>
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={page === 0}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Previous
-                    </button>
-                    {Array.from({ length: totalPages }, (_, idx) => (
-                      <button
-                        key={idx}
-                        className={`px-2 py-1 border rounded ${page === idx ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setPage(idx)}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={page === totalPages - 1}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
+                <PaginationInfo
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalItems={totalRows}
+                  itemsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  dataLength={paginatedData.length}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1258,7 +1282,7 @@ export function ManagerAnalytics() {
                       paginatedCourseData.map((course, idx) => (
                         <tr key={course.courseId}>
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.courseId}
+                            {courseRowsPerPage === -1 ? idx + 1 : coursePage * courseRowsPerPage + (idx + 1)}
                           </td>
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
                             {course.courseName}
@@ -1296,33 +1320,14 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {courseDetails.length > 0 && (
-                  <div className='flex items-center gap-2 mt-4 justify-center'>
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={coursePage === 0}
-                      onClick={() => setCoursePage(coursePage - 1)}
-                    >
-                      Previous
-                    </button>
-                    {Array.from({ length: totalCoursePages }, (_, idx) => (
-                      <button
-                        key={idx}
-                        className={`px-2 py-1 border rounded ${coursePage === idx ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setCoursePage(idx)}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={coursePage === totalCoursePages - 1}
-                      onClick={() => setCoursePage(coursePage + 1)}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
+                <PaginationInfo
+                  currentPage={coursePage}
+                  totalPages={totalCoursePages}
+                  totalItems={totalCourseElements}
+                  itemsPerPage={courseRowsPerPage}
+                  onPageChange={setCoursePage}
+                  dataLength={courseDetails.length}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1405,10 +1410,10 @@ export function ManagerAnalytics() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedStudentData.map(data => (
+                      paginatedStudentData.map((data, index) => (
                         <tr key={data.id}>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.id}
+                            {studentRowsPerPage === -1 ? index + 1 : studentPage * studentRowsPerPage + (index + 1)}
                           </td>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
                             {data.courseName}
@@ -1443,43 +1448,14 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {studentDetails.length > 0 && (
-                  <div className='flex items-center gap-2 mt-4 justify-center'>
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={studentPage === 0}
-                      onClick={() => setStudentPage(studentPage - 1)}
-                    >
-                      Previous
-                    </button>
-                    {Array.from(
-                      {
-                        length: Math.ceil(
-                          totalStudentRows / studentRowsPerPage
-                        ),
-                      },
-                      (_, idx) => (
-                        <button
-                          key={idx}
-                          className={`px-2 py-1 border rounded ${studentPage === idx ? 'bg-gray-200 font-bold' : ''}`}
-                          onClick={() => setStudentPage(idx)}
-                        >
-                          {idx + 1}
-                        </button>
-                      )
-                    )}
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={
-                        studentPage ===
-                        Math.ceil(totalStudentRows / studentRowsPerPage) - 1
-                      }
-                      onClick={() => setStudentPage(studentPage + 1)}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
+                <PaginationInfo
+                  currentPage={studentPage}
+                  totalPages={totalStudentPages}
+                  totalItems={totalStudentElements}
+                  itemsPerPage={studentRowsPerPage}
+                  onPageChange={setStudentPage}
+                  dataLength={studentDetails.length}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1565,10 +1541,10 @@ export function ManagerAnalytics() {
                         </td>
                       </tr>
                     ) : (
-                      paginatedRevenueData.map(data => (
+                      paginatedRevenueData.map((data, index) => (
                         <tr key={data.id}>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.id}
+                            {revenueRowsPerPage === -1 ? index + 1 : revenuePage * revenueRowsPerPage + (index + 1)}
                           </td>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
                             {data.courseName}
@@ -1606,33 +1582,14 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                {revenueDetails.length > 0 && (
-                  <div className='flex items-center gap-2 mt-4 justify-center'>
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={revenuePage === 0}
-                      onClick={() => setRevenuePage(revenuePage - 1)}
-                    >
-                      Previous
-                    </button>
-                    {Array.from({ length: totalRevenuePages }, (_, idx) => (
-                      <button
-                        key={idx}
-                        className={`px-2 py-1 border rounded ${revenuePage === idx ? 'bg-gray-200 font-bold' : ''}`}
-                        onClick={() => setRevenuePage(idx)}
-                      >
-                        {idx + 1}
-                      </button>
-                    ))}
-                    <button
-                      className='px-2 py-1 border rounded disabled:opacity-50'
-                      disabled={revenuePage === totalRevenuePages - 1}
-                      onClick={() => setRevenuePage(revenuePage + 1)}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
+                <PaginationInfo
+                  currentPage={revenuePage}
+                  totalPages={totalRevenuePages}
+                  totalItems={totalRevenueElements}
+                  itemsPerPage={revenueRowsPerPage}
+                  onPageChange={setRevenuePage}
+                  dataLength={revenueDetails.length}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -1912,14 +1869,19 @@ export function ManagerAnalytics() {
                     style={{ width: '100%' }}
                     placeholder={['Start date', 'End date']}
                     format='DD/MM/YYYY'
+                    value={exportDateRange 
+                      ? [exportDateRange[0], exportDateRange[1]]
+                      : null
+                    }
                     onChange={dates => {
-                      setExportDateRange(dates as [Date, Date] | null)
+                      setExportDateRange(dates as any)
                       if (dates) {
                         setExportTimeRange('custom')
                       }
                     }}
                     disabled={exportTimeRange !== 'custom'}
                     className={exportTimeRange !== 'custom' ? 'opacity-50' : ''}
+                    allowEmpty
                   />
                 </div>
               </div>
@@ -1942,7 +1904,7 @@ export function ManagerAnalytics() {
                 </div>
                 <p className='text-sm text-blue-700 mt-1'>
                   {exportDateRange && exportDateRange[0] && exportDateRange[1]
-                    ? `${exportDateRange[0].toLocaleDateString('en-GB')} - ${exportDateRange[1].toLocaleDateString('en-GB')}`
+                    ? `${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-GB')} - ${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-GB')}`
                     : exportTimeRange === '7d'
                       ? 'Last 7 days'
                       : exportTimeRange === '30d'

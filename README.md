@@ -35,3 +35,5 @@ pnpm add -D @tailwindcss/line-clamp
 npm install react-date-range date-fns --legacy-peer-deps
 npm install exceljs
 npm install exceljs react-hot-toast
+npm install date-fns --legacy-peer-deps
+npm install dayjs --legacy-peer-deps

@@ -1,6 +1,5 @@
 'use client'
 
-import { courseApi } from '@/services/course-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,26 +36,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/hooks/use-toast'
+import { courseApi } from '@/services/course-api'
 import { ManagerCourseResponseDTO } from '@/types/course'
 import {
-  Archive,
-  BookOpen,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Download,
-  Edit,
-  Eye,
   Loader2,
   MoreVertical,
-  Plus,
-  RefreshCw,
-  Search,
-  Star,
-  Trash2,
-  Users,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -85,6 +72,12 @@ export function ManagerCourseList() {
   const [statusFilter, setStatusFilter] = useState<string>('PUBLISHED')
   const [page, setPage] = useState(0)
   const [pageSize] = useState(10)
+
+  // Listen for changes in category query parameter
+  useEffect(() => {
+    const category = searchParams.get('category') || 'all'
+    setCategoryFilter(category)
+  }, [searchParams])
 
   // Lấy danh sách status động từ backend
   useEffect(() => {
@@ -368,15 +361,48 @@ export function ManagerCourseList() {
           </CardContent>
         </Card>
       </div>
+      {/* Show filter info if coming from category management */}
+      {searchParams.get('category') && searchParams.get('category') !== 'all' && (
+        <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <Badge variant='secondary' className='bg-blue-100 text-blue-800'>
+                Filtered by Category: {searchParams.get('category')}
+              </Badge>
+              <span className='text-sm text-blue-600'>
+                Showing courses in "{searchParams.get('category')}" category
+              </span>
+            </div>
+            <Button 
+              variant='ghost' 
+              size='sm' 
+              onClick={() => {
+                setCategoryFilter('all')
+                window.history.replaceState({}, '', '/manager/courses')
+              }}
+              className='text-blue-600 hover:text-blue-800'
+            >
+              Clear Filter
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 mb-4'>
         <Select
           value={categoryFilter}
           onValueChange={v => {
             setCategoryFilter(v)
             setPage(0)
+            // Update URL when manually changing category
+            if (v === 'all') {
+              window.history.replaceState({}, '', '/manager/courses')
+            } else {
+              window.history.replaceState({}, '', `/manager/courses?category=${encodeURIComponent(v)}`)
+            }
           }}
         >
-          <SelectTrigger className='w-full md:w-[200px]'>
+          <SelectTrigger className={`w-full md:w-[200px] ${categoryFilter !== 'all' ? 'border-blue-300 bg-blue-50' : ''}`}>
             <SelectValue placeholder='Category' />
           </SelectTrigger>
           <SelectContent>

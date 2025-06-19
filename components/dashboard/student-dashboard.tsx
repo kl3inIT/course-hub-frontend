@@ -52,6 +52,7 @@ export function StudentDashboard() {
   const certificateRef = useRef<HTMLDivElement>(null)
   const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
   const hiddenCertificateRef = useRef<HTMLDivElement>(null)
+  const [learningStreak, setLearningStreak] = useState(0)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -61,6 +62,7 @@ export function StudentDashboard() {
 
     fetchDashboardCourses()
     fetchRecommendedCourses()
+    calculateLearningStreak()
   }, [])
 
   const fetchDashboardCourses = async () => {
@@ -83,6 +85,31 @@ export function StudentDashboard() {
     } catch (error) {
       console.error('Error fetching recommended courses:', error)
       toast.error('Failed to load recommended courses')
+    }
+  }
+
+  const calculateLearningStreak = () => {
+    const lastStudyDate = localStorage.getItem('lastStudyDate')
+    const currentStreak = parseInt(localStorage.getItem('learningStreak') || '0')
+
+    const today = new Date().toDateString()
+
+    if (lastStudyDate === today) {
+      setLearningStreak(currentStreak)
+    } else {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      if (lastStudyDate === yesterday.toDateString()) {
+        const newStreak = currentStreak + 1
+        localStorage.setItem('learningStreak', newStreak.toString())
+        localStorage.setItem('lastStudyDate', today)
+        setLearningStreak(newStreak)
+      } else {
+        localStorage.setItem('learningStreak', '1')
+        localStorage.setItem('lastStudyDate', today)
+        setLearningStreak(1)
+      }
     }
   }
 
@@ -174,15 +201,13 @@ export function StudentDashboard() {
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>
-              Average Progress
+              Learning Streak
             </CardTitle>
-            <TrendingUp className='h-4 w-4 text-muted-foreground' />
+            <Calendar className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>
-              {Math.round(totalProgress)}%
-            </div>
-            <p className='text-xs text-muted-foreground'>Across all courses</p>
+            <div className='text-2xl font-bold'>{learningStreak} days</div>
+            <p className='text-xs text-muted-foreground'>Keep it going!</p>
           </CardContent>
         </Card>
 

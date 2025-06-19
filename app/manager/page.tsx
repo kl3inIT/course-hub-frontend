@@ -1,7 +1,7 @@
-import { ManagerDashboard } from '@/components/manager/manager-dashboard'
-import { ManagerSidebar } from '@/components/layout/manager-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { RoleGuard } from '@/components/auth/role-guard'
+import { ManagerSidebar } from '@/components/layout/manager-sidebar'
+import { ManagerDashboard } from '@/components/manager/manager-dashboard'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 export default function ManagerPage() {
   return (

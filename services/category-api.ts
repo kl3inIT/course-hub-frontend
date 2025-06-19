@@ -4,8 +4,6 @@ import {
   CategoryRequestDTO,
   CategoryResponseDTO,
   CategorySearchParams,
-  CategoryChartDTO,
-  CategoryDetailDTO,
 } from '@/types/category'
 
 export const categoryApi = {
@@ -47,15 +45,5 @@ export const categoryApi = {
   deleteCategory: async (id: string): Promise<ApiResponse<void>> => {
     const response = await httpClient.delete(`/api/categories/${id}`)
     return response.data
-  },
-
-  getCategoryChart: async (): Promise<CategoryChartDTO[]> => {
-    const res = await httpClient.get('/categories/chart')
-    return res.data
-  },
-
-  getCategoryDetails: async (): Promise<CategoryDetailDTO[]> => {
-    const res = await httpClient.get('/categories/details')
-    return res.data
   },
 }

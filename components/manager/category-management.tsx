@@ -1,26 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { categoryApi } from '@/services/category-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +11,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -39,34 +39,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Plus,
-  Search,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Tags,
-  BookOpen,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
-import { toast } from 'sonner'
-import { categoryApi } from '@/services/category-api'
+  CategoryRequestDTO,
+  CategoryResponseDTO,
+  CategorySearchParams,
+} from '@/types/category'
 import { Page } from '@/types/common'
 import {
-  CategorySearchParams,
-  CategoryResponseDTO,
-  CategoryRequestDTO,
-} from '@/types/category'
+  BookOpen,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  Plus,
+  RefreshCw,
+  Search,
+  Tags,
+  Trash2,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
@@ -113,7 +107,7 @@ export function CategoryManagement() {
       setTotalCourses(totalCoursesCount)
     } catch (error: any) {
       console.error('Failed to fetch total courses:', error)
-      toast('Lỗi', {
+      toast.error('Lỗi', {
         description: `Không thể tải dữ liệu: ${error.message || 'Lỗi không xác định'}`,
       })
     }
@@ -138,7 +132,7 @@ export function CategoryManagement() {
       setPagination(response.data)
     } catch (error) {
       console.error('Failed to fetch categories:', error)
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to fetch categories. Please try again.',
       })
     } finally {
@@ -186,8 +180,9 @@ export function CategoryManagement() {
       setIsCreateDialogOpen(false)
       setNameError('')
       setDescriptionError('')
-      toast('✅ Category created successfully.', {
+      toast.success('Category created successfully.', {
         description: `Category ${newCategory.name} has been created successfully.`,
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
       })
       fetchCategories(
         pagination.number,
@@ -196,7 +191,7 @@ export function CategoryManagement() {
       )
       fetchTotalCourses() // Cập nhật tổng số khóa học
     } catch (error) {
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to create category. Please try again.',
       })
     }
@@ -230,9 +225,13 @@ export function CategoryManagement() {
       setEditDescriptionError('')
       setEditNameTouched(false)
       setEditDescriptionTouched(false)
-      toast('✅ Category updated successfully!', {
-        description: `Category ${selectedCategory.name} has been updated successfully!`,
-      })
+      toast.success(
+        `Category ${selectedCategory.name} has been updated successfully!`,
+        {
+          description: `Category ${selectedCategory.name} has been updated successfully!`,
+          icon: <CheckCircle className='h-5 w-5 text-green-500' />,
+        }
+      )
       fetchCategories(
         pagination.number,
         pagination.size,
@@ -240,7 +239,7 @@ export function CategoryManagement() {
       )
       fetchTotalCourses()
     } catch (error) {
-      toast('Error', {
+      toast.error('Error', {
         description: 'Failed to update category. Please try again.',
       })
     }
@@ -249,7 +248,7 @@ export function CategoryManagement() {
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return
     if (categoryToDelete.courseCount > 0) {
-      toast('❌ Không thể xoá danh mục', {
+      toast.error('❌ Không thể xoá danh mục', {
         description: `Danh mục "${categoryToDelete.name}" đang có ${categoryToDelete.courseCount} khoá học. Hãy chuyển hoặc xoá các khoá học trước!`,
       })
       setIsDeleteDialogOpen(false)
@@ -258,7 +257,8 @@ export function CategoryManagement() {
     }
     try {
       await categoryApi.deleteCategory(categoryToDelete.id.toString())
-      toast('✅ Category deleted', {
+      toast.success('Category deleted', {
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
         description: (
           <span>
             Category&nbsp;
@@ -358,6 +358,7 @@ export function CategoryManagement() {
             onOpenChange={open => {
               setIsCreateDialogOpen(open)
               if (open) {
+                setNewCategory({ name: '', description: '' })
                 setNameError('')
                 setDescriptionError('')
                 setNameTouched(false)
@@ -377,7 +378,11 @@ export function CategoryManagement() {
                 Add Category
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent
+              key={
+                isCreateDialogOpen ? 'add-category-open' : 'add-category-closed'
+              }
+            >
               <DialogHeader>
                 <DialogTitle>Create New Category</DialogTitle>
                 <DialogDescription>
@@ -541,7 +546,7 @@ export function CategoryManagement() {
                     className='cursor-pointer hover:bg-gray-50 transition group'
                     onClick={() =>
                       router.push(
-                        `/courses?category=${encodeURIComponent(category.name)}&categoryName=${encodeURIComponent(category.name)}`
+                        `/manager/courses?category=${encodeURIComponent(category.name)}`
                       )
                     }
                   >
@@ -592,6 +597,7 @@ export function CategoryManagement() {
                           size='icon'
                           onClick={e => {
                             e.stopPropagation()
+                            e.preventDefault()
                             openDeleteDialog(category)
                           }}
                           title='Delete'
@@ -652,7 +658,21 @@ export function CategoryManagement() {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog
+        open={isEditDialogOpen}
+        onOpenChange={open => {
+          setIsEditDialogOpen(open)
+          if (!open) {
+            // Khi dialog đóng, reset newCategory và các lỗi/touched state
+            setNewCategory({ name: '', description: '' })
+            setSelectedCategory(null) // Đảm bảo selectedCategory cũng được reset
+            setEditNameError('')
+            setEditDescriptionError('')
+            setEditNameTouched(false)
+            setEditDescriptionTouched(false)
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
@@ -744,17 +764,15 @@ export function CategoryManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription className='space-y-2'>
-              <p>
-                This action cannot be undone. This will permanently delete the
-                category
-                <span
-                  className='inline-block max-w-[250px] align-middle ml-1 truncate'
-                  title={categoryToDelete?.name}
-                >
-                  "{categoryToDelete?.name}"
-                </span>
-                .
-              </p>
+              This action cannot be undone. This will permanently delete the
+              category
+              <span
+                className='inline-block max-w-[250px] align-middle ml-1 truncate'
+                title={categoryToDelete?.name}
+              >
+                "{categoryToDelete?.name}"
+              </span>
+              .
               {categoryToDelete && categoryToDelete.courseCount > 0 && (
                 <div className='bg-red-50 border border-red-200 rounded-md p-3 mt-3'>
                   <p className='text-red-800 font-medium'>
@@ -779,7 +797,11 @@ export function CategoryManagement() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCategory}
+              onClick={e => {
+                e.stopPropagation()
+                e.preventDefault()
+                handleDeleteCategory()
+              }}
               className={`${
                 !!categoryToDelete && categoryToDelete.courseCount > 0
                   ? 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'

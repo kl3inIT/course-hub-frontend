@@ -35,7 +35,7 @@ export const progressApi = {
     const response = await httpClient.get<boolean>(
       `${BASE_PATH}/lessons/${lessonId}/access`
     )
-    return response.data
+    return response.data // Backend returns boolean directly, not wrapped in ApiResponse
   },
 
   // Get all completed lessons for a course

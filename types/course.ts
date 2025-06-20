@@ -63,6 +63,7 @@ export interface CourseSearchParams {
 }
 
 export interface DashboardCourseResponseDTO {
+  id: number
   title: string
   description: string
   thumbnailUrl: string | null

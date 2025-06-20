@@ -59,7 +59,7 @@ export function CourseCard({
 
           <div className='flex items-center justify-between'>
             <Badge variant='secondary'>{course.totalDuration}h total</Badge>
-            <Link href={`/learn/${course.title}`}>
+            <Link href={`/courses/${course.id}`}>
               <Button size='sm'>
                 <Play className='h-4 w-4 mr-2' />
                 Continue

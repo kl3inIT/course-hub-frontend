@@ -37,12 +37,12 @@ import { courseApi } from '@/api/course-api'
 import { DashboardCourseResponseDTO } from '@/types/course'
 import { toast } from 'sonner'
 import { CourseCard } from './course-card'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { createPortal } from 'react-dom'
 
 export function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
-  const [dashboardCourses, setDashboardCourses] = useState<
-    DashboardCourseResponseDTO[]
-  >([])
+  const [dashboardCourses, setDashboardCourses] = useState<DashboardCourseResponseDTO[]>([])
   const [recommendedCourses, setRecommendedCourses] = useState<
     DashboardCourseResponseDTO[]
   >([])
@@ -53,6 +53,8 @@ export function StudentDashboard() {
   const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
   const hiddenCertificateRef = useRef<HTMLDivElement>(null)
   const [learningStreak, setLearningStreak] = useState(0)
+  const [showFirework, setShowFirework] = useState(false)
+  const prevStreak = useRef(0)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -64,6 +66,19 @@ export function StudentDashboard() {
     fetchRecommendedCourses()
     calculateLearningStreak()
   }, [])
+
+  useEffect(() => {
+    if (learningStreak > 1) {
+      const lastShownStreak = parseInt(
+        localStorage.getItem('lastShownStreakForToast') || '0'
+      )
+      if (learningStreak > lastShownStreak) {
+        setShowFirework(true)
+        localStorage.setItem('lastShownStreakForToast', learningStreak.toString())
+        setTimeout(() => setShowFirework(false), 3500)
+      }
+    }
+  }, [learningStreak])
 
   const fetchDashboardCourses = async () => {
     try {
@@ -89,27 +104,28 @@ export function StudentDashboard() {
   }
 
   const calculateLearningStreak = () => {
-    const lastStudyDate = localStorage.getItem('lastStudyDate')
-    const currentStreak = parseInt(localStorage.getItem('learningStreak') || '0')
-
     const today = new Date().toDateString()
+    const lastStudyDate = localStorage.getItem('lastStudyDate')
+    let currentStreak = parseInt(localStorage.getItem('learningStreak') || '0')
 
     if (lastStudyDate === today) {
       setLearningStreak(currentStreak)
-    } else {
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
+      return
+    }
 
-      if (lastStudyDate === yesterday.toDateString()) {
-        const newStreak = currentStreak + 1
-        localStorage.setItem('learningStreak', newStreak.toString())
-        localStorage.setItem('lastStudyDate', today)
-        setLearningStreak(newStreak)
-      } else {
-        localStorage.setItem('learningStreak', '1')
-        localStorage.setItem('lastStudyDate', today)
-        setLearningStreak(1)
-      }
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (lastStudyDate === yesterday.toDateString()) {
+      currentStreak += 1
+      localStorage.setItem('learningStreak', currentStreak.toString())
+      localStorage.setItem('lastStudyDate', today)
+      setLearningStreak(currentStreak)
+    } else {
+      localStorage.setItem('learningStreak', '1')
+      localStorage.setItem('lastStudyDate', today)
+      localStorage.setItem('lastShownStreakForToast', '0')
+      setLearningStreak(1)
     }
   }
 
@@ -163,6 +179,9 @@ export function StudentDashboard() {
 
   return (
     <div className='space-y-6'>
+      {showFirework && (
+        <FireworkToast streak={learningStreak} />
+      )}
       <div>
         <h1 className='text-3xl font-bold'>
           Welcome back, {user?.name || user?.email}!
@@ -375,7 +394,7 @@ export function StudentDashboard() {
                       {course.totalDuration}h • {course.totalLessons} lessons
                     </div>
                   </div>
-                  <Link href={`/courses/${course.title}`}>
+                  <Link href={`/courses/${course.id}`}>
                     <Button className="w-full">
                       <Play className="h-4 w-4 mr-2" />
                       View Course
@@ -409,22 +428,48 @@ export function StudentDashboard() {
             <div className='space-y-6 flex flex-col items-center'>
               <div ref={certificateRef}>
                 <CompletionCertificate
-                  courseTitle={selectedCertificate.title}
+                  courseTitle={selectedCertificate.title || selectedCertificate.courseTitle}
                   instructor={selectedCertificate.instructorName}
                   completionDate={
-                    selectedCertificate.completedDate
+                    selectedCertificate.completedDate && !isNaN(new Date(selectedCertificate.completedDate).getTime())
                       ? new Date(selectedCertificate.completedDate)
                       : undefined
                   }
                   studentName={user.name || user.email || 'Student'}
-                  certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+                  certificateId={`CERT-${selectedCertificate.title || selectedCertificate.courseTitle}-${Date.now()}`}
                 />
               </div>
               <div className='flex justify-center gap-4 mt-0'>
-                <Button variant='outline' className='flex items-center gap-2'>
-                  <Share2 className='h-4 w-4' />
-                  Share Certificate
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='outline' className='flex items-center gap-2'>
+                      <Share2 className='h-4 w-4' />
+                      Share Certificate
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='end'>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (!selectedCertificate || !user) return;
+                        const verifyUrl = `https://learnhub.academy/verify/CERT-${selectedCertificate.title}-${Date.now()}`;
+                        const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(verifyUrl)}`;
+                        window.open(fbShareUrl, '_blank');
+                      }}
+                    >
+                      Share to Facebook
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (!selectedCertificate || !user) return;
+                        const gistContent = `Certificate of Completion\n\nCourse: ${selectedCertificate.title}\nInstructor: ${selectedCertificate.instructorName}\nStudent: ${user.name || user.email || 'Student'}\nCertificate ID: CERT-${selectedCertificate.title}-${Date.now()}\nVerify: https://learnhub.academy/verify/CERT-${selectedCertificate.title}-${Date.now()}`;
+                        const url = `https://gist.github.com/?description=${encodeURIComponent('My Certificate of Completion from LearnHub')}&files[certificate.txt]=${encodeURIComponent(gistContent)}`;
+                        window.open(url, '_blank');
+                      }}
+                    >
+                      Share to Github (Gist)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button className='flex items-center gap-2' onClick={handleDownloadPDF}>
                   <Download className='h-4 w-4' />
                   Download PDF
@@ -476,19 +521,61 @@ export function StudentDashboard() {
             }}
           >
             <CompletionCertificate
-              courseTitle={selectedCertificate.title}
+              courseTitle={selectedCertificate.title || selectedCertificate.courseTitle}
               instructor={selectedCertificate.instructorName}
               completionDate={
-                selectedCertificate.completedDate
+                selectedCertificate.completedDate && !isNaN(new Date(selectedCertificate.completedDate).getTime())
                   ? new Date(selectedCertificate.completedDate)
                   : undefined
               }
               studentName={user.name || user.email || 'Student'}
-              certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+              certificateId={`CERT-${selectedCertificate.title || selectedCertificate.courseTitle}-${Date.now()}`}
             />
           </div>
         </div>
       )}
     </div>
   )
+}
+
+function FireworkToast({ streak }: { streak: number }) {
+  return createPortal(
+    <div style={{
+      position: 'fixed',
+      top: 40,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+      background: 'rgba(255,255,255,0.95)',
+      borderRadius: 16,
+      boxShadow: '0 4px 32px 0 #e0e0e0',
+      padding: '32px 48px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      animation: 'fadeInDown 0.7s',
+      border: '2px solid #fbbf24',
+    }}>
+      <div style={{ fontSize: 48, marginBottom: 8, animation: 'fireworkPop 1s infinite alternate' }}>
+        🎆🎉✨
+      </div>
+      <div style={{ fontWeight: 700, fontSize: 22, color: '#f59e42', marginBottom: 6 }}>
+        Chúc mừng! Bạn đã học liên tiếp {streak} ngày!
+      </div>
+      <div style={{ fontSize: 16, color: '#333', fontStyle: 'italic' }}>
+        Hãy tiếp tục duy trì thói quen tuyệt vời này nhé! 🚀
+      </div>
+      <style>{`
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-40px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fireworkPop {
+          from { filter: drop-shadow(0 0 0 #fbbf24); }
+          to { filter: drop-shadow(0 0 16px #fbbf24); }
+        }
+      `}</style>
+    </div>,
+    document.body
+  );
 }

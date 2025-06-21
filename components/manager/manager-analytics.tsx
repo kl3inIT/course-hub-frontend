@@ -334,107 +334,468 @@ export function ManagerAnalytics() {
 
       console.log('Fresh export data:', freshExportData) // Debug
 
-      // 4. Create Excel file
+      // 4. Create Excel file with proper formatting
       const workbook = new ExcelJS.Workbook()
+      
+      // Determine date range for headers
+      const dateRangeText = exportDateRange && exportDateRange[0] && exportDateRange[1]
+        ? `from ${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-US')} to ${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-US')}`
+        : exportTimeRange === '7d' ? 'for the last 7 days'
+        : exportTimeRange === '30d' ? 'for the last 30 days'
+        : exportTimeRange === '90d' ? 'for the last 90 days'
+        : exportTimeRange === '6m' ? 'for the last 6 months'
+        : exportTimeRange === '1y' ? 'for the last year'
+        : 'for selected period'
 
       if (exportOptions.category.checked) {
-        const categorySheet = workbook.addWorksheet('Categories')
-        categorySheet.columns = [
-          { header: 'Category ID', key: 'id', width: 12 },
-          { header: 'Category Name', key: 'name', width: 35 },
-          { header: 'Description', key: 'description', width: 50 },
-          { header: 'Total Courses', key: 'courseCount', width: 15 },
-          { header: 'Total Students', key: 'totalStudents', width: 15 },
-          { header: 'Total Revenue (VND)', key: 'totalRevenue', width: 25 },
-          { header: 'Revenue Share (%)', key: 'revenueProportion', width: 18 },
+        const categorySheet = workbook.addWorksheet('Category Analysis')
+        
+        // Add title rows
+        categorySheet.mergeCells('A1:G1')
+        categorySheet.getCell('A1').value = `CATEGORY PERFORMANCE ANALYSIS REPORT`
+        categorySheet.getCell('A1').font = { bold: true, size: 16 }
+        categorySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        categorySheet.mergeCells('A2:G2')
+        categorySheet.getCell('A2').value = `Analytics report ${dateRangeText}`
+        categorySheet.getCell('A2').font = { bold: false, size: 12, italic: true }
+        categorySheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        // Add empty row
+        categorySheet.getRow(3).height = 10
+        
+        // Set up columns starting from row 4
+        categorySheet.getRow(4).values = [
+          'No.',
+          'Category Name',
+          'Description',
+          'Total Courses',
+          'Total Students',
+          'Total Revenue (VND)',
+          'Revenue Share (%)'
         ]
-        freshExportData.category.forEach((cat: any) => {
-          categorySheet.addRow({
-            id: cat.id,
-            name: cat.name,
-            description: cat.description,
-            courseCount: cat.courseCount || 0,
-            totalStudents: cat.totalStudents,
-            totalRevenue: cat.totalRevenue,
-            revenueProportion: cat.revenueProportion,
-          })
+        
+        // Style header row
+        const headerRow = categorySheet.getRow(4)
+        headerRow.font = { bold: true }
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+        headerRow.height = 25
+        
+        // Apply background color only to cells with data (A4:G4)
+        for (let col = 1; col <= 7; col++) {
+          const cell = headerRow.getCell(col)
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
+        }
+        
+        // Set column widths
+        categorySheet.columns = [
+          { width: 8 },   // No.
+          { width: 35 },  // Category Name
+          { width: 50 },  // Description
+          { width: 18 },  // Total Courses
+          { width: 18 },  // Total Students
+          { width: 25 },  // Total Revenue
+          { width: 20 },  // Revenue Share
+        ]
+        
+        // Add data rows
+        freshExportData.category.forEach((cat: any, index: number) => {
+          const rowIndex = index + 5
+          categorySheet.getRow(rowIndex).values = [
+            index + 1,
+            cat.name,
+            cat.description,
+            cat.courseCount || 0,
+            cat.totalStudents,
+            cat.totalRevenue,
+            `${cat.revenueProportion.toFixed(2)}%`,
+          ]
+          
+          // Style data rows
+          const dataRow = categorySheet.getRow(rowIndex)
+          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Category Name
+          dataRow.getCell(3).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Description
+          
+          // Add borders to data cells only (specific number of columns)
+          for (let col = 1; col <= 7; col++) {
+            const cell = dataRow.getCell(col)
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            }
+          }
         })
+        
+        // Add borders to header cells with data only
+        for (let col = 1; col <= 7; col++) {
+          const cell = headerRow.getCell(col)
+          cell.border = {
+            top: { style: 'thick' },
+            left: { style: 'thick' },
+            bottom: { style: 'thick' },
+            right: { style: 'thick' }
+          }
+        }
+        
+        // Add signature section at the bottom
+        const lastDataRow = freshExportData.category.length + 4
+        const signatureRow = lastDataRow + 3
+        
+        categorySheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
+        categorySheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
+        categorySheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
+        categorySheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
+        
+        categorySheet.mergeCells(`E${signatureRow}:G${signatureRow}`)
+        categorySheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
+        categorySheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
+        categorySheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
       }
 
       if (exportOptions.course.checked) {
-        const courseSheet = workbook.addWorksheet('Courses')
-        courseSheet.columns = [
-          { header: 'Course ID', key: 'courseId', width: 15 },
-          { header: 'Course Name', key: 'courseName', width: 45 },
-          { header: 'Total Students', key: 'students', width: 15 },
-          { header: 'Average Rating', key: 'rating', width: 15 },
-          { header: 'Total Revenue (VND)', key: 'revenue', width: 25 },
-          { header: 'Revenue Share (%)', key: 'revenuePercent', width: 18 },
-          { header: 'Total Reviews', key: 'reviews', width: 15 },
-          { header: 'Course Level', key: 'level', width: 15 },
+        const courseSheet = workbook.addWorksheet('Course Analysis')
+        
+        // Add title rows
+        courseSheet.mergeCells('A1:H1')
+        courseSheet.getCell('A1').value = `COURSE PERFORMANCE ANALYSIS REPORT`
+        courseSheet.getCell('A1').font = { bold: true, size: 16 }
+        courseSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        courseSheet.mergeCells('A2:H2')
+        courseSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
+        courseSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
+        courseSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        // Add empty row
+        courseSheet.getRow(3).height = 10
+        
+        // Set up columns starting from row 4
+        courseSheet.getRow(4).values = [
+          'No.',
+          'Course Name',
+          'Total Students',
+          'Average Rating',
+          'Total Revenue (VND)',
+          'Revenue Share (%)',
+          'Total Reviews',
+          'Course Level'
         ]
-        freshExportData.course.forEach((course: any) => {
-          courseSheet.addRow({
-            courseId: course.courseId,
-            courseName: course.courseName,
-            students: course.students,
-            rating: course.rating,
-            revenue: course.revenue,
-            revenuePercent: course.revenuePercent,
-            reviews: course.reviews,
-            level: course.level,
-          })
+        
+        // Style header row
+        const headerRow = courseSheet.getRow(4)
+        headerRow.font = { bold: true }
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+        headerRow.height = 25
+        
+        // Apply background color only to cells with data (A4:H4)
+        for (let col = 1; col <= 8; col++) {
+          const cell = headerRow.getCell(col)
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
+        }
+        
+        // Set column widths
+        courseSheet.columns = [
+          { width: 8 },   // No.
+          { width: 45 },  // Course Name
+          { width: 15 },  // Total Students
+          { width: 15 },  // Average Rating
+          { width: 25 },  // Total Revenue
+          { width: 20 },  // Revenue Share
+          { width: 15 },  // Total Reviews
+          { width: 15 },  // Course Level
+        ]
+        
+        // Add data rows
+        freshExportData.course.forEach((course: any, index: number) => {
+          const rowIndex = index + 5
+          courseSheet.getRow(rowIndex).values = [
+            index + 1,
+            course.courseName,
+            course.students,
+            course.rating?.toFixed(1) || '0.0',
+            course.revenue,
+            `${course.revenuePercent?.toFixed(2)}%`,
+            course.reviews,
+            course.level || 'N/A',
+          ]
+          
+          // Style data rows
+          const dataRow = courseSheet.getRow(rowIndex)
+          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
+          
+          // Add borders to data cells only (specific number of columns)
+          for (let col = 1; col <= 8; col++) {
+            const cell = dataRow.getCell(col)
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            }
+          }
         })
+        
+        // Add borders to header cells with data only
+        for (let col = 1; col <= 8; col++) {
+          const cell = headerRow.getCell(col)
+          cell.border = {
+            top: { style: 'thick' },
+            left: { style: 'thick' },
+            bottom: { style: 'thick' },
+            right: { style: 'thick' }
+          }
+        }
+        
+        // Add signature section at the bottom
+        const lastDataRow = freshExportData.course.length + 4
+        const signatureRow = lastDataRow + 3
+        
+        courseSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
+        courseSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
+        courseSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
+        courseSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
+        
+        courseSheet.mergeCells(`E${signatureRow}:H${signatureRow}`)
+        courseSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
+        courseSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
+        courseSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
       }
 
       if (exportOptions.student.checked) {
-        const studentSheet = workbook.addWorksheet('Student Activity')
-        studentSheet.columns = [
-          { header: 'Course ID', key: 'id', width: 15 },
-          { header: 'Course Name', key: 'courseName', width: 45 },
-          { header: 'New Students', key: 'newStudents', width: 15 },
-          { header: 'Previously', key: 'previousCompletion', width: 15 },
-          { header: 'Growth Rate (%)', key: 'growth', width: 16 },
-          { header: 'Total Reviews', key: 'reviews', width: 15 },
-          { header: 'Average Rating', key: 'avgRating', width: 16 },
+        const studentSheet = workbook.addWorksheet('Student Activity Analysis')
+        
+        // Add title rows
+        studentSheet.mergeCells('A1:G1')
+        studentSheet.getCell('A1').value = `STUDENT ACTIVITY ANALYSIS REPORT`
+        studentSheet.getCell('A1').font = { bold: true, size: 16 }
+        studentSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        studentSheet.mergeCells('A2:G2')
+        studentSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
+        studentSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
+        studentSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        // Add empty row
+        studentSheet.getRow(3).height = 10
+        
+        // Set up columns starting from row 4
+        studentSheet.getRow(4).values = [
+          'No.',
+          'Course Name',
+          'New Students',
+          'Previously',
+          'Growth Rate (%)',
+          'Total Reviews',
+          'Average Rating'
         ]
-        freshExportData.student.forEach((data: any) => {
-          studentSheet.addRow({
-            id: data.id,
-            courseName: data.courseName,
-            newStudents: data.newStudents,
-            previousCompletion: data.previousCompletion,
-            growth: data.growth,
-            reviews: data.reviews,
-            avgRating: data.avgRating,
-          })
+        
+        // Style header row
+        const headerRow = studentSheet.getRow(4)
+        headerRow.font = { bold: true }
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+        headerRow.height = 25
+        
+        // Apply background color only to cells with data (A4:G4)
+        for (let col = 1; col <= 7; col++) {
+          const cell = headerRow.getCell(col)
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
+        }
+        
+        // Set column widths
+        studentSheet.columns = [
+          { width: 8 },   // No.
+          { width: 45 },  // Course Name
+          { width: 15 },  // New Students
+          { width: 15 },  // Previously
+          { width: 20 },  // Growth Rate
+          { width: 15 },  // Total Reviews
+          { width: 16 },  // Average Rating
+        ]
+        
+        // Add data rows
+        freshExportData.student.forEach((data: any, index: number) => {
+          const rowIndex = index + 5
+          studentSheet.getRow(rowIndex).values = [
+            index + 1,
+            data.courseName,
+            data.newStudents,
+            data.previousCompletion,
+            `${data.growth > 0 ? '+' : ''}${data.growth}%`,
+            data.reviews,
+            data.avgRating,
+          ]
+          
+          // Style data rows
+          const dataRow = studentSheet.getRow(rowIndex)
+          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
+          
+          // Color code growth rate - Fixed color format
+          const growthCell = dataRow.getCell(5)
+          if (data.growth > 0) {
+            growthCell.font = { color: { argb: '008000' }, bold: true } // Green
+          } else if (data.growth < 0) {
+            growthCell.font = { color: { argb: 'FF0000' }, bold: true } // Red
+          }
+          
+          // Add borders to data cells only (specific number of columns)
+          for (let col = 1; col <= 7; col++) {
+            const cell = dataRow.getCell(col)
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            }
+          }
         })
+        
+        // Add borders to header cells with data only
+        for (let col = 1; col <= 7; col++) {
+          const cell = headerRow.getCell(col)
+          cell.border = {
+            top: { style: 'thick' },
+            left: { style: 'thick' },
+            bottom: { style: 'thick' },
+            right: { style: 'thick' }
+          }
+        }
+        
+        // Add signature section at the bottom
+        const lastDataRow = freshExportData.student.length + 4
+        const signatureRow = lastDataRow + 3
+        
+        studentSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
+        studentSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
+        studentSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
+        studentSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
+        
+        studentSheet.mergeCells(`E${signatureRow}:G${signatureRow}`)
+        studentSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
+        studentSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
+        studentSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
       }
 
       if (exportOptions.revenue.checked) {
-        const revenueSheet = workbook.addWorksheet('Revenue Trends')
-        revenueSheet.columns = [
-          { header: 'Course ID', key: 'id', width: 15 },
-          { header: 'Course Name', key: 'courseName', width: 45 },
-          { header: 'Current Revenue (VND)', key: 'revenue', width: 25 },
-          { header: 'Previously (VND)', key: 'previousRevenue', width: 20 },
-          { header: 'Growth Rate (%)', key: 'growth', width: 16 },
-          { header: 'Total Orders', key: 'orders', width: 15 },
-          { header: 'New Students', key: 'newStudents', width: 15 },
-          { header: 'Revenue Share (%)', key: 'revenueShare', width: 18 },
+        const revenueSheet = workbook.addWorksheet('Revenue Trends Analysis')
+        
+        // Add title rows
+        revenueSheet.mergeCells('A1:H1')
+        revenueSheet.getCell('A1').value = `REVENUE TRENDS ANALYSIS REPORT`
+        revenueSheet.getCell('A1').font = { bold: true, size: 16 }
+        revenueSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        revenueSheet.mergeCells('A2:H2')
+        revenueSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
+        revenueSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
+        revenueSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+        
+        // Add empty row
+        revenueSheet.getRow(3).height = 10
+        
+        // Set up columns starting from row 4
+        revenueSheet.getRow(4).values = [
+          'No.',
+          'Course Name',
+          'Current Revenue (VND)',
+          'Previously (VND)',
+          'Growth Rate (%)',
+          'Total Orders',
+          'New Students',
+          'Revenue Share (%)'
         ]
-        freshExportData.revenue.forEach((data: any) => {
-          revenueSheet.addRow({
-            id: data.id,
-            courseName: data.courseName,
-            revenue: data.revenue,
-            previousRevenue: data.previousRevenue,
-            growth: data.growth,
-            orders: data.orders,
-            newStudents: data.newStudents,
-            revenueShare: data.revenueShare,
-          })
+        
+        // Style header row
+        const headerRow = revenueSheet.getRow(4)
+        headerRow.font = { bold: true }
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
+        headerRow.height = 25
+        
+        // Apply background color only to cells with data (A4:H4)
+        for (let col = 1; col <= 8; col++) {
+          const cell = headerRow.getCell(col)
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
+        }
+        
+        // Set column widths
+        revenueSheet.columns = [
+          { width: 8 },   // No.
+          { width: 45 },  // Course Name
+          { width: 25 },  // Current Revenue
+          { width: 20 },  // Previously
+          { width: 20 },  // Growth Rate
+          { width: 15 },  // Total Orders
+          { width: 15 },  // New Students
+          { width: 20 },  // Revenue Share
+        ]
+        
+        // Add data rows
+        freshExportData.revenue.forEach((data: any, index: number) => {
+          const rowIndex = index + 5
+          revenueSheet.getRow(rowIndex).values = [
+            index + 1,
+            data.courseName,
+            data.revenue,
+            data.previousRevenue,
+            `${data.growth > 0 ? '+' : ''}${data.growth}%`,
+            data.orders,
+            data.newStudents,
+            `${data.revenueShare}%`,
+          ]
+          
+          // Style data rows
+          const dataRow = revenueSheet.getRow(rowIndex)
+          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
+          
+          // Color code growth rate - Fixed color format
+          const growthCell = dataRow.getCell(5)
+          if (data.growth > 0) {
+            growthCell.font = { color: { argb: '008000' }, bold: true } // Green
+          } else if (data.growth < 0) {
+            growthCell.font = { color: { argb: 'FF0000' }, bold: true } // Red
+          }
+          
+          // Add borders to data cells only (specific number of columns)
+          for (let col = 1; col <= 8; col++) {
+            const cell = dataRow.getCell(col)
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            }
+          }
         })
+        
+        // Add borders to header cells with data only
+        for (let col = 1; col <= 8; col++) {
+          const cell = headerRow.getCell(col)
+          cell.border = {
+            top: { style: 'thick' },
+            left: { style: 'thick' },
+            bottom: { style: 'thick' },
+            right: { style: 'thick' }
+          }
+        }
+        
+        // Add signature section at the bottom
+        const lastDataRow = freshExportData.revenue.length + 4
+        const signatureRow = lastDataRow + 3
+        
+        revenueSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
+        revenueSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
+        revenueSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
+        revenueSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
+        
+        revenueSheet.mergeCells(`E${signatureRow}:H${signatureRow}`)
+        revenueSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
+        revenueSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
+        revenueSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
       }
 
       // 5. Generate filename with date info
@@ -817,7 +1178,7 @@ export function ManagerAnalytics() {
         {/* Item Count Info - Always visible */}
         <div className='text-sm text-gray-600 text-center'>
           {safeTotalItems === 0 
-            ? 'No items to display'
+            ? '  '
             : `Showing ${startItem} to ${endItem} of ${safeTotalItems} items`
           }
         </div>

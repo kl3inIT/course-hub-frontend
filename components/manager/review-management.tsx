@@ -1,10 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   Select,
   SelectContent,
@@ -12,30 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Star,
-  MessageSquare,
-  ThumbsUp,
-  Flag,
-  Search,
-  RefreshCw,
-} from 'lucide-react'
-import { reviewApi } from '@/services/review-api'
+import { Textarea } from '@/components/ui/textarea'
 import { categoryApi } from '@/services/category-api'
-import { ReviewResponseDTO, ReviewSearchParams } from '@/types/review'
+import { reviewApi } from '@/services/review-api'
 import { CategoryResponseDTO } from '@/types/category'
 import { Page } from '@/types/common'
+import { ReviewResponseDTO, ReviewSearchParams } from '@/types/review'
+import {
+  Flag,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  Search,
+  Star
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export function ReviewManagement() {
@@ -56,6 +55,20 @@ export function ReviewManagement() {
   const [responseText, setResponseText] = useState('')
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
+
+  // Report modal states
+  const [showReport, setShowReport] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDescription, setReportDescription] = useState('')
+  const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null)
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false)
+
+  const reportReasons = [
+    { id: 'Spam', label: 'Spam or advertising' },
+    { id: 'Inappropriate', label: 'Inappropriate content' },
+    { id: 'Harassment', label: 'Harassment or bullying' },
+    { id: 'Other', label: 'Other reason' },
+  ]
 
   // Fetch reviews
   const fetchReviews = async (page: number = 0, size: number = 5) => {
@@ -124,6 +137,43 @@ export function ReviewManagement() {
     } catch (error) {
       toast('Failed to submit response. Please try again!')
     }
+  }
+
+  // Handle report functions
+  const handleReport = useCallback(
+    async (reviewId: number, reason: string, description?: string) => {
+      setIsSubmittingReport(true)
+      
+      // Simulate API call for now (replace with actual API call later)
+      setTimeout(() => {
+        // Show success message
+        toast.success('Report submitted successfully!', {
+          description: 'We will review your report as soon as possible.',
+          duration: 4000,
+        })
+        
+        // Close modal and reset state
+        setShowReport(false)
+        setReportReason('')
+        setReportDescription('')
+        setSelectedReviewId(null)
+        setIsSubmittingReport(false)
+      }, 1500) // Simulate 1.5 second loading
+    },
+    []
+  )
+
+  const handleOpenReport = (reviewId: number) => {
+    setSelectedReviewId(reviewId)
+    setShowReport(true)
+  }
+
+  const handleCloseReport = () => {
+    setShowReport(false)
+    setReportReason('')
+    setReportDescription('')
+    setSelectedReviewId(null)
+    setIsSubmittingReport(false)
   }
 
   const renderStars = (rating: number) => {
@@ -283,7 +333,7 @@ export function ReviewManagement() {
             <CardContent>
               <div className='flex justify-between items-center'>
                 <p className='text-sm mb-4 mr-4'>{review.comment}</p>
-                <Button variant='ghost' size='sm'>
+                <Button variant='ghost' size='sm' onClick={() => handleOpenReport(review.id)}>
                   <Flag className='mr-1 h-3 w-3' />
                   Report
                 </Button>
@@ -327,6 +377,58 @@ export function ReviewManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Report Modal */}
+      <Dialog open={showReport} onOpenChange={handleCloseReport}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Report Review</DialogTitle>
+            <DialogDescription>
+              Please let us know why you want to report this review
+            </DialogDescription>
+          </DialogHeader>
+          <div className='space-y-4 py-4'>
+            <RadioGroup
+              value={reportReason}
+              onValueChange={setReportReason}
+            >
+              {reportReasons.map(reason => (
+                <div key={reason.id} className='flex items-center space-x-2'>
+                  <RadioGroupItem value={reason.id} id={reason.id} />
+                  <Label htmlFor={reason.id}>{reason.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+            <div className='space-y-2'>
+              <Label htmlFor='description'>
+                Description (optional)
+              </Label>
+              <Textarea
+                id='description'
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder='Add more details about the issue...'
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className='flex justify-end gap-3'>
+            <Button variant='outline' onClick={handleCloseReport} disabled={isSubmittingReport}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                selectedReviewId &&
+                handleReport(selectedReviewId, reportReason, reportDescription)
+              }
+              disabled={!reportReason || isSubmittingReport}
+            >
+              {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

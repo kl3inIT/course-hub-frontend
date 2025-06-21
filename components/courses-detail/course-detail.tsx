@@ -1,6 +1,5 @@
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,10 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { courseApi } from '@/services/course-api'
@@ -36,23 +32,22 @@ import { CourseDetailsResponseDTO } from '@/types/course'
 import { EnrollmentStatusResponseDTO } from '@/types/enrollment'
 import { LessonResponseDTO } from '@/types/lesson'
 import { ModuleResponseDTO } from '@/types/module'
-import { CourseReviews } from './course-reviews'
 import {
   AlertCircle,
   CheckCircle,
   ChevronDown,
   ChevronRight,
   Clock,
-  Flag,
   Loader2,
   Lock,
   Play,
   PlayCircle,
-  Star,
+  Star
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PaymentModal } from '../payment/payment-modal'
+import { CourseReviews } from './course-reviews'
 
 interface CourseDetailProps {
   courseId: string

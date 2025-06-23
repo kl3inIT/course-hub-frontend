@@ -1,9 +1,15 @@
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  BANNED = 'BANNED',
+}
+
 export interface User {
   id: string
   name: string
   email: string
   role: string
-  status: 'active' | 'banned'
+  status: UserStatus
   avatar?: string
   joinDate?: string
   enrolledcourses?: number
@@ -64,7 +70,7 @@ export interface UserSearchParams {
   pageSize?: number
   pageNo?: number
   role?: string
-  status?: string
+  status?: UserStatus
   search?: string
 }
 

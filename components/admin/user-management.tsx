@@ -65,17 +65,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { User } from '@/types/user'
+import { User, UserStatus } from '@/types/user'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import {
+  AlertTriangle,
   Ban,
   CheckCircle,
   Eye,
   GraduationCap,
   MoreHorizontal,
   Search,
-  Trash2,
   Users,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -123,20 +123,23 @@ export function UserManagement() {
 
   const STATUS_OPTIONS = [
     { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'banned', label: 'Banned' },
+    { value: UserStatus.ACTIVE, label: 'Active' },
+    { value: UserStatus.BANNED, label: 'Banned' },
   ]
 
   // States
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedStatus, setSelectedStatus] = useState<'all' | UserStatus>(
+    'all'
+  )
   const [activeTab, setActiveTab] = useState('learner')
   const [isLoading, setIsLoading] = useState(true)
   const [userStats, setUserStats] = useState({
     total: 0,
     active: 0,
     banned: 0,
+    inactive: 0,
   })
   const [pagination, setPagination] = useState({
     currentPage: 0,
@@ -156,9 +159,9 @@ export function UserManagement() {
   }, [pagination.currentPage, pagination.pageSize])
 
   // API Calls
-  const fetchUsersWithStatus = async (status: string) => {
+  const fetchUsersWithStatus = async (status: UserStatus | 'all') => {
     const response = await fetch(
-      `${BACKEND_URL}/api/admin/users?pageSize=1&pageNo=0&role=${activeTab.toUpperCase()}&status=${status}`,
+      `${BACKEND_URL}/api/admin/users?pageSize=1&pageNo=0&role=${activeTab.toUpperCase()}&status=${status !== 'all' ? status.toUpperCase() : ''}`,
       {
         headers: {
           Authorization: `Bearer ${getToken()}`,
@@ -167,6 +170,7 @@ export function UserManagement() {
     )
     if (!response.ok) return 0
     const data = await response.json()
+    console.log('API response for status', status, data)
     return data.data?.totalElements || 0
   }
 
@@ -184,15 +188,17 @@ export function UserManagement() {
 
       // Fetch stats on first page
       if (pagination.currentPage === 0) {
-        const [activeCount, bannedCount] = await Promise.all([
-          fetchUsersWithStatus('active'),
-          fetchUsersWithStatus('banned'),
+        const [activeCount, bannedCount, inactiveCount] = await Promise.all([
+          fetchUsersWithStatus(UserStatus.ACTIVE),
+          fetchUsersWithStatus(UserStatus.BANNED),
+          fetchUsersWithStatus(UserStatus.INACTIVE),
         ])
-
+        console.log('Counts:', { activeCount, bannedCount, inactiveCount })
         setUserStats({
-          total: activeCount + bannedCount,
+          total: activeCount + bannedCount + inactiveCount,
           active: activeCount,
           banned: bannedCount,
+          inactive: inactiveCount,
         })
       }
 
@@ -201,7 +207,7 @@ export function UserManagement() {
         pageSize: pagination.pageSize.toString(),
         pageNo: pagination.currentPage.toString(),
         role: activeTab.toUpperCase(),
-        status: selectedStatus !== 'all' ? selectedStatus : '',
+        status: selectedStatus !== 'all' ? selectedStatus.toUpperCase() : '',
       })
 
       const response = await fetch(
@@ -240,7 +246,7 @@ export function UserManagement() {
         totalPages: 0,
       }))
       if (pagination.currentPage === 0) {
-        setUserStats({ total: 0, active: 0, banned: 0 })
+        setUserStats({ total: 0, active: 0, banned: 0, inactive: 0 })
       }
     } finally {
       setIsLoading(false)
@@ -262,7 +268,7 @@ export function UserManagement() {
 
   const handleUpdateUserStatus = async (
     userId: string,
-    newStatus: 'active' | 'banned'
+    newStatus: UserStatus
   ) => {
     try {
       const token = getToken()
@@ -547,7 +553,7 @@ export function UserManagement() {
 
       {/* Stats Cards */}
       <div
-        className={`grid gap-4 md:grid-cols-2 ${activeTab === 'learner' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+        className={`grid gap-4 md:grid-cols-2 ${activeTab === 'manager' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}
       >
         {renderStatsCard(
           activeTab === 'learner' ? 'Total Learners' : 'Total Managers',
@@ -559,12 +565,17 @@ export function UserManagement() {
           userStats.active,
           <CheckCircle className='h-4 w-4 text-green-600' />
         )}
-        {activeTab === 'learner' &&
+        {activeTab === 'manager' &&
           renderStatsCard(
-            'Banned',
-            userStats.banned,
-            <Ban className='h-4 w-4 text-red-600' />
+            'Inactive',
+            userStats.inactive,
+            <AlertTriangle className='h-4 w-4 text-gray-600' />
           )}
+        {renderStatsCard(
+          'Banned',
+          userStats.banned,
+          <Ban className='h-4 w-4 text-red-600' />
+        )}
         {renderStatsCard(
           activeTab === 'learner' ? 'Enrolled Courses' : 'Managed Courses',
           0,
@@ -613,7 +624,9 @@ export function UserManagement() {
                 </div>
                 <Select
                   value={selectedStatus}
-                  onValueChange={setSelectedStatus}
+                  onValueChange={value =>
+                    setSelectedStatus(value as UserStatus | 'all')
+                  }
                 >
                   <SelectTrigger className='w-[150px]'>
                     <SelectValue placeholder='Filter by status' />
@@ -671,13 +684,19 @@ export function UserManagement() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={
-                              user.status === 'active'
-                                ? 'default'
-                                : 'destructive'
+                            className={
+                              user.status === UserStatus.ACTIVE
+                                ? 'bg-green-100 text-green-800'
+                                : user.status === UserStatus.INACTIVE
+                                  ? 'bg-gray-100 text-black'
+                                  : 'bg-red-100 text-red-600'
                             }
                           >
-                            {user.status === 'active' ? 'Active' : 'Banned'}
+                            {user.status === UserStatus.ACTIVE
+                              ? 'Active'
+                              : user.status === UserStatus.INACTIVE
+                                ? 'Inactive'
+                                : 'Banned'}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
@@ -846,13 +865,19 @@ export function UserManagement() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={
-                              user.status === 'active'
-                                ? 'default'
-                                : 'destructive'
+                            className={
+                              user.status === UserStatus.ACTIVE
+                                ? 'bg-green-100 text-green-800'
+                                : user.status === UserStatus.INACTIVE
+                                  ? 'bg-gray-100 text-black'
+                                  : 'bg-red-100 text-red-600'
                             }
                           >
-                            {user.status === 'active' ? 'Active' : 'Banned'}
+                            {user.status === UserStatus.ACTIVE
+                              ? 'Active'
+                              : user.status === UserStatus.INACTIVE
+                                ? 'Inactive'
+                                : 'Banned'}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
@@ -871,42 +896,64 @@ export function UserManagement() {
                                 <Eye className='mr-2 h-4 w-4' />
                                 View Profile
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
+                              {user.status === UserStatus.INACTIVE ? (
+                                <>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    onSelect={e => e.preventDefault()}
-                                    className='text-red-600 cursor-pointer'
+                                    onClick={() =>
+                                      handleUpdateUserStatus(
+                                        user.id,
+                                        UserStatus.ACTIVE
+                                      )
+                                    }
+                                    className='text-green-600 cursor-pointer'
                                   >
-                                    <Trash2 className='mr-2 h-4 w-4' />
-                                    Delete Manager
+                                    <CheckCircle className='mr-2 h-4 w-4' />
+                                    Activate
                                   </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Are you absolutely sure?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will
-                                      permanently delete the manager account and
-                                      remove all associated data from our
-                                      servers.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                      Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(user.id)}
-                                      className='bg-red-600 hover:bg-red-700'
-                                    >
-                                      Delete Permanently
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem
+                                        onSelect={e => e.preventDefault()}
+                                        className='text-red-600 cursor-pointer'
+                                      >
+                                        <AlertTriangle className='mr-2 h-4 w-4 text-yellow-500' />
+                                        Deactivate
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          Deactivate Manager?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will deactivate the manager
+                                          account. The manager will not be able
+                                          to log in until reactivated. This
+                                          action can be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                          Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() =>
+                                            handleDeleteUser(user.id)
+                                          }
+                                          className='bg-red-600 hover:bg-red-700'
+                                        >
+                                          Confirm Deactivate
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>

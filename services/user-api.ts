@@ -7,6 +7,7 @@ import {
   User,
   UserDetail,
   UserSearchParams,
+  UserStatus,
 } from '@/types/user'
 
 export const userApi = {
@@ -91,7 +92,7 @@ export const userApi = {
     // Update user status
     updateUserStatus: async (
       userId: string,
-      status: 'active' | 'banned'
+      status: UserStatus
     ): Promise<ApiResponse<void>> => {
       const response = await httpClient.put(
         `/api/admin/users/${userId}/status`,

@@ -20,50 +20,62 @@ export interface UseCourseDataReturn {
   currentLesson: LessonResponseDTO | null
   moduleLessons: Record<string, LessonResponseDTO[]>
   expandedModules: Set<string>
-  
+
   // Loading/error state
   loading: boolean
   error: string | null
-  
+
   // Enrollment state
   isEnrolled: boolean | null
   isCheckingEnrollment: boolean
-  
+
   // Video URL
   videoUrl: string | undefined
-  
+
   // Actions
   toggleModuleExpansion: (moduleId: string) => void
-  getNextLesson: () => { module: ModuleResponseDTO; lesson: LessonResponseDTO } | null
-  getPreviousLesson: () => { module: ModuleResponseDTO; lesson: LessonResponseDTO } | null
+  getNextLesson: () => {
+    module: ModuleResponseDTO
+    lesson: LessonResponseDTO
+  } | null
+  getPreviousLesson: () => {
+    module: ModuleResponseDTO
+    lesson: LessonResponseDTO
+  } | null
   refetchCourseData: () => Promise<void>
 }
 
-export function useCourseData({ 
-  courseId, 
-  lessonId, 
-  userId 
+export function useCourseData({
+  courseId,
+  lessonId,
+  userId,
 }: UseCourseDataProps): UseCourseDataReturn {
   // Data state
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
-  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(null)
-  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(null)
-  const [moduleLessons, setModuleLessons] = useState<Record<string, LessonResponseDTO[]>>({})
+  const [currentModule, setCurrentModule] = useState<ModuleResponseDTO | null>(
+    null
+  )
+  const [currentLesson, setCurrentLesson] = useState<LessonResponseDTO | null>(
+    null
+  )
+  const [moduleLessons, setModuleLessons] = useState<
+    Record<string, LessonResponseDTO[]>
+  >({})
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
-  
+
   // Loading/error state
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Enrollment state
   const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null)
   const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true)
-  
+
   // Video URL
   const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined)
-  
+
   const router = useRouter()
-  
+
   // Use a ref for stable router access
   const routerRef = useRef(router)
   routerRef.current = router
@@ -76,7 +88,7 @@ export function useCourseData({
         setIsCheckingEnrollment(false)
         return
       }
-      
+
       try {
         setIsCheckingEnrollment(true)
         const response = await enrollmentApi.getEnrollmentStatus(courseId)
@@ -88,7 +100,7 @@ export function useCourseData({
         setIsCheckingEnrollment(false)
       }
     }
-    
+
     checkEnrollment()
   }, [courseId, userId])
 
@@ -103,14 +115,14 @@ export function useCourseData({
     try {
       setLoading(true)
       setError(null)
-      
+
       const courseResponse = await courseApi.getCourseDetails(courseId)
       if (!courseResponse.data) {
         throw new Error(`Course with ID "${courseId}" not found`)
       }
-      
+
       setCourse(courseResponse.data)
-      
+
       if (!lessonId) {
         const firstModule = courseResponse.data.modules[0]
         if (firstModule) {
@@ -127,7 +139,7 @@ export function useCourseData({
 
       let foundModule: ModuleResponseDTO | undefined = undefined
       let foundLesson: LessonResponseDTO | undefined = undefined
-      
+
       for (const m of courseResponse.data.modules) {
         const lessonsResponse = await lessonApi.getLessonsByModuleId(
           m.id.toString()
@@ -135,7 +147,7 @@ export function useCourseData({
         const lesson = lessonsResponse.data.find(
           l => l.id.toString() === lessonId
         )
-        
+
         if (lesson) {
           foundModule = m
           foundLesson = lesson
@@ -174,7 +186,7 @@ export function useCourseData({
   useEffect(() => {
     const fetchVideoUrl = async () => {
       if (!currentLesson) return
-      
+
       try {
         const response = await lessonApi.getLessonUrl(
           currentLesson.id.toString()
@@ -185,7 +197,7 @@ export function useCourseData({
         setVideoUrl(undefined)
       }
     }
-    
+
     fetchVideoUrl()
   }, [currentLesson])
 
@@ -196,29 +208,33 @@ export function useCourseData({
   }, [courseId, lessonId]) // Depend on courseId and lessonId directly instead of fetchCourseData
 
   // Toggle module expansion and load lessons
-  const toggleModuleExpansion = useCallback(async (moduleId: string) => {
-    const newExpanded = new Set(expandedModules)
-    
-    if (newExpanded.has(moduleId)) {
-      newExpanded.delete(moduleId)
-    } else {
-      newExpanded.add(moduleId)
-      // Fetch lessons when module is expanded
-      if (!moduleLessons[moduleId]) {
-        try {
-          const lessonsResponse = await lessonApi.getLessonsByModuleId(moduleId)
-          setModuleLessons(prev => ({
-            ...prev,
-            [moduleId]: lessonsResponse.data,
-          }))
-        } catch (err) {
-          console.error('Failed to load module lessons:', err)
+  const toggleModuleExpansion = useCallback(
+    async (moduleId: string) => {
+      const newExpanded = new Set(expandedModules)
+
+      if (newExpanded.has(moduleId)) {
+        newExpanded.delete(moduleId)
+      } else {
+        newExpanded.add(moduleId)
+        // Fetch lessons when module is expanded
+        if (!moduleLessons[moduleId]) {
+          try {
+            const lessonsResponse =
+              await lessonApi.getLessonsByModuleId(moduleId)
+            setModuleLessons(prev => ({
+              ...prev,
+              [moduleId]: lessonsResponse.data,
+            }))
+          } catch (err) {
+            console.error('Failed to load module lessons:', err)
+          }
         }
       }
-    }
-    
-    setExpandedModules(newExpanded)
-  }, [expandedModules, moduleLessons])
+
+      setExpandedModules(newExpanded)
+    },
+    [expandedModules, moduleLessons]
+  )
 
   // Get next lesson
   const getNextLesson = useCallback(() => {
@@ -295,22 +311,22 @@ export function useCourseData({
     currentLesson,
     moduleLessons,
     expandedModules,
-    
+
     // Loading/error state
     loading,
     error,
-    
+
     // Enrollment state
     isEnrolled,
     isCheckingEnrollment,
-    
+
     // Video URL
     videoUrl,
-    
+
     // Actions
     toggleModuleExpansion,
     getNextLesson,
     getPreviousLesson,
     refetchCourseData: fetchCourseData,
   }
-} 
+}

@@ -58,17 +58,15 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   const lessonProgress = useLessonProgress({
     courseId,
     currentLesson: courseData.currentLesson,
-    onProgressUpdate: (progress) => {
+    onProgressUpdate: progress => {
       console.log('Progress updated:', progress)
     },
-    onLessonComplete: (lessonId) => {
+    onLessonComplete: lessonId => {
       toast({
         title: 'Lesson Completed!',
         description: `You've completed this lesson`,
       })
-      // ❌ REMOVED: lessonProgress.markLessonComplete(lessonId) - This causes infinite recursion!
-      
-      // Auto navigate to next lesson
+
       const nextLesson = courseData.getNextLesson()
       if (nextLesson) {
         setTimeout(() => {
@@ -79,7 +77,7 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         }, 1200)
       }
     },
-    onOverallProgressUpdate: (progress) => {
+    onOverallProgressUpdate: progress => {
       console.log('Overall progress updated:', progress)
     },
   })
@@ -87,36 +85,57 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
   // ✅ NEW: Check access and redirect if denied (for direct navigation)
   useEffect(() => {
     const checkAccessAndRedirect = async () => {
-      if (!courseData.currentLesson || !courseData.isEnrolled || courseData.loading) return
-      
+      if (
+        !courseData.currentLesson ||
+        !courseData.isEnrolled ||
+        courseData.loading
+      )
+        return
+
       // Skip check for current lesson if we're already here (avoid infinite loop)
       if (lessonProgress.isAccessChecking) return
-      
+
       try {
-        console.log('🔍 Checking access for direct navigation to lesson:', courseData.currentLesson.id)
-        const canAccess = await lessonProgress.checkLessonAccess(courseData.currentLesson.id)
+        console.log(
+          '🔍 Checking access for direct navigation to lesson:',
+          courseData.currentLesson.id
+        )
+        const canAccess = await lessonProgress.checkLessonAccess(
+          courseData.currentLesson.id
+        )
         console.log('🔐 Direct access check result:', canAccess)
-        
+
         if (!canAccess) {
           console.log('❌ Access denied, redirecting to course page...')
           toast({
             title: 'Access Denied',
-            description: 'You need to complete previous lessons first. Redirecting to course page...',
+            description:
+              'You need to complete previous lessons first. Redirecting to course page...',
             variant: 'destructive',
           })
-          
+
           // Redirect to course page after showing error
           setTimeout(() => {
             router.push(`/courses/${courseId}`)
           }, 2000)
         }
       } catch (error) {
-        console.error('❌ Failed to check lesson access for direct navigation:', error)
+        console.error(
+          '❌ Failed to check lesson access for direct navigation:',
+          error
+        )
       }
     }
 
     checkAccessAndRedirect()
-  }, [courseData.currentLesson, courseData.isEnrolled, courseData.loading, lessonProgress.isAccessChecking, lessonId, courseId])
+  }, [
+    courseData.currentLesson,
+    courseData.isEnrolled,
+    courseData.loading,
+    lessonProgress.isAccessChecking,
+    lessonId,
+    courseId,
+  ])
 
   // Navigation function
   const navigateToLesson = async (moduleId: string, targetLessonId: string) => {
@@ -124,12 +143,17 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
 
     try {
       console.log('🔄 Navigating to lesson:', targetLessonId)
-      console.log('📋 Current completed lessons:', Array.from(lessonProgress.completedLessons))
-      
+      console.log(
+        '📋 Current completed lessons:',
+        Array.from(lessonProgress.completedLessons)
+      )
+
       // Check if user can access the target lesson
-      const canAccess = await lessonProgress.checkLessonAccess(Number(targetLessonId))
+      const canAccess = await lessonProgress.checkLessonAccess(
+        Number(targetLessonId)
+      )
       console.log('🔐 Lesson access check result:', canAccess)
-      
+
       if (!canAccess) {
         toast({
           title: 'Access Restricted',
@@ -243,10 +267,15 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
           <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto'></div>
           <div className='space-y-2'>
             <p className='text-lg font-medium'>
-              {lessonProgress.isAccessChecking ? 'Checking lesson access...' : 'Loading course content...'}
+              {lessonProgress.isAccessChecking
+                ? 'Checking lesson access...'
+                : 'Loading course content...'}
             </p>
             <p className='text-sm text-muted-foreground'>
-              Please wait while we {lessonProgress.isAccessChecking ? 'verify your access' : 'fetch your lesson'}
+              Please wait while we{' '}
+              {lessonProgress.isAccessChecking
+                ? 'verify your access'
+                : 'fetch your lesson'}
             </p>
           </div>
         </div>
@@ -292,7 +321,11 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
     )
   }
 
-  if (!courseData.course || !courseData.currentModule || !courseData.currentLesson) {
+  if (
+    !courseData.course ||
+    !courseData.currentModule ||
+    !courseData.currentLesson
+  ) {
     return (
       <Alert className='max-w-2xl mx-auto'>
         <AlertCircle className='h-4 w-4' />
@@ -345,7 +378,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
         <CardHeader>
           <div className='flex items-start justify-between'>
             <div className='space-y-2'>
-              <CardTitle className='text-2xl'>{courseData.course.title}</CardTitle>
+              <CardTitle className='text-2xl'>
+                {courseData.course.title}
+              </CardTitle>
             </div>
             {lessonProgress.displayProgress !== undefined && (
               <Badge variant='secondary'>
@@ -354,7 +389,10 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
             )}
           </div>
           {lessonProgress.displayProgress !== undefined && (
-            <Progress value={lessonProgress.displayProgress} className='w-full' />
+            <Progress
+              value={lessonProgress.displayProgress}
+              className='w-full'
+            />
           )}
         </CardHeader>
       </Card>
@@ -368,11 +406,14 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
               <div className='flex items-center justify-between'>
                 <div>
                   <CardTitle className='text-lg'>
-                    Module {courseData.currentModule.orderNumber}: {courseData.currentModule.title}
+                    Module {courseData.currentModule.orderNumber}:{' '}
+                    {courseData.currentModule.title}
                   </CardTitle>
                   <CardDescription>
                     {courseData.course.totalLessons} lessons •{' '}
-                    {lessonProgress.formatDuration(courseData.course.totalDuration)}
+                    {lessonProgress.formatDuration(
+                      courseData.course.totalDuration
+                    )}
                   </CardDescription>
                 </div>
               </div>
@@ -390,13 +431,19 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                   // ✅ FIXED: Update progress to 100% first, then mark complete
                   if (courseData.currentLesson) {
                     // First update progress to completion (using lesson duration or current video duration)
-                    const lessonDuration = courseData.currentLesson.duration || 0
+                    const lessonDuration =
+                      courseData.currentLesson.duration || 0
                     if (lessonDuration > 0) {
-                      await lessonProgress.updateLessonProgress(lessonDuration, 0)
+                      await lessonProgress.updateLessonProgress(
+                        lessonDuration,
+                        0
+                      )
                     }
-                    
+
                     // Then mark lesson complete (this will sync with backend AND refresh completed lessons)
-                    await lessonProgress.markLessonComplete(courseData.currentLesson.id)
+                    await lessonProgress.markLessonComplete(
+                      courseData.currentLesson.id
+                    )
                   }
                 }}
                 onProgressUpdate={(currentTime, progress) => {
@@ -429,9 +476,12 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
             <CardHeader>
               <CardTitle className='flex items-center'>
                 <BookOpen className='h-5 w-5 mr-2' />
-                Lesson {courseData.currentLesson.orderNumber}: {courseData.currentLesson.title}
+                Lesson {courseData.currentLesson.orderNumber}:{' '}
+                {courseData.currentLesson.title}
               </CardTitle>
-              <CardDescription>Lesson content for {courseData.currentLesson.title}</CardDescription>
+              <CardDescription>
+                Lesson content for {courseData.currentLesson.title}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue='content' className='w-full'>
@@ -443,8 +493,14 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                 <TabsContent value='content' className='mt-4'>
                   <div className='prose prose-sm max-w-none dark:prose-invert'>
                     <div className='whitespace-pre-wrap'>
-                      <p>This is the content area for "{courseData.currentLesson.title}".</p>
-                      <p>Lesson content and materials will be displayed here when available.</p>
+                      <p>
+                        This is the content area for "
+                        {courseData.currentLesson.title}".
+                      </p>
+                      <p>
+                        Lesson content and materials will be displayed here when
+                        available.
+                      </p>
                     </div>
                   </div>
                 </TabsContent>
@@ -511,4 +567,4 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
 }
 
 // Export the LessonViewer component directly
-export default LessonViewer 
+export default LessonViewer

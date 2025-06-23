@@ -41,8 +41,6 @@ export interface PaymentHistoryResponseDTO {
   date: string
 }
 
-
-
 export interface PageResponse<T> {
   content: T[]
   page: {

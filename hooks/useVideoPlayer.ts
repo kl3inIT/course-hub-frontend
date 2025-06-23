@@ -12,7 +12,7 @@ export interface UseVideoPlayerReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>
   videoContainerRef: React.RefObject<HTMLDivElement | null>
   progressBarRef: React.RefObject<HTMLDivElement | null>
-  
+
   // Video state
   isPlaying: boolean
   currentTime: number
@@ -23,7 +23,7 @@ export interface UseVideoPlayerReturn {
   playbackSpeed: number
   videoSize: 'small' | 'medium' | 'large'
   isFullscreen: boolean
-  
+
   // Video actions
   togglePlayPause: () => Promise<void>
   toggleFullscreen: () => void
@@ -33,12 +33,12 @@ export interface UseVideoPlayerReturn {
   handleVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleSpeedChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
   setVideoSize: (size: 'small' | 'medium' | 'large') => void
-  
+
   // Video event handlers
   handleTimeUpdate: () => void
   handleLoadedMetadata: () => void
   handleVideoEnded: () => void
-  
+
   // Utility functions
   formatTime: (time: number) => string
 }
@@ -62,7 +62,9 @@ export function useVideoPlayer({
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
-  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>('medium')
+  const [videoSize, setVideoSize] = useState<'small' | 'medium' | 'large'>(
+    'medium'
+  )
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Video player functions
@@ -119,16 +121,19 @@ export function useVideoPlayer({
     }
   }, [])
 
-  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (progressBarRef.current && videoRef.current) {
-      const rect = progressBarRef.current.getBoundingClientRect()
-      const clickX = e.clientX - rect.left
-      const width = rect.width
-      const percentage = clickX / width
-      const newTime = percentage * duration
-      videoRef.current.currentTime = newTime
-    }
-  }, [duration])
+  const handleProgressClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (progressBarRef.current && videoRef.current) {
+        const rect = progressBarRef.current.getBoundingClientRect()
+        const clickX = e.clientX - rect.left
+        const width = rect.width
+        const percentage = clickX / width
+        const newTime = percentage * duration
+        videoRef.current.currentTime = newTime
+      }
+    },
+    [duration]
+  )
 
   const toggleMute = useCallback(() => {
     if (videoRef.current) {
@@ -137,21 +142,27 @@ export function useVideoPlayer({
     }
   }, [isMuted])
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = Number.parseFloat(e.target.value)
-    setVolume(newVolume)
-    if (videoRef.current) {
-      videoRef.current.volume = newVolume
-    }
-  }, [])
+  const handleVolumeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newVolume = Number.parseFloat(e.target.value)
+      setVolume(newVolume)
+      if (videoRef.current) {
+        videoRef.current.volume = newVolume
+      }
+    },
+    []
+  )
 
-  const handleSpeedChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSpeed = Number.parseFloat(e.target.value)
-    setPlaybackSpeed(newSpeed)
-    if (videoRef.current) {
-      videoRef.current.playbackRate = newSpeed
-    }
-  }, [])
+  const handleSpeedChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newSpeed = Number.parseFloat(e.target.value)
+      setPlaybackSpeed(newSpeed)
+      if (videoRef.current) {
+        videoRef.current.playbackRate = newSpeed
+      }
+    },
+    []
+  )
 
   // Video event handlers
   const handleTimeUpdate = useCallback(() => {
@@ -188,7 +199,7 @@ export function useVideoPlayer({
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
     }
-    
+
     const handleKeyPress = async (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullscreen) {
         setIsFullscreen(false)
@@ -203,10 +214,10 @@ export function useVideoPlayer({
         await togglePlayPause()
       }
     }
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     document.addEventListener('keydown', handleKeyPress)
-    
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       document.removeEventListener('keydown', handleKeyPress)
@@ -238,7 +249,7 @@ export function useVideoPlayer({
           setDuration(videoRef.current.duration)
         }
       }
-      
+
       videoRef.current.addEventListener('canplay', handleCanPlay)
       return () => {
         videoRef.current?.removeEventListener('canplay', handleCanPlay)
@@ -251,7 +262,7 @@ export function useVideoPlayer({
     videoRef,
     videoContainerRef,
     progressBarRef,
-    
+
     // Video state
     isPlaying,
     currentTime,
@@ -262,7 +273,7 @@ export function useVideoPlayer({
     playbackSpeed,
     videoSize,
     isFullscreen,
-    
+
     // Video actions
     togglePlayPause,
     toggleFullscreen,
@@ -272,13 +283,13 @@ export function useVideoPlayer({
     handleVolumeChange,
     handleSpeedChange,
     setVideoSize,
-    
+
     // Video event handlers
     handleTimeUpdate,
     handleLoadedMetadata,
     handleVideoEnded,
-    
+
     // Utility functions
     formatTime,
   }
-} 
+}

@@ -14,7 +14,7 @@ import { DashboardCourseResponseDTO } from '@/types/course'
 
 interface CourseCardProps {
   course: DashboardCourseResponseDTO
-  type: 'active' | 'completed' | 'certificate'
+  type: 'active' | 'completed' | 'certificate' | 'recommended'
   onViewCertificate?: (course: DashboardCourseResponseDTO) => void
 }
 
@@ -127,7 +127,7 @@ export function CourseCard({
 
   // Certificate card
   return (
-    <Card className='overflow-hidden hover:shadow-lg transition-shadow'>
+    <Card className='overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col'>
       <CardHeader className='bg-gradient-to-r from-blue-500 to-purple-600 text-white'>
         <div className='flex items-center justify-between'>
           <Award className='h-8 w-8' />
@@ -136,7 +136,7 @@ export function CourseCard({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className='p-6 space-y-4'>
+      <CardContent className='p-6 flex-1 flex flex-col'>
         <div>
           <h3 className='font-bold text-lg line-clamp-2'>{course.title}</h3>
           <p className='text-sm text-muted-foreground'>
@@ -154,7 +154,7 @@ export function CourseCard({
           </div>
         </div>
 
-        <div className='flex gap-2'>
+        <div className='mt-auto flex gap-2'>
           <Button
             variant='outline'
             size='sm'

@@ -123,7 +123,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   const [showPreview, setShowPreview] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-
   const checkEnrollmentStatus = async (courseId: string) => {
     if (!user) {
       setEnrollmentStatus({ enrolled: false, progress: 0, completed: false })
@@ -289,8 +288,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       videoRef.current.pause()
     }
   }
-
-
 
   if (loading) {
     return (
@@ -611,10 +608,10 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         </TabsContent>
 
         <TabsContent value='reviews' className='space-y-6'>
-          <CourseReviews 
-            courseId={courseId} 
-            averageRating={course.averageRating} 
-            totalReviews={course.totalReviews} 
+          <CourseReviews
+            courseId={courseId}
+            averageRating={course.averageRating}
+            totalReviews={course.totalReviews}
           />
         </TabsContent>
       </Tabs>
@@ -666,8 +663,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           totalStudents: course.totalStudents,
         }}
       />
-
-
     </div>
   )
 }

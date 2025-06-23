@@ -527,7 +527,9 @@ export function ManagerCourseList() {
                         <DropdownMenuItem
                           onClick={async () => {
                             try {
-                              await courseApi.restoreCourse(course.id.toString())
+                              await courseApi.restoreCourse(
+                                course.id.toString()
+                              )
                               toast({
                                 title: 'Course Restored',
                                 description: `"${course.title}" has been restored.`,
@@ -536,7 +538,10 @@ export function ManagerCourseList() {
                             } catch (err) {
                               toast({
                                 title: 'Restore Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
+                                description:
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'An error occurred',
                                 variant: 'destructive',
                               })
                             }
@@ -549,7 +554,9 @@ export function ManagerCourseList() {
                         <DropdownMenuItem
                           onClick={async () => {
                             try {
-                              await courseApi.publishCourse(course.id.toString())
+                              await courseApi.publishCourse(
+                                course.id.toString()
+                              )
                               toast({
                                 title: 'Course Published',
                                 description: `"${course.title}" has been published.`,
@@ -558,7 +565,10 @@ export function ManagerCourseList() {
                             } catch (err) {
                               toast({
                                 title: 'Publish Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
+                                description:
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'An error occurred',
                                 variant: 'destructive',
                               })
                             }
@@ -567,12 +577,15 @@ export function ManagerCourseList() {
                           Publish Course
                         </DropdownMenuItem>
                       )}
-                      {(course.status?.toUpperCase() === 'PUBLISHED' || course.status?.toUpperCase() === 'DRAFT') && (
+                      {(course.status?.toUpperCase() === 'PUBLISHED' ||
+                        course.status?.toUpperCase() === 'DRAFT') && (
                         <DropdownMenuItem
                           className='text-destructive'
                           onClick={async () => {
                             try {
-                              await courseApi.archiveCourse(course.id.toString())
+                              await courseApi.archiveCourse(
+                                course.id.toString()
+                              )
                               toast({
                                 title: 'Course Archived',
                                 description: `"${course.title}" has been archived.`,
@@ -581,7 +594,10 @@ export function ManagerCourseList() {
                             } catch (err) {
                               toast({
                                 title: 'Archive Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
+                                description:
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'An error occurred',
                                 variant: 'destructive',
                               })
                             }

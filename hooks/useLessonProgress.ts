@@ -24,13 +24,16 @@ export interface UseLessonProgressReturn {
   completedLessons: Set<number>
   isAccessChecking: boolean
   displayProgress: number | undefined
-  
+
   // Progress actions
-  updateLessonProgress: (currentTime: number, watchedDelta: number) => Promise<void>
+  updateLessonProgress: (
+    currentTime: number,
+    watchedDelta: number
+  ) => Promise<void>
   markLessonComplete: (lessonId: number) => void
   updateOverallProgress: () => Promise<void>
   checkLessonAccess: (lessonId: number) => Promise<boolean>
-  
+
   // Utility functions
   formatDuration: (seconds: number) => string
 }
@@ -43,14 +46,19 @@ export function useLessonProgress({
   onOverallProgressUpdate,
 }: UseLessonProgressProps): UseLessonProgressReturn {
   // Progress state
-  const [lessonProgress, setLessonProgress] = useState<LessonProgressDTO | null>(null)
+  const [lessonProgress, setLessonProgress] =
+    useState<LessonProgressDTO | null>(null)
   const [isProgressLoading, setIsProgressLoading] = useState(true)
   const [canAccessLesson, setCanAccessLesson] = useState(true)
   const [accessReason, setAccessReason] = useState<string | null>(null)
-  const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set())
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  )
   const [isAccessChecking, setIsAccessChecking] = useState(true)
-  const [displayProgress, setDisplayProgress] = useState<number | undefined>(undefined)
-  
+  const [displayProgress, setDisplayProgress] = useState<number | undefined>(
+    undefined
+  )
+
   const lastProgressUpdate = useRef<number>(0)
   const progressUpdateInterval = 10000 // Update progress every 10 seconds
 
@@ -58,7 +66,7 @@ export function useLessonProgress({
   useEffect(() => {
     const loadLessonProgress = async () => {
       if (!currentLesson) return
-      
+
       setIsProgressLoading(true)
       try {
         const response = await progressApi.getLessonProgress(currentLesson.id)
@@ -79,7 +87,7 @@ export function useLessonProgress({
         setIsProgressLoading(false)
       }
     }
-    
+
     loadLessonProgress()
   }, [currentLesson]) // Remove onProgressUpdate from dependencies
 
@@ -113,66 +121,74 @@ export function useLessonProgress({
   }, [currentLesson, courseId])
 
   // Update lesson progress
-  const updateLessonProgress = useCallback(async (currentTime: number, watchedDelta: number) => {
-    if (!currentLesson || isProgressLoading) return
+  const updateLessonProgress = useCallback(
+    async (currentTime: number, watchedDelta: number) => {
+      if (!currentLesson || isProgressLoading) return
 
-    const now = Date.now()
-    if (now - lastProgressUpdate.current < progressUpdateInterval) return
+      const now = Date.now()
+      if (now - lastProgressUpdate.current < progressUpdateInterval) return
 
-    try {
-      if (watchedDelta > 0) {
-        const updateData: UpdateLessonProgressRequestDTO = {
-          currentTime: Math.floor(currentTime).toString(), // Round to integer
-          watchedDelta: Math.floor(watchedDelta).toString(), // Round to integer
+      try {
+        if (watchedDelta > 0) {
+          const updateData: UpdateLessonProgressRequestDTO = {
+            currentTime: Math.floor(currentTime).toString(), // Round to integer
+            watchedDelta: Math.floor(watchedDelta).toString(), // Round to integer
+          }
+
+          const response = await progressApi.updateLessonProgress(
+            currentLesson.id,
+            updateData
+          )
+          setLessonProgress(response.data)
+          onProgressUpdate?.(response.data)
+          lastProgressUpdate.current = now
         }
-
-        const response = await progressApi.updateLessonProgress(
-          currentLesson.id,
-          updateData
-        )
-        setLessonProgress(response.data)
-        onProgressUpdate?.(response.data)
-        lastProgressUpdate.current = now
+      } catch (error) {
+        console.error('Failed to update progress:', error)
+        // Don't update lastProgressUpdate to retry sooner
       }
-    } catch (error) {
-      console.error('Failed to update progress:', error)
-      // Don't update lastProgressUpdate to retry sooner
-    }
-  }, [currentLesson, isProgressLoading]) // Remove onProgressUpdate from dependencies
+    },
+    [currentLesson, isProgressLoading]
+  ) // Remove onProgressUpdate from dependencies
 
   // Mark lesson as completed
-  const markLessonComplete = useCallback(async (lessonId: number) => {
-    try {
-      console.log('🎯 Marking lesson complete:', lessonId)
-      
-      // Update local state immediately for UI feedback
-      setCompletedLessons(prev => {
-        const newSet = new Set(prev).add(lessonId)
-        console.log('📝 Updated local completed lessons:', Array.from(newSet))
-        return newSet
-      })
-      
-      // Refresh completed lessons from backend to ensure sync
-      if (courseId) {
-        console.log('🔄 Refreshing completed lessons from backend...')
-        const completedResponse = await progressApi.getCompletedLessons(Number(courseId))
-        console.log('📋 Backend completed lessons:', completedResponse.data)
-        setCompletedLessons(new Set(completedResponse.data))
-        
-        // ✅ NEW: Force re-check overall progress after completion
-        setTimeout(() => {
-          updateOverallProgress()
-        }, 500)
+  const markLessonComplete = useCallback(
+    async (lessonId: number) => {
+      try {
+        console.log('🎯 Marking lesson complete:', lessonId)
+
+        // Update local state immediately for UI feedback
+        setCompletedLessons(prev => {
+          const newSet = new Set(prev).add(lessonId)
+          console.log('📝 Updated local completed lessons:', Array.from(newSet))
+          return newSet
+        })
+
+        // Refresh completed lessons from backend to ensure sync
+        if (courseId) {
+          console.log('🔄 Refreshing completed lessons from backend...')
+          const completedResponse = await progressApi.getCompletedLessons(
+            Number(courseId)
+          )
+          console.log('📋 Backend completed lessons:', completedResponse.data)
+          setCompletedLessons(new Set(completedResponse.data))
+
+          // ✅ NEW: Force re-check overall progress after completion
+          setTimeout(() => {
+            updateOverallProgress()
+          }, 500)
+        }
+
+        // Trigger completion callback
+        console.log('🎉 Triggering completion callback for lesson:', lessonId)
+        onLessonComplete?.(lessonId)
+      } catch (error) {
+        console.error('❌ Failed to sync lesson completion:', error)
+        // Keep local state - better to show completed than not
       }
-      
-      // Trigger completion callback
-      console.log('🎉 Triggering completion callback for lesson:', lessonId)
-      onLessonComplete?.(lessonId)
-    } catch (error) {
-      console.error('❌ Failed to sync lesson completion:', error)
-      // Keep local state - better to show completed than not
-    }
-  }, [courseId]) // Keep minimal dependencies to avoid infinite loops
+    },
+    [courseId]
+  ) // Keep minimal dependencies to avoid infinite loops
 
   // Update overall course progress
   const updateOverallProgress = useCallback(async () => {
@@ -192,14 +208,17 @@ export function useLessonProgress({
   }, [courseId]) // Remove onOverallProgressUpdate from dependencies
 
   // Check if user can access a specific lesson
-  const checkLessonAccess = useCallback(async (lessonId: number): Promise<boolean> => {
-    try {
-      return await progressApi.canAccessLesson(lessonId)
-    } catch (error) {
-      console.error('Failed to check lesson access:', error)
-      return false
-    }
-  }, [])
+  const checkLessonAccess = useCallback(
+    async (lessonId: number): Promise<boolean> => {
+      try {
+        return await progressApi.canAccessLesson(lessonId)
+      } catch (error) {
+        console.error('Failed to check lesson access:', error)
+        return false
+      }
+    },
+    []
+  )
 
   // Load progress from localStorage/query on mount
   useEffect(() => {
@@ -236,14 +255,14 @@ export function useLessonProgress({
     completedLessons,
     isAccessChecking,
     displayProgress,
-    
+
     // Progress actions
     updateLessonProgress,
     markLessonComplete,
     updateOverallProgress,
     checkLessonAccess,
-    
+
     // Utility functions
     formatDuration,
   }
-} 
+}

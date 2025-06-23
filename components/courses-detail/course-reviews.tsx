@@ -2,10 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -40,7 +37,11 @@ const formatDateTime = (dateString: string) => {
   return `${time} ${date}`
 }
 
-export function CourseReviews({ courseId, averageRating, totalReviews }: CourseReviewsProps) {
+export function CourseReviews({
+  courseId,
+  averageRating,
+  totalReviews,
+}: CourseReviewsProps) {
   const { toast } = useToast()
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
   const [reviewPage, setReviewPage] = useState(0)
@@ -232,8 +233,8 @@ export function CourseReviews({ courseId, averageRating, totalReviews }: CourseR
                 <div className='mt-2'>
                   {review.isHidden === 1 ? (
                     <p className='text-sm text-muted-foreground italic bg-gray-50 rounded px-3 py-2'>
-                      This review has been hidden due to violation of
-                      community guidelines.
+                      This review has been hidden due to violation of community
+                      guidelines.
                     </p>
                   ) : (
                     <p
@@ -265,7 +266,7 @@ export function CourseReviews({ courseId, averageRating, totalReviews }: CourseR
           )
         })}
       </div>
-      
+
       {/* Pagination for reviews */}
       {reviewTotalPages > 1 && (
         <div className='flex justify-center items-center gap-4 mt-6'>
@@ -369,4 +370,4 @@ export function CourseReviews({ courseId, averageRating, totalReviews }: CourseR
       </Dialog>
     </div>
   )
-} 
+}

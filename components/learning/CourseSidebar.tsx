@@ -15,12 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Lock,
-} from 'lucide-react'
+import { CheckCircle, ChevronDown, ChevronRight, Lock } from 'lucide-react'
 import { CourseDetailsResponseDTO } from '@/types/course'
 import { ModuleResponseDTO } from '@/types/module'
 import { LessonResponseDTO } from '@/types/lesson'
@@ -57,39 +52,46 @@ export function CourseSidebar({
   useEffect(() => {
     const checkAllLessonsAccess = async () => {
       if (!course?.modules || checkingAccess) return
-      
+
       setCheckingAccess(true)
       console.log('🔍 Checking access for all lessons...')
-      
+
       try {
-        const accessPromises: Promise<{ lessonId: number; canAccess: boolean }>[] = []
-        
+        const accessPromises: Promise<{
+          lessonId: number
+          canAccess: boolean
+        }>[] = []
+
         // Collect all lessons
         const allLessons: LessonResponseDTO[] = []
         course.modules.forEach(module => {
           const lessons = moduleLessons[module.id] || []
           allLessons.push(...lessons)
         })
-        
+
         // Check access for each lesson
         for (const lesson of allLessons) {
           accessPromises.push(
-            progressApi.canAccessLesson(lesson.id)
+            progressApi
+              .canAccessLesson(lesson.id)
               .then(canAccess => ({ lessonId: lesson.id, canAccess }))
               .catch(error => {
-                console.error(`Failed to check access for lesson ${lesson.id}:`, error)
+                console.error(
+                  `Failed to check access for lesson ${lesson.id}:`,
+                  error
+                )
                 return { lessonId: lesson.id, canAccess: false }
               })
           )
         }
-        
+
         const results = await Promise.all(accessPromises)
         const newAccessMap: Record<number, boolean> = {}
-        
+
         results.forEach(({ lessonId, canAccess }) => {
           newAccessMap[lessonId] = canAccess
         })
-        
+
         console.log('🔐 Lesson access results:', newAccessMap)
         setLessonAccess(newAccessMap)
       } catch (error) {
@@ -106,7 +108,7 @@ export function CourseSidebar({
   const isLessonAccessible = (lesson: LessonResponseDTO) => {
     // Current lesson is always accessible (already loaded)
     if (lesson.id === currentLesson?.id) return true
-    
+
     // Check backend API result
     return lessonAccess[lesson.id] === true
   }
@@ -118,7 +120,9 @@ export function CourseSidebar({
           <CardTitle className='text-lg'>Course Content</CardTitle>
           <CardDescription>
             {course.totalModules} modules • {course.totalLessons} lessons
-            {checkingAccess && <span className="ml-2 text-xs">(Checking access...)</span>}
+            {checkingAccess && (
+              <span className='ml-2 text-xs'>(Checking access...)</span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-2'>
@@ -147,13 +151,13 @@ export function CourseSidebar({
                   </div>
                 </div>
               </CollapsibleTrigger>
-              
+
               <CollapsibleContent className='space-y-1 ml-6 mt-2'>
                 {moduleLessons[module.id]?.map(lesson => {
                   const isAccessible = isLessonAccessible(lesson)
                   const isCurrent = currentLesson?.id === lesson.id
                   const isCompleted = completedLessons.has(lesson.id)
-                  
+
                   return (
                     <div
                       key={lesson.id}
@@ -166,10 +170,21 @@ export function CourseSidebar({
                       }`}
                       onClick={() => {
                         if (isAccessible) {
-                          console.log('🔗 Clicking accessible lesson:', lesson.id)
-                          onLessonClick(module.id.toString(), lesson.id.toString())
+                          console.log(
+                            '🔗 Clicking accessible lesson:',
+                            lesson.id
+                          )
+                          onLessonClick(
+                            module.id.toString(),
+                            lesson.id.toString()
+                          )
                         } else {
-                          console.log('🔒 Lesson not accessible:', lesson.id, 'Access status:', lessonAccess[lesson.id])
+                          console.log(
+                            '🔒 Lesson not accessible:',
+                            lesson.id,
+                            'Access status:',
+                            lessonAccess[lesson.id]
+                          )
                         }
                       }}
                       title={
@@ -187,7 +202,7 @@ export function CourseSidebar({
                             {formatDuration(lesson?.duration || 0)}
                           </p>
                         </div>
-                        
+
                         <div className='flex items-center space-x-2 ml-2'>
                           {isCompleted ? (
                             <CheckCircle className='h-4 w-4 text-green-500 flex-shrink-0' />
@@ -214,4 +229,4 @@ export function CourseSidebar({
       </Card>
     </div>
   )
-} 
+}

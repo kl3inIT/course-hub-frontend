@@ -1,6 +1,10 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
-import { PageResponse, PaymentHistoryRequestDTO, PaymentHistoryResponseDTO } from '@/types/payment'
+import {
+  PageResponse,
+  PaymentHistoryRequestDTO,
+  PaymentHistoryResponseDTO,
+} from '@/types/payment'
 
 interface PaymentRequestDTO {
   courseId: number
@@ -75,19 +79,23 @@ export const paymentApi = {
   },
 
   exportToExcel: async (params: PaymentHistoryRequestDTO): Promise<Blob> => {
-    const response = await httpClient.get('/api/payments/excel', { 
+    const response = await httpClient.get('/api/payments/excel', {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
     })
-    return response.data 
+    return response.data
   },
 
-  getPaymentOverall: async (params: PaymentHistoryRequestDTO): Promise<PaymentOverallResponse> => {
+  getPaymentOverall: async (
+    params: PaymentHistoryRequestDTO
+  ): Promise<PaymentOverallResponse> => {
     const response = await httpClient.get('/api/payments/overall', { params })
     return response.data
   },
 
-  getMyPaymentHistory: async (params: PaymentHistoryRequestDTO): Promise<ApiResponse<PageResponse<PaymentHistoryResponseDTO>>> => {
+  getMyPaymentHistory: async (
+    params: PaymentHistoryRequestDTO
+  ): Promise<ApiResponse<PageResponse<PaymentHistoryResponseDTO>>> => {
     const response = await httpClient.get('/api/payments/my', { params })
     return response.data
   },

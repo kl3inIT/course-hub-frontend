@@ -4,6 +4,16 @@ export enum UserStatus {
   BANNED = 'BANNED',
 }
 
+export enum UserActivityType {
+  COMMENT = 'comment',
+  ENROLLMENT = 'enrollment',
+  COURSE_CREATION = 'course_creation',
+  COURSE_UPDATE = 'course_update',
+  LESSON_COMPLETION = 'lesson_completion',
+  COURSE_COMPLETION = 'course_completion',
+  QUIZ_ATTEMPT = 'quiz_attempt',
+}
+
 export interface User {
   id: string
   name: string
@@ -12,8 +22,10 @@ export interface User {
   status: UserStatus
   avatar?: string
   joinDate?: string
-  enrolledcourses?: number
-  permissions?: string[]
+  bio?: string
+  activities?: UserActivity[]
+  enrolledCoursesCount?: number
+  managedCoursesCount?: number
 }
 
 export interface UserDetail {
@@ -31,7 +43,7 @@ export interface UserDetail {
 
 export interface UserActivity {
   id: number
-  type: string
+  type: UserActivityType | string // Support both enum and string for flexibility
   timestamp: string | null
   courseId: number
   courseTitle: string
@@ -40,6 +52,7 @@ export interface UserActivity {
   lessonId?: number
   lessonTitle?: string
   commentText?: string
+  actionDescription?: string // For course management activities
 }
 
 export interface Course {
@@ -64,19 +77,4 @@ export interface PasswordData {
   currentPassword: string
   newPassword: string
   confirmPassword: string
-}
-
-export interface UserSearchParams {
-  pageSize?: number
-  pageNo?: number
-  role?: string
-  status?: UserStatus
-  search?: string
-}
-
-export interface CreateManagerRequest {
-  email: string
-  password: string
-  name: string
-  role: string
 }

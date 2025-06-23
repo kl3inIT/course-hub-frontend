@@ -1,9 +1,5 @@
 'use client'
 
-import { commentApi } from '@/services/comment-api'
-import { reportApi } from '@/services/report-api'
-import { reviewApi } from '@/services/review-api'
-import { userApi } from '@/services/user-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,11 +28,16 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { adminApi } from '@/services/admin-api'
+import { commentApi } from '@/services/comment-api'
+import { reportApi } from '@/services/report-api'
+import { reviewApi } from '@/services/review-api'
 import {
   ReportResponse,
   ReportStatus,
   ResourceLocationDTO,
 } from '@/types/report'
+import { UserStatus } from '@/types/user'
 import { format } from 'date-fns'
 import {
   AlertTriangle,
@@ -172,10 +173,10 @@ export function ReportDetail() {
   const handleBanUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.updateUserStatus(userId.toString(), 'banned')
+      await adminApi.updateUserStatus(userId.toString(), UserStatus.BANNED)
       toast.success('User has been banned')
       await loadReport()
-    } catch (error) {
+    } catch (error: any) {
       toast.error('Failed to ban user')
     } finally {
       setIsProcessing(false)
@@ -186,10 +187,10 @@ export function ReportDetail() {
   const handleUnbanUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.updateUserStatus(userId.toString(), 'active')
+      await adminApi.updateUserStatus(userId.toString(), UserStatus.ACTIVE)
       toast.success('User has been unbanned')
       await loadReport()
-    } catch (error) {
+    } catch (error: any) {
       toast.error('Failed to unban user')
     } finally {
       setIsProcessing(false)
@@ -200,7 +201,7 @@ export function ReportDetail() {
   const handleWarnUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.warnUser(
+      await adminApi.warnUser(
         userId,
         report?.type || undefined,
         report?.resourceId || undefined
@@ -581,7 +582,8 @@ export function ReportDetail() {
           </CardHeader>
           <CardContent>
             <div className='flex flex-wrap gap-4'>
-              {report.reportedUserStatus === '1' ? (
+              {report.reportedUserStatus === 'ACTIVE' ||
+              report.reportedUserStatus === 'Active' ? (
                 <Button
                   variant='outline'
                   className='min-w-[140px] border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground'

@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,19 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyticsApi } from '@/services/analytics-api'
 import { courseApi } from '@/services/course-api'
@@ -31,9 +18,6 @@ import {
   StudentAnalyticsDetailResponseDTO,
 } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
-import { DatePicker } from 'antd'
-import 'antd/dist/reset.css'
-import ExcelJS from 'exceljs'
 import {
   BookOpen,
   DollarSign,
@@ -45,13 +29,11 @@ import {
   Users,
 } from 'lucide-react'
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
-import 'react-date-range/dist/styles.css'
-import 'react-date-range/dist/theme/default.css'
+import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
-import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
-import '../../styles/date-range-custom.css'
-import { ChartConfig } from '../ui/chart'
-const { RangePicker } = DatePicker
+import { ChartConfig } from '../../ui/chart'
+import { AnalyticsExportDialog } from './AnalyticsExportDialog'
+import { PaginationComponent } from './PaginationComponent'
 
 interface ChartContainerProps {
   children: ReactNode
@@ -100,15 +82,14 @@ function formatDateTime(dateString: string) {
 }
 
 export function ManagerAnalytics() {
-  // Helper function to convert dayjs to date string
-  const formatDateForAPI = (dateInput: any) => {
-    if (!dateInput) return null
-    const dateObj = dateInput.toDate ? dateInput.toDate() : dateInput
-    return dateObj.getFullYear() +
+  // Helper function to convert Date to date string
+  const formatDateForAPI = (date: Date) => {
+    if (!date) return null
+    return date.getFullYear() +
       '-' +
-      String(dateObj.getMonth() + 1).padStart(2, '0') +
+      String(date.getMonth() + 1).padStart(2, '0') +
       '-' +
-      String(dateObj.getDate()).padStart(2, '0')
+      String(date.getDate()).padStart(2, '0')
   }
   const COLORS = [
     '#8884d8',
@@ -123,15 +104,6 @@ export function ManagerAnalytics() {
   const [timeRange, setTimeRange] = useState('6m')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
-  const [exportOptions, setExportOptions] = useState({
-    category: { checked: true, rowCount: 10 },
-    course: { checked: true, rowCount: 10 },
-    student: { checked: true, rowCount: 10 },
-    revenue: { checked: true, rowCount: 10 },
-  })
-  const [exportDateRange, setExportDateRange] = useState<any>(null)
-  const [exportTimeRange, setExportTimeRange] = useState('6m')
-  const [isExporting, setIsExporting] = useState(false)
   const [open, setOpen] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
 
@@ -179,7 +151,7 @@ export function ManagerAnalytics() {
   const [pieOuterRadius, setPieOuterRadius] = useState(120)
   const hasMountedRef = useRef(false)
   const [show, setShow] = useState(false)
-  const [selectedDateRange, setSelectedDateRange] = useState<any>([null, null])
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>()
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showCategoryCoursesDialog, setShowCategoryCoursesDialog] =
     useState(false)
@@ -221,612 +193,6 @@ export function ManagerAnalytics() {
 
     return false
   }, [])
-
-  const handleCloseExportDialog = useCallback(() => {
-    // Restore scroll position
-    const scrollY = document.body.style.top
-    document.body.style.position = ''
-    document.body.style.top = ''
-    document.body.style.width = ''
-    if (scrollY) {
-      window.scrollTo(0, parseInt(scrollY || '0') * -1)
-    }
-
-    setShowExportDialog(false)
-  }, [])
-
-  const handleExport = async () => {
-    setIsExporting(true)
-    try {
-      // 1. Determine export parameters
-      const exportParams: any = {}
-
-      if (exportDateRange && exportDateRange[0] && exportDateRange[1]) {
-        // Use custom date range if provided - convert dayjs to date strings
-        const startDate = exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]
-        const endDate = exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]
-        
-        exportParams.startDate =
-          startDate.getFullYear() +
-          '-' +
-          String(startDate.getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(startDate.getDate()).padStart(2, '0')
-        exportParams.endDate =
-          endDate.getFullYear() +
-          '-' +
-          String(endDate.getMonth() + 1).padStart(2, '0') +
-          '-' +
-          String(endDate.getDate()).padStart(2, '0')
-      } else {
-        // Use time range
-        exportParams.range = exportTimeRange
-      }
-
-      // Set size to get all data for export
-      exportParams.page = 0
-      exportParams.size = 1000
-
-      console.log('Export params:', exportParams) // Debug
-
-      // 2. Fetch fresh data from API for export
-      const exportPromises = []
-
-      if (exportOptions.category.checked) {
-        exportPromises.push(
-          analyticsApi.getCategoryAnalyticsDetails(exportParams)
-        )
-      }
-      if (exportOptions.course.checked) {
-        exportPromises.push(
-          analyticsApi.getCourseAnalyticsDetails(exportParams)
-        )
-      }
-      if (exportOptions.student.checked) {
-        exportPromises.push(
-          analyticsApi.getStudentAnalyticsDetails(exportParams)
-        )
-      }
-      if (exportOptions.revenue.checked) {
-        exportPromises.push(
-          analyticsApi.getRevenueAnalyticsDetails(exportParams)
-        )
-      }
-
-      const results = await Promise.all(exportPromises)
-
-      // 3. Map results to export data
-      let resultIndex = 0
-      const freshExportData = {
-        category: (exportOptions.category.checked
-          ? exportOptions.category.rowCount === -1
-            ? results[resultIndex++].data.content
-            : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.category.rowCount
-            )
-          : []) as any[],
-        course: (exportOptions.course.checked
-          ? exportOptions.course.rowCount === -1
-            ? results[resultIndex++].data.content
-            : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.course.rowCount
-            )
-          : []) as any[],
-        student: (exportOptions.student.checked
-          ? exportOptions.student.rowCount === -1
-            ? results[resultIndex++].data.content
-            : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.student.rowCount
-            )
-          : []) as any[],
-        revenue: (exportOptions.revenue.checked
-          ? exportOptions.revenue.rowCount === -1
-            ? results[resultIndex++].data.content
-            : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.revenue.rowCount
-            )
-          : []) as any[],
-      }
-
-      console.log('Fresh export data:', freshExportData) // Debug
-
-      // 4. Create Excel file with proper formatting
-      const workbook = new ExcelJS.Workbook()
-      
-      // Determine date range for headers
-      const dateRangeText = exportDateRange && exportDateRange[0] && exportDateRange[1]
-        ? `from ${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-US')} to ${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-US')}`
-        : exportTimeRange === '7d' ? 'for the last 7 days'
-        : exportTimeRange === '30d' ? 'for the last 30 days'
-        : exportTimeRange === '90d' ? 'for the last 90 days'
-        : exportTimeRange === '6m' ? 'for the last 6 months'
-        : exportTimeRange === '1y' ? 'for the last year'
-        : 'for selected period'
-
-      if (exportOptions.category.checked) {
-        const categorySheet = workbook.addWorksheet('Category Analysis')
-        
-        // Add title rows
-        categorySheet.mergeCells('A1:G1')
-        categorySheet.getCell('A1').value = `CATEGORY PERFORMANCE ANALYSIS REPORT`
-        categorySheet.getCell('A1').font = { bold: true, size: 16 }
-        categorySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        categorySheet.mergeCells('A2:G2')
-        categorySheet.getCell('A2').value = `Analytics report ${dateRangeText}`
-        categorySheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-        categorySheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        // Add empty row
-        categorySheet.getRow(3).height = 10
-        
-        // Set up columns starting from row 4
-        categorySheet.getRow(4).values = [
-          'No.',
-          'Category Name',
-          'Description',
-          'Total Courses',
-          'Total Students',
-          'Total Revenue (VND)',
-          'Revenue Share (%)'
-        ]
-        
-        // Style header row
-        const headerRow = categorySheet.getRow(4)
-        headerRow.font = { bold: true }
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
-        headerRow.height = 25
-        
-        // Apply background color only to cells with data (A4:G4)
-        for (let col = 1; col <= 7; col++) {
-          const cell = headerRow.getCell(col)
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
-        }
-        
-        // Set column widths
-        categorySheet.columns = [
-          { width: 8 },   // No.
-          { width: 35 },  // Category Name
-          { width: 50 },  // Description
-          { width: 18 },  // Total Courses
-          { width: 18 },  // Total Students
-          { width: 25 },  // Total Revenue
-          { width: 20 },  // Revenue Share
-        ]
-        
-        // Add data rows
-        freshExportData.category.forEach((cat: any, index: number) => {
-          const rowIndex = index + 5
-          categorySheet.getRow(rowIndex).values = [
-            index + 1,
-            cat.name,
-            cat.description,
-            cat.courseCount || 0,
-            cat.totalStudents,
-            cat.totalRevenue,
-            `${cat.revenueProportion.toFixed(2)}%`,
-          ]
-          
-          // Style data rows
-          const dataRow = categorySheet.getRow(rowIndex)
-          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Category Name
-          dataRow.getCell(3).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Description
-          
-          // Add borders to data cells only (specific number of columns)
-          for (let col = 1; col <= 7; col++) {
-            const cell = dataRow.getCell(col)
-            cell.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
-        })
-        
-        // Add borders to header cells with data only
-        for (let col = 1; col <= 7; col++) {
-          const cell = headerRow.getCell(col)
-          cell.border = {
-            top: { style: 'thick' },
-            left: { style: 'thick' },
-            bottom: { style: 'thick' },
-            right: { style: 'thick' }
-          }
-        }
-        
-        // Add signature section at the bottom
-        const lastDataRow = freshExportData.category.length + 4
-        const signatureRow = lastDataRow + 3
-        
-        categorySheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
-        categorySheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
-        categorySheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
-        categorySheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
-        
-        categorySheet.mergeCells(`E${signatureRow}:G${signatureRow}`)
-        categorySheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
-        categorySheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
-        categorySheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
-      }
-
-      if (exportOptions.course.checked) {
-        const courseSheet = workbook.addWorksheet('Course Analysis')
-        
-        // Add title rows
-        courseSheet.mergeCells('A1:H1')
-        courseSheet.getCell('A1').value = `COURSE PERFORMANCE ANALYSIS REPORT`
-        courseSheet.getCell('A1').font = { bold: true, size: 16 }
-        courseSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        courseSheet.mergeCells('A2:H2')
-        courseSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
-        courseSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-        courseSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        // Add empty row
-        courseSheet.getRow(3).height = 10
-        
-        // Set up columns starting from row 4
-        courseSheet.getRow(4).values = [
-          'No.',
-          'Course Name',
-          'Total Students',
-          'Average Rating',
-          'Total Revenue (VND)',
-          'Revenue Share (%)',
-          'Total Reviews',
-          'Course Level'
-        ]
-        
-        // Style header row
-        const headerRow = courseSheet.getRow(4)
-        headerRow.font = { bold: true }
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
-        headerRow.height = 25
-        
-        // Apply background color only to cells with data (A4:H4)
-        for (let col = 1; col <= 8; col++) {
-          const cell = headerRow.getCell(col)
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
-        }
-        
-        // Set column widths
-        courseSheet.columns = [
-          { width: 8 },   // No.
-          { width: 45 },  // Course Name
-          { width: 15 },  // Total Students
-          { width: 15 },  // Average Rating
-          { width: 25 },  // Total Revenue
-          { width: 20 },  // Revenue Share
-          { width: 15 },  // Total Reviews
-          { width: 15 },  // Course Level
-        ]
-        
-        // Add data rows
-        freshExportData.course.forEach((course: any, index: number) => {
-          const rowIndex = index + 5
-          courseSheet.getRow(rowIndex).values = [
-            index + 1,
-            course.courseName,
-            course.students,
-            course.rating?.toFixed(1) || '0.0',
-            course.revenue,
-            `${course.revenuePercent?.toFixed(2)}%`,
-            course.reviews,
-            course.level || 'N/A',
-          ]
-          
-          // Style data rows
-          const dataRow = courseSheet.getRow(rowIndex)
-          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
-          
-          // Add borders to data cells only (specific number of columns)
-          for (let col = 1; col <= 8; col++) {
-            const cell = dataRow.getCell(col)
-            cell.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
-        })
-        
-        // Add borders to header cells with data only
-        for (let col = 1; col <= 8; col++) {
-          const cell = headerRow.getCell(col)
-          cell.border = {
-            top: { style: 'thick' },
-            left: { style: 'thick' },
-            bottom: { style: 'thick' },
-            right: { style: 'thick' }
-          }
-        }
-        
-        // Add signature section at the bottom
-        const lastDataRow = freshExportData.course.length + 4
-        const signatureRow = lastDataRow + 3
-        
-        courseSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
-        courseSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
-        courseSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
-        courseSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
-        
-        courseSheet.mergeCells(`E${signatureRow}:H${signatureRow}`)
-        courseSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
-        courseSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
-        courseSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
-      }
-
-      if (exportOptions.student.checked) {
-        const studentSheet = workbook.addWorksheet('Student Activity Analysis')
-        
-        // Add title rows
-        studentSheet.mergeCells('A1:G1')
-        studentSheet.getCell('A1').value = `STUDENT ACTIVITY ANALYSIS REPORT`
-        studentSheet.getCell('A1').font = { bold: true, size: 16 }
-        studentSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        studentSheet.mergeCells('A2:G2')
-        studentSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
-        studentSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-        studentSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        // Add empty row
-        studentSheet.getRow(3).height = 10
-        
-        // Set up columns starting from row 4
-        studentSheet.getRow(4).values = [
-          'No.',
-          'Course Name',
-          'New Students',
-          'Previously',
-          'Growth Rate (%)',
-          'Total Reviews',
-          'Average Rating'
-        ]
-        
-        // Style header row
-        const headerRow = studentSheet.getRow(4)
-        headerRow.font = { bold: true }
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
-        headerRow.height = 25
-        
-        // Apply background color only to cells with data (A4:G4)
-        for (let col = 1; col <= 7; col++) {
-          const cell = headerRow.getCell(col)
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
-        }
-        
-        // Set column widths
-        studentSheet.columns = [
-          { width: 8 },   // No.
-          { width: 45 },  // Course Name
-          { width: 15 },  // New Students
-          { width: 15 },  // Previously
-          { width: 20 },  // Growth Rate
-          { width: 15 },  // Total Reviews
-          { width: 16 },  // Average Rating
-        ]
-        
-        // Add data rows
-        freshExportData.student.forEach((data: any, index: number) => {
-          const rowIndex = index + 5
-          studentSheet.getRow(rowIndex).values = [
-            index + 1,
-            data.courseName,
-            data.newStudents,
-            data.previousCompletion,
-            `${data.growth > 0 ? '+' : ''}${data.growth}%`,
-            data.reviews,
-            data.avgRating,
-          ]
-          
-          // Style data rows
-          const dataRow = studentSheet.getRow(rowIndex)
-          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
-          
-          // Color code growth rate - Fixed color format
-          const growthCell = dataRow.getCell(5)
-          if (data.growth > 0) {
-            growthCell.font = { color: { argb: '008000' }, bold: true } // Green
-          } else if (data.growth < 0) {
-            growthCell.font = { color: { argb: 'FF0000' }, bold: true } // Red
-          }
-          
-          // Add borders to data cells only (specific number of columns)
-          for (let col = 1; col <= 7; col++) {
-            const cell = dataRow.getCell(col)
-            cell.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
-        })
-        
-        // Add borders to header cells with data only
-        for (let col = 1; col <= 7; col++) {
-          const cell = headerRow.getCell(col)
-          cell.border = {
-            top: { style: 'thick' },
-            left: { style: 'thick' },
-            bottom: { style: 'thick' },
-            right: { style: 'thick' }
-          }
-        }
-        
-        // Add signature section at the bottom
-        const lastDataRow = freshExportData.student.length + 4
-        const signatureRow = lastDataRow + 3
-        
-        studentSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
-        studentSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
-        studentSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
-        studentSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
-        
-        studentSheet.mergeCells(`E${signatureRow}:G${signatureRow}`)
-        studentSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
-        studentSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
-        studentSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
-      }
-
-      if (exportOptions.revenue.checked) {
-        const revenueSheet = workbook.addWorksheet('Revenue Trends Analysis')
-        
-        // Add title rows
-        revenueSheet.mergeCells('A1:H1')
-        revenueSheet.getCell('A1').value = `REVENUE TRENDS ANALYSIS REPORT`
-        revenueSheet.getCell('A1').font = { bold: true, size: 16 }
-        revenueSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        revenueSheet.mergeCells('A2:H2')
-        revenueSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
-        revenueSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-        revenueSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
-        
-        // Add empty row
-        revenueSheet.getRow(3).height = 10
-        
-        // Set up columns starting from row 4
-        revenueSheet.getRow(4).values = [
-          'No.',
-          'Course Name',
-          'Current Revenue (VND)',
-          'Previously (VND)',
-          'Growth Rate (%)',
-          'Total Orders',
-          'New Students',
-          'Revenue Share (%)'
-        ]
-        
-        // Style header row
-        const headerRow = revenueSheet.getRow(4)
-        headerRow.font = { bold: true }
-        headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
-        headerRow.height = 25
-        
-        // Apply background color only to cells with data (A4:H4)
-        for (let col = 1; col <= 8; col++) {
-          const cell = headerRow.getCell(col)
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
-        }
-        
-        // Set column widths
-        revenueSheet.columns = [
-          { width: 8 },   // No.
-          { width: 45 },  // Course Name
-          { width: 25 },  // Current Revenue
-          { width: 20 },  // Previously
-          { width: 20 },  // Growth Rate
-          { width: 15 },  // Total Orders
-          { width: 15 },  // New Students
-          { width: 20 },  // Revenue Share
-        ]
-        
-        // Add data rows
-        freshExportData.revenue.forEach((data: any, index: number) => {
-          const rowIndex = index + 5
-          revenueSheet.getRow(rowIndex).values = [
-            index + 1,
-            data.courseName,
-            data.revenue,
-            data.previousRevenue,
-            `${data.growth > 0 ? '+' : ''}${data.growth}%`,
-            data.orders,
-            data.newStudents,
-            `${data.revenueShare}%`,
-          ]
-          
-          // Style data rows
-          const dataRow = revenueSheet.getRow(rowIndex)
-          dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-          dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
-          
-          // Color code growth rate - Fixed color format
-          const growthCell = dataRow.getCell(5)
-          if (data.growth > 0) {
-            growthCell.font = { color: { argb: '008000' }, bold: true } // Green
-          } else if (data.growth < 0) {
-            growthCell.font = { color: { argb: 'FF0000' }, bold: true } // Red
-          }
-          
-          // Add borders to data cells only (specific number of columns)
-          for (let col = 1; col <= 8; col++) {
-            const cell = dataRow.getCell(col)
-            cell.border = {
-              top: { style: 'thin' },
-              left: { style: 'thin' },
-              bottom: { style: 'thin' },
-              right: { style: 'thin' }
-            }
-          }
-        })
-        
-        // Add borders to header cells with data only
-        for (let col = 1; col <= 8; col++) {
-          const cell = headerRow.getCell(col)
-          cell.border = {
-            top: { style: 'thick' },
-            left: { style: 'thick' },
-            bottom: { style: 'thick' },
-            right: { style: 'thick' }
-          }
-        }
-        
-        // Add signature section at the bottom
-        const lastDataRow = freshExportData.revenue.length + 4
-        const signatureRow = lastDataRow + 3
-        
-        revenueSheet.mergeCells(`A${signatureRow}:D${signatureRow}`)
-        revenueSheet.getCell(`A${signatureRow}`).value = 'Analytics Management Team'
-        revenueSheet.getCell(`A${signatureRow}`).font = { bold: true, size: 12 }
-        revenueSheet.getCell(`A${signatureRow}`).alignment = { horizontal: 'left', vertical: 'middle' }
-        
-        revenueSheet.mergeCells(`E${signatureRow}:H${signatureRow}`)
-        revenueSheet.getCell(`E${signatureRow}`).value = `Generated on: ${new Date().toLocaleDateString('en-US')}`
-        revenueSheet.getCell(`E${signatureRow}`).font = { italic: true, size: 10 }
-        revenueSheet.getCell(`E${signatureRow}`).alignment = { horizontal: 'right', vertical: 'middle' }
-      }
-
-      // 5. Generate filename with date info
-      const dateInfo =
-        exportDateRange && exportDateRange[0] && exportDateRange[1]
-          ? `${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-GB')}_to_${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-GB')}`
-          : exportTimeRange
-
-      // 6. Export file
-      const buffer = await workbook.xlsx.writeBuffer()
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `analytics-report-${dateInfo}-${new Date().toISOString().split('T')[0]}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      toast.success('Export completed successfully!')
-      handleCloseExportDialog()
-    } catch (error) {
-      console.error('Export error:', error)
-      toast.error('Error exporting report. Please try again.')
-    } finally {
-      setIsExporting(false)
-    }
-  }
 
   const totalRevenue = courseDetails.reduce(
     (sum, item) => sum + item.revenue,
@@ -873,12 +239,12 @@ export function ManagerAnalytics() {
     const params: any = {}
     if (
       timeRange === 'custom' &&
-      selectedDateRange[0] &&
-      selectedDateRange[1]
+      selectedDateRange?.from &&
+      selectedDateRange?.to
     ) {
-      // Sử dụng helper function để convert dayjs to date string
-      params.startDate = formatDateForAPI(selectedDateRange[0])
-      params.endDate = formatDateForAPI(selectedDateRange[1])
+      // Sử dụng helper function để convert Date to date string
+      params.startDate = formatDateForAPI(selectedDateRange.from)
+      params.endDate = formatDateForAPI(selectedDateRange.to)
     } else {
       params.range = timeRange
     }
@@ -898,12 +264,12 @@ export function ManagerAnalytics() {
       const params: any = {}
       if (
         timeRange === 'custom' &&
-        selectedDateRange[0] &&
-        selectedDateRange[1]
+        selectedDateRange?.from &&
+        selectedDateRange?.to
       ) {
-        // Sử dụng helper function để convert dayjs to date string
-        params.startDate = formatDateForAPI(selectedDateRange[0])
-        params.endDate = formatDateForAPI(selectedDateRange[1])
+        // Sử dụng helper function để convert Date to date string
+        params.startDate = formatDateForAPI(selectedDateRange.from)
+        params.endDate = formatDateForAPI(selectedDateRange.to)
       } else {
         params.range = timeRange
       }
@@ -932,12 +298,12 @@ export function ManagerAnalytics() {
       const params: any = {}
       if (
         timeRange === 'custom' &&
-        selectedDateRange[0] &&
-        selectedDateRange[1]
+        selectedDateRange?.from &&
+        selectedDateRange?.to
       ) {
-        // Sử dụng helper function để convert dayjs to date string
-        params.startDate = formatDateForAPI(selectedDateRange[0])
-        params.endDate = formatDateForAPI(selectedDateRange[1])
+        // Sử dụng helper function để convert Date to date string
+        params.startDate = formatDateForAPI(selectedDateRange.from)
+        params.endDate = formatDateForAPI(selectedDateRange.to)
       } else {
         params.range = timeRange
       }
@@ -966,12 +332,12 @@ export function ManagerAnalytics() {
       const params: any = {}
       if (
         timeRange === 'custom' &&
-        selectedDateRange[0] &&
-        selectedDateRange[1]
+        selectedDateRange?.from &&
+        selectedDateRange?.to
       ) {
-        // Sử dụng helper function để convert dayjs to date string
-        params.startDate = formatDateForAPI(selectedDateRange[0])
-        params.endDate = formatDateForAPI(selectedDateRange[1])
+        // Sử dụng helper function để convert Date to date string
+        params.startDate = formatDateForAPI(selectedDateRange.from)
+        params.endDate = formatDateForAPI(selectedDateRange.to)
       } else {
         params.range = timeRange
       }
@@ -1135,88 +501,17 @@ export function ManagerAnalytics() {
     0
   )
 
-  const handleDateRangeChange = (dates: any) => {
-    setSelectedDateRange(dates ? [dates[0], dates[1]] : [null, null])
-    if (dates && dates[0] && dates[1]) {
+  const handleDateRangeChange = (dateRange: DateRange | undefined) => {
+    setSelectedDateRange(dateRange)
+    if (dateRange?.from && dateRange?.to) {
+      setTimeRange('custom')
       const daysDiff = Math.ceil(
-        (dates[1].toDate().getTime() - dates[0].toDate().getTime()) / (1000 * 60 * 60 * 24)
+        (dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)
       )
       setPreviousPeriodLabel(`${daysDiff} Days Ago`)
     } else {
       setPreviousPeriodLabel('Previous Month')
     }
-  }
-
-  // Pagination Info Component
-  const PaginationInfo = ({ 
-    currentPage, 
-    totalPages, 
-    totalItems, 
-    itemsPerPage, 
-    onPageChange,
-    dataLength 
-  }: {
-    currentPage: number
-    totalPages: number
-    totalItems: number
-    itemsPerPage: number
-    onPageChange: (pageNum: number) => void
-    dataLength: number
-  }) => {
-    // Ensure we have valid numbers
-    const safeCurrentPage = currentPage || 0
-    const safeTotalPages = totalPages || 1
-    const safeTotalItems = totalItems || 0
-    const safeItemsPerPage = itemsPerPage || 5
-    const safeDataLength = dataLength || 0
-
-    const startItem = safeTotalItems === 0 ? 0 : safeItemsPerPage === -1 ? 1 : safeCurrentPage * safeItemsPerPage + 1
-    const endItem = safeItemsPerPage === -1 ? safeTotalItems : Math.min((safeCurrentPage + 1) * safeItemsPerPage, safeTotalItems)
-
-    return (
-      <div className='mt-4 space-y-2'>
-        {/* Item Count Info - Always visible */}
-        <div className='text-sm text-gray-600 text-center'>
-          {safeTotalItems === 0 
-            ? '  '
-            : `Showing ${startItem} to ${endItem} of ${safeTotalItems} items`
-          }
-        </div>
-        
-        {/* Pagination Controls - Only visible if more than 1 page */}
-        {safeTotalPages > 1 && safeDataLength > 0 && (
-          <div className='flex items-center gap-2 justify-center'>
-            <button
-              className='px-3 py-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-white text-gray-700 hover:bg-gray-50'
-              disabled={safeCurrentPage === 0}
-              onClick={() => onPageChange(safeCurrentPage - 1)}
-            >
-              Previous
-            </button>
-            {Array.from({ length: safeTotalPages }, (_, idx) => (
-              <button
-                key={idx}
-                className={`px-3 py-2 border rounded text-sm ${
-                  safeCurrentPage === idx 
-                    ? 'bg-gray-800 text-white border-gray-800' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-                onClick={() => onPageChange(idx)}
-              >
-                {idx + 1}
-              </button>
-            ))}
-            <button
-              className='px-3 py-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm bg-white text-gray-700 hover:bg-gray-50'
-              disabled={safeCurrentPage === safeTotalPages - 1}
-              onClick={() => onPageChange(safeCurrentPage + 1)}
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-    )
   }
 
   return (
@@ -1256,20 +551,10 @@ export function ManagerAnalytics() {
             <label className='text-sm font-medium text-gray-700 whitespace-nowrap'>
               Custom Range:
             </label>
-            <RangePicker
-              format='YYYY-MM-DD'
-              placeholder={['Start date', 'End date']}
-              className='h-10'
-              style={{ width: '240px' }}
-              value={selectedDateRange[0] && selectedDateRange[1] 
-                ? [selectedDateRange[0], selectedDateRange[1]]
-                : null
-              }
-              onChange={(dates) => {
-                setSelectedDateRange(dates ? [dates[0], dates[1]] : [null, null])
-                setTimeRange('custom')
-              }}
-              allowEmpty
+            <DateRangePicker
+              value={selectedDateRange}
+              onChange={handleDateRangeChange}
+              className='h-10 w-60'
             />
           </div>
 
@@ -1279,8 +564,8 @@ export function ManagerAnalytics() {
               onClick={handleFilter}
               disabled={
                 timeRange !== 'custom' ||
-                !selectedDateRange[0] ||
-                !selectedDateRange[1]
+                !selectedDateRange?.from ||
+                !selectedDateRange?.to
               }
               className='h-10 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
             >
@@ -1304,12 +589,9 @@ export function ManagerAnalytics() {
               type='button'
               className='h-10 px-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
               onClick={handleExportClick}
-              disabled={isExporting}
             >
-              <Download
-                className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`}
-              />
-              {isExporting ? 'Exporting...' : 'Export'}
+              <Download className='w-4 h-4' />
+              Export
             </button>
 
             <button
@@ -1547,7 +829,7 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                <PaginationInfo
+                <PaginationComponent
                   currentPage={page}
                   totalPages={totalPages}
                   totalItems={totalRows}
@@ -1681,7 +963,7 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                <PaginationInfo
+                <PaginationComponent
                   currentPage={coursePage}
                   totalPages={totalCoursePages}
                   totalItems={totalCourseElements}
@@ -1809,7 +1091,7 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                <PaginationInfo
+                <PaginationComponent
                   currentPage={studentPage}
                   totalPages={totalStudentPages}
                   totalItems={totalStudentElements}
@@ -1943,7 +1225,7 @@ export function ManagerAnalytics() {
                     </tbody>
                   </table>
                 </div>
-                <PaginationInfo
+                <PaginationComponent
                   currentPage={revenuePage}
                   totalPages={totalRevenuePages}
                   totalItems={totalRevenueElements}
@@ -1956,371 +1238,10 @@ export function ManagerAnalytics() {
           </TabsContent>
         </div>
       </Tabs>
-      <Dialog
-        open={showCategoryCoursesDialog}
-        onOpenChange={setShowCategoryCoursesDialog}
-        modal
-      >
-        <DialogContent className='sm:max-w-4xl p-6 max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
-            <DialogTitle>
-              Courses in {selectedCategoryForCourses?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {loadingCategoryCourses ? (
-            <div className='flex items-center justify-center py-8'>
-              <Loader2 className='h-8 w-8 animate-spin mr-2' />
-              Loading courses...
-            </div>
-          ) : categoryCourses.length === 0 ? (
-            <div className='text-center py-8 text-muted-foreground'>
-              No courses found for this category.
-            </div>
-          ) : (
-            <div className='space-y-6'>
-              {/* Chart Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Distribution</CardTitle>
-                  <CardDescription>
-                    Breakdown of revenue by course within{' '}
-                    {selectedCategoryForCourses?.name}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={{}} className='h-[250px]'>
-                    <ResponsiveContainer width='100%' height='100%'>
-                      <PieChart>
-                        <Pie
-                          data={categoryCourses.map(course => ({
-                            name: course.title,
-                            value: course.finalPrice || 0,
-                          }))}
-                          dataKey='value'
-                          nameKey='name'
-                          cx='50%'
-                          cy='50%'
-                          outerRadius={80}
-                          fill='#8884d8'
-                          labelLine={false}
-                          label={renderCustomizedLabel}
-                        >
-                          {categoryCourses.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <ChartTooltip
-                          content={<ChartTooltipContent />}
-                        ></ChartTooltip>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              {/* Courses Table */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className='w-full overflow-x-auto max-h-[400px] overflow-y-auto border border-gray-200 rounded-md'>
-                    <table className='min-w-[1500px] border bg-white table-fixed text-xs md:text-sm'>
-                      <thead>
-                      <tr className='bg-gray-50'>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          ID
-                        </th>
-                        <th className='px-2 py-2 border text-left font-semibold whitespace-nowrap'>
-                          Course Name
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Enrollments
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Rating
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Revenue
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Completion %
-                        </th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      {categoryCourses.map((course, idx) => (
-                        <tr key={course.id}>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {idx + 1}
-                          </td>
-                          <td className='border px-2 py-2 align-top'>
-                            {course.title}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.totalStudents}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.averageRating?.toFixed(1) || 'N/A'}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.finalPrice?.toLocaleString('vi-VN') ||
-                              '0'}{' '}
-                            ₫
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {Math.floor(Math.random() * 30 + 70)}%
-                          </td>
-                        </tr>
-                      ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Export Dialog */}
-      <Dialog
+      <AnalyticsExportDialog
         open={showExportDialog}
-        onOpenChange={open => {
-          if (!open) {
-            handleCloseExportDialog()
-          }
-        }}
-        modal
-      >
-        <DialogContent
-          key='export-dialog'
-          className='sm:max-w-[600px] p-6 max-h-[90vh] overflow-y-auto'
-        >
-          <DialogHeader>
-            <DialogTitle className='text-xl font-bold text-gray-800'>
-              Export Analytics Report
-            </DialogTitle>
-            <p className='text-sm text-gray-600 mt-2'>
-              Configure your export settings and download comprehensive
-              analytics data
-            </p>
-          </DialogHeader>
-
-          <div className='grid gap-6 py-4'>
-            {/* Data Selection Section */}
-            <div className='space-y-4'>
-              <div className='flex items-center gap-2 border-b pb-2'>
-                <div className='w-4 h-4 bg-blue-500 rounded-sm'></div>
-                <span className='font-semibold text-lg text-gray-800'>
-                  Select Data to Export
-                </span>
-              </div>
-              <div className='grid grid-cols-1 gap-3'>
-                {Object.keys(exportOptions).map(key => (
-                  <div
-                    key={key}
-                    className='flex flex-col gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors bg-gray-50/50'
-                  >
-                    <div className='flex items-center space-x-3'>
-                      <Checkbox
-                        id={key}
-                        checked={Boolean(
-                          exportOptions[key as keyof typeof exportOptions]
-                            .checked
-                        )}
-                        onCheckedChange={value =>
-                          setExportOptions(prev => ({
-                            ...prev,
-                            [key]: {
-                              ...prev[key as keyof typeof prev],
-                              checked: value === true,
-                            },
-                          }))
-                        }
-                        className='w-5 h-5'
-                      />
-                      <label
-                        htmlFor={key}
-                        className='text-base font-medium flex-1 cursor-pointer text-gray-700'
-                      >
-                        {key === 'category' ? '📊 Categories Analytics' : ''}
-                        {key === 'course' ? '📚 Course Performance' : ''}
-                        {key === 'student' ? '👥 Student Activity' : ''}
-                        {key === 'revenue' ? '💰 Revenue Trends' : ''}
-                      </label>
-                    </div>
-                    {exportOptions[key as keyof typeof exportOptions]
-                      .checked && (
-                      <div className='ml-8 mt-2'>
-                        <label className='block text-sm font-medium text-gray-600 mb-2'>
-                          Number of records:
-                        </label>
-                        <select
-                          value={exportOptions[
-                            key as keyof typeof exportOptions
-                            ].rowCount.toString()}
-                          onChange={e =>
-                            setExportOptions(prev => ({
-                              ...prev,
-                              [key]: {
-                                ...prev[key as keyof typeof prev],
-                                rowCount: Number(e.target.value),
-                              },
-                            }))
-                          }
-                          className='w-[200px] border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
-                        >
-                          <option value='5'>First 5 records</option>
-                          <option value='10'>First 10 records</option>
-                          <option value='20'>First 20 records</option>
-                          <option value='50'>First 50 records</option>
-                          <option value='-1'>All records</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Time Range Section */}
-            <div className='space-y-4'>
-              <div className='flex items-center gap-2 border-b pb-2'>
-                <div className='w-4 h-4 bg-green-500 rounded-sm'></div>
-                <span className='font-semibold text-lg text-gray-800'>
-                  Time Range
-                </span>
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                {/* Time Range Selector */}
-                <div className='space-y-3'>
-                  <label className='block text-sm font-medium text-gray-700'>
-                    Quick Select:
-                  </label>
-                  <select
-                    value={exportTimeRange}
-                    onChange={e => {
-                      setExportTimeRange(e.target.value)
-                      if (e.target.value !== 'custom') {
-                        setExportDateRange(null) // Clear custom date when using quick select
-                      }
-                    }}
-                    className='w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
-                  >
-                    <option value='7d'>Last 7 days</option>
-                    <option value='30d'>Last 30 days</option>
-                    <option value='90d'>Last 90 days</option>
-                    <option value='6m'>Last 6 months</option>
-                    <option value='1y'>Last year</option>
-                    <option value='custom'>Custom Range</option>
-                  </select>
-                </div>
-
-                {/* Custom Date Range */}
-                <div className='space-y-3'>
-                  <label className='block text-sm font-medium text-gray-700'>
-                    Custom Date Range:
-                  </label>
-                  <RangePicker
-                    style={{ width: '100%' }}
-                    placeholder={['Start date', 'End date']}
-                    format='DD/MM/YYYY'
-                    value={exportDateRange 
-                      ? [exportDateRange[0], exportDateRange[1]]
-                      : null
-                    }
-                    onChange={dates => {
-                      setExportDateRange(dates as any)
-                      if (dates) {
-                        setExportTimeRange('custom')
-                      }
-                    }}
-                    disabled={exportTimeRange !== 'custom'}
-                    className={exportTimeRange !== 'custom' ? 'opacity-50' : ''}
-                    allowEmpty
-                  />
-                </div>
-              </div>
-
-              {/* Time Range Preview */}
-              <div className='bg-blue-50 border border-blue-200 rounded-lg p-3'>
-                <div className='flex items-center gap-2 text-blue-800'>
-                  <svg
-                    className='w-4 h-4'
-                    fill='currentColor'
-                    viewBox='0 0 20 20'
-                  >
-                    <path
-                      fillRule='evenodd'
-                      d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z'
-                      clipRule='evenodd'
-                    ></path>
-                  </svg>
-                  <span className='text-sm font-medium'>Export Period:</span>
-                </div>
-                <p className='text-sm text-blue-700 mt-1'>
-                  {exportDateRange && exportDateRange[0] && exportDateRange[1]
-                    ? `${(exportDateRange[0].toDate ? exportDateRange[0].toDate() : exportDateRange[0]).toLocaleDateString('en-GB')} - ${(exportDateRange[1].toDate ? exportDateRange[1].toDate() : exportDateRange[1]).toLocaleDateString('en-GB')}`
-                    : exportTimeRange === '7d'
-                      ? 'Last 7 days'
-                      : exportTimeRange === '30d'
-                        ? 'Last 30 days'
-                        : exportTimeRange === '90d'
-                          ? 'Last 90 days'
-                          : exportTimeRange === '6m'
-                            ? 'Last 6 months'
-                            : exportTimeRange === '1y'
-                              ? 'Last year'
-                              : 'Please select a time range'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className='mt-6 gap-3'>
-            <Button
-              variant='outline'
-              onClick={e => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleCloseExportDialog()
-              }}
-              className='px-6'
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={e => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleExport()
-              }}
-              disabled={
-                isExporting ||
-                !Object.values(exportOptions).some(o => o.checked)
-              }
-              className='px-6 bg-blue-600 hover:bg-blue-700'
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className='mr-2 h-4 w-4' />
-                  Export Report
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setShowExportDialog}
+      />
     </div>
   )
 }

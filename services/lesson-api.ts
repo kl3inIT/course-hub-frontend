@@ -42,6 +42,18 @@ export const lessonApi = {
     return response.data
   },
 
+  // Cập nhật video của lesson (sẽ xóa video cũ và chuẩn bị upload video mới)
+  updateLessonVideo: async (
+    lessonId: string,
+    data: LessonUploadRequestDTO
+  ): Promise<ApiResponse<LessonUploadResponseDTO>> => {
+    const response = await httpClient.put(
+      `/api/lessons/${lessonId}/video`,
+      data
+    )
+    return response.data
+  },
+
   // Lấy thông tin một bài học
   getLessonById: async (
     lessonId: string

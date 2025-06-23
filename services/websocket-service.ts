@@ -30,8 +30,8 @@ class WebSocketService {
 
     try {
       this.client.activate()
-    } catch (error) {
-      console.error('[WebSocket] Failed to connect to WebSocket:', error)
+    } catch (_error) {
+      // Failed to connect to WebSocket
     }
   }
 
@@ -60,12 +60,8 @@ class WebSocketService {
         try {
           const data = JSON.parse(message.body)
           this.notifySubscribers(event, data)
-        } catch (e) {
-          console.error(
-            '[WebSocket] Error parsing message.body:',
-            message.body,
-            e
-          )
+        } catch (_e) {
+          // Error parsing message.body
           this.notifySubscribers(event, message.body)
         }
       }
@@ -91,7 +87,7 @@ class WebSocketService {
     if (callback) {
       callback(data)
     } else {
-      console.warn('[WebSocket] No subscriber found for event:', event)
+      // No subscriber found for event
     }
   }
 }

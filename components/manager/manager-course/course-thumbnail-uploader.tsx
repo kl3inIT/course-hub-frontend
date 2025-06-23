@@ -37,6 +37,22 @@ export function CourseThumbnailUploader({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Check if there's an existing thumbnail
+    const hasExistingThumbnail = typeof value === 'string' && value
+
+    if (hasExistingThumbnail) {
+      const shouldReplace = window.confirm(
+        'Uploading a new thumbnail will permanently delete the current one from storage. Do you want to continue?'
+      )
+
+      if (!shouldReplace) {
+        // Reset the file input
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+    }
+
     // Validate type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if (!validTypes.includes(file.type)) {

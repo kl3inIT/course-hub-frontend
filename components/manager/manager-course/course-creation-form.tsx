@@ -1,8 +1,6 @@
 'use client'
 
-import type React from 'react'
-
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -52,7 +50,7 @@ type Step = 'basic-info' | 'content-structure' | 'final-review'
 
 export function CourseCreationForm() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
   const [currentStep, setCurrentStep] = useState<Step>('basic-info')
 
   // Course basic info state
@@ -65,7 +63,7 @@ export function CourseCreationForm() {
   })
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [isValidCourseData, setIsValidCourseData] = useState(false)
-  const [courseErrors, setCourseErrors] = useState<Record<string, string>>({})
+  const [_courseErrors, setCourseErrors] = useState<Record<string, string>>({})
 
   // Course creation state
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -80,7 +78,7 @@ export function CourseCreationForm() {
   const [modules, setModules] = useState<Module[]>([])
 
   // State lưu tiến trình upload cho từng lesson
-  const [lessonUploadProgress, setLessonUploadProgress] = useState<
+  const [_lessonUploadProgress, setLessonUploadProgress] = useState<
     Record<string, number>
   >({})
 

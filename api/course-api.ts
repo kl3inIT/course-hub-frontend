@@ -143,4 +143,14 @@ export const courseApi = {
     >('/api/courses/recommended')
     return response.data
   },
+
+  getCoursesSortedByPriceAsc: async (): Promise<ApiResponse<CourseResponseDTO[]>> => {
+    const response = await httpClient.get<ApiResponse<CourseResponseDTO[]>>('/api/courses/priceAsc');
+    return response.data;
+  },
+
+  getCoursesSortedByPriceDesc: async (): Promise<ApiResponse<CourseResponseDTO[]>> => {
+    const response = await httpClient.get<ApiResponse<CourseResponseDTO[]>>('/api/courses/priceDesc');
+    return response.data;
+  },
 }

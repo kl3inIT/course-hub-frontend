@@ -1,16 +1,13 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Award, Calendar, User, BookOpen, Download } from 'lucide-react'
-import { downloadCertificatePDF } from '@/utils/pdf'
+import React from 'react';
 
 interface CompletionCertificateProps {
-  courseTitle: string
-  instructor: string
-  completionDate: Date | undefined
-  studentName: string
-  certificateId?: string
+  courseTitle: string;
+  instructor: string;
+  completionDate: Date | undefined;
+  studentName: string;
+  certificateId?: string;
 }
 
 export function CompletionCertificate({
@@ -20,141 +17,118 @@ export function CompletionCertificate({
   studentName,
   certificateId,
 }: CompletionCertificateProps) {
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return 'Not available';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    })
-  }
+    });
+  };
+
+  const formattedDate = formatDate(completionDate);
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Chứng chỉ */}
+    <div className="font-serif bg-white text-gray-800 relative w-[1024px] h-[724px] shadow-2xl overflow-hidden border border-gray-200">
+      {/* Watermark */}
       <div
-        id="pdf-wrapper"
-        className="w-[794px] min-h-[1123px] bg-white mx-auto p-6"
-      >
-        <Card className="w-full bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 shadow-none">
-          <CardContent className="p-12">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-full">
-                  <Award className="h-12 w-12 text-white" />
-                </div>
-              </div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                Certificate of Completion
-              </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto"></div>
-            </div>
+        className="absolute inset-0 bg-repeat bg-center opacity-[0.02]"
+        style={{ backgroundImage: "url('/assets/watermark-logo.svg')" }}
+      ></div>
 
-            {/* Main Content */}
-            <div className="text-center space-y-8">
-              <div>
-                <p className="text-lg text-gray-600 mb-4">
-                  This is to certify that
-                </p>
-                <div
-                  style={{
-                    fontSize: '32px',
-                    fontWeight: 'bold',
-                    color: '#222',
-                    background: '#fff',
-                    padding: '16px 32px',
-                    border: '2px solid #60a5fa',
-                    borderRadius: '12px',
-                    minWidth: '320px',
-                    display: 'inline-block',
-                    margin: '0 auto',
-                    boxShadow: '0 2px 8px rgba(96,165,250,0.08)',
-                    letterSpacing: '1px',
-                  }}
+      {/* Left Content Area - Absolutely Positioned for PDF compatibility */}
+      <div className="absolute top-0 left-0 w-2/3 h-full p-16 flex flex-col">
+        <header className="mb-10">
+          <div className="text-green-700 font-bold text-2xl">iT4Begginer</div>
+          <p className="text-[10px] text-gray-500 tracking-[0.2em] ml-1">
+            EDUCATION &amp; TRAINING
+          </p>
+        </header>
+
+        <main className="flex-grow pl-4">
+          <p className="text-sm text-gray-500 mb-8">{formattedDate}</p>
+          <h2 className="text-4xl font-mono font-medium text-gray-800 tracking-wide mb-6">
+            {studentName}
+          </h2>
+          <p className="text-sm text-gray-600 mb-2">
+            has successfully completed
+          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            {courseTitle}
+          </h1>
+          <p className="text-xs text-gray-500 max-w-md">
+            an online non-credit course authorized by {instructor} and offered
+            through LearnHub.
+          </p>
+        </main>
+      </div>
+
+      {/* Right Ribbon Area - Absolutely Positioned for PDF compatibility */}
+      <div className="absolute top-0 right-8 h-4/5 w-48">
+        <div className="relative w-full h-full bg-slate-300">
+          {/* The pointed tip using an SVG shape for PDF compatibility */}
+          <div className="absolute -bottom-12 left-0 w-full h-12">
+            <svg viewBox="0 0 192 48" preserveAspectRatio="none" className="w-full h-full">
+              <path d="M 0,0 L 96,48 L 192,0 Z" fill="#cbd5e1" />
+            </svg>
+          </div>
+
+          {/* Ribbon Content */}
+          <div className="text-center pt-20 relative z-10">
+            <p className="font-semibold tracking-[0.3em] text-gray-700">
+              COURSE
+            </p>
+            <p className="font-semibold tracking-[0.3em] text-gray-700 mb-12">
+              CERTIFICATE
+            </p>
+            {/* Seal */}
+            <div className="w-36 h-36 rounded-full mx-auto flex items-center justify-center relative p-2 bg-gray-100 border-4 border-gray-300">
+              <div className="text-xl font-bold text-gray-700">LearnHub</div>
+              <svg
+                className="absolute top-0 left-0 w-full h-full"
+                viewBox="0 0 100 100"
+              >
+                <defs>
+                  <path
+                    id="circlePath"
+                    d="M 50, 50 m -40, 0 a 40, 40 0 1, 1 80, 0 a 40, 40 0 1, 1 -80, 0"
+                  ></path>
+                </defs>
+                <text
+                  fill="#6b7280"
+                  style={{ fontSize: '8px', letterSpacing: '0.1em' }}
                 >
-                  {studentName}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-lg text-gray-600 mb-4">
-                  has successfully completed the course
-                </p>
-                <div className="bg-white p-6 rounded-lg border-2 border-blue-200 max-w-2xl mx-auto">
-                  <h3 className="text-2xl font-bold text-blue-600 mb-2">
-                    {courseTitle}
-                  </h3>
-                  <div className="flex items-center justify-center gap-2 text-gray-600">
-                    <User className="h-4 w-4" />
-                    <span>Instructed by {instructor}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Course Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <Calendar className="h-5 w-5" />
-                    <span className="font-medium">Completion Date</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-800">
-                    {completionDate instanceof Date && !isNaN(completionDate.getTime())
-                      ? formatDate(completionDate)
-                      : 'N/A'}
-                  </p>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <BookOpen className="h-5 w-5" />
-                    <span className="font-medium">Course Type</span>
-                  </div>
-                  <p className="text-lg font-bold text-gray-800">
-                    Online Course
-                  </p>
-                </div>
-              </div>
-
-              {/* Signatures */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto mt-12">
-                <div className="text-center">
-                  <div className="border-t-2 border-gray-400 pt-2 mb-2">
-                    <p className="font-bold text-gray-800">{instructor}</p>
-                  </div>
-                  <p className="text-sm text-gray-600">Course Instructor</p>
-                </div>
-
-                <div className="text-center">
-                  <div className="border-t-2 border-gray-400 pt-2 mb-2">
-                    <p className="font-bold text-gray-800">LearnHub Academy</p>
-                  </div>
-                  <p className="text-sm text-gray-600">Learning Platform</p>
-                </div>
-              </div>
-
-              {/* Certificate ID */}
-              {certificateId && (
-                <div className="mt-8">
-                  <Badge
-                    variant="outline"
-                    className="text-xs text-gray-500 border-gray-300"
-                  >
-                    Certificate ID: {certificateId}
-                  </Badge>
-                </div>
-              )}
-
-              {/* Verification */}
-              <div className="mt-8 text-center">
-                <p className="text-xs text-gray-500">
-                  This certificate can be verified at learnhub.academy/verify/
-                  {certificateId}
-                </p>
-              </div>
+                  <textPath href="#circlePath">
+                    EDUCATION FOR EVERYONE • COURSE CERTIFICATE •
+                  </textPath>
+                </text>
+              </svg>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Elements */}
+      <div className="absolute bottom-8 left-20">
+        <div className="text-left">
+          <div className="font-['Ms_Madi',_cursive] text-green-700 text-4xl -mb-1">
+            iT4Begginer
+          </div>
+          <div className="border-t border-gray-300 pt-1">
+            <p className="text-[10px] text-gray-500 tracking-[0.2em] ml-1">
+              EDUCATION &amp; TRAINING
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-8 right-20 text-right">
+        <p className="text-[10px] text-gray-600">
+          Verify at course.learnhub.academy/verify/{certificateId}
+        </p>
+        <p className="text-[9px] text-gray-500 mt-1 max-w-[400px]">
+          LearnHub has confirmed the identity of this individual and their
+          participation in the course.
+        </p>
       </div>
     </div>
   )

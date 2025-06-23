@@ -80,36 +80,14 @@ const FilterSidebar = memo(function FilterSidebar({
     <div className='space-y-6'>
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>Filters</h2>
-        {hasActiveFilters && (
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={onClearFilters}
-            className='h-8 px-2 text-muted-foreground'
-          >
-            Clear all
-          </Button>
-        )}
       </div>
 
       {/* Categories */}
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
           <Label className='text-base'>Categories</Label>
-          {selectedCategories.length > 0 && (
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => {
-                selectedCategories.forEach(cat => onCategoryToggle(cat))
-              }}
-              className='h-auto p-0 text-xs text-muted-foreground hover:text-foreground'
-            >
-              Clear
-            </Button>
-          )}
         </div>
-        <div className='space-y-2 max-h-48 overflow-y-auto pr-2'>
+        <div className='no-scrollbar space-y-2 max-h-48 overflow-y-auto pr-2'>
           {categories.map(category => (
             <div key={category.id} className='flex items-center space-x-2'>
               <Checkbox
@@ -132,18 +110,6 @@ const FilterSidebar = memo(function FilterSidebar({
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
           <Label className='text-base'>Skill Level</Label>
-          {selectedLevels.length > 0 && (
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => {
-                selectedLevels.forEach(level => onLevelToggle(level))
-              }}
-              className='h-auto p-0 text-xs text-muted-foreground hover:text-foreground'
-            >
-              Clear
-            </Button>
-          )}
         </div>
         <div className='space-y-2'>
           {levels.map(level => (
@@ -267,10 +233,16 @@ export function CourseCatalog() {
     if (searchFromUrl) {
       setSearchTerm(searchFromUrl)
     }
-    if (categoryFromUrl) {
-      setSelectedCategories([categoryFromUrl])
+
+    if (categoryFromUrl && categories.length > 0) {
+      const categoryToSelect = categories.find(
+        c => c.name.toLowerCase() === categoryFromUrl.toLowerCase()
+      )
+      if (categoryToSelect) {
+        setSelectedCategories([String(categoryToSelect.id)])
+      }
     }
-  }, [searchParams])
+  }, [searchParams, categories])
 
   // Load courses based on filters and pagination with optimized state updates
   useEffect(() => {
@@ -285,56 +257,66 @@ export function CourseCatalog() {
         }
         setError(null)
 
-        const params: any = {
-          page: currentPage,
-          size: pageSize,
+        let coursesResponse
+
+        if (sortBy === 'price-low') {
+          coursesResponse = await courseApi.getCoursesSortedByPriceDesc()
+        } else if (sortBy === 'price-high') {
+          coursesResponse = await courseApi.getCoursesSortedByPriceAsc()
+        } else {
+          const params: any = {
+            page: currentPage,
+            size: pageSize,
+          }
+
+          if (debouncedSearchTerm) params.search = debouncedSearchTerm
+          if (selectedCategories.length > 0) {
+            params.category = selectedCategories.join(',')
+          }
+          if (selectedLevels.length > 0) {
+            params.level = selectedLevels.join(',')
+          }
+
+          if (priceFilter === 'free') {
+            params.maxPrice = 0
+          } else if (priceFilter === 'paid') {
+            params.minPrice = 0.01
+          }
+
+          if (priceFilter !== 'free' && priceRange) {
+            if (priceRange[0] > 0) params.minPrice = priceRange[0]
+            if (priceRange[1] < 200) params.maxPrice = priceRange[1]
+          }
+
+          switch (sortBy) {
+            case 'newest':
+              params.sort = 'id,desc'
+              break
+            case 'popularity':
+              params.sort = 'totalStudents,desc'
+              break
+            case 'rating':
+              params.sort = 'averageRating,desc'
+              break
+            case 'relevance':
+            default:
+              params.sort = 'id,desc'
+          }
+          coursesResponse = await courseApi.searchCourses(params)
         }
 
-        if (debouncedSearchTerm) params.search = debouncedSearchTerm
-        if (selectedCategories.length > 0) {
-          params.category = selectedCategories.join(',')
-        }
-        if (selectedLevels.length > 0) {
-          params.level = selectedLevels.join(',')
-        }
-
-        if (priceFilter === 'free') {
-          params.maxPrice = 0
-        } else if (priceFilter === 'paid') {
-          params.minPrice = 0.01
-        }
-
-        if (priceFilter !== 'free' && priceRange) {
-          if (priceRange[0] > 0) params.minPrice = priceRange[0]
-          if (priceRange[1] < 200) params.maxPrice = priceRange[1]
-        }
-
-        switch (sortBy) {
-          case 'price-low':
-            params.sort = 'price,asc'
-            break
-          case 'price-high':
-            params.sort = 'price,desc'
-            break
-          case 'newest':
-            params.sort = 'id,desc'
-            break
-          case 'popularity':
-            params.sort = 'totalStudents,desc'
-            break
-          case 'rating':
-            params.sort = 'rating,desc'
-            break
-          default:
-            params.sort = 'id,desc'
-        }
-
-        const coursesResponse = await courseApi.searchCourses(params)
-
-        if (isMounted && coursesResponse.data?.content) {
-          setCourses(coursesResponse.data.content)
-          setTotalPages(coursesResponse.data.totalPages)
-          setTotalElements(coursesResponse.data.totalElements)
+        if (isMounted) {
+          if (Array.isArray(coursesResponse.data)) {
+            // Handle array response for price sort
+            setCourses(coursesResponse.data)
+            setTotalPages(1)
+            setTotalElements(coursesResponse.data.length)
+          } else if (coursesResponse.data?.content) {
+            // Handle paginated response for other sorts
+            setCourses(coursesResponse.data.content)
+            setTotalPages(coursesResponse.data.totalPages)
+            setTotalElements(coursesResponse.data.totalElements)
+          }
         }
       } catch (err) {
         if (isMounted) {

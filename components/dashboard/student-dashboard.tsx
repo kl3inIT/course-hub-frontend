@@ -54,7 +54,6 @@ export function StudentDashboard() {
   const hiddenCertificateRef = useRef<HTMLDivElement>(null)
   const [learningStreak, setLearningStreak] = useState(0)
   const [showFirework, setShowFirework] = useState(false)
-  const prevStreak = useRef(0)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -68,15 +67,17 @@ export function StudentDashboard() {
   }, [])
 
   useEffect(() => {
-    if (learningStreak > 1) {
-      const lastShownStreak = parseInt(
-        localStorage.getItem('lastShownStreakForToast') || '0'
-      )
-      if (learningStreak > lastShownStreak) {
-        setShowFirework(true)
-        localStorage.setItem('lastShownStreakForToast', learningStreak.toString())
-        setTimeout(() => setShowFirework(false), 3500)
-      }
+    // Get the streak value for which a toast was last shown.
+    const lastShownStreak = parseInt(
+      localStorage.getItem('lastShownStreakForToast') || '0'
+    )
+
+    // If the current streak is greater than the last one we showed a toast for,
+    // show the notification and update the value in localStorage.
+    if (learningStreak > 0 && learningStreak > lastShownStreak) {
+      setShowFirework(true)
+      localStorage.setItem('lastShownStreakForToast', learningStreak.toString())
+      setTimeout(() => setShowFirework(false), 3500)
     }
   }, [learningStreak])
 
@@ -124,6 +125,7 @@ export function StudentDashboard() {
     } else {
       localStorage.setItem('learningStreak', '1')
       localStorage.setItem('lastStudyDate', today)
+      // Reset the toast tracker when the streak resets
       localStorage.setItem('lastShownStreakForToast', '0')
       setLearningStreak(1)
     }
@@ -155,20 +157,35 @@ export function StudentDashboard() {
   const handleDownloadPDF = async () => {
     if (user && selectedCertificate) {
       setShowHiddenCertificate(true)
-      setTimeout(async () => {
-        if (hiddenCertificateRef.current) {
-          const html2pdf = (await import('html2pdf.js')).default;
-          const opt = {
-            margin: 0,
-            filename: `certificate-${selectedCertificate.title}.pdf`,
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
-          };
-          html2pdf().set(opt).from(hiddenCertificateRef.current).save();
+
+      // Wait for the next render cycle for the hidden component to be in the DOM
+      // and for all custom fonts to be fully loaded and ready.
+      await new Promise(resolve => setTimeout(resolve, 100))
+      await document.fonts.ready
+
+      if (hiddenCertificateRef.current) {
+        const html2pdf = (await import('html2pdf.js')).default
+        const opt = {
+          margin: 0,
+          filename: `certificate-${selectedCertificate.title}.pdf`,
+          image: { type: 'jpeg', quality: 1 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: {
+            unit: 'px',
+            format: [1024, 724],
+            orientation: 'landscape',
+          },
         }
+        html2pdf()
+          .set(opt)
+          .from(hiddenCertificateRef.current)
+          .save()
+          .finally(() => {
+            setShowHiddenCertificate(false)
+          })
+      } else {
         setShowHiddenCertificate(false)
-      }, 200)
+      }
     }
   }
 
@@ -182,6 +199,7 @@ export function StudentDashboard() {
       {showFirework && (
         <FireworkToast streak={learningStreak} />
       )}
+
       <div>
         <h1 className='text-3xl font-bold'>
           Welcome back, {user?.name || user?.email}!
@@ -412,7 +430,7 @@ export function StudentDashboard() {
         open={showCertificateModal}
         onOpenChange={setShowCertificateModal}
       >
-        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+        <DialogContent className='max-w-6xl max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <Award className='h-5 w-5 text-yellow-500' />
@@ -492,44 +510,23 @@ export function StudentDashboard() {
             position: 'absolute',
             left: '-9999px',
             top: 0,
-            width: '300px',
-            height: '1123px',
-            background: 'white',
-            margin: 0,
-            padding: 0,
-            boxSizing: 'border-box',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            overflow: 'hidden',
           }}
         >
-          <div
-            ref={hiddenCertificateRef}
-            style={{
-              width: '100px',
-              background: 'white',
-              margin: 'auto',
-              padding: 0,
-              boxSizing: 'border-box',
-              boxShadow: '0 0 24px 0 #e0e0e0',
-              borderRadius: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div ref={hiddenCertificateRef}>
             <CompletionCertificate
-              courseTitle={selectedCertificate.title || selectedCertificate.courseTitle}
+              courseTitle={
+                selectedCertificate.title || selectedCertificate.courseTitle
+              }
               instructor={selectedCertificate.instructorName}
               completionDate={
-                selectedCertificate.completedDate && !isNaN(new Date(selectedCertificate.completedDate).getTime())
+                selectedCertificate.completedDate &&
+                  !isNaN(new Date(selectedCertificate.completedDate).getTime())
                   ? new Date(selectedCertificate.completedDate)
                   : undefined
               }
               studentName={user.name || user.email || 'Student'}
-              certificateId={`CERT-${selectedCertificate.title || selectedCertificate.courseTitle}-${Date.now()}`}
+              certificateId={`CERT-${selectedCertificate.title || selectedCertificate.courseTitle
+                }-${Date.now()}`}
             />
           </div>
         </div>

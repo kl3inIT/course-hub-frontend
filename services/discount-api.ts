@@ -10,7 +10,7 @@ import {
   CouponUpdateRequestDTO,
   DiscountRequestDTO,
   DiscountResponseDTO,
-  PaginatedCouponResponse
+  PaginatedCouponResponse,
 } from '@/types/discount'
 
 export const discountApi = {
@@ -32,7 +32,9 @@ export const discountApi = {
   getAvailableCoupons: async (
     params?: CouponSearchParams
   ): Promise<ApiResponse<PaginatedCouponResponse>> => {
-    const response = await httpClient.get('/api/discounts/available', { params })
+    const response = await httpClient.get('/api/discounts/available', {
+      params,
+    })
     return response.data
   },
 

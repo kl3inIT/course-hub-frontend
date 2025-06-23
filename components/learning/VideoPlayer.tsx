@@ -47,7 +47,7 @@ export function VideoPlayer({
     videoUrl,
     onTimeUpdate: onProgressUpdate,
     onVideoEnded,
-    onError: (error) => console.error('Video error:', error),
+    onError: error => console.error('Video error:', error),
   })
 
   const formatDuration = (seconds: number): string => {
@@ -71,7 +71,7 @@ export function VideoPlayer({
             </div>
           </div>
         )}
-        
+
         {videoUrl && (
           <div
             className={`relative bg-black transition-all duration-300 ${
@@ -90,13 +90,15 @@ export function VideoPlayer({
                       ? 'h-64 md:h-80 lg:h-96'
                       : 'h-80 md:h-96 lg:h-[32rem]'
               }`}
-              poster={course.thumbnailUrl || '/placeholder.svg?height=400&width=600'}
+              poster={
+                course.thumbnailUrl || '/placeholder.svg?height=400&width=600'
+              }
               controls={false}
               onClick={videoPlayer.togglePlayPause}
               onTimeUpdate={videoPlayer.handleTimeUpdate}
               onLoadedMetadata={videoPlayer.handleLoadedMetadata}
               onEnded={videoPlayer.handleVideoEnded}
-              onError={(e) => console.error('Video error:', e)}
+              onError={e => console.error('Video error:', e)}
             >
               <source src={videoUrl} type='video/mp4' />
               Your browser does not support the video tag.
@@ -130,7 +132,9 @@ export function VideoPlayer({
                 <div className='flex items-center space-x-1 bg-black/50 rounded-lg p-1 backdrop-blur-sm'>
                   <Button
                     size='sm'
-                    variant={videoPlayer.videoSize === 'small' ? 'secondary' : 'ghost'}
+                    variant={
+                      videoPlayer.videoSize === 'small' ? 'secondary' : 'ghost'
+                    }
                     className='h-8 w-8 p-0 text-white hover:text-black'
                     onClick={() => videoPlayer.setVideoSize('small')}
                     title='Small video'
@@ -139,7 +143,9 @@ export function VideoPlayer({
                   </Button>
                   <Button
                     size='sm'
-                    variant={videoPlayer.videoSize === 'medium' ? 'secondary' : 'ghost'}
+                    variant={
+                      videoPlayer.videoSize === 'medium' ? 'secondary' : 'ghost'
+                    }
                     className='h-8 w-8 p-0 text-white hover:text-black'
                     onClick={() => videoPlayer.setVideoSize('medium')}
                     title='Medium video'
@@ -148,7 +154,9 @@ export function VideoPlayer({
                   </Button>
                   <Button
                     size='sm'
-                    variant={videoPlayer.videoSize === 'large' ? 'secondary' : 'ghost'}
+                    variant={
+                      videoPlayer.videoSize === 'large' ? 'secondary' : 'ghost'
+                    }
                     className='h-8 w-8 p-0 text-white hover:text-black'
                     onClick={() => videoPlayer.setVideoSize('large')}
                     title='Large video'
@@ -163,7 +171,11 @@ export function VideoPlayer({
                   variant='ghost'
                   className='h-8 w-8 p-0 text-white hover:text-black bg-black/50 hover:bg-white/90 backdrop-blur-sm'
                   onClick={videoPlayer.toggleFullscreen}
-                  title={videoPlayer.isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  title={
+                    videoPlayer.isFullscreen
+                      ? 'Exit fullscreen'
+                      : 'Enter fullscreen'
+                  }
                 >
                   {videoPlayer.isFullscreen ? (
                     <Minimize2 className='h-4 w-4' />
@@ -328,11 +340,17 @@ export function VideoPlayer({
               </div>
               <div className='flex items-center space-x-2 text-sm text-muted-foreground'>
                 <Monitor className='h-4 w-4' />
-                <span className='capitalize'>{videoPlayer.videoSize} player</span>
+                <span className='capitalize'>
+                  {videoPlayer.videoSize} player
+                </span>
               </div>
             </div>
             <div className='flex items-center space-x-2'>
-              <Button size='sm' variant='outline' onClick={videoPlayer.toggleFullscreen}>
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={videoPlayer.toggleFullscreen}
+              >
                 <Maximize2 className='h-4 w-4 mr-2' />
                 Fullscreen
               </Button>
@@ -342,4 +360,4 @@ export function VideoPlayer({
       )}
     </div>
   )
-} 
+}

@@ -52,7 +52,7 @@ export function CourseCatalog() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [searchStats, setSearchStats] =
     useState<CourseSearchStatsResponseDTO | null>(null)
-  
+
   // Tách loading states
   const [initialLoading, setInitialLoading] = useState(true) // Chỉ dùng lần đầu
   const [sectionLoading, setSectionLoading] = useState(false) // Chỉ cho section
@@ -66,13 +66,16 @@ export function CourseCatalog() {
   const debouncedSearchTerm = useDebounce(searchTerm, 1000)
 
   // Memoize handlers để tránh re-render filter sidebar
-  const handleCategoryChange = useCallback((category: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCategories(prev => [...prev, category])
-    } else {
-      setSelectedCategories(prev => prev.filter(c => c !== category))
-    }
-  }, [])
+  const handleCategoryChange = useCallback(
+    (category: string, checked: boolean) => {
+      if (checked) {
+        setSelectedCategories(prev => [...prev, category])
+      } else {
+        setSelectedCategories(prev => prev.filter(c => c !== category))
+      }
+    },
+    []
+  )
 
   const handleLevelChange = useCallback((level: string, checked: boolean) => {
     if (checked) {
@@ -115,7 +118,7 @@ export function CourseCatalog() {
       try {
         const [categoriesResponse, statsResponse] = await Promise.all([
           categoryApi.getAllCategories({ page: 0, size: 100 }),
-          courseApi.getSearchStats()
+          courseApi.getSearchStats(),
         ])
 
         if (categoriesResponse.data?.content) {
@@ -200,7 +203,8 @@ export function CourseCatalog() {
         const coursesResponse = await courseApi.advancedSearch(searchParams)
 
         // Lấy dữ liệu từ response có cấu trúc PagedResponse
-        const { content = [], page = { totalPages: 0, totalElements: 0 } } = coursesResponse.data || {}
+        const { content = [], page = { totalPages: 0, totalElements: 0 } } =
+          coursesResponse.data || {}
         setCourses(content)
         setTotalPages(page.totalPages || 0)
         setTotalElements(page.totalElements || 0)
@@ -230,7 +234,7 @@ export function CourseCatalog() {
     isDiscounted,
     sortBy,
     categories,
-    initialLoading
+    initialLoading,
   ])
 
   // Reset to first page when filters change
@@ -270,12 +274,15 @@ export function CourseCatalog() {
     (isFree ? 1 : 0) +
     (isDiscounted ? 1 : 0)
 
-  const handlePageChange = useCallback((newPage: number) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setCurrentPage(newPage)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }, [totalPages])
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      if (newPage >= 0 && newPage < totalPages) {
+        setCurrentPage(newPage)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    [totalPages]
+  )
 
   const renderPagination = useCallback(() => {
     if (totalPages <= 1) return null
@@ -520,7 +527,7 @@ export function CourseCatalog() {
           isFree={isFree}
           setIsFree={handleIsFreeChange}
         />
-        
+
         {/* Course Grid Section - Chỉ reload phần này */}
         <div className='flex-1'>
           <CoursesCatalogSection

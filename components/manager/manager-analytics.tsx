@@ -62,13 +62,13 @@ interface ChartContainerProps {
 
 // Custom label cho PieChart để tránh dính chữ
 const renderCustomizedLabel = ({
-                                 cx,
-                                 cy,
-                                 midAngle,
-                                 innerRadius,
-                                 outerRadius,
-                                 percent,
-                               }: any) => {
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+}: any) => {
   if (percent === 0) return null
   const RADIAN = Math.PI / 180
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5
@@ -305,33 +305,33 @@ export function ManagerAnalytics() {
           ? exportOptions.category.rowCount === -1
             ? results[resultIndex++].data.content
             : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.category.rowCount
-            )
+                0,
+                exportOptions.category.rowCount
+              )
           : []) as any[],
         course: (exportOptions.course.checked
           ? exportOptions.course.rowCount === -1
             ? results[resultIndex++].data.content
             : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.course.rowCount
-            )
+                0,
+                exportOptions.course.rowCount
+              )
           : []) as any[],
         student: (exportOptions.student.checked
           ? exportOptions.student.rowCount === -1
             ? results[resultIndex++].data.content
             : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.student.rowCount
-            )
+                0,
+                exportOptions.student.rowCount
+              )
           : []) as any[],
         revenue: (exportOptions.revenue.checked
           ? exportOptions.revenue.rowCount === -1
             ? results[resultIndex++].data.content
             : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.revenue.rowCount
-            )
+                0,
+                exportOptions.revenue.rowCount
+              )
           : []) as any[],
       }
 
@@ -481,7 +481,7 @@ export function ManagerAnalytics() {
   const avgRating =
     courseDetails.length > 0
       ? courseDetails.reduce((sum, item) => sum + item.rating, 0) /
-      courseDetails.length
+        courseDetails.length
       : 0
 
   // Dữ liệu mẫu cho categories (bạn thay bằng API nếu có)
@@ -754,9 +754,9 @@ export function ManagerAnalytics() {
     courseRowsPerPage === -1
       ? courseDetails
       : courseDetails.slice(
-        coursePage * courseRowsPerPage,
-        (coursePage + 1) * courseRowsPerPage
-      )
+          coursePage * courseRowsPerPage,
+          (coursePage + 1) * courseRowsPerPage
+        )
 
   // Pagination logic for student activity table
   const totalStudentRows = studentDetails.length
@@ -768,9 +768,9 @@ export function ManagerAnalytics() {
     studentRowsPerPage === -1
       ? studentDetails
       : studentDetails.slice(
-        studentPage * studentRowsPerPage,
-        (studentPage + 1) * studentRowsPerPage
-      )
+          studentPage * studentRowsPerPage,
+          (studentPage + 1) * studentRowsPerPage
+        )
 
   // Pagination logic for revenue trends table
   const totalRevenueRows = revenueDetails.length
@@ -782,9 +782,9 @@ export function ManagerAnalytics() {
     revenueRowsPerPage === -1
       ? revenueDetails
       : revenueDetails.slice(
-        revenuePage * revenueRowsPerPage,
-        (revenuePage + 1) * revenueRowsPerPage
-      )
+          revenuePage * revenueRowsPerPage,
+          (revenuePage + 1) * revenueRowsPerPage
+        )
 
   const handleCategoryRowClick = async (category: CategoryDetailDTO) => {
     setSelectedCategoryForCourses(category)
@@ -1050,96 +1050,96 @@ export function ManagerAnalytics() {
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
                     <thead className='bg-gray-50'>
-                    <tr>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        ID
-                      </th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Category Name
-                      </th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64'>
-                        Details
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Courses
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Students
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue (VND)
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue Proportion (%)
-                      </th>
-                    </tr>
+                      <tr>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          ID
+                        </th>
+                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Category Name
+                        </th>
+                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64'>
+                          Details
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Courses
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Students
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue (VND)
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue Proportion (%)
+                        </th>
+                      </tr>
                     </thead>
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingCategory ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
-                          Loading categories...
-                        </td>
-                      </tr>
-                    ) : paginatedData.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedData.map(cat => (
-                        <tr
-                          key={cat.id}
-                          className='cursor-pointer hover:bg-gray-50'
-                          onClick={() => handleCategoryRowClick(cat)}
-                        >
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.id}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </td>
-                          <td className='px-6 py-3 text-sm text-left text-gray-900'>
-                            <div className='line-clamp-2'>
-                              {(cat.description || '').replace(
-                                /\n|\r|\r\n/g,
-                                ' '
-                              )}
-                            </div>
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.courseCount || 0}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.totalStudents}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.totalRevenue?.toLocaleString('vi-VN')} ₫
-                          </td>
+                      {loadingCategory ? (
+                        <tr>
                           <td
-                            className={
-                              `px-6 py-3 whitespace-nowrap text-sm text-center ` +
-                              (cat.revenueProportion === 0
-                                ? 'text-black'
-                                : cat.revenueProportion > 0 &&
-                                cat.revenueProportion <= 20
-                                  ? 'text-red-600'
-                                  : 'text-green-600')
-                            }
+                            colSpan={7}
+                            className='px-6 py-4 text-center text-gray-500'
                           >
-                            {cat.revenueProportion.toFixed(2)}%
+                            <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
+                            Loading categories...
                           </td>
                         </tr>
-                      ))
-                    )}
+                      ) : paginatedData.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className='px-6 py-4 text-center text-gray-500'
+                          >
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedData.map(cat => (
+                          <tr
+                            key={cat.id}
+                            className='cursor-pointer hover:bg-gray-50'
+                            onClick={() => handleCategoryRowClick(cat)}
+                          >
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {cat.id}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
+                              {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
+                            </td>
+                            <td className='px-6 py-3 text-sm text-left text-gray-900'>
+                              <div className='line-clamp-2'>
+                                {(cat.description || '').replace(
+                                  /\n|\r|\r\n/g,
+                                  ' '
+                                )}
+                              </div>
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {cat.courseCount || 0}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {cat.totalStudents}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {cat.totalRevenue?.toLocaleString('vi-VN')} ₫
+                            </td>
+                            <td
+                              className={
+                                `px-6 py-3 whitespace-nowrap text-sm text-center ` +
+                                (cat.revenueProportion === 0
+                                  ? 'text-black'
+                                  : cat.revenueProportion > 0 &&
+                                      cat.revenueProportion <= 20
+                                    ? 'text-red-600'
+                                    : 'text-green-600')
+                              }
+                            >
+                              {cat.revenueProportion.toFixed(2)}%
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1207,92 +1207,92 @@ export function ManagerAnalytics() {
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
                     <thead className='bg-gray-50'>
-                    <tr>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        ID
-                      </th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Course Name
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Students
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Rating
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue (VND)
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue %
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Reviews
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Level
-                      </th>
-                    </tr>
+                      <tr>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          ID
+                        </th>
+                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Course Name
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Students
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Rating
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue (VND)
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue %
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Reviews
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Level
+                        </th>
+                      </tr>
                     </thead>
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingCourse ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
-                          Loading courses...
-                        </td>
-                      </tr>
-                    ) : courseDetails.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedCourseData.map((course, idx) => (
-                        <tr key={course.courseId}>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.courseId}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {course.courseName}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.students}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.rating?.toFixed(1) || '0.0'}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.revenue?.toLocaleString('vi-VN') || '0'} ₫
-                          </td>
+                      {loadingCourse ? (
+                        <tr>
                           <td
-                            className={`px-6 py-3 whitespace-nowrap text-sm text-center ${
-                              course.revenuePercent === 0
-                                ? 'text-black'
-                                : course.revenuePercent > 0 &&
-                                course.revenuePercent <= 20
-                                  ? 'text-red-600'
-                                  : 'text-green-600'
-                            }`}
+                            colSpan={8}
+                            className='px-6 py-4 text-center text-gray-500'
                           >
-                            {course.revenuePercent?.toFixed(2)}%
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.reviews}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.level || 'N/A'}
+                            <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
+                            Loading courses...
                           </td>
                         </tr>
-                      ))
-                    )}
+                      ) : courseDetails.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className='px-6 py-4 text-center text-gray-500'
+                          >
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedCourseData.map((course, idx) => (
+                          <tr key={course.courseId}>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.courseId}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
+                              {course.courseName}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.students}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.rating?.toFixed(1) || '0.0'}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.revenue?.toLocaleString('vi-VN') || '0'} ₫
+                            </td>
+                            <td
+                              className={`px-6 py-3 whitespace-nowrap text-sm text-center ${
+                                course.revenuePercent === 0
+                                  ? 'text-black'
+                                  : course.revenuePercent > 0 &&
+                                      course.revenuePercent <= 20
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                              }`}
+                            >
+                              {course.revenuePercent?.toFixed(2)}%
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.reviews}
+                            </td>
+                            <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {course.level || 'N/A'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1360,86 +1360,86 @@ export function ManagerAnalytics() {
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
                     <thead className='bg-gray-50'>
-                    <tr>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        ID
-                      </th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Course Name
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        New Students
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Previously
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Growth (%)
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Reviews
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Avg Rating
-                      </th>
-                    </tr>
+                      <tr>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          ID
+                        </th>
+                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Course Name
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          New Students
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Previously
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Growth (%)
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Reviews
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Avg Rating
+                        </th>
+                      </tr>
                     </thead>
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingStudent ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
-                          Loading student analytics...
-                        </td>
-                      </tr>
-                    ) : paginatedStudentData.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedStudentData.map(data => (
-                        <tr key={data.id}>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.id}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {data.courseName}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.newStudents}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.previousCompletion}
-                          </td>
+                      {loadingStudent ? (
+                        <tr>
                           <td
-                            className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                              data.growth === 0
-                                ? 'text-black'
-                                : data.growth > 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                            }`}
+                            colSpan={7}
+                            className='px-6 py-4 text-center text-gray-500'
                           >
-                            {data.growth > 0 ? '+' : ''}
-                            {data.growth}%
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.reviews}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.avgRating}
+                            <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
+                            Loading student analytics...
                           </td>
                         </tr>
-                      ))
-                    )}
+                      ) : paginatedStudentData.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className='px-6 py-4 text-center text-gray-500'
+                          >
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedStudentData.map(data => (
+                          <tr key={data.id}>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.id}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
+                              {data.courseName}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.newStudents}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.previousCompletion}
+                            </td>
+                            <td
+                              className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                data.growth === 0
+                                  ? 'text-black'
+                                  : data.growth > 0
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                              }`}
+                            >
+                              {data.growth > 0 ? '+' : ''}
+                              {data.growth}%
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.reviews}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.avgRating}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1517,92 +1517,92 @@ export function ManagerAnalytics() {
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
                     <thead className='bg-gray-50'>
-                    <tr>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        ID
-                      </th>
-                      <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Course Name
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Previously
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Growth (%)
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Orders
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        New Students
-                      </th>
-                      <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                        Revenue Share (%)
-                      </th>
-                    </tr>
+                      <tr>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          ID
+                        </th>
+                        <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Course Name
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Previously
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Growth (%)
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Orders
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          New Students
+                        </th>
+                        <th className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Revenue Share (%)
+                        </th>
+                      </tr>
                     </thead>
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingRevenue ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
-                          Loading revenue analytics...
-                        </td>
-                      </tr>
-                    ) : paginatedRevenueData.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className='px-6 py-4 text-center text-gray-500'
-                        >
-                          No data available
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedRevenueData.map(data => (
-                        <tr key={data.id}>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.id}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {data.courseName}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.revenue.toLocaleString('vi-VN')} ₫
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.previousRevenue.toLocaleString('vi-VN')} ₫
-                          </td>
+                      {loadingRevenue ? (
+                        <tr>
                           <td
-                            className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                              data.growth === 0
-                                ? 'text-black'
-                                : data.growth > 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                            }`}
+                            colSpan={8}
+                            className='px-6 py-4 text-center text-gray-500'
                           >
-                            {data.growth > 0 ? '+' : ''}
-                            {data.growth}%
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.orders}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.newStudents}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.revenueShare}%
+                            <Loader2 className='h-5 w-5 animate-spin mx-auto' />{' '}
+                            Loading revenue analytics...
                           </td>
                         </tr>
-                      ))
-                    )}
+                      ) : paginatedRevenueData.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className='px-6 py-4 text-center text-gray-500'
+                          >
+                            No data available
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedRevenueData.map(data => (
+                          <tr key={data.id}>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.id}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
+                              {data.courseName}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.revenue.toLocaleString('vi-VN')} ₫
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.previousRevenue.toLocaleString('vi-VN')} ₫
+                            </td>
+                            <td
+                              className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                data.growth === 0
+                                  ? 'text-black'
+                                  : data.growth > 0
+                                    ? 'text-green-600'
+                                    : 'text-red-600'
+                              }`}
+                            >
+                              {data.growth > 0 ? '+' : ''}
+                              {data.growth}%
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.orders}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.newStudents}
+                            </td>
+                            <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                              {data.revenueShare}%
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1712,52 +1712,52 @@ export function ManagerAnalytics() {
                   <div className='w-full overflow-x-auto max-h-[400px] overflow-y-auto border border-gray-200 rounded-md'>
                     <table className='min-w-[1500px] border bg-white table-fixed text-xs md:text-sm'>
                       <thead>
-                      <tr className='bg-gray-50'>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          ID
-                        </th>
-                        <th className='px-2 py-2 border text-left font-semibold whitespace-nowrap'>
-                          Course Name
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Enrollments
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Rating
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Revenue
-                        </th>
-                        <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
-                          Completion %
-                        </th>
-                      </tr>
+                        <tr className='bg-gray-50'>
+                          <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
+                            ID
+                          </th>
+                          <th className='px-2 py-2 border text-left font-semibold whitespace-nowrap'>
+                            Course Name
+                          </th>
+                          <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
+                            Enrollments
+                          </th>
+                          <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
+                            Rating
+                          </th>
+                          <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
+                            Revenue
+                          </th>
+                          <th className='px-2 py-2 border text-center font-semibold whitespace-nowrap'>
+                            Completion %
+                          </th>
+                        </tr>
                       </thead>
                       <tbody>
-                      {categoryCourses.map((course, idx) => (
-                        <tr key={course.id}>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {idx + 1}
-                          </td>
-                          <td className='border px-2 py-2 align-top'>
-                            {course.title}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.totalStudents}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.averageRating?.toFixed(1) || 'N/A'}
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {course.finalPrice?.toLocaleString('vi-VN') ||
-                              '0'}{' '}
-                            ₫
-                          </td>
-                          <td className='border px-2 py-2 text-center align-top'>
-                            {Math.floor(Math.random() * 30 + 70)}%
-                          </td>
-                        </tr>
-                      ))}
+                        {categoryCourses.map((course, idx) => (
+                          <tr key={course.id}>
+                            <td className='border px-2 py-2 text-center align-top'>
+                              {idx + 1}
+                            </td>
+                            <td className='border px-2 py-2 align-top'>
+                              {course.title}
+                            </td>
+                            <td className='border px-2 py-2 text-center align-top'>
+                              {course.totalStudents}
+                            </td>
+                            <td className='border px-2 py-2 text-center align-top'>
+                              {course.averageRating?.toFixed(1) || 'N/A'}
+                            </td>
+                            <td className='border px-2 py-2 text-center align-top'>
+                              {course.finalPrice?.toLocaleString('vi-VN') ||
+                                '0'}{' '}
+                              ₫
+                            </td>
+                            <td className='border px-2 py-2 text-center align-top'>
+                              {Math.floor(Math.random() * 30 + 70)}%
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -1844,7 +1844,7 @@ export function ManagerAnalytics() {
                         <select
                           value={exportOptions[
                             key as keyof typeof exportOptions
-                            ].rowCount.toString()}
+                          ].rowCount.toString()}
                           onChange={e =>
                             setExportOptions(prev => ({
                               ...prev,

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,9 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -18,21 +16,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  BookOpen,
-  Clock,
-  Award,
-  Play,
-  Download,
-  Trophy,
-  Calendar,
-  Share2,
-} from 'lucide-react'
-import Link from 'next/link'
-import { CompletionCertificate } from './completion-certificate'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { courseApi } from '@/services/course-api'
 import { DashboardCourseResponseDTO } from '@/types/course'
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  Clock,
+  Download,
+  Play,
+  Share2,
+  Trophy,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { CompletionCertificate } from './completion-certificate'
 import { CourseCard } from './course-card'
 
 export function StudentDashboard() {
@@ -424,7 +424,7 @@ export function StudentDashboard() {
         open={showCertificateModal}
         onOpenChange={setShowCertificateModal}
       >
-        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+        <DialogContent className='max-w-6xl w-full max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <Award className='h-5 w-5 text-yellow-500' />
@@ -438,20 +438,22 @@ export function StudentDashboard() {
 
           {selectedCertificate && user && (
             <div className='space-y-6 flex flex-col items-center'>
-              <div ref={certificateRef}>
-                <CompletionCertificate
-                  courseTitle={selectedCertificate.title}
-                  instructor={selectedCertificate.instructorName}
-                  completionDate={
-                    selectedCertificate.completedDate
-                      ? new Date(selectedCertificate.completedDate)
-                      : undefined
-                  }
-                  studentName={user.name || user.email || 'Student'}
-                  certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-                  elementId="certificate-modal"
-                  isPdfVersion={false}
-                />
+              <div className="w-full flex justify-center">
+                <div ref={certificateRef} className="w-full max-w-5xl">
+                  <CompletionCertificate
+                    courseTitle={selectedCertificate.title}
+                    instructor={selectedCertificate.instructorName}
+                    completionDate={
+                      selectedCertificate.completedDate
+                        ? new Date(selectedCertificate.completedDate)
+                        : undefined
+                    }
+                    studentName={user.name || user.email || 'Student'}
+                    certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+                    elementId="certificate-modal"
+                    isPdfVersion={false}
+                  />
+                </div>
               </div>
               <div className='flex justify-center gap-4 mt-0'>
                 <Button variant='outline' className='flex items-center gap-2'>

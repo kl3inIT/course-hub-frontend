@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 
 interface CompletionCertificateProps {
   courseTitle: string
@@ -48,7 +47,7 @@ export function CompletionCertificate({
         {/* Left Content Area */}
         <div className="absolute top-0 left-0 w-2/3 h-full p-16 flex flex-col">
           <header className="mb-10">
-            <div className="text-green-700 font-bold text-2xl">iT4Begginer</div>
+            <div className="text-green-700 font-bold text-2xl">iT4Beginner</div>
             <p className="text-[10px] text-gray-500 tracking-[0.2em] ml-1">
               EDUCATION &amp; TRAINING
             </p>

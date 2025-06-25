@@ -18,6 +18,7 @@ import {
   StudentAnalyticsDetailResponseDTO,
 } from '@/types/analytics'
 import { CourseResponseDTO } from '@/types/course'
+import { formatDateForAPI } from '@/utils/analytics-utils'
 import {
   BookOpen,
   DollarSign,
@@ -70,27 +71,7 @@ const renderCustomizedLabel = ({
   )
 }
 
-// Hàm format ngày giờ: chỉ hiện ngày/tháng/năm và xuống dòng là giờ:phút:giây
-function formatDateTime(dateString: string) {
-  return new Date(dateString).toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 export function ManagerAnalytics() {
-  // Helper function to convert Date to date string
-  const formatDateForAPI = (date: Date) => {
-    if (!date) return null
-    return date.getFullYear() +
-      '-' +
-      String(date.getMonth() + 1).padStart(2, '0') +
-      '-' +
-      String(date.getDate()).padStart(2, '0')
-  }
   const COLORS = [
     '#8884d8',
     '#82ca9d',
@@ -208,33 +189,6 @@ export function ManagerAnalytics() {
       courseDetails.length
       : 0
 
-  // Dữ liệu mẫu cho categories (bạn thay bằng API nếu có)
-  const categories = [
-    {
-      categoryId: 1,
-      categoryName: 'Web Development',
-      description: 'All about web dev',
-      courseCount: 10,
-      averageRating: 4.8,
-      totalStudents: 500,
-      totalRevenue: 10000,
-      createdDate: '2023-01-01',
-      modifiedDate: '2023-06-01',
-    },
-    {
-      categoryId: 2,
-      categoryName: 'Programming',
-      description: 'Programming basics',
-      courseCount: 7,
-      averageRating: 4.6,
-      totalStudents: 300,
-      totalRevenue: 7000,
-      createdDate: '2023-02-01',
-      modifiedDate: '2023-06-02',
-    },
-    // ... thêm các category khác nếu muốn
-  ]
-
   const handleCategoryFilter = async () => {
     const params: any = {}
     if (
@@ -277,8 +231,6 @@ export function ManagerAnalytics() {
       params.page = 0
       params.size = 500 // Load all data
 
-      console.log('Course filter params:', params) // Debug log
-
       const res = await analyticsApi.getCourseAnalyticsDetails(params)
       setCourseDetails(res.data.content || [])
       setTotalCourseElements(res.data.totalElements || 0)
@@ -311,8 +263,6 @@ export function ManagerAnalytics() {
       params.page = 0
       params.size = 500 // Load all data
 
-      console.log('Student filter params:', params) // Debug log
-
       const res = await analyticsApi.getStudentAnalyticsDetails(params)
       setStudentDetails(res.data.content || [])
       setTotalStudentElements(res.data.totalElements || 0)
@@ -344,8 +294,6 @@ export function ManagerAnalytics() {
       // Load tất cả dữ liệu một lần để tránh reload khi chuyển trang
       params.page = 0
       params.size = 500 // Load all data
-
-      console.log('Revenue filter params:', params) // Debug log
 
       const res = await analyticsApi.getRevenueAnalyticsDetails(params)
       setRevenueDetails(res.data.content || [])

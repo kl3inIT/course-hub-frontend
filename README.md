@@ -37,3 +37,4 @@ npm install exceljs
 npm install exceljs react-hot-toast
 npm install date-fns --legacy-peer-deps
 npm install dayjs --legacy-peer-deps
+npm install jspdf jspdf-autotable @types/jspdf --legacy-peer-deps

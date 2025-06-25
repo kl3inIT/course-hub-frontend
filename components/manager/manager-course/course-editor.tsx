@@ -522,7 +522,11 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
           <TabsContent value='basic-info' className='space-y-6'>
             {/* Course Basic Information Form */}
             <CourseBasicInfoForm
-              initialData={courseData}
+              initialData={{
+                ...courseData,
+                // Ensure level is properly passed
+                level: courseData.level || originalCourse?.level || '',
+              }}
               onDataChange={handleCourseDataChange}
               onValidationChange={handleValidationChange}
               isEditing={true}

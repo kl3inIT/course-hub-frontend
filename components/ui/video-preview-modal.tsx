@@ -44,10 +44,14 @@ export function VideoPreviewModal({
   // Clean up when modal closes
   useEffect(() => {
     if (!isOpen && videoRef.current) {
-      videoRef.current.pause()
-      videoRef.current.currentTime = 0
-      setIsPlaying(false)
-      setCurrentTime(0)
+      try {
+        videoRef.current.pause()
+        videoRef.current.currentTime = 0
+        setIsPlaying(false)
+        setCurrentTime(0)
+      } catch (error) {
+        // Ignore cleanup errors
+      }
     }
   }, [isOpen])
 
@@ -86,13 +90,18 @@ export function VideoPreviewModal({
     }
   }, [videoUrl])
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (!videoRef.current) return
 
-    if (isPlaying) {
-      videoRef.current.pause()
-    } else {
-      videoRef.current.play()
+    try {
+      if (isPlaying) {
+        videoRef.current.pause()
+      } else {
+        await videoRef.current.play()
+      }
+    } catch (error) {
+      console.error('Video play/pause error:', error)
+      // Ignore the error as it's usually just a race condition
     }
   }
 

@@ -22,6 +22,7 @@ import { Info } from 'lucide-react'
 import { categoryApi } from '@/services/category-api'
 import { CategoryResponseDTO } from '@/types/category'
 import { CourseRequestDTO, CourseResponseDTO } from '@/types/course'
+import { useCourseMeta } from '@/hooks'
 import { toast } from 'sonner'
 
 interface CourseBasicInfoFormProps {
@@ -43,13 +44,17 @@ export function CourseBasicInfoForm({
     title: initialData.title || '',
     description: initialData.description || '',
     price: initialData.price ? Number(initialData.price) : 0,
-    level: (initialData.level as any) || '',
+    level: initialData.level ? initialData.level.toUpperCase() : '',
     categoryCode:
       (initialData as any).categoryCode || (initialData as any).category || 0,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
+  const { courseLevels, isLoadingLevels } = useCourseMeta()
+  
+
+
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -76,9 +81,11 @@ export function CourseBasicInfoForm({
           title: initialData.title || '',
           description: initialData.description || '',
           price: initialData.price ? Number(initialData.price) : 0,
-          level: (initialData.level as any) || '',
-          categoryCode: (initialData as any).categoryCode || 0,
+          level: initialData.level ? initialData.level.toUpperCase() : '',
+          categoryCode: (initialData as any)?.categoryCode || 0,
         }
+
+        
 
         // Only update if data actually changed to prevent infinite loops
         if (JSON.stringify(prev) !== JSON.stringify(newForm)) {
@@ -294,20 +301,48 @@ export function CourseBasicInfoForm({
               <Select
                 value={form.level}
                 onValueChange={value => handleChange('level', value)}
+                disabled={isLoadingLevels}
               >
                 <SelectTrigger className={errors.level ? 'border-red-500' : ''}>
-                  <SelectValue placeholder='Select course level' />
+                  <SelectValue 
+                    placeholder={
+                      isLoadingLevels 
+                        ? 'Loading levels...' 
+                        : 'Select course level'
+                    } 
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='BEGINNER'>
-                    <Badge variant='secondary'>Beginner</Badge>
-                  </SelectItem>
-                  <SelectItem value='INTERMEDIATE'>
-                    <Badge variant='default'>Intermediate</Badge>
-                  </SelectItem>
-                  <SelectItem value='ADVANCED'>
-                    <Badge variant='destructive'>Advanced</Badge>
-                  </SelectItem>
+                  {Object.keys(courseLevels).length === 0 && !isLoadingLevels ? (
+                    // Fallback levels if API fails
+                    <>
+                      <SelectItem value='BEGINNER'>
+                        <Badge variant='secondary'>Beginner</Badge>
+                      </SelectItem>
+                      <SelectItem value='INTERMEDIATE'>
+                        <Badge variant='default'>Intermediate</Badge>
+                      </SelectItem>
+                      <SelectItem value='ADVANCED'>
+                        <Badge variant='destructive'>Advanced</Badge>
+                      </SelectItem>
+                    </>
+                  ) : (
+                    Object.entries(courseLevels).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>
+                        <Badge 
+                          variant={
+                            key === 'BEGINNER' 
+                              ? 'secondary' 
+                              : key === 'INTERMEDIATE' 
+                                ? 'default' 
+                                : 'destructive'
+                          }
+                        >
+                          {value}
+                        </Badge>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.level && (
@@ -368,13 +403,22 @@ export function CourseBasicInfoForm({
               {errors.categoryCode && (
                 <p className='text-xs text-red-500'>{errors.categoryCode}</p>
               )}
-              {loadingCategories && (
+                            {loadingCategories && (
                 <p className='text-xs text-blue-600'>
                   Loading available categories...
                 </p>
               )}
             </div>
           </div>
+          
+          {/* Loading indicator for levels */}
+          {isLoadingLevels && (
+            <div className='text-center'>
+              <p className='text-xs text-blue-600'>
+                Loading course levels...
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

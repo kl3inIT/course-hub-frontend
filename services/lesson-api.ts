@@ -6,6 +6,7 @@ import {
   LessonUpdateRequestDTO,
   LessonResponseDTO,
   LessonUploadResponseDTO,
+  LessonVideoUpdateResponseDTO,
 } from '@/types/lesson'
 
 export const lessonApi = {
@@ -46,7 +47,7 @@ export const lessonApi = {
   updateLessonVideo: async (
     lessonId: string,
     data: LessonUploadRequestDTO
-  ): Promise<ApiResponse<LessonUploadResponseDTO>> => {
+  ): Promise<ApiResponse<LessonVideoUpdateResponseDTO>> => {
     const response = await httpClient.put(
       `/api/lessons/${lessonId}/video`,
       data

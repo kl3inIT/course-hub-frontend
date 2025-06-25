@@ -61,4 +61,32 @@ export const reviewApi = {
     )
     return response.data
   },
+
+  // Get total reviews from backend
+  getTotalReviews: async (): Promise<ApiResponse<number>> => {
+    const response = await httpClient.get('/api/reviews/total-visible')
+    return response.data
+  },
+
+  // Get overall average rating from backend
+  getOverallAverageRating: async (): Promise<ApiResponse<number>> => {
+    const response = await httpClient.get('/api/reviews/overall-average')
+    return response.data
+  },
+
+  // Get reviews by visibility status
+  getReviewsByVisibility: async (
+    visibilityStatus: number,
+    params?: {
+      page?: number
+      size?: number
+      sortBy?: string
+      direction?: 'ASC' | 'DESC'
+    }
+  ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
+    const response = await httpClient.get('/api/reviews/by-visibility', { 
+      params: { visibilityStatus, ...params }
+    })
+    return response.data
+  },
 }

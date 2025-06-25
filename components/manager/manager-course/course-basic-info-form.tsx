@@ -40,17 +40,20 @@ export function CourseBasicInfoForm({
   isEditing = false,
   className = '',
 }: CourseBasicInfoFormProps) {
-  const [form, setForm] = useState<CourseRequestDTO>({
+  const [form, setForm] = useState<CourseRequestDTO & { categoryCode?: number }>({
     title: initialData.title || '',
     description: initialData.description || '',
     price: initialData.price ? Number(initialData.price) : 0,
     level: initialData.level ? initialData.level.toUpperCase() : '',
     categoryCode:
-      (initialData as any).categoryCode || (initialData as any).category || 0,
+      (initialData as any).categoryCode && (initialData as any).categoryCode !== 0 
+        ? (initialData as any).categoryCode 
+        : undefined,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const { courseLevels, isLoadingLevels } = useCourseMeta()
   
 
@@ -82,7 +85,9 @@ export function CourseBasicInfoForm({
           description: initialData.description || '',
           price: initialData.price ? Number(initialData.price) : 0,
           level: initialData.level ? initialData.level.toUpperCase() : '',
-          categoryCode: (initialData as any)?.categoryCode || 0,
+          categoryCode: (initialData as any)?.categoryCode && (initialData as any)?.categoryCode !== 0 
+            ? (initialData as any)?.categoryCode 
+            : undefined,
         }
 
         
@@ -104,11 +109,19 @@ export function CourseBasicInfoForm({
   ])
 
   useEffect(() => {
-    onDataChange(form)
+    // Ensure categoryCode has a valid value before passing to parent
+    const formData: CourseRequestDTO = {
+      ...form,
+      categoryCode: form.categoryCode || 0
+    }
+    onDataChange(formData)
   }, [form, onDataChange])
 
   useEffect(() => {
-    validateForm()
+    // Only validate if user has interacted with the form
+    if (Object.keys(touched).length > 0) {
+      validateForm()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form])
 
@@ -139,13 +152,13 @@ export function CourseBasicInfoForm({
         if (!value) return 'Course level is required'
         break
       case 'categoryCode':
-        if (!value) return 'Course category is required'
+        if (!value || value === 0) return 'Course category is required'
         break
     }
     return undefined
   }
 
-  const validateForm = () => {
+  const validateForm = (forceValidateAll = false) => {
     if (typeof onValidationChange !== 'function') {
       console.error('onValidationChange is not a function:', onValidationChange)
       return false
@@ -156,10 +169,13 @@ export function CourseBasicInfoForm({
 
     const keys = Object.keys(form) as (keyof CourseRequestDTO)[]
     keys.forEach((key: keyof CourseRequestDTO) => {
-      const error = validateField(key, form[key])
-      if (error) {
-        newErrors[key] = error
-        isValid = false
+      // Show error if field has been touched OR if forcing validation (on submit)
+      if (touched[key] || forceValidateAll) {
+        const error = validateField(key, form[key])
+        if (error) {
+          newErrors[key] = error
+          isValid = false
+        }
       }
     })
 
@@ -168,8 +184,21 @@ export function CourseBasicInfoForm({
     return isValid
   }
 
+  // Function to validate all fields (for submit)
+  const validateAllFields = () => {
+    // Mark all fields as touched
+    const allTouched = Object.keys(form).reduce((acc, key) => {
+      acc[key] = true
+      return acc
+    }, {} as Record<string, boolean>)
+    setTouched(allTouched)
+    
+    return validateForm(true)
+  }
+
   const handleChange = (name: keyof CourseRequestDTO, value: any) => {
     setForm(prev => ({ ...prev, [name]: value }))
+    setTouched(prev => ({ ...prev, [name]: true }))
   }
 
   return (
@@ -364,8 +393,8 @@ export function CourseBasicInfoForm({
                 </Tooltip>
               </div>
               <Select
-                value={form.categoryCode?.toString() || ''}
-                onValueChange={value => handleChange('categoryCode', value)}
+                value={form.categoryCode && form.categoryCode !== 0 ? form.categoryCode.toString() : ''}
+                onValueChange={value => handleChange('categoryCode', parseInt(value))}
                 disabled={loadingCategories}
               >
                 <SelectTrigger

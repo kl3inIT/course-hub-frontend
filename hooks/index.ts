@@ -14,6 +14,9 @@ export type {
 export { useCourseData } from './useCourseData'
 export type { UseCourseDataProps, UseCourseDataReturn } from './useCourseData'
 
+export { useCourseMeta } from './use-course-meta'
+export type { UseCourseMeta } from './use-course-meta'
+
 // Existing hooks
 export { useAvailableCoupons } from './use-available-coupons'
 export { useCoupon } from './use-coupon'

@@ -45,7 +45,13 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
 import { toast } from 'react-hot-toast'
@@ -54,7 +60,7 @@ import '../../styles/date-range-custom.css'
 import { ChartConfig } from '../ui/chart'
 const { RangePicker } = DatePicker
 
-interface ChartContainerProps {
+interface _ChartContainerProps {
   children: ReactNode
   config: ChartConfig
   className?: string

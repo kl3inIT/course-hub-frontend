@@ -286,20 +286,53 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
             currLesson.lessonId = lessonId.toString()
             currLesson.id = lessonId.toString()
           } else {
-            // Update if changed
-            const orig = origLessonsMap.get(currLesson.lessonId)
+            // Existing lesson - check if video needs replacement
             if (
-              orig &&
-              typeof orig === 'object' &&
-              orig !== null &&
-              (('title' in orig ? orig.title : '') !== currLesson.title ||
-                ('duration' in orig ? orig.duration : 0) !==
-                  currLesson.duration)
+              currLesson.videoFile &&
+              (currLesson as any).needsVideoReplacement
             ) {
-              await lessonApi.updateLesson(currLesson.lessonId, {
+              // Replace existing video
+              const updateVideoData = {
                 title: currLesson.title,
+                fileName: currLesson.videoFile.name,
+                fileType: currLesson.videoFile.type,
+              }
+              const updateResponse = await lessonApi.updateLessonVideo(
+                currLesson.lessonId,
+                updateVideoData
+              )
+              const { preSignedPutUrl } = updateResponse.data
+
+              // Upload new video
+              await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest()
+                xhr.open('PUT', preSignedPutUrl, true)
+                xhr.setRequestHeader('Content-Type', currLesson.videoFile.type)
+                xhr.onload = () => resolve()
+                xhr.onerror = () => reject(new Error('Upload failed'))
+                xhr.send(currLesson.videoFile)
+              })
+
+              // Confirm upload with new duration
+              await lessonApi.completeUpload(currLesson.lessonId, {
                 duration: currLesson.duration,
               })
+            } else {
+              // Update only metadata if changed
+              const orig = origLessonsMap.get(currLesson.lessonId)
+              if (
+                orig &&
+                typeof orig === 'object' &&
+                orig !== null &&
+                (('title' in orig ? orig.title : '') !== currLesson.title ||
+                  ('duration' in orig ? orig.duration : 0) !==
+                    currLesson.duration)
+              ) {
+                await lessonApi.updateLesson(currLesson.lessonId, {
+                  title: currLesson.title,
+                  duration: currLesson.duration,
+                })
+              }
             }
           }
         }
@@ -489,7 +522,11 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
           <TabsContent value='basic-info' className='space-y-6'>
             {/* Course Basic Information Form */}
             <CourseBasicInfoForm
-              initialData={courseData}
+              initialData={{
+                ...courseData,
+                // Ensure level is properly passed
+                level: courseData.level || originalCourse?.level || '',
+              }}
               onDataChange={handleCourseDataChange}
               onValidationChange={handleValidationChange}
               isEditing={true}

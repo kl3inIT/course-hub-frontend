@@ -15,13 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { VideoPreviewModal } from '@/components/ui/video-preview-modal'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -121,7 +115,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   )
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const checkEnrollmentStatus = async (courseId: string) => {
     if (!user) {
@@ -269,24 +263,28 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
     try {
       setPreviewLesson(lesson)
+      setPreviewLoading(true)
+      setShowPreview(true)
+
       const url = await lessonApi.getLessonPreviewUrl(lesson.id.toString())
       setPreviewVideoUrl(url)
-      setShowPreview(true)
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to load preview video.',
         variant: 'destructive',
       })
+      setShowPreview(false)
+    } finally {
+      setPreviewLoading(false)
     }
   }
 
   const handleClosePreview = () => {
     setShowPreview(false)
     setPreviewVideoUrl(null)
-    if (videoRef.current) {
-      videoRef.current.pause()
-    }
+    setPreviewLesson(null)
+    setPreviewLoading(false)
   }
 
   if (loading) {
@@ -610,43 +608,23 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         <TabsContent value='reviews' className='space-y-6'>
           <CourseReviews
             courseId={courseId}
-            averageRating={course.averageRating}
+            averageRating={course.averageRating ?? undefined}
             totalReviews={course.totalReviews}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Preview Video Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className='sm:max-w-[800px] p-0 gap-0'>
-          <DialogHeader className='p-4 border-b'>
-            <div className='flex items-center justify-between'>
-              <DialogTitle>
-                {previewLesson?.title || 'Lesson Preview'}
-              </DialogTitle>
-            </div>
-            <DialogDescription>
-              Preview video for this lesson. This is a sample of the course
-              content.
-            </DialogDescription>
-          </DialogHeader>
-          <div className='aspect-video bg-black'>
-            {previewVideoUrl ? (
-              <video
-                ref={videoRef}
-                src={previewVideoUrl}
-                controls
-                className='w-full h-full'
-                autoPlay
-              />
-            ) : (
-              <div className='flex items-center justify-center h-full'>
-                <Loader2 className='h-8 w-8 animate-spin text-white' />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Preview Video Modal */}
+      <VideoPreviewModal
+        isOpen={showPreview}
+        onClose={handleClosePreview}
+        title={previewLesson?.title || 'Lesson Preview'}
+        description='Preview video for this lesson. This is a sample of the course content.'
+        videoUrl={previewVideoUrl}
+        isLoading={previewLoading}
+        autoPlay={true}
+        showControls={true}
+      />
 
       <PaymentModal
         isOpen={showPayment}

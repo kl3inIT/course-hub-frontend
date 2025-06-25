@@ -13,8 +13,8 @@ class WebSocketService {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    // Convert HTTP(S) to WS(S) for WebSocket
-    const wsUrl = `${baseUrl.replace(/^https?/, baseUrl.startsWith('https') ? 'wss' : 'ws')}/ws?token=${encodeURIComponent(token)}`
+    // SockJS expects HTTP/HTTPS URLs, not WS/WSS
+    const wsUrl = `${baseUrl}/ws?token=${encodeURIComponent(token)}`
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),

@@ -28,7 +28,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { User, UserStatus } from '@/types/user'
-import { UserTableProps } from '@/types/user-management'
 import { format } from 'date-fns'
 import { AlertTriangle, CheckCircle, Eye, MoreHorizontal } from 'lucide-react'
 
@@ -68,18 +67,18 @@ const UserAvatar = ({ user }: { user: User }) => {
   )
 }
 
-const UserActions = ({
+interface UserActionsProps {
+  user: User
+  activeTab: 'learner' | 'manager'
+  onViewProfile: (id: number) => void
+  onUpdateUserStatus: (id: number, status: UserStatus) => void
+}
+
+const UserActions: React.FC<UserActionsProps> = ({
   user,
   activeTab,
   onViewProfile,
   onUpdateUserStatus,
-  onDeleteUser,
-}: {
-  user: User
-  activeTab: string
-  onViewProfile: (id: string) => void
-  onUpdateUserStatus: (id: string, status: UserStatus) => void
-  onDeleteUser: (id: string) => void
 }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
@@ -125,7 +124,9 @@ const UserActions = ({
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => onDeleteUser(user.id)}
+                    onClick={() =>
+                      onUpdateUserStatus(user.id, UserStatus.INACTIVE)
+                    }
                     className='bg-red-600 hover:bg-red-700'
                   >
                     Confirm Deactivate
@@ -140,14 +141,19 @@ const UserActions = ({
   </DropdownMenu>
 )
 
-export function UserTable({
+interface UserTableProps {
+  users: User[]
+  activeTab: 'learner' | 'manager'
+  onViewProfile: (id: number) => void
+  onUpdateUserStatus: (id: number, status: UserStatus) => void
+}
+
+export const UserTable: React.FC<UserTableProps> = ({
   users,
-  userCourseMap,
   activeTab,
   onViewProfile,
   onUpdateUserStatus,
-  onDeleteUser,
-}: UserTableProps) {
+}) => {
   const formatDate = (date?: string) => {
     if (!date) return '-'
     try {
@@ -156,8 +162,6 @@ export function UserTable({
       return '-'
     }
   }
-
-  const filteredUsers = users.filter(user => user.role === activeTab)
 
   return (
     <Table>
@@ -173,7 +177,7 @@ export function UserTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {filteredUsers.map(user => (
+        {users.map(user => (
           <TableRow key={user.id}>
             <TableCell>
               <div className='flex items-center space-x-3'>
@@ -193,7 +197,9 @@ export function UserTable({
             <TableCell>
               <div className='flex items-center space-x-1'>
                 <span className='font-medium'>
-                  {userCourseMap.get(user.id) || 0}
+                  {activeTab === 'learner'
+                    ? user.enrolledCoursesCount
+                    : user.managedCoursesCount}
                 </span>
                 <span className='text-xs text-muted-foreground'>courses</span>
               </div>
@@ -204,7 +210,6 @@ export function UserTable({
                 activeTab={activeTab}
                 onViewProfile={onViewProfile}
                 onUpdateUserStatus={onUpdateUserStatus}
-                onDeleteUser={onDeleteUser}
               />
             </TableCell>
           </TableRow>

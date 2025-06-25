@@ -31,7 +31,7 @@ export const adminApi = {
   },
 
   // Get user details by ID
-  getUserDetails: async (userId: string): Promise<UserDetailResponse> => {
+  getUserDetails: async (userId: number): Promise<UserDetailResponse> => {
     const response = await httpClient.get(`/api/admin/users/${userId}/detail`)
     return response.data
   },
@@ -46,7 +46,7 @@ export const adminApi = {
 
   // Update user status
   updateUserStatus: async (
-    userId: string,
+    userId: number,
     status: UserStatus
   ): Promise<{ message: string }> => {
     // Use query parameter instead of form data
@@ -59,12 +59,6 @@ export const adminApi = {
         },
       }
     )
-    return response.data
-  },
-
-  // Delete/deactivate manager
-  deleteManager: async (managerId: string): Promise<{ message: string }> => {
-    const response = await httpClient.delete(`/api/admin/users/${managerId}`)
     return response.data
   },
 
@@ -91,24 +85,14 @@ export const adminApi = {
         role,
         status,
       })
-      console.log('getUsersCountByStatus response:', response)
-      console.log('getUsersCountByStatus response.data:', response.data)
-      console.log(
-        'getUsersCountByStatus response.data.totalElements:',
-        response.data?.totalElements
-      )
-      console.log(
-        'getUsersCountByStatus response.data.content.length:',
-        response.data?.content?.length
-      )
 
       // Use content length as fallback if totalElements is 0 or undefined
       const count =
-        response.data?.totalElements || response.data?.content?.length || 0
-      console.log('getUsersCountByStatus returning count:', count)
+        response.data?.page?.totalElements ||
+        response.data?.content?.length ||
+        0
       return count
     } catch (error) {
-      console.error(`Error fetching ${role} count for status ${status}:`, error)
       return 0
     }
   },
@@ -116,42 +100,32 @@ export const adminApi = {
   // Get total course statistics
   getTotalCourseStats: async (role: string): Promise<number> => {
     try {
-      console.log('getTotalCourseStats called with role:', role)
       const response = await adminApi.getAllUsers({
         pageSize: 1000,
         pageNo: 0,
         role: role.toUpperCase(),
       })
 
-      console.log('Course stats response:', response)
-
       if (!response.data?.content) {
-        console.error('No content in response:', response)
         return 0
       }
 
       const content = response.data.content
-      console.log('Users content:', content)
 
       if (role.toLowerCase() === 'learner') {
         const total = content.reduce((total: number, user: User) => {
           const count = user.enrolledCoursesCount || 0
-          console.log(`User ${user.name}: ${count} enrolled courses`)
           return total + count
         }, 0)
-        console.log('Total enrolled courses:', total)
         return total
       } else {
         const total = content.reduce((total: number, user: User) => {
           const count = user.managedCoursesCount || 0
-          console.log(`Manager ${user.name}: ${count} managed courses`)
           return total + count
         }, 0)
-        console.log('Total managed courses:', total)
         return total
       }
     } catch (error) {
-      console.error(`Error fetching course stats for ${role}:`, error)
       return 0
     }
   },

@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -30,7 +31,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { DateRange } from 'react-day-picker'
 
 const S3_URL = 'https://course-hub-resourses.s3.amazonaws.com'
 
@@ -223,7 +225,44 @@ const UserProfileCard = ({ userDetail }: { userDetail: UserDetail }) => {
                 <span>Joined {formatDate(userDetail.joinDate)}</span>
               </div>
             </div>
+
+            {/* Bio section bên phải */}
+            {userDetail.bio && (
+              <div className='hidden lg:block max-w-xs ml-8'>
+                <Card className='shadow-none border-0 bg-transparent'>
+                  <CardHeader className='pb-2'>
+                    <CardTitle className='flex items-center gap-2 text-base'>
+                      <User className='h-5 w-5' />
+                      Bio
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className='pt-0'>
+                    <p className='text-gray-700 leading-relaxed'>
+                      {userDetail.bio}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
+          {/* Bio section cho mobile/tablet */}
+          {userDetail.bio && (
+            <div className='block lg:hidden mt-6'>
+              <Card>
+                <CardHeader>
+                  <CardTitle className='flex items-center gap-2'>
+                    <User className='h-5 w-5' />
+                    Bio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className='text-gray-700 leading-relaxed'>
+                    {userDetail.bio}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -273,8 +312,9 @@ const UserProfileCard = ({ userDetail }: { userDetail: UserDetail }) => {
             <StatsCard
               title='Course Updates'
               value={
-                userDetail.activities?.filter(a => a.type === 'course_update')
-                  .length || 0
+                userDetail.activities?.filter(
+                  a => a.type?.toLowerCase() === 'course_update'
+                ).length || 0
               }
               icon={TrendingUp}
               description='Course modifications'
@@ -282,8 +322,9 @@ const UserProfileCard = ({ userDetail }: { userDetail: UserDetail }) => {
             <StatsCard
               title='Course Creations'
               value={
-                userDetail.activities?.filter(a => a.type === 'course_creation')
-                  .length || 0
+                userDetail.activities?.filter(
+                  a => a.type?.toLowerCase() === 'course_creation'
+                ).length || 0
               }
               icon={Star}
               description='New courses created'
@@ -291,21 +332,6 @@ const UserProfileCard = ({ userDetail }: { userDetail: UserDetail }) => {
           </>
         )}
       </div>
-
-      {/* Bio Section */}
-      {userDetail.bio && (
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <User className='h-5 w-5' />
-              Bio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className='text-gray-700 leading-relaxed'>{userDetail.bio}</p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
@@ -442,15 +468,15 @@ const getActivityText = (activity: UserActivity) => {
     case 'course_update':
       return `Updated course "${activity.courseTitle}"`
     case 'lesson_completion':
-      return `Completed lesson "${activity.lessonTitle}"`
+      return `Completed lesson "${activity.lessonTitle}" in course "${activity.courseTitle}"`
     case 'course_completion':
       return `Completed course "${activity.courseTitle}"`
     case 'quiz_attempt':
       return `Attempted quiz in "${activity.courseTitle}"`
     case 'lesson_creation':
-      return `Created lesson "${activity.lessonTitle}"`
+      return `Created lesson "${activity.lessonTitle}" in course "${activity.courseTitle}"`
     case 'lesson_update':
-      return `Updated lesson "${activity.lessonTitle}"`
+      return `Updated lesson "${activity.lessonTitle}" in course "${activity.courseTitle}"`
     default:
       return 'Activity'
   }
@@ -638,41 +664,30 @@ export function UserDetail({ userId }: { userId: string }) {
   const { getToken } = useAuth()
   const pathname = usePathname()
   const isAdminView = pathname?.startsWith('/admin')
+  const [activityTab, setActivityTab] = useState<string>('all')
+  const [activityDateRange, setActivityDateRange] = useState<
+    DateRange | undefined
+  >()
 
-  const getEnrolledCourses = (
-    activities: UserActivity[]
-  ): (Course & { completedAt?: string })[] => {
-    // Lấy tất cả activity enrollment
-    const enrollmentActivities = activities.filter(activity => {
-      const normalizedType = activity.type?.toLowerCase()
-      return normalizedType === 'enrollment'
-    })
+  const MANAGER_ACTIVITY_TYPES = [
+    { key: 'course_creation', label: 'Course Created' },
+    { key: 'course_update', label: 'Course Updated' },
+    { key: 'lesson_creation', label: 'Lesson Created' },
+    { key: 'lesson_update', label: 'Lesson Updated' },
+    { key: 'comment', label: 'Comment' },
+  ]
+  const LEARNER_ACTIVITY_TYPES = [
+    { key: 'enrollment', label: 'Enrollment' },
+    { key: 'comment', label: 'Comment' },
+    { key: 'review', label: 'Review' },
+    { key: 'lesson_completion', label: 'Lesson Completed' },
+  ]
 
-    // Lấy tất cả activity course_completion
-    const courseCompletionActivities = activities.filter(activity => {
-      const normalizedType = activity.type?.toLowerCase()
-      return normalizedType === 'course_completion'
-    })
-
-    const courses = enrollmentActivities.map(activity => {
-      // Tìm activity course_completion cho course này
-      const completion = courseCompletionActivities.find(
-        a => a.courseId === activity.courseId
-      )
-      return {
-        id: activity.courseId,
-        title: activity.courseTitle,
-        thumbnail: activity.courseThumbnail,
-        progress: activity.progressPercentage || 0,
-        completedAt:
-          typeof completion?.timestamp === 'string'
-            ? completion.timestamp
-            : undefined,
-      }
-    })
-
-    return courses
-  }
+  const activityTypes = useMemo(() => {
+    return userDetail?.role === 'manager'
+      ? MANAGER_ACTIVITY_TYPES
+      : LEARNER_ACTIVITY_TYPES
+  }, [userDetail])
 
   const fetchUserDetail = async () => {
     try {
@@ -705,6 +720,19 @@ export function UserDetail({ userId }: { userId: string }) {
     fetchUserDetail()
   }, [userId, isAdminView])
 
+  const activitiesToShow = useMemo(() => {
+    if (!userDetail?.activities) return []
+    if (!activityDateRange?.from && !activityDateRange?.to)
+      return userDetail.activities
+    return userDetail.activities.filter(a => {
+      if (!a.timestamp) return false
+      const date = new Date(a.timestamp)
+      if (activityDateRange.from && date < activityDateRange.from) return false
+      if (activityDateRange.to && date > activityDateRange.to) return false
+      return true
+    })
+  }, [userDetail?.activities, activityDateRange])
+
   if (isLoading) return <UserDetailSkeleton />
   if (!userDetail) {
     return (
@@ -718,19 +746,53 @@ export function UserDetail({ userId }: { userId: string }) {
     )
   }
 
-  const enrolledCourses =
-    userDetail.role === 'learner'
-      ? getEnrolledCourses(userDetail.activities)
-      : []
+  const getEnrolledCoursesWithProgress = (): Course[] => {
+    const { enrolledCourses, activities } = userDetail
+    if (!enrolledCourses || !activities) {
+      return enrolledCourses || []
+    }
+
+    const progressMap = new Map<
+      number, // Key is course ID (number)
+      { progress?: number; completedAt?: string }
+    >()
+
+    // Iterate through all activities to populate the progress map
+    for (const activity of activities) {
+      // Ensure courseId exists and is a number
+      const courseId = activity.courseId ? Number(activity.courseId) : null
+      if (courseId === null || isNaN(courseId)) {
+        continue
+      }
+
+      // Get or create the entry for this course
+      const info = progressMap.get(courseId) || {}
+
+      const type = activity.type?.toLowerCase()
+      if (type === 'enrollment') {
+        info.progress = activity.progressPercentage || 0
+      } else if (type === 'course_completion') {
+        info.completedAt = activity.timestamp ?? undefined
+      }
+
+      progressMap.set(courseId, info)
+    }
+
+    // Map over the original enrolled courses and add the progress info
+    return enrolledCourses.map(course => {
+      const progressInfo = progressMap.get(course.id) // course.id is number
+      return {
+        ...course,
+        progress: progressInfo?.progress,
+        completedAt: progressInfo?.completedAt,
+      }
+    })
+  }
+
+  const enrolledCourses = getEnrolledCoursesWithProgress()
 
   const coursesToShow =
     userDetail.role === 'manager' ? userDetail.managedCourses : enrolledCourses
-
-  const activitiesToShow = userDetail.activities || []
-
-  console.log('User role:', userDetail.role)
-  console.log('Enrolled courses:', enrolledCourses)
-  console.log('Courses to show:', coursesToShow)
 
   return (
     <div className='w-full min-h-screen bg-gray-50/30'>
@@ -807,40 +869,96 @@ export function UserDetail({ userId }: { userId: string }) {
               </TabsContent>
 
               <TabsContent value='activities' className='p-6'>
-                {activitiesToShow.length === 0 ? (
-                  <div className='text-center py-12'>
-                    <Clock className='h-12 w-12 text-gray-300 mx-auto mb-3' />
-                    <h3 className='text-base font-semibold text-gray-600 mb-2'>
-                      No Activities Found
-                    </h3>
-                    <p className='text-sm text-muted-foreground'>
-                      This user has not performed any activities yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className='space-y-4 max-w-4xl mx-auto'>
-                    {activitiesToShow
-                      .sort(
-                        (a, b) =>
-                          new Date(b.timestamp || 0).getTime() -
-                          new Date(a.timestamp || 0).getTime()
-                      )
-                      .map(activity => (
-                        <ActivityItem
-                          key={[
-                            activity.id,
-                            activity.type,
-                            activity.timestamp,
-                            activity.courseId,
-                            activity.lessonId,
-                          ]
-                            .filter(Boolean)
-                            .join('-')}
-                          activity={activity}
-                        />
+                <Tabs value={activityTab} onValueChange={setActivityTab}>
+                  <div className='flex items-center justify-between mb-4 gap-3'>
+                    <TabsList>
+                      <TabsTrigger value='all'>All</TabsTrigger>
+                      {activityTypes.map(type => (
+                        <TabsTrigger key={type.key} value={type.key}>
+                          {type.label}
+                        </TabsTrigger>
                       ))}
+                    </TabsList>
+                    <DateRangePicker
+                      value={activityDateRange}
+                      onChange={setActivityDateRange}
+                    />
                   </div>
-                )}
+                  <TabsContent value='all'>
+                    {activitiesToShow.length === 0 ? (
+                      <div className='text-center py-12'>
+                        <Clock className='h-12 w-12 text-gray-300 mx-auto mb-3' />
+                        <h3 className='text-base font-semibold text-gray-600 mb-2'>
+                          No Activities Found
+                        </h3>
+                        <p className='text-sm text-muted-foreground'>
+                          This user has not performed any activities yet.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className='space-y-4 max-w-4xl mx-auto'>
+                        {activitiesToShow
+                          .sort(
+                            (a, b) =>
+                              new Date(b.timestamp || 0).getTime() -
+                              new Date(a.timestamp || 0).getTime()
+                          )
+                          .map(activity => (
+                            <ActivityItem
+                              key={[
+                                activity.id,
+                                activity.type,
+                                activity.timestamp,
+                                activity.courseId,
+                                activity.lessonId,
+                              ]
+                                .filter(Boolean)
+                                .join('-')}
+                              activity={activity}
+                            />
+                          ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                  {activityTypes.map(type => (
+                    <TabsContent key={type.key} value={type.key}>
+                      {activitiesToShow.filter(
+                        a => a.type?.toLowerCase() === type.key
+                      ).length === 0 ? (
+                        <div className='text-center py-12'>
+                          <Clock className='h-12 w-12 text-gray-300 mx-auto mb-3' />
+                          <h3 className='text-base font-semibold text-gray-600 mb-2'>
+                            No {type.label} Activities
+                          </h3>
+                        </div>
+                      ) : (
+                        <div className='space-y-4 max-w-4xl mx-auto'>
+                          {activitiesToShow
+                            .filter(a => a.type?.toLowerCase() === type.key)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.timestamp || 0).getTime() -
+                                new Date(a.timestamp || 0).getTime()
+                            )
+                            .map(activity => (
+                              <ActivityItem
+                                key={[
+                                  activity.id,
+                                  activity.type,
+                                  activity.timestamp,
+                                  activity.courseId,
+                                  activity.lessonId,
+                                ]
+                                  .filter(Boolean)
+                                  .join('-')}
+                                activity={activity}
+                              />
+                            ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  ))}
+                </Tabs>
               </TabsContent>
             </Tabs>
           </Card>

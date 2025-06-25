@@ -1,12 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { UserStatsCardsProps } from '@/types/user-management'
-import {
-  AlertTriangle,
-  Ban,
-  CheckCircle,
-  GraduationCap,
-  Users,
-} from 'lucide-react'
+import { AlertTriangle, Ban, CheckCircle, Users } from 'lucide-react'
 
 const StatCard = ({
   title,
@@ -37,7 +31,7 @@ export function UserStatsCards({
 
   return (
     <div
-      className={`grid gap-4 md:grid-cols-2 ${isManager ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}
+      className={`grid gap-4 md:grid-cols-2 ${isManager ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
     >
       <StatCard
         title={`Total ${isManager ? 'Managers' : 'Learners'}`}
@@ -60,11 +54,6 @@ export function UserStatsCards({
         title='Banned'
         value={userStats.banned}
         icon={<Ban className='h-4 w-4 text-red-600' />}
-      />
-      <StatCard
-        title={`${isManager ? 'Managed' : 'Enrolled'} Courses`}
-        value={courseStats.totalCourses}
-        icon={<GraduationCap className='h-4 w-4 text-blue-600' />}
       />
     </div>
   )

@@ -12,7 +12,7 @@ export const userApi = {
 
   // Get user profile by ID
   getUserProfile: async (userId: string): Promise<ApiResponse<UserDetail>> => {
-    const response = await httpClient.get(`/api/users/profile/${userId}`)
+    const response = await httpClient.get(`/api/users/${userId}`)
     return response.data
   },
 

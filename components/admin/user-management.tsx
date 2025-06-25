@@ -10,7 +10,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { adminApi } from '@/services/admin-api'
-import { UserManagementResponse } from '@/types/admin-api'
 import { User, UserStatus } from '@/types/user'
 import {
   CourseStats,
@@ -21,8 +20,6 @@ import {
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
-// Import sub-components
 import {
   CreateManagerDialog,
   UserFilters,
@@ -34,8 +31,6 @@ import {
 export function UserManagement() {
   const { toast: showToast } = useToast()
   const router = useRouter()
-
-  // States
   const [isCreateManagerOpen, setIsCreateManagerOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [users, setUsers] = useState<User[]>([])
@@ -43,7 +38,7 @@ export function UserManagement() {
   const [selectedStatus, setSelectedStatus] = useState<'all' | UserStatus>(
     'all'
   )
-  const [activeTab, setActiveTab] = useState('learner')
+  const [activeTab, setActiveTab] = useState<'learner' | 'manager'>('learner')
   const [userStats, setUserStats] = useState<UserStats>({
     total: 0,
     active: 0,
@@ -53,9 +48,6 @@ export function UserManagement() {
   const [courseStats, setCourseStats] = useState<CourseStats>({
     totalCourses: 0,
   })
-  const [userCourseMap, setUserCourseMap] = useState<Map<string, number>>(
-    new Map()
-  )
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 0,
     totalPages: 0,
@@ -63,48 +55,21 @@ export function UserManagement() {
     pageSize: 10,
   })
 
-  // Effects
   useEffect(() => {
-    const fetchData = async () => {
-    setPagination(prev => ({ ...prev, currentPage: 0 }))
-      await Promise.all([fetchUsers(true), fetchCourseStats()])
-    }
-    fetchData()
+    setPagination(prev => {
+      const next = { ...prev, currentPage: 0 }
+      fetchUsers(next, true)
+      return next
+    })
+    fetchCourseStats()
   }, [activeTab, selectedStatus])
 
-  useEffect(() => {
-    fetchUsers()
-  }, [pagination.currentPage, pagination.pageSize])
-
-  useEffect(() => {
-    if (users.length > 0) {
-      fetchUserCourseData()
-    }
-  }, [users, activeTab])
-
-  // API Calls
   const fetchCourseStats = async () => {
     try {
       const totalCourses = await adminApi.getTotalCourseStats(activeTab)
       setCourseStats({ totalCourses: totalCourses || 0 })
-    } catch (error) {
+    } catch {
       setCourseStats({ totalCourses: 0 })
-    }
-  }
-
-  const fetchUserCourseData = async () => {
-    try {
-      const courseMap = new Map<string, number>()
-      for (const user of users) {
-        if (activeTab === 'learner') {
-          courseMap.set(user.id, user.enrolledCoursesCount || 0)
-        } else {
-          courseMap.set(user.id, user.managedCoursesCount || 0)
-        }
-      }
-      setUserCourseMap(courseMap)
-    } catch (error) {
-      setUserCourseMap(new Map())
     }
   }
 
@@ -118,140 +83,98 @@ export function UserManagement() {
         role: activeTab,
         status: 'all',
       })
-
-      if (!allUsersResponse.data?.content) {
-        return 0
-      }
-
-      const filteredUsers =
-        status === 'all'
-          ? allUsersResponse.data.content
-          : allUsersResponse.data.content.filter(user => user.status === status)
-
-      return filteredUsers.length
-    } catch (error) {
+      if (!allUsersResponse.data?.content) return 0
+      return status === 'all'
+        ? allUsersResponse.data.content.length
+        : allUsersResponse.data.content.filter(user => user.status === status)
+            .length
+    } catch {
       return 0
     }
   }
 
-  const fetchUsers = async (fetchStats = false) => {
+  const fetchUsers = async (
+    customPagination?: PaginationState,
+    fetchStats = false
+  ) => {
     try {
       setIsLoading(true)
+      const pag = customPagination || pagination
+      const usersApiPromise = adminApi.getAllUsers({
+        pageSize: pag.pageSize,
+        pageNo: pag.currentPage,
+        role: activeTab,
+        status: selectedStatus,
+      })
 
-      const promises = []
-
-      promises.push(
-        adminApi.getAllUsers({
-          pageSize: pagination.pageSize,
-          pageNo: pagination.currentPage,
-          role: activeTab,
-          status: selectedStatus,
-        })
-      )
-
-      if (fetchStats || pagination.currentPage === 0) {
-        promises.push(
-          Promise.all([
+      let statsPromise: Promise<[number, number, number]> | undefined
+      if (fetchStats || pag.currentPage === 0) {
+        statsPromise = Promise.all([
           fetchUsersWithStatus(UserStatus.ACTIVE),
           fetchUsersWithStatus(UserStatus.BANNED),
           fetchUsersWithStatus(UserStatus.INACTIVE),
         ])
-        )
       }
 
-      const results = await Promise.all(promises)
-      const usersResponse = results[0] as UserManagementResponse
-
-      setUsers(usersResponse.data.content || [])
+      const usersApiResponse = await usersApiPromise
+      const statsResponse = statsPromise ? await statsPromise : undefined
+      const data = usersApiResponse.data
+      setUsers(data.content || [])
       setPagination(prev => ({
         ...prev,
-        totalElements: usersResponse.data.totalElements || 0,
-        totalPages: usersResponse.data.totalPages || 0,
+        totalElements: data.page.totalElements ?? 0,
+        totalPages: data.page.totalPages ?? 0,
+        currentPage: data.page.pageNumber ?? prev.currentPage,
       }))
-
-      if (results.length > 1) {
-        const [activeCount, bannedCount, inactiveCount] = results[1] as [
-          number,
-          number,
-          number,
-        ]
-
-        const stats = {
+      if (statsResponse) {
+        const [activeCount, bannedCount, inactiveCount] = statsResponse
+        setUserStats({
           total: (activeCount || 0) + (bannedCount || 0) + (inactiveCount || 0),
           active: activeCount || 0,
           banned: bannedCount || 0,
           inactive: inactiveCount || 0,
-        }
-        setUserStats(stats)
+        })
       }
     } catch (error: any) {
       showToast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
       })
       setUsers([])
-      setPagination(prev => ({
-        ...prev,
-        totalElements: 0,
-        totalPages: 0,
-      }))
-      if (fetchStats || pagination.currentPage === 0) {
-        setUserStats({ total: 0, active: 0, banned: 0, inactive: 0 })
-      }
+      setPagination(prev => ({ ...prev, totalElements: 0, totalPages: 0 }))
+      setUserStats({ total: 0, active: 0, banned: 0, inactive: 0 })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handlers
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, currentPage: newPage }))
+    setPagination({ ...pagination, currentPage: newPage })
+    fetchUsers({ ...pagination, currentPage: newPage })
   }
-
   const handlePageSizeChange = (newSize: number) => {
-    setPagination(prev => ({
-      ...prev,
-      pageSize: newSize,
-      currentPage: 0,
-    }))
+    setPagination({ ...pagination, pageSize: newSize, currentPage: 0 })
+    fetchUsers({ ...pagination, pageSize: newSize, currentPage: 0 })
   }
-
-  const handleUpdateUserStatus = async (
-    userId: string,
-    newStatus: UserStatus
-  ) => {
+  const handleUpdateUserStatus = async (userId: number, status: UserStatus) => {
     try {
-      await adminApi.updateUserStatus(userId, newStatus)
-      setUsers(
-        users.map(u => (u.id === userId ? { ...u, status: newStatus } : u))
-      )
-      toast.success(`User status updated to ${newStatus}`)
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update user status')
-    }
-  }
-
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      await adminApi.deleteManager(userId)
-      setUsers(users.filter(u => u.id !== userId))
-      toast.success('User deleted successfully')
+      await adminApi.updateUserStatus(userId, status)
+      showToast({
+        title: 'Success',
+        description: 'User status updated successfully.',
+      })
       fetchUsers()
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete user')
+      showToast({
+        title: 'Error',
+        description:
+          error.response?.data?.message || 'Failed to update user status.',
+      })
     }
   }
-
-  const handleViewProfile = async (userId: string) => {
-    try {
-      await adminApi.getUserDetails(userId)
-      router.push(`/admin/users/${userId}/detail`)
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to access user profile')
-    }
+  const handleViewProfile = (userId: number) => {
+    router.push(`/admin/users/${userId}/detail`)
   }
-
   const handleCreateManager = async (data: CreateManagerRequest) => {
     try {
       await adminApi.createManager(data)
@@ -264,23 +187,20 @@ export function UserManagement() {
       toast.error(error.message || 'Failed to create manager')
     }
   }
-
   const handleTabChange = (value: string) => {
-    setActiveTab(value)
+    setActiveTab(value as 'learner' | 'manager')
     setSearchTerm('')
     setSelectedStatus('all')
   }
 
-  // Filter users for display
-  const displayedUsers = users.filter(user => {
-    if (!searchTerm) return true
-    return (
+  const displayedUsers = users.filter(
+    user =>
+      !searchTerm ||
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })
+  )
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className='flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-3'>
@@ -288,18 +208,14 @@ export function UserManagement() {
         </div>
       </div>
     )
-  }
 
   return (
     <div className='space-y-6'>
-      {/* Stats Cards */}
       <UserStatsCards
         userStats={userStats}
         courseStats={courseStats}
         activeTab={activeTab}
       />
-
-      {/* User Management with Tabs */}
       <Card>
         <CardHeader>
           <div className='flex items-center justify-between'>
@@ -321,8 +237,6 @@ export function UserManagement() {
               <TabsTrigger value='learner'>Learners</TabsTrigger>
               <TabsTrigger value='manager'>Managers</TabsTrigger>
             </TabsList>
-
-            {/* Learner Tab Content */}
             <TabsContent value='learner'>
               <UserFilters
                 searchTerm={searchTerm}
@@ -331,16 +245,18 @@ export function UserManagement() {
                 onStatusChange={setSelectedStatus}
                 activeTab={activeTab}
               />
-
-              <UserTable
-                users={displayedUsers}
-                userCourseMap={userCourseMap}
-                activeTab={activeTab}
-                onViewProfile={handleViewProfile}
-                onUpdateUserStatus={handleUpdateUserStatus}
-                onDeleteUser={handleDeleteUser}
-              />
-
+              {displayedUsers.length > 0 ? (
+                <UserTable
+                  users={displayedUsers}
+                  activeTab='learner'
+                  onViewProfile={handleViewProfile}
+                  onUpdateUserStatus={handleUpdateUserStatus}
+                />
+              ) : (
+                <div className='text-center p-8 border-t'>
+                  No learners found.
+                </div>
+              )}
               <UserPagination
                 pagination={pagination}
                 activeTab={activeTab}
@@ -348,8 +264,6 @@ export function UserManagement() {
                 onPageSizeChange={handlePageSizeChange}
               />
             </TabsContent>
-
-            {/* Manager Tab Content */}
             <TabsContent value='manager' className='space-y-4'>
               <div className='flex items-center justify-between mb-4'>
                 <div className='flex items-center space-x-2'>
@@ -367,16 +281,18 @@ export function UserManagement() {
                   onSubmit={handleCreateManager}
                 />
               </div>
-
-              <UserTable
-                users={displayedUsers}
-                userCourseMap={userCourseMap}
-                activeTab={activeTab}
-                onViewProfile={handleViewProfile}
-                onUpdateUserStatus={handleUpdateUserStatus}
-                onDeleteUser={handleDeleteUser}
-              />
-
+              {displayedUsers.length > 0 ? (
+                <UserTable
+                  users={displayedUsers}
+                  activeTab='manager'
+                  onViewProfile={handleViewProfile}
+                  onUpdateUserStatus={handleUpdateUserStatus}
+                />
+              ) : (
+                <div className='text-center p-8 border-t'>
+                  No managers found.
+                </div>
+              )}
               <UserPagination
                 pagination={pagination}
                 activeTab={activeTab}

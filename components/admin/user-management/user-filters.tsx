@@ -10,10 +10,16 @@ import { UserStatus } from '@/types/user'
 import { UserFiltersProps } from '@/types/user-management'
 import { Search } from 'lucide-react'
 
-const STATUS_OPTIONS = [
+const LEARNER_STATUS_OPTIONS = [
   { value: 'all', label: 'All Status' },
   { value: UserStatus.ACTIVE, label: 'Active' },
   { value: UserStatus.BANNED, label: 'Banned' },
+] as const
+
+const MANAGER_STATUS_OPTIONS = [
+  { value: 'all', label: 'All Status' },
+  { value: UserStatus.ACTIVE, label: 'Active' },
+  { value: UserStatus.INACTIVE, label: 'Inactive' },
 ] as const
 
 export function UserFilters({
@@ -23,6 +29,9 @@ export function UserFilters({
   onStatusChange,
   activeTab,
 }: UserFiltersProps) {
+  const statusOptions =
+    activeTab === 'manager' ? MANAGER_STATUS_OPTIONS : LEARNER_STATUS_OPTIONS
+
   return (
     <div className='flex items-center space-x-2 mb-4'>
       <div className='relative flex-1'>
@@ -39,7 +48,7 @@ export function UserFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {STATUS_OPTIONS.map(option => (
+          {statusOptions.map(option => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
@@ -49,4 +58,3 @@ export function UserFilters({
     </div>
   )
 }
- 

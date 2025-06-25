@@ -15,7 +15,7 @@ export enum UserActivityType {
 }
 
 export interface User {
-  id: string
+  id: number
   name: string
   email: string
   role: string
@@ -37,6 +37,7 @@ export interface UserDetail {
   status: string
   joinDate: string
   bio: string | null
+  enrolledCourses: Course[] | null
   managedCourses: Course[] | null
   activities: UserActivity[]
 }

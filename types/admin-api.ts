@@ -1,19 +1,21 @@
-import { User } from './user'
+import { User, UserDetail } from './user'
 
 export interface UserManagementResponse {
   data: {
     content: User[]
-    totalElements: number
-    totalPages: number
-    pageSize: number
-    pageNumber: number
+    page: {
+      totalElements: number
+      totalPages: number
+      pageSize: number
+      pageNumber: number
+    }
   }
   message: string
   detail: string | null
 }
 
 export interface UserDetailResponse {
-  data: User
+  data: UserDetail
   message: string
   detail: string | null
 }
@@ -25,7 +27,7 @@ export interface CourseStatsResponse {
 }
 
 export interface CreateManagerResponse {
-  data: User
+  data: UserDetail
   message: string
   detail: string | null
 }

@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://it4beginner.vercel.app' 
+    : 'http://localhost:8080')
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
@@ -34,6 +37,10 @@ const PUBLIC_ENDPOINTS = [
 
   // Review endpoints
   '/api/reviews',
+  
+  // Public course meta endpoints
+  '/api/courses/levels',
+  '/api/courses/statuses',
 ]
 
 export const httpClient = axios.create({
@@ -73,7 +80,46 @@ httpClient.interceptors.request.use(
   }
 )
 
-// Add response interceptor for error handling
+// Utility methods for common HTTP operations
+export const api = {
+  // GET request
+  get: <T = any>(url: string, config?: any) => 
+    httpClient.get<T>(url, config),
+    
+  // POST request  
+  post: <T = any>(url: string, data?: any, config?: any) => 
+    httpClient.post<T>(url, data, config),
+    
+  // PUT request
+  put: <T = any>(url: string, data?: any, config?: any) => 
+    httpClient.put<T>(url, data, config),
+    
+  // PATCH request
+  patch: <T = any>(url: string, data?: any, config?: any) => 
+    httpClient.patch<T>(url, data, config),
+    
+  // DELETE request
+  delete: <T = any>(url: string, config?: any) => 
+    httpClient.delete<T>(url, config),
+    
+  // Upload file
+  upload: <T = any>(url: string, file: File | FormData, onProgress?: (progress: number) => void) => {
+    const formData = file instanceof FormData ? file : new FormData()
+    if (file instanceof File) {
+      formData.append('file', file)
+    }
+    
+    return httpClient.post<T>(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(progress)
+        }
+      }
+    })
+  }
+}
 httpClient.interceptors.response.use(
   response => response,
   error => {

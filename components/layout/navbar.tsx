@@ -182,9 +182,15 @@ export function Navbar() {
     fetchCategories()
   }, [])
 
-  const handleLogout = () => {
-    logout()
-    window.location.href = '/login'
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Always redirect to login regardless of logout API result
+      window.location.href = '/login'
+    }
   }
 
   const isActiveLink = (href: string) => {

@@ -69,7 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const urlParams = new URLSearchParams(window.location.search)
       const redirectUrl = urlParams.get('redirect')
       if (redirectUrl) {
-        window.location.href = decodeURIComponent(redirectUrl)
+        const baseUrl = window.location.origin
+        const fullUrl = redirectUrl.startsWith('http') 
+          ? redirectUrl 
+          : `${baseUrl}${redirectUrl.startsWith('/') ? '' : '/'}${redirectUrl}`
+        window.location.href = decodeURIComponent(fullUrl)
       }
     } catch (error) {
       console.error('Login error:', error)

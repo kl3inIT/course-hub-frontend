@@ -12,7 +12,9 @@ class WebSocketService {
       return
     }
 
-    const wsUrl = `http://localhost:8080/ws?token=${encodeURIComponent(token)}`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    // Convert HTTP(S) to WS(S) for WebSocket
+    const wsUrl = `${baseUrl.replace(/^https?/, baseUrl.startsWith('https') ? 'wss' : 'ws')}/ws?token=${encodeURIComponent(token)}`
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
@@ -80,6 +82,7 @@ class WebSocketService {
       this.subscriptions.get(event)?.unsubscribe()
       this.subscriptions.delete(event)
     }
+
   }
 
   private notifySubscribers(event: string, data: any) {
@@ -93,3 +96,4 @@ class WebSocketService {
 }
 
 export const websocketService = new WebSocketService()
+

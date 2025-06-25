@@ -328,7 +328,7 @@ export function CourseBasicInfoForm({
                 </Tooltip>
               </div>
               <Select
-                value={form.level}
+                value={form.level || ''}
                 onValueChange={value => handleChange('level', value)}
                 disabled={isLoadingLevels}
               >

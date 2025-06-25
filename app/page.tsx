@@ -23,7 +23,10 @@ import Link from 'next/link'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-const Earth3D = dynamic(() => import('@/components/Earth3D'), { ssr: false })
+const Earth3D = dynamic(() => import('@/components/Earth3D'), { 
+  ssr: false,
+  loading: () => <div className="w-[400px] h-[400px] animate-pulse bg-gradient-to-br from-blue-300/20 to-purple-400/20 rounded-full" />
+})
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')

@@ -56,7 +56,6 @@ import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
 import { toast } from 'react-hot-toast'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
-import '../../styles/date-range-custom.css'
 import { ChartConfig } from '../ui/chart'
 const { RangePicker } = DatePicker
 

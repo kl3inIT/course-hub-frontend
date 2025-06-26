@@ -1,6 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,12 +39,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { categoryApi } from '@/services/category-api'
 import {
   CategoryRequestDTO,
   CategoryResponseDTO,
   CategorySearchParams,
 } from '@/types/category'
-import { Page } from '@/types/common'
 import {
   BookOpen,
   CheckCircle,
@@ -59,21 +58,17 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
-  const [pagination, setPagination] = useState<Page<CategoryResponseDTO>>({
-    content: [],
-    totalElements: 0,
-    totalPages: 0,
-    size: 6,
-    number: 0,
-  })
+  const [allCategories, setAllCategories] = useState<CategoryResponseDTO[]>([])
+  const [filteredCategories, setFilteredCategories] = useState<CategoryResponseDTO[]>([])
   const [totalCourses, setTotalCourses] = useState(0)
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(0)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -96,44 +91,62 @@ export function CategoryManagement() {
 
   const router = useRouter()
 
-  // Fetch total courses count
-  const fetchTotalCourses = async () => {
-    try {
-      const response = await categoryApi.getAllCategories({ size: 100 }) // Giảm size xuống để tránh quá tải
-      const totalCoursesCount = response.data.content.reduce(
-        (sum, c) => sum + c.courseCount,
-        0
-      )
-      setTotalCourses(totalCoursesCount)
-    } catch (error: any) {
-      console.error('Failed to fetch total courses:', error)
-      toast.error('Lỗi', {
-        description: `Không thể tải dữ liệu: ${error.message || 'Lỗi không xác định'}`,
-      })
-    }
-  }
+  // Pagination constants
+  const ITEMS_PER_PAGE = 6
 
-  // Fetch categories from API
-  const fetchCategories = async (
-    page: number = 0,
-    size: number = 6,
-    searchName?: string
-  ) => {
+  // Calculate pagination data
+  const paginationData = useMemo(() => {
+    const totalItems = filteredCategories.length
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
+    const startIndex = currentPage * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    const currentItems = filteredCategories.slice(startIndex, endIndex)
+
+    return {
+      totalItems,
+      totalPages,
+      currentItems,
+      hasNext: currentPage < totalPages - 1,
+      hasPrev: currentPage > 0,
+      startItem: startIndex + 1,
+      endItem: Math.min(endIndex, totalItems),
+    }
+  }, [filteredCategories, currentPage])
+
+  // Fetch all categories without pagination
+  const fetchCategories = async (searchName?: string) => {
     try {
       setLoading(true)
       const params: CategorySearchParams = {
-        page,
-        size,
+        size: 1000, // Fetch all categories
         name: searchName,
       }
+      
+      console.log('Fetching all categories with params:', params)
+      
       const response = await categoryApi.getAllCategories(params)
-
-      setCategories(response.data.content)
-      setPagination(response.data)
+      
+      console.log('API Response:', response)
+      
+      const categoriesData = response.data.content || response.data
+      setAllCategories(categoriesData)
+      setFilteredCategories(categoriesData)
+      setCategories(categoriesData)
+      
+      // Calculate total courses
+      const totalCoursesCount = categoriesData.reduce(
+        (sum: number, c: CategoryResponseDTO) => sum + c.courseCount,
+        0
+      )
+      setTotalCourses(totalCoursesCount)
+      
+      // Reset to first page when data changes
+      setCurrentPage(0)
+      
     } catch (error) {
       console.error('Failed to fetch categories:', error)
       toast.error('Error', {
-        description: 'Failed to fetch categories. Please try again.',
+        description: 'Failed to load categories. Please try again.',
       })
     } finally {
       setLoading(false)
@@ -143,20 +156,29 @@ export function CategoryManagement() {
   // Load initial data
   useEffect(() => {
     fetchCategories()
-    fetchTotalCourses()
   }, [])
 
   // Handle search
   useEffect(() => {
     const delayedSearch = setTimeout(() => {
-      fetchCategories(0, pagination.size, searchTerm || undefined)
-    }, 500)
+      if (searchTerm.trim()) {
+        const filtered = allCategories.filter(cat => 
+          cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          cat.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        setFilteredCategories(filtered)
+      } else {
+        setFilteredCategories(allCategories)
+      }
+      // Reset to first page when search changes
+      setCurrentPage(0)
+    }, 300)
 
     return () => clearTimeout(delayedSearch)
-  }, [searchTerm])
+  }, [searchTerm, allCategories])
 
   const handlePageChange = (newPage: number) => {
-    fetchCategories(newPage, pagination.size, searchTerm || undefined)
+    setCurrentPage(newPage)
   }
 
   const handleCreateCategory = async () => {
@@ -180,16 +202,11 @@ export function CategoryManagement() {
       setIsCreateDialogOpen(false)
       setNameError('')
       setDescriptionError('')
-      toast.success('Category created successfully.', {
-        description: `Category ${newCategory.name} has been created successfully.`,
+      toast.success('Category created successfully', {
+        description: `Category "${newCategory.name}" has been created successfully.`,
         icon: <CheckCircle className='h-5 w-5 text-green-500' />,
       })
-      fetchCategories(
-        pagination.number,
-        pagination.size,
-        searchTerm || undefined
-      )
-      fetchTotalCourses() // Cập nhật tổng số khóa học
+      fetchCategories(searchTerm || undefined)
     } catch (error) {
       toast.error('Error', {
         description: 'Failed to create category. Please try again.',
@@ -225,19 +242,11 @@ export function CategoryManagement() {
       setEditDescriptionError('')
       setEditNameTouched(false)
       setEditDescriptionTouched(false)
-      toast.success(
-        `Category ${selectedCategory.name} has been updated successfully!`,
-        {
-          description: `Category ${selectedCategory.name} has been updated successfully!`,
-          icon: <CheckCircle className='h-5 w-5 text-green-500' />,
-        }
-      )
-      fetchCategories(
-        pagination.number,
-        pagination.size,
-        searchTerm || undefined
-      )
-      fetchTotalCourses()
+      toast.success('Category updated successfully', {
+        description: `Category "${selectedCategory.name}" has been updated successfully.`,
+        icon: <CheckCircle className='h-5 w-5 text-green-500' />,
+      })
+      fetchCategories(searchTerm || undefined)
     } catch (error) {
       toast.error('Error', {
         description: 'Failed to update category. Please try again.',
@@ -248,8 +257,8 @@ export function CategoryManagement() {
   const handleDeleteCategory = async () => {
     if (!categoryToDelete) return
     if (categoryToDelete.courseCount > 0) {
-      toast.error('❌ Không thể xoá danh mục', {
-        description: `Danh mục "${categoryToDelete.name}" đang có ${categoryToDelete.courseCount} khoá học. Hãy chuyển hoặc xoá các khoá học trước!`,
+      toast.error('Cannot delete category', {
+        description: `Category "${categoryToDelete.name}" has ${categoryToDelete.courseCount} course(s). Please remove or reassign courses first.`,
       })
       setIsDeleteDialogOpen(false)
       setCategoryToDelete(null)
@@ -257,42 +266,25 @@ export function CategoryManagement() {
     }
     try {
       await categoryApi.deleteCategory(categoryToDelete.id.toString())
-      toast.success('Category deleted', {
+      toast.success('Category deleted successfully', {
         icon: <CheckCircle className='h-5 w-5 text-green-500' />,
-        description: (
-          <span>
-            Category&nbsp;
-            <span
-              className='inline-block max-w-[200px] align-middle truncate'
-              title={categoryToDelete.name}
-              style={{ verticalAlign: 'middle' }}
-            >
-              "{categoryToDelete.name}"
-            </span>
-            &nbsp;has been deleted successfully!
-          </span>
-        ),
+        description: `Category "${categoryToDelete.name}" has been deleted successfully.`,
       })
-      fetchCategories(
-        pagination.number,
-        pagination.size,
-        searchTerm || undefined
-      )
-      fetchTotalCourses()
+      fetchCategories(searchTerm || undefined)
       setIsDeleteDialogOpen(false)
       setCategoryToDelete(null)
     } catch (error: any) {
       console.error('Delete category error:', error)
-      let errorMessage = 'Không thể xoá danh mục. Vui lòng thử lại.'
+      let errorMessage = 'Failed to delete category. Please try again.'
       if (
         error.message?.includes('being used by courses') ||
         error.message?.includes('CategoryInUseException')
       ) {
-        errorMessage = `Không thể xoá "${categoryToDelete.name}" vì vẫn còn khoá học sử dụng. Hãy chuyển hoặc xoá các khoá học trước!`
+        errorMessage = `Cannot delete "${categoryToDelete.name}" because it is still being used by courses. Please remove or reassign courses first.`
       } else if (error.message?.includes('not found')) {
-        errorMessage = `Danh mục "${categoryToDelete.name}" không tồn tại. Có thể đã bị xoá trước đó.`
+        errorMessage = `Category "${categoryToDelete.name}" not found. It may have been deleted already.`
       }
-      toast.error('❌ Xoá thất bại', { description: errorMessage })
+      toast.error('Delete failed', { description: errorMessage })
       setIsDeleteDialogOpen(false)
       setCategoryToDelete(null)
     }
@@ -325,7 +317,7 @@ export function CategoryManagement() {
   }
 
   const getCategoryStats = () => {
-    const total = pagination.totalElements
+    const total = allCategories.length
     return { total, totalCourses }
   }
 
@@ -504,6 +496,9 @@ export function CategoryManagement() {
                 className='pl-10'
               />
             </div>
+            <div className='text-sm text-muted-foreground'>
+              {searchTerm ? `${filteredCategories.length} of ${allCategories.length} categories` : `${filteredCategories.length} categories total`}
+            </div>
           </div>
 
           {/* Categories Table */}
@@ -528,7 +523,7 @@ export function CategoryManagement() {
                     Loading categories...
                   </TableCell>
                 </TableRow>
-              ) : categories.length === 0 ? (
+              ) : paginationData.currentItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={6}
@@ -540,15 +535,18 @@ export function CategoryManagement() {
                   </TableCell>
                 </TableRow>
               ) : (
-                categories.map(category => (
+                paginationData.currentItems.map(category => (
                   <TableRow
                     key={category.id}
                     className='cursor-pointer hover:bg-gray-50 transition group'
-                    onClick={() =>
+                    onClick={() => {
+                      toast.success('Redirecting to courses', {
+                        description: `Showing courses in "${category.name}" category`,
+                      })
                       router.push(
                         `/manager/courses?category=${encodeURIComponent(category.name)}`
                       )
-                    }
+                    }}
                   >
                     <TableCell className='font-medium w-[22%] truncate'>
                       {category.name}
@@ -619,34 +617,29 @@ export function CategoryManagement() {
           </Table>
 
           {/* Pagination */}
-          {pagination.totalPages >= 1 && (
+          {paginationData.totalItems > 0 && (
             <div className='flex items-center justify-between mt-6'>
               <p className='text-sm text-muted-foreground'>
-                Showing {pagination.number * pagination.size + 1} to{' '}
-                {Math.min(
-                  (pagination.number + 1) * pagination.size,
-                  pagination.totalElements
-                )}{' '}
-                of {pagination.totalElements} categories
+                Showing {paginationData.startItem} to {paginationData.endItem} of {paginationData.totalItems} categories
               </p>
               <div className='flex items-center gap-2'>
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => handlePageChange(pagination.number - 1)}
-                  disabled={pagination.number === 0}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!paginationData.hasPrev || loading}
                 >
                   <ChevronLeft className='h-4 w-4' />
                   Previous
                 </Button>
                 <span className='text-sm'>
-                  Page {pagination.number + 1} of {pagination.totalPages}
+                  Page {currentPage + 1} of {Math.max(1, paginationData.totalPages)}
                 </span>
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => handlePageChange(pagination.number + 1)}
-                  disabled={pagination.number === pagination.totalPages - 1}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!paginationData.hasNext || loading}
                 >
                   Next
                   <ChevronRight className='h-4 w-4' />

@@ -23,8 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryApi } from '@/services/category-api'
+import { courseApi } from '@/services/course-api'
 import { reviewApi } from '@/services/review-api'
 import { CategoryResponseDTO } from '@/types/category'
+import { CourseResponseDTO } from '@/types/course'
 import { ReviewResponseDTO } from '@/types/review'
 import {
   Eye,
@@ -36,7 +38,7 @@ import {
   Search,
   Star
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export function ReviewManagement() {
@@ -49,10 +51,14 @@ export function ReviewManagement() {
     number: 0,
   })
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [ratingFilter, setRatingFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [courseFilter, setCourseFilter] = useState<string>('all')
   const [loading, setLoading] = useState(false)
+  const [loadingCourses, setLoadingCourses] = useState(false)
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
+  const [courses, setCourses] = useState<CourseResponseDTO[]>([])
   const [totalReviews, setTotalReviews] = useState(0)
   const [globalAverageRating, setGlobalAverageRating] = useState(0)
   const [activeTab, setActiveTab] = useState<'visible' | 'hidden'>('visible')
@@ -87,12 +93,29 @@ export function ReviewManagement() {
     try {
       setLoading(true)
       const visibilityStatus = activeTab === 'visible' ? 0 : 1
-      const params: any = { page: 0, size: 1000, sortBy: 'modifiedDate', direction: 'DESC' }
-      if (ratingFilter !== 'all') params.star = parseInt(ratingFilter)
-      if (categoryFilter !== 'all') params.categoryId = parseInt(categoryFilter)
-      if (searchTerm.trim()) params.search = searchTerm.trim()
+      const params: any = { 
+        visibilityStatus,
+        page: 0, 
+        size: 1000, 
+        sortBy: 'modifiedDate', 
+        direction: 'DESC' as 'DESC'
+      }
       
-      const response = await reviewApi.getReviewsByVisibility(visibilityStatus, params)
+      // Add filters if they are set
+      if (ratingFilter !== 'all') {
+        params.star = parseInt(ratingFilter)
+      }
+      if (categoryFilter !== 'all') {
+        params.categoryId = parseInt(categoryFilter)
+      }
+      if (courseFilter !== 'all') {
+        params.courseId = parseInt(courseFilter)
+      }
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim()
+      }
+      
+      const response = await reviewApi.getReviewsByVisibilityWithFilters(params)
       const allData = response.data.content || []
       setAllReviews(allData)
       updateDisplayedReviews(allData, 0, rowsPerPage)
@@ -151,20 +174,49 @@ export function ReviewManagement() {
   }, [])
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const response = await categoryApi.getAllCategories({ size: 100 })
-        setCategories(response.data.content)
+        const categoriesResponse = await categoryApi.getAllCategories({ size: 100 })
+        setCategories(categoriesResponse.data.content)
       } catch (error) {
         console.error('Failed to fetch categories:', error)
       }
     }
-    fetchCategories()
+    fetchData()
   }, [])
+
+  // Separate useEffect to load courses when category changes
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (categoryFilter === 'all') {
+        // If no category selected, clear courses and reset course filter
+        setCourses([])
+        setCourseFilter('all')
+        return
+      }
+      
+      try {
+        setLoadingCourses(true)
+        // Load courses for the selected category
+        const coursesResponse = await courseApi.getCoursesByCategory(categoryFilter)
+        setCourses(coursesResponse.data || [])
+        // Reset course filter when category changes to a specific category
+        setCourseFilter('all')
+      } catch (error) {
+        console.error('Failed to fetch courses for category:', error)
+        setCourses([])
+        setCourseFilter('all')
+      } finally {
+        setLoadingCourses(false)
+      }
+    }
+    
+    fetchCourses()
+  }, [categoryFilter])
 
   useEffect(() => {
     fetchAllReviews()
-  }, [ratingFilter, categoryFilter, activeTab, searchTerm])
+  }, [ratingFilter, categoryFilter, courseFilter, activeTab, searchQuery])
 
   useEffect(() => {
     if (allReviews.length > 0) {
@@ -228,11 +280,32 @@ export function ReviewManagement() {
     return isNaN(d.getTime()) ? '' : d.toLocaleDateString()
   }
 
+  const handleSearch = () => {
+    setSearchQuery(searchTerm)
+  }
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
   const renderFilters = () => (
     <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'>
-      <div className='relative flex-1'>
-        <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-        <Input placeholder='Search reviews...' value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className='pl-10' />
+      <div className='relative flex-1 flex gap-2'>
+        <div className='relative flex-1'>
+          <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
+          <Input 
+            placeholder='Search reviews...' 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+            onKeyPress={handleSearchKeyPress}
+            className='pl-10' 
+          />
+        </div>
+        <Button variant='outline' onClick={handleSearch} disabled={loading} className='px-4'>
+          <Search className='h-4 w-4' />
+        </Button>
       </div>
       <Select value={ratingFilter} onValueChange={setRatingFilter}>
         <SelectTrigger className='w-full md:w-[140px]'>
@@ -254,8 +327,38 @@ export function ReviewManagement() {
         <SelectContent>
           <SelectItem value='all'>All Categories</SelectItem>
           {categories.map(cat => (
-            <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+            <SelectItem key={cat.id} value={cat.id.toString()} title={cat.name}>
+              <span className='truncate block max-w-[140px]'>{cat.name}</span>
+            </SelectItem>
           ))}
+        </SelectContent>
+      </Select>
+      <Select value={courseFilter} onValueChange={setCourseFilter}>
+        <SelectTrigger className='w-full md:w-[200px]'>
+          <SelectValue placeholder='Course' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='all'>All Courses</SelectItem>
+          {categoryFilter !== 'all' && !loadingCourses && courses.map(course => (
+            <SelectItem key={course.id} value={course.id.toString()} title={course.title}>
+              <span className='truncate block max-w-[160px]'>{course.title}</span>
+            </SelectItem>
+          ))}
+          {categoryFilter !== 'all' && loadingCourses && (
+            <SelectItem value='loading' disabled className='text-muted-foreground'>
+              Loading courses...
+            </SelectItem>
+          )}
+          {categoryFilter === 'all' && (
+            <SelectItem value='disabled' disabled className='text-muted-foreground'>
+              Please select a category first
+            </SelectItem>
+          )}
+          {categoryFilter !== 'all' && !loadingCourses && courses.length === 0 && (
+            <SelectItem value='empty' disabled className='text-muted-foreground'>
+              No courses found in this category
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
       <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
@@ -278,14 +381,29 @@ export function ReviewManagement() {
       <CardHeader>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-3'>
-            <Avatar>
-              {review.userAvatar && <AvatarImage src={review.userAvatar} alt={review.userName} />}
-              <AvatarFallback>{review.userName.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className='font-medium'>{review.userName}</h3>
-              <p className='text-sm text-muted-foreground'>{review.courseName}</p>
-              {isHidden && <span className='text-xs text-red-500 font-medium'>Hidden Review</span>}
+            <a href="#" className='flex-shrink-0 hover:opacity-80 transition-opacity'>
+              <Avatar>
+                {review.userAvatar && <AvatarImage src={review.userAvatar} alt={review.userName} />}
+                <AvatarFallback>{review.userName.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+              </Avatar>
+            </a>
+            <div className='flex-1'>
+              <a href="#" className='hover:text-blue-600 transition-colors'>
+                <h3 className='font-medium text-lg'>{review.userName}</h3>
+              </a>
+              <div className='flex items-center gap-2 mt-1'>
+                <span className='px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full truncate max-w-[120px]' title={review.categoryName}>
+                  {review.categoryName}
+                </span>
+                <span className='text-gray-400'>•</span>
+                <span className='text-xs text-gray-600 font-medium truncate max-w-[200px]' title={review.courseName}>{review.courseName}</span>
+              </div>
+              {isHidden && (
+                <span className='inline-flex items-center px-2 py-1 mt-2 bg-red-100 text-red-800 text-xs font-medium rounded-full'>
+                  <EyeOff className='w-3 h-3 mr-1' />
+                  Hidden Review
+                </span>
+              )}
             </div>
           </div>
           <div className='flex items-center space-x-2'>
@@ -295,9 +413,11 @@ export function ReviewManagement() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className='flex justify-between items-center'>
-          <p className='text-sm mb-4 mr-4'>{review.comment}</p>
-          <div className='flex gap-2'>
+        <div className='flex justify-between items-start'>
+          <div className='flex-1 mr-4'>
+            <p className='text-sm leading-relaxed'>{review.comment}</p>
+          </div>
+          <div className='flex gap-2 flex-shrink-0'>
             <Button variant='outline' size='sm' onClick={() => handleToggleVisibility(review.id, isHidden)}>
               {isHidden ? (<><Eye className='mr-1 h-3 w-3' />Unhide</>) : (<><EyeOff className='mr-1 h-3 w-3' />Hide</>) }
             </Button>

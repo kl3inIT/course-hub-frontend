@@ -1,6 +1,7 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import {
+  ReviewFiltersParams,
   ReviewRequestDTO,
   ReviewResponseDTO,
   ReviewSearchParams,
@@ -74,7 +75,7 @@ export const reviewApi = {
     return response.data
   },
 
-  // Get reviews by visibility status
+  // Get reviews by visibility status (old method)
   getReviewsByVisibility: async (
     visibilityStatus: number,
     params?: {
@@ -86,6 +87,16 @@ export const reviewApi = {
   ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
     const response = await httpClient.get('/api/reviews/by-visibility', { 
       params: { visibilityStatus, ...params }
+    })
+    return response.data
+  },
+
+  // Get reviews by visibility with advanced filters (new method)
+  getReviewsByVisibilityWithFilters: async (
+    params: ReviewFiltersParams
+  ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
+    const response = await httpClient.get('/api/reviews/by-visibility-with-filters', { 
+      params
     })
     return response.data
   },

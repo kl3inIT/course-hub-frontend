@@ -32,8 +32,8 @@ const PUBLIC_ENDPOINTS = [
   '/api/categories/chart',
   '/api/categories/details',
 
-  // Review endpoints
-  '/api/reviews',
+  // Review endpoints - only GET method is public
+  { url: '/api/reviews', method: 'GET' },
   
   // Public course meta endpoints
   '/api/courses/levels',
@@ -52,9 +52,14 @@ export const httpClient = axios.create({
 httpClient.interceptors.request.use(
   config => {
     // Check if the current endpoint is in the public endpoints list
-    const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint =>
-      config.url?.includes(endpoint)
-    )
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => {
+      if (typeof endpoint === 'string') {
+        return config.url?.includes(endpoint)
+      } else {
+        return config.url?.includes(endpoint.url) && 
+               config.method?.toUpperCase() === endpoint.method
+      }
+    })
 
     // Set Content-Type header based on the request data type
     if (config.data instanceof FormData) {
@@ -135,3 +140,5 @@ httpClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+

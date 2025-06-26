@@ -220,7 +220,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     }
   }
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!user) {
       toast({
         title: 'Authentication Required',
@@ -232,7 +232,40 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       )
       return
     }
-    setShowPayment(true)
+
+    // Check if course is free (price is 0)
+    if (course && course.finalPrice === 0) {
+      try {
+        setEnrollmentLoading(true)
+        await courseApi.enrollFreeCourse(courseId)
+        
+        toast({
+          title: 'Success',
+          description: 'You have successfully enrolled in this free course!',
+        })
+
+        // Refresh enrollment status
+        await checkEnrollmentStatus(courseId)
+      } catch (error: any) {
+        let errorMessage = 'Failed to enroll in course'
+        
+        if (error?.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error?.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        }
+
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      } finally {
+        setEnrollmentLoading(false)
+      }
+    } else {
+      setShowPayment(true)
+    }
   }
 
   const toggleModule = (moduleId: number) => {
@@ -397,22 +430,33 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             <CardHeader>
               {enrollmentStatus?.enrolled ? null : (
                 <div className='flex items-center gap-2 mb-2'>
-                  <span className='text-3xl font-bold'>
-                    ${course.finalPrice.toFixed(2)}
-                  </span>
-                  {course.discount && course.discount > 0 && (
-                    <span className='text-lg text-muted-foreground line-through'>
-                      $
-                      {(
-                        course.finalPrice /
-                        (1 - course.discount / 100)
-                      ).toFixed(2)}
-                    </span>
-                  )}
-                  {course.discount && course.discount > 0 && (
-                    <Badge variant='destructive' className='ml-auto'>
-                      {course.discount}% OFF
-                    </Badge>
+                  {course.finalPrice === 0 ? (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-3xl font-bold text-green-600'>Free</span>
+                      <Badge variant='secondary' className='bg-green-100 text-green-800'>
+                        Free Course
+                      </Badge>
+                    </div>
+                  ) : (
+                    <>
+                      <span className='text-3xl font-bold'>
+                        ${course.finalPrice.toFixed(2)}
+                      </span>
+                      {course.discount && course.discount > 0 && (
+                        <span className='text-lg text-muted-foreground line-through'>
+                          $
+                          {(
+                            course.finalPrice /
+                            (1 - course.discount / 100)
+                          ).toFixed(2)}
+                        </span>
+                      )}
+                      {course.discount && course.discount > 0 && (
+                        <Badge variant='destructive' className='ml-auto'>
+                          {course.discount}% OFF
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -460,8 +504,20 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                   )}
                 </div>
               ) : (
-                <Button onClick={handleEnroll} className='w-full' size='lg'>
-                  Enroll Now
+                <Button 
+                  onClick={handleEnroll} 
+                  className='w-full' 
+                  size='lg'
+                  disabled={enrollmentLoading}
+                >
+                  {enrollmentLoading ? (
+                    <>
+                      <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                      {course?.finalPrice === 0 ? 'Enrolling...' : 'Processing...'}
+                    </>
+                  ) : (
+                    course?.finalPrice === 0 ? 'Enroll for Free' : 'Enroll Now'
+                  )}
                 </Button>
               )}
 
@@ -610,6 +666,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             courseId={courseId}
             averageRating={course.averageRating ?? undefined}
             totalReviews={course.totalReviews}
+            isEnrolled={enrollmentStatus?.enrolled}
           />
         </TabsContent>
       </Tabs>

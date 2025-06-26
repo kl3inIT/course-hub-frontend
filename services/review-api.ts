@@ -22,12 +22,9 @@ export const reviewApi = {
   },
 
   createReview: async (
-    userId: number,
     data: ReviewRequestDTO
   ): Promise<ApiResponse<ReviewResponseDTO>> => {
-    const response = await httpClient.post('/api/reviews', data, {
-      params: { userId },
-    })
+    const response = await httpClient.post('/api/reviews', data)
     return response.data
   },
 

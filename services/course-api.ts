@@ -177,4 +177,9 @@ export const courseApi = {
     >('/api/courses/recommended')
     return response.data
   },
+
+  enrollFreeCourse: async (courseId: string): Promise<ApiResponse<string>> => {
+    const response = await httpClient.post(`/api/courses/${courseId}/enroll`)
+    return response.data
+  },
 }

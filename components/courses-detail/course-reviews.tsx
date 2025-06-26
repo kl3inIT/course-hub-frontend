@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { reportApi } from '@/services/report-api'
 import { reviewApi } from '@/services/review-api'
 import { ReviewResponseDTO } from '@/types/review'
+import { WriteReview } from './write-review'
 import { Flag, Star } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -24,6 +25,7 @@ interface CourseReviewsProps {
   courseId: string
   averageRating?: number
   totalReviews: number
+  isEnrolled?: boolean
 }
 
 const formatDateTime = (dateString: string) => {
@@ -41,6 +43,7 @@ export function CourseReviews({
   courseId,
   averageRating,
   totalReviews,
+  isEnrolled,
 }: CourseReviewsProps) {
   const { toast } = useToast()
   const [reviews, setReviews] = useState<ReviewResponseDTO[]>([])
@@ -62,24 +65,31 @@ export function CourseReviews({
   ]
 
   // Fetch reviews for this course
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const res = await reviewApi.getAllReviews({
-          courseId: Number(courseId),
-          page: reviewPage,
-          size: 6,
-          sortBy: 'createdDate',
-          direction: 'DESC',
-        })
-        setReviews(res.data.content)
-        setReviewTotalPages(res.data.totalPages)
-      } catch (err) {
-        setReviews([])
-      }
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await reviewApi.getAllReviews({
+        courseId: Number(courseId),
+        page: reviewPage,
+        size: 6,
+        sortBy: 'createdDate',
+        direction: 'DESC',
+      })
+      setReviews(res.data.content)
+      setReviewTotalPages(res.data.totalPages)
+    } catch (err) {
+      setReviews([])
     }
-    fetchReviews()
   }, [courseId, reviewPage])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
+
+  const handleReviewSubmitted = () => {
+    // Reset to first page and fetch reviews again
+    setReviewPage(0)
+    fetchReviews()
+  }
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
@@ -174,6 +184,11 @@ export function CourseReviews({
           </span>
         </div>
       </div>
+
+      {/* Write Review Component for Enrolled Students */}
+      {isEnrolled && (
+        <WriteReview courseId={courseId} onReviewSubmitted={handleReviewSubmitted} />
+      )}
 
       <div className='space-y-4'>
         {reviews.length === 0 && (

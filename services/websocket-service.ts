@@ -82,7 +82,6 @@ class WebSocketService {
       this.subscriptions.get(event)?.unsubscribe()
       this.subscriptions.delete(event)
     }
-
   }
 
   private notifySubscribers(event: string, data: any) {
@@ -96,4 +95,3 @@ class WebSocketService {
 }
 
 export const websocketService = new WebSocketService()
-

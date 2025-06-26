@@ -82,7 +82,7 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
       onReviewSubmitted?.()
     } catch (error: any) {
       let errorMessage = 'Failed to submit review'
-      
+
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error?.response?.data?.detail) {
@@ -110,10 +110,14 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
         <Star
           key={i}
           className={`h-6 w-6 cursor-pointer transition-colors ${
-            filled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 hover:text-yellow-300'
+            filled
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300 hover:text-yellow-300'
           }`}
           onClick={interactive ? () => setRating(starIndex) : undefined}
-          onMouseEnter={interactive ? () => setHoveredRating(starIndex) : undefined}
+          onMouseEnter={
+            interactive ? () => setHoveredRating(starIndex) : undefined
+          }
           onMouseLeave={interactive ? () => setHoveredRating(0) : undefined}
         />
       )
@@ -122,74 +126,77 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
 
   return (
     <>
-      <Card className="mt-6">
+      <Card className='mt-6'>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PenTool className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <PenTool className='h-5 w-5' />
             Share Your Experience
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">
-            You've enrolled in this course! Help other students by sharing your thoughts and rating.
+          <p className='text-muted-foreground mb-4'>
+            You've enrolled in this course! Help other students by sharing your
+            thoughts and rating.
           </p>
-          <Button onClick={() => setShowDialog(true)} className="w-full sm:w-auto">
-            <MessageSquare className="h-4 w-4 mr-2" />
+          <Button
+            onClick={() => setShowDialog(true)}
+            className='w-full sm:w-auto'
+          >
+            <MessageSquare className='h-4 w-4 mr-2' />
             Write a Review
           </Button>
         </CardContent>
       </Card>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className='max-w-md'>
           <DialogHeader>
             <DialogTitle>Write Your Review</DialogTitle>
             <DialogDescription>
-              Share your experience with this course to help other students make informed decisions.
+              Share your experience with this course to help other students make
+              informed decisions.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-6 py-4">
+
+          <div className='space-y-6 py-4'>
             {/* Rating */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Your Rating</Label>
-              <div className="flex gap-1">
-                {renderStars(true)}
-              </div>
+            <div className='space-y-2'>
+              <Label className='text-sm font-medium'>Your Rating</Label>
+              <div className='flex gap-1'>{renderStars(true)}</div>
               {rating > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {rating === 1 && "Poor"}
-                  {rating === 2 && "Fair"}
-                  {rating === 3 && "Good"}
-                  {rating === 4 && "Very Good"}
-                  {rating === 5 && "Excellent"}
+                <p className='text-sm text-muted-foreground'>
+                  {rating === 1 && 'Poor'}
+                  {rating === 2 && 'Fair'}
+                  {rating === 3 && 'Good'}
+                  {rating === 4 && 'Very Good'}
+                  {rating === 5 && 'Excellent'}
                 </p>
               )}
             </div>
 
             {/* Comment */}
-            <div className="space-y-2">
-              <Label htmlFor="comment" className="text-sm font-medium">
+            <div className='space-y-2'>
+              <Label htmlFor='comment' className='text-sm font-medium'>
                 Your Review
               </Label>
               <Textarea
-                id="comment"
+                id='comment'
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your thoughts about this course, what you learned, and what others should know..."
-                className="min-h-[100px] resize-none"
+                onChange={e => setComment(e.target.value)}
+                placeholder='Share your thoughts about this course, what you learned, and what others should know...'
+                className='min-h-[100px] resize-none'
                 maxLength={1000}
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className='flex justify-between text-xs text-muted-foreground'>
                 <span>Minimum 10 characters</span>
                 <span>{comment.length}/1000</span>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className='flex justify-end gap-3'>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={() => {
                 setShowDialog(false)
                 setRating(0)
@@ -202,7 +209,9 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
             </Button>
             <Button
               onClick={handleSubmitReview}
-              disabled={rating === 0 || comment.trim().length < 10 || isSubmitting}
+              disabled={
+                rating === 0 || comment.trim().length < 10 || isSubmitting
+              }
             >
               {isSubmitting ? 'Submitting...' : 'Submit Review'}
             </Button>
@@ -211,4 +220,4 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
       </Dialog>
     </>
   )
-} 
+}

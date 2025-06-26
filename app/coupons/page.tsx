@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -284,6 +285,14 @@ const FilterSidebar = memo(function FilterSidebar({
 })
 
 export default function CouponsPage() {
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <CouponsContent />
+    </ProtectedRoute>
+  )
+}
+
+function CouponsContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState({

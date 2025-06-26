@@ -43,6 +43,7 @@ import {
   Play,
   PlayCircle,
   Star,
+  Shield,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -125,7 +126,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
     try {
       setEnrollmentLoading(true)
-      const response = await enrollmentApi.getEnrollmentStatus(courseId)
+      // Use enhanced enrollment status that considers role-based access
+      const response = await enrollmentApi.getEnhancedEnrollmentStatus(
+        courseId,
+        user.role
+      )
       if (response.data) {
         setEnrollmentStatus(response.data)
       }
@@ -238,7 +243,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       try {
         setEnrollmentLoading(true)
         await courseApi.enrollFreeCourse(courseId)
-        
+
         toast({
           title: 'Success',
           description: 'You have successfully enrolled in this free course!',
@@ -248,7 +253,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         await checkEnrollmentStatus(courseId)
       } catch (error: any) {
         let errorMessage = 'Failed to enroll in course'
-        
+
         if (error?.response?.data?.message) {
           errorMessage = error.response.data.message
         } else if (error?.response?.data?.detail) {
@@ -432,8 +437,13 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                 <div className='flex items-center gap-2 mb-2'>
                   {course.finalPrice === 0 ? (
                     <div className='flex items-center gap-2'>
-                      <span className='text-3xl font-bold text-green-600'>Free</span>
-                      <Badge variant='secondary' className='bg-green-100 text-green-800'>
+                      <span className='text-3xl font-bold text-green-600'>
+                        Free
+                      </span>
+                      <Badge
+                        variant='secondary'
+                        className='bg-green-100 text-green-800'
+                      >
                         Free Course
                       </Badge>
                     </div>
@@ -480,23 +490,44 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                     size='lg'
                   >
                     <Play className='h-4 w-4 mr-2' />
-                    Continue Learning
+                    {user?.role === 'manager' || user?.role === 'admin'
+                      ? 'Access Course'
+                      : 'Continue Learning'}
                   </Button>
-                  {enrollmentStatus.progress > 0 && (
-                    <div className='text-sm text-muted-foreground'>
-                      <div className='flex justify-between mb-1'>
-                        <span>Progress</span>
-                        <span>{Math.round(enrollmentStatus.progress)}%</span>
+
+                  {/* Show access reason for manager/admin */}
+                  {enrollmentStatus.accessReason &&
+                    (user?.role === 'manager' || user?.role === 'admin') && (
+                      <div className='text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg'>
+                        <div className='flex items-center gap-2 mb-1'>
+                          <Shield className='h-4 w-4 text-blue-600' />
+                          <span className='font-medium text-blue-800'>
+                            Privileged Access
+                          </span>
+                        </div>
+                        <p className='text-blue-700'>
+                          {enrollmentStatus.accessReason}
+                        </p>
                       </div>
-                      <div className='w-full bg-gray-200 rounded-full h-2'>
-                        <div
-                          className='bg-primary h-2 rounded-full transition-all duration-300'
-                          style={{ width: `${enrollmentStatus.progress}%` }}
-                        ></div>
+                    )}
+
+                  {/* Show progress only for regular enrolled users */}
+                  {enrollmentStatus.progress > 0 &&
+                    user?.role === 'learner' && (
+                      <div className='text-sm text-muted-foreground'>
+                        <div className='flex justify-between mb-1'>
+                          <span>Progress</span>
+                          <span>{Math.round(enrollmentStatus.progress)}%</span>
+                        </div>
+                        <div className='w-full bg-gray-200 rounded-full h-2'>
+                          <div
+                            className='bg-primary h-2 rounded-full transition-all duration-300'
+                            style={{ width: `${enrollmentStatus.progress}%` }}
+                          ></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {enrollmentStatus.completed && (
+                    )}
+                  {enrollmentStatus.completed && user?.role === 'learner' && (
                     <div className='flex items-center gap-2 text-green-600 text-sm'>
                       <CheckCircle className='h-4 w-4' />
                       <span>Course Completed!</span>
@@ -504,19 +535,23 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                   )}
                 </div>
               ) : (
-                <Button 
-                  onClick={handleEnroll} 
-                  className='w-full' 
+                <Button
+                  onClick={handleEnroll}
+                  className='w-full'
                   size='lg'
                   disabled={enrollmentLoading}
                 >
                   {enrollmentLoading ? (
                     <>
                       <Loader2 className='h-4 w-4 animate-spin mr-2' />
-                      {course?.finalPrice === 0 ? 'Enrolling...' : 'Processing...'}
+                      {course?.finalPrice === 0
+                        ? 'Enrolling...'
+                        : 'Processing...'}
                     </>
+                  ) : course?.finalPrice === 0 ? (
+                    'Enroll for Free'
                   ) : (
-                    course?.finalPrice === 0 ? 'Enroll for Free' : 'Enroll Now'
+                    'Enroll Now'
                   )}
                 </Button>
               )}

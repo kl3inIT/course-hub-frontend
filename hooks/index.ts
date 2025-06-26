@@ -17,6 +17,9 @@ export type { UseCourseDataProps, UseCourseDataReturn } from './useCourseData'
 export { useCourseMeta } from './use-course-meta'
 export type { UseCourseMeta } from './use-course-meta'
 
+// Auth hooks
+export { useAuthGuard } from './use-auth-guard'
+
 // Existing hooks
 export { useAvailableCoupons } from './use-available-coupons'
 export { useCoupon } from './use-coupon'

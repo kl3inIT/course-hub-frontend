@@ -354,8 +354,8 @@ export function Navbar() {
                 ></span>
               </Link>
 
-              {/* Only show "My Learning" link for authenticated users */}
-              {user && (
+              {/* Only show "My Learning" link for learners */}
+              {user && user.role === 'learner' && (
                 <Link
                   href='/dashboard'
                   className={`text-sm font-medium transition-colors relative group ${
@@ -652,8 +652,8 @@ export function Navbar() {
                         Contact
                       </Link>
 
-                      {/* Only show "My Learning" link for authenticated users in mobile */}
-                      {user && (
+                      {/* Only show "My Learning" link for learners in mobile */}
+                      {user && user.role === 'learner' && (
                         <Link
                           href='/dashboard'
                           className={`text-lg font-medium transition-colors py-2 ${

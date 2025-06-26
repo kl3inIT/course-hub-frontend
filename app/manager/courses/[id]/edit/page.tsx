@@ -3,13 +3,13 @@ import { ManagerSidebar } from '@/components/layout/manager-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { RoleGuard } from '@/components/auth/role-guard'
 
-export default async function EditCoursePage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function EditCoursePage({
+  params,
+}: {
+  params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  
+
   return (
     <RoleGuard allowedRoles={['manager', 'admin']}>
       <SidebarProvider>

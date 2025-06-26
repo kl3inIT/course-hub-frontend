@@ -23,9 +23,11 @@ import Link from 'next/link'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-const Earth3D = dynamic(() => import('@/components/Earth3D'), { 
+const Earth3D = dynamic(() => import('@/components/Earth3D'), {
   ssr: false,
-  loading: () => <div className="w-[400px] h-[400px] animate-pulse bg-gradient-to-br from-blue-300/20 to-purple-400/20 rounded-full" />
+  loading: () => (
+    <div className='w-[400px] h-[400px] animate-pulse bg-gradient-to-br from-blue-300/20 to-purple-400/20 rounded-full' />
+  ),
 })
 
 export default function HomePage() {
@@ -34,8 +36,6 @@ export default function HomePage() {
     []
   )
   const [loadingFeaturedCourses, setLoadingFeaturedCourses] = useState(false)
-
-
 
   // Fetch featured courses from API
   useEffect(() => {
@@ -235,8 +235,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-
 
       {/* Why Choose Us */}
       <section className='py-16 px-4'>

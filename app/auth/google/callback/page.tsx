@@ -72,8 +72,8 @@ export default function GoogleCallbackPage() {
           window.location.href = `${baseUrl}/manager`
         } else if (returnUrl) {
           // Nếu có returnUrl (từ state parameter), sử dụng nó
-          const fullUrl = returnUrl.startsWith('http') 
-            ? returnUrl 
+          const fullUrl = returnUrl.startsWith('http')
+            ? returnUrl
             : `${baseUrl}${returnUrl.startsWith('/') ? '' : '/'}${returnUrl}`
           window.location.href = decodeURIComponent(fullUrl)
         } else {

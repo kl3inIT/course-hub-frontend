@@ -40,14 +40,17 @@ export function CourseBasicInfoForm({
   isEditing = false,
   className = '',
 }: CourseBasicInfoFormProps) {
-  const [form, setForm] = useState<CourseRequestDTO & { categoryCode?: number }>({
+  const [form, setForm] = useState<
+    CourseRequestDTO & { categoryCode?: number }
+  >({
     title: initialData.title || '',
     description: initialData.description || '',
     price: initialData.price ? Number(initialData.price) : 0,
     level: initialData.level ? initialData.level.toUpperCase() : '',
     categoryCode:
-      (initialData as any).categoryCode && (initialData as any).categoryCode !== 0 
-        ? (initialData as any).categoryCode 
+      (initialData as any).categoryCode &&
+      (initialData as any).categoryCode !== 0
+        ? (initialData as any).categoryCode
         : undefined,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -55,9 +58,6 @@ export function CourseBasicInfoForm({
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const { courseLevels, isLoadingLevels } = useCourseMeta()
-  
-
-
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -85,12 +85,12 @@ export function CourseBasicInfoForm({
           description: initialData.description || '',
           price: initialData.price ? Number(initialData.price) : 0,
           level: initialData.level ? initialData.level.toUpperCase() : '',
-          categoryCode: (initialData as any)?.categoryCode && (initialData as any)?.categoryCode !== 0 
-            ? (initialData as any)?.categoryCode 
-            : undefined,
+          categoryCode:
+            (initialData as any)?.categoryCode &&
+            (initialData as any)?.categoryCode !== 0
+              ? (initialData as any)?.categoryCode
+              : undefined,
         }
-
-        
 
         // Only update if data actually changed to prevent infinite loops
         if (JSON.stringify(prev) !== JSON.stringify(newForm)) {
@@ -112,7 +112,7 @@ export function CourseBasicInfoForm({
     // Ensure categoryCode has a valid value before passing to parent
     const formData: CourseRequestDTO = {
       ...form,
-      categoryCode: form.categoryCode || 0
+      categoryCode: form.categoryCode || 0,
     }
     onDataChange(formData)
   }, [form, onDataChange])
@@ -187,12 +187,15 @@ export function CourseBasicInfoForm({
   // Function to validate all fields (for submit)
   const validateAllFields = () => {
     // Mark all fields as touched
-    const allTouched = Object.keys(form).reduce((acc, key) => {
-      acc[key] = true
-      return acc
-    }, {} as Record<string, boolean>)
+    const allTouched = Object.keys(form).reduce(
+      (acc, key) => {
+        acc[key] = true
+        return acc
+      },
+      {} as Record<string, boolean>
+    )
     setTouched(allTouched)
-    
+
     return validateForm(true)
   }
 
@@ -333,16 +336,17 @@ export function CourseBasicInfoForm({
                 disabled={isLoadingLevels}
               >
                 <SelectTrigger className={errors.level ? 'border-red-500' : ''}>
-                  <SelectValue 
+                  <SelectValue
                     placeholder={
-                      isLoadingLevels 
-                        ? 'Loading levels...' 
+                      isLoadingLevels
+                        ? 'Loading levels...'
                         : 'Select course level'
-                    } 
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(courseLevels).length === 0 && !isLoadingLevels ? (
+                  {Object.keys(courseLevels).length === 0 &&
+                  !isLoadingLevels ? (
                     // Fallback levels if API fails
                     <>
                       <SelectItem value='BEGINNER'>
@@ -358,12 +362,12 @@ export function CourseBasicInfoForm({
                   ) : (
                     Object.entries(courseLevels).map(([key, value]) => (
                       <SelectItem key={key} value={key}>
-                        <Badge 
+                        <Badge
                           variant={
-                            key === 'BEGINNER' 
-                              ? 'secondary' 
-                              : key === 'INTERMEDIATE' 
-                                ? 'default' 
+                            key === 'BEGINNER'
+                              ? 'secondary'
+                              : key === 'INTERMEDIATE'
+                                ? 'default'
                                 : 'destructive'
                           }
                         >
@@ -393,8 +397,14 @@ export function CourseBasicInfoForm({
                 </Tooltip>
               </div>
               <Select
-                value={form.categoryCode && form.categoryCode !== 0 ? form.categoryCode.toString() : ''}
-                onValueChange={value => handleChange('categoryCode', parseInt(value))}
+                value={
+                  form.categoryCode && form.categoryCode !== 0
+                    ? form.categoryCode.toString()
+                    : ''
+                }
+                onValueChange={value =>
+                  handleChange('categoryCode', parseInt(value))
+                }
                 disabled={loadingCategories}
               >
                 <SelectTrigger
@@ -432,20 +442,18 @@ export function CourseBasicInfoForm({
               {errors.categoryCode && (
                 <p className='text-xs text-red-500'>{errors.categoryCode}</p>
               )}
-                            {loadingCategories && (
+              {loadingCategories && (
                 <p className='text-xs text-blue-600'>
                   Loading available categories...
                 </p>
               )}
             </div>
           </div>
-          
+
           {/* Loading indicator for levels */}
           {isLoadingLevels && (
             <div className='text-center'>
-              <p className='text-xs text-blue-600'>
-                Loading course levels...
-              </p>
+              <p className='text-xs text-blue-600'>Loading course levels...</p>
             </div>
           )}
         </CardContent>

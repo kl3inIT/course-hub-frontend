@@ -3,6 +3,8 @@ export interface EnrollmentStatusResponseDTO {
   completed: boolean
   enrollDate?: string
   progress: number
+  canAccess?: boolean
+  accessReason?: string
 }
 
 export interface EnrollmentResponseDTO {

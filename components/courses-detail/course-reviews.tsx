@@ -187,7 +187,10 @@ export function CourseReviews({
 
       {/* Write Review Component for Enrolled Students */}
       {isEnrolled && (
-        <WriteReview courseId={courseId} onReviewSubmitted={handleReviewSubmitted} />
+        <WriteReview
+          courseId={courseId}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
       )}
 
       <div className='space-y-4'>

@@ -4,41 +4,48 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 // List of endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
-  // Auth endpoints
+  // ========== AUTH ENDPOINTS (Public) ==========
   '/api/auth/login',
-  '/api/auth/register',
   '/api/auth/register/init',
+  '/api/auth/register/verify',
   '/api/auth/register/re-send-otp',
   '/api/auth/forgot-password/send-otp',
-  '/api/auth/forgot-password/reset-password',
   '/api/auth/forgot-password/verify-otp',
-  '/api/auth/verify-email',
-  '/api/auth/verify-email/resend-otp',
-  '/api/auth/verify-email/verify-otp',
-  '/api/auth/verify-email/reset-password',
-  '/api/auth/verify-email/verify-email',
+  '/api/auth/forgot-password/reset-password',
   '/api/auth/google-login-url',
-  '/api/auth/logout',
+  '/api/auth/google/callback',
+  '/api/auth/logout', // Can be called without token
 
-  // Course endpoints
+  // ========== COURSE ENDPOINTS (Public - Browse/Search) ==========
   '/api/courses/search',
   '/api/courses/featured',
-  '/api/courses/categories',
   '/api/courses/search/advanced-search',
   '/api/courses/search/stats',
+  '/api/courses/levels/levels',
+  '/api/courses/status/statuses',
+  // Individual course details are public for browsing
+  { url: '/api/courses/', method: 'GET' }, // Matches /api/courses/{id}
 
-  // Category endpoints
+  // ========== CATEGORY ENDPOINTS (Public) ==========
   '/api/categories',
-  '/api/categories/chart',
-  '/api/categories/details',
 
-  // Review endpoints - only GET method is public
+  // ========== REVIEW ENDPOINTS (Public - Read Only) ==========
   { url: '/api/reviews', method: 'GET' },
-  
-  // Public course meta endpoints
-  '/api/courses/levels',
-  '/api/courses/statuses',
+  { url: '/api/reviews/', method: 'GET' }, // Matches /api/reviews/{id}
 ]
+
+// All other endpoints require authentication, including:
+// - User profile management (/api/users/*)
+// - Course enrollment (/api/enrollments/*)
+// - Payment processing (/api/payments/*)
+// - Progress tracking (/api/progress/*)
+// - Notifications (/api/notifications/*)
+// - Comments (/api/comments/*)
+// - Admin functions (/api/admin/*)
+// - Analytics (/api/analytics/*)
+// - Discount/Coupon management (/api/discounts/*)
+// - Course creation/management (POST/PUT/DELETE to /api/courses/*)
+// - Review creation/management (POST/PUT/DELETE to /api/reviews/*)
 
 export const httpClient = axios.create({
   baseURL: BASE_URL,
@@ -56,8 +63,12 @@ httpClient.interceptors.request.use(
       if (typeof endpoint === 'string') {
         return config.url?.includes(endpoint)
       } else {
-        return config.url?.includes(endpoint.url) && 
-               config.method?.toUpperCase() === endpoint.method
+        // More precise matching for URL patterns with methods
+        const urlMatches =
+          config.url?.includes(endpoint.url) ||
+          (endpoint.url.endsWith('/') && config.url?.startsWith(endpoint.url))
+        const methodMatches = config.method?.toUpperCase() === endpoint.method
+        return urlMatches && methodMatches
       }
     })
 
@@ -85,43 +96,49 @@ httpClient.interceptors.request.use(
 // Utility methods for common HTTP operations
 export const api = {
   // GET request
-  get: <T = any>(url: string, config?: any) => 
-    httpClient.get<T>(url, config),
-    
-  // POST request  
-  post: <T = any>(url: string, data?: any, config?: any) => 
+  get: <T = any>(url: string, config?: any) => httpClient.get<T>(url, config),
+
+  // POST request
+  post: <T = any>(url: string, data?: any, config?: any) =>
     httpClient.post<T>(url, data, config),
-    
+
   // PUT request
-  put: <T = any>(url: string, data?: any, config?: any) => 
+  put: <T = any>(url: string, data?: any, config?: any) =>
     httpClient.put<T>(url, data, config),
-    
+
   // PATCH request
-  patch: <T = any>(url: string, data?: any, config?: any) => 
+  patch: <T = any>(url: string, data?: any, config?: any) =>
     httpClient.patch<T>(url, data, config),
-    
+
   // DELETE request
-  delete: <T = any>(url: string, config?: any) => 
+  delete: <T = any>(url: string, config?: any) =>
     httpClient.delete<T>(url, config),
-    
+
   // Upload file
-  upload: <T = any>(url: string, file: File | FormData, onProgress?: (progress: number) => void) => {
+  upload: <T = any>(
+    url: string,
+    file: File | FormData,
+    onProgress?: (progress: number) => void
+  ) => {
     const formData = file instanceof FormData ? file : new FormData()
     if (file instanceof File) {
       formData.append('file', file)
     }
-    
+
     return httpClient.post<T>(url, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (progressEvent) => {
+      onUploadProgress: progressEvent => {
         if (onProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          )
           onProgress(progress)
         }
-      }
+      },
     })
-  }
+  },
 }
+
 httpClient.interceptors.response.use(
   response => response,
   error => {
@@ -140,5 +157,3 @@ httpClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
-

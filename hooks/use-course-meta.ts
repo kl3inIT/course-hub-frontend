@@ -14,7 +14,9 @@ export interface UseCourseMeta {
 
 export function useCourseMeta(): UseCourseMeta {
   const [courseLevels, setCourseLevels] = useState<Record<string, string>>({})
-  const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>({})
+  const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>(
+    {}
+  )
   const [isLoadingLevels, setIsLoadingLevels] = useState(true)
   const [isLoadingStatuses, setIsLoadingStatuses] = useState(true)
   const [levelsError, setLevelsError] = useState<string | null>(null)
@@ -75,4 +77,4 @@ export function useCourseMeta(): UseCourseMeta {
     refreshLevels: loadLevels,
     refreshStatuses: loadStatuses,
   }
-} 
+}

@@ -22,12 +22,12 @@ import { DashboardCourseResponseDTO } from '@/types/course'
 import {
   Award,
   BookOpen,
-  Calendar,
   Clock,
   Download,
+  Flame,
   Play,
   Share2,
-  Trophy,
+  Trophy
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
@@ -52,6 +52,11 @@ export function StudentDashboard() {
   const [learningStreak, setLearningStreak] = useState(0)
 
   useEffect(() => {
+    // Xóa các key không cần thiết trong localStorage
+    localStorage.removeItem('lastShownStreakDate');
+    localStorage.removeItem('lastShownStreakForToast');
+    localStorage.removeItem('lastStreakToastDate');
+
     const userData = localStorage.getItem('user')
     if (userData) {
       setUser(JSON.parse(userData))
@@ -201,7 +206,7 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Enrolled Courses
             </CardTitle>
-            <BookOpen className='h-4 w-4 text-muted-foreground' />
+            <BookOpen className='h-5 w-5 text-blue-500' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{enrolledCourses.length}</div>
@@ -216,7 +221,7 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Completed Courses
             </CardTitle>
-            <Trophy className='h-4 w-4 text-muted-foreground' />
+            <Trophy className='h-5 w-5 text-yellow-500' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{completedCourses.length}</div>
@@ -229,25 +234,31 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Learning Streak
             </CardTitle>
-            <Calendar className='h-4 w-4 text-muted-foreground' />
+            <Flame className='h-5 w-5 text-orange-500' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{learningStreak} days</div>
-            <p className='text-xs text-muted-foreground'>Keep it going!</p>
+            <div className='text-2xl font-bold flex items-center gap-2'>
+              {learningStreak} days
+            </div>
+            <p className='text-xs text-muted-foreground'>
+              Keep it going!
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Study Time</CardTitle>
-            <Clock className='h-4 w-4 text-muted-foreground' />
+            <Clock className='h-5 w-5 text-purple-500' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {enrolledCourses.reduce(
-                (acc, course) => acc + course.totalDuration,
-                0
-              )}
+              {(
+                enrolledCourses.reduce(
+                  (acc, course) => acc + course.totalDuration,
+                  0
+                ) / 3600
+              ).toFixed(1)}
               h
             </div>
             <p className='text-xs text-muted-foreground'>Total duration</p>

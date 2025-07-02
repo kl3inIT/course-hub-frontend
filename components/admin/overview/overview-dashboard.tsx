@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,35 +9,34 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/hooks/use-toast'
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
   Activity,
   AlertTriangle,
-  CheckCircle,
-  RefreshCw,
-  Eye,
   ArrowUpRight,
+  CheckCircle,
+  DollarSign,
+  Eye,
+  RefreshCw,
   Shield,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 // Mock data for enhanced dashboard
 const realtimeMetrics = {
@@ -157,7 +157,7 @@ const alertsData = [
   },
 ]
 
-export function EnhancedOverviewDashboard() {
+export function OverviewDashboard() {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h')
   const [refreshing, setRefreshing] = useState(false)
   const { toast } = useToast()

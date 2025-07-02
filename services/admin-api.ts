@@ -47,12 +47,12 @@ export const adminApi = {
   // Update user status
   updateUserStatus: async (
     userId: number,
-    status: UserStatus
+    status: UserStatus,
+    reason?: string
   ): Promise<{ message: string }> => {
-    // Use query parameter instead of form data
     const response = await httpClient.put(
-      `/api/admin/users/${userId}/status?status=${encodeURIComponent(status)}`,
-      {}, // empty body
+      `/api/admin/users/${userId}/status`,
+      { status, reason },
       {
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import {
+  AggregatedReportDTO,
   GetReportsParams,
   ReportListResponse,
   ReportRequest,
@@ -57,10 +58,19 @@ export const reportApi = {
   },
 
   getResourceLocation: async (
-    id: number
+    reportId: number
   ): Promise<ApiResponse<ResourceLocationDTO>> => {
     const response = await httpClient.get(
-      `/api/reports/${id}/resource-location`
+      `/api/reports/${reportId}/resource-location`
+    )
+    return response.data
+  },
+
+  getResourceLocationByResourceId: async (
+    resourceId: number
+  ): Promise<ApiResponse<ResourceLocationDTO>> => {
+    const response = await httpClient.get(
+      `/api/reports/resource-location/${resourceId}`
     )
     return response.data
   },
@@ -69,12 +79,73 @@ export const reportApi = {
     id: number,
     data: ReportStatusRequest
   ): Promise<ApiResponse<ReportResponse>> => {
-    const response = await httpClient.patch(`/api/reports/${id}/status`, data)
+    const response = await httpClient.patch(
+      `/api/reports/resource/${id}/status`,
+      data
+    )
     return response.data
   },
 
   deleteReport: async (id: number): Promise<ApiResponse<void>> => {
     const response = await httpClient.delete(`/api/reports/${id}`)
     return response.data
+  },
+
+  getAggregatedReports: async (
+    params: GetReportsParams = {}
+  ): Promise<
+    ApiResponse<{
+      content: AggregatedReportDTO[]
+      totalElements: number
+      totalPages: number
+      size: number
+      number: number
+    }>
+  > => {
+    const {
+      page = 0,
+      size = 10,
+      sortBy = 'createdDate',
+      sortDir = 'desc',
+      type,
+      severity,
+      status,
+      search,
+    } = params
+
+    const queryParams = new URLSearchParams()
+    queryParams.append('page', page.toString())
+    queryParams.append('size', size.toString())
+    queryParams.append('sortBy', sortBy)
+    queryParams.append('sortDir', sortDir)
+    if (type) queryParams.append('type', type)
+    if (severity) queryParams.append('severity', severity)
+    if (status) queryParams.append('status', status)
+    if (search) queryParams.append('search', search)
+    if (params.resourceId) queryParams.append('resourceId', params.resourceId)
+
+    try {
+      const response = await httpClient.get(
+        `/api/reports/aggregated?${queryParams}`
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error fetching aggregated reports:', error)
+      throw error
+    }
+  },
+
+  getAggregatedReportByResourceId: async (
+    resourceId: number
+  ): Promise<ApiResponse<AggregatedReportDTO>> => {
+    try {
+      const response = await httpClient.get(
+        `/api/reports/aggregated/${resourceId}`
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error fetching aggregated report by resourceId:', error)
+      throw error
+    }
   },
 }

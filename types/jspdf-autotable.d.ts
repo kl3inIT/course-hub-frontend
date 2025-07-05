@@ -80,4 +80,4 @@ declare module 'jspdf' {
       finalY: number
     }
   }
-} 
+}

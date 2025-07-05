@@ -9,11 +9,11 @@
  */
 export const formatDateForAPI = (date: Date): string => {
   if (!date) return ''
-  
+
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  
+
   return `${year}-${month}-${day}`
 }
 
@@ -24,13 +24,13 @@ export const formatDateForAPI = (date: Date): string => {
  */
 export const formatDateForDisplay = (dateString: string): string => {
   if (!dateString) return ''
-  
+
   try {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     })
   } catch (error) {
     return dateString
@@ -42,7 +42,9 @@ export const formatDateForDisplay = (dateString: string): string => {
  * @param timeRange - Time range string (e.g., '7d', '30d', '90d', '6m', '1y')
  * @returns Object with start and end dates
  */
-export const parseTimeRange = (timeRange: string): { startDate: Date; endDate: Date } => {
+export const parseTimeRange = (
+  timeRange: string
+): { startDate: Date; endDate: Date } => {
   const endDate = new Date()
   const startDate = new Date()
 
@@ -75,7 +77,10 @@ export const parseTimeRange = (timeRange: string): { startDate: Date; endDate: D
  * @param previous - Previous value
  * @returns Growth percentage
  */
-export const calculateGrowthPercentage = (current: number, previous: number): number => {
+export const calculateGrowthPercentage = (
+  current: number,
+  previous: number
+): number => {
   if (previous === 0) return current > 0 ? 100 : 0
   return ((current - previous) / previous) * 100
 }
@@ -88,7 +93,7 @@ export const calculateGrowthPercentage = (current: number, previous: number): nu
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(amount)
 }
 
@@ -99,4 +104,4 @@ export const formatCurrency = (amount: number): string => {
  */
 export const formatNumber = (number: number): string => {
   return new Intl.NumberFormat('vi-VN').format(number)
-} 
+}

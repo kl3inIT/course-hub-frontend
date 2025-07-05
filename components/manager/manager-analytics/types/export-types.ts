@@ -1,4 +1,4 @@
-import { DateRange } from 'react-day-picker';
+import { DateRange } from 'react-day-picker'
 
 export interface ExportOptions {
   category: { checked: boolean; rowCount: number }
@@ -32,4 +32,4 @@ export interface ExportParams {
 export interface DateRangeInfo {
   exportDateRange?: DateRange
   exportTimeRange: string
-} 
+}

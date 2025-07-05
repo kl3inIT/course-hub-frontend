@@ -34,14 +34,16 @@ import {
   MessageSquare,
   RefreshCw,
   Search,
-  Star
+  Star,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export function ReviewManagement() {
   const [allReviews, setAllReviews] = useState<ReviewResponseDTO[]>([])
-  const [displayedReviews, setDisplayedReviews] = useState<ReviewResponseDTO[]>([])
+  const [displayedReviews, setDisplayedReviews] = useState<ReviewResponseDTO[]>(
+    []
+  )
   const [pagination, setPagination] = useState({
     totalElements: 0,
     totalPages: 0,
@@ -74,7 +76,7 @@ export function ReviewManagement() {
     try {
       const [totalResponse, avgResponse] = await Promise.all([
         reviewApi.getTotalReviews(),
-        reviewApi.getOverallAverageRating()
+        reviewApi.getOverallAverageRating(),
       ])
       setTotalReviews(totalResponse.data)
       setGlobalAverageRating(avgResponse.data)
@@ -87,12 +89,20 @@ export function ReviewManagement() {
     try {
       setLoading(true)
       const visibilityStatus = activeTab === 'visible' ? 0 : 1
-      const params: any = { page: 0, size: 1000, sortBy: 'modifiedDate', direction: 'DESC' }
+      const params: any = {
+        page: 0,
+        size: 1000,
+        sortBy: 'modifiedDate',
+        direction: 'DESC',
+      }
       if (ratingFilter !== 'all') params.star = parseInt(ratingFilter)
       if (categoryFilter !== 'all') params.categoryId = parseInt(categoryFilter)
       if (searchTerm.trim()) params.search = searchTerm.trim()
-      
-      const response = await reviewApi.getReviewsByVisibility(visibilityStatus, params)
+
+      const response = await reviewApi.getReviewsByVisibility(
+        visibilityStatus,
+        params
+      )
       const allData = response.data.content || []
       setAllReviews(allData)
       updateDisplayedReviews(allData, 0, rowsPerPage)
@@ -104,10 +114,14 @@ export function ReviewManagement() {
     }
   }
 
-  const updateDisplayedReviews = (data: ReviewResponseDTO[], page: number, sizeStr: string) => {
+  const updateDisplayedReviews = (
+    data: ReviewResponseDTO[],
+    page: number,
+    sizeStr: string
+  ) => {
     let paginatedData: ReviewResponseDTO[]
     let totalPages: number
-    
+
     if (sizeStr === 'all') {
       paginatedData = data
       totalPages = 1
@@ -119,7 +133,7 @@ export function ReviewManagement() {
       paginatedData = data.slice(startIndex, endIndex)
       totalPages = Math.ceil(data.length / size)
     }
-    
+
     setDisplayedReviews(paginatedData)
     setPagination({
       totalElements: data.length,
@@ -177,10 +191,17 @@ export function ReviewManagement() {
     fetchAnalytics()
   }
 
-  const handleToggleVisibility = async (reviewId: number, isCurrentlyHidden: boolean) => {
+  const handleToggleVisibility = async (
+    reviewId: number,
+    isCurrentlyHidden: boolean
+  ) => {
     try {
       await reviewApi.setReviewVisibility(reviewId, !isCurrentlyHidden)
-      toast.success(isCurrentlyHidden ? 'Review unhidden successfully!' : 'Review hidden successfully!')
+      toast.success(
+        isCurrentlyHidden
+          ? 'Review unhidden successfully!'
+          : 'Review hidden successfully!'
+      )
       fetchAllReviews()
       fetchAnalytics()
     } catch (error) {
@@ -188,20 +209,23 @@ export function ReviewManagement() {
     }
   }
 
-  const handleReport = useCallback(async (reviewId: number, reason: string, description?: string) => {
-    setIsSubmittingReport(true)
-    setTimeout(() => {
-      toast.success('Report submitted successfully!', {
-        description: 'We will review your report as soon as possible.',
-        duration: 4000,
-      })
-      setShowReport(false)
-      setReportReason('')
-      setReportDescription('')
-      setSelectedReviewId(null)
-      setIsSubmittingReport(false)
-    }, 1500)
-  }, [])
+  const handleReport = useCallback(
+    async (reviewId: number, reason: string, description?: string) => {
+      setIsSubmittingReport(true)
+      setTimeout(() => {
+        toast.success('Report submitted successfully!', {
+          description: 'We will review your report as soon as possible.',
+          duration: 4000,
+        })
+        setShowReport(false)
+        setReportReason('')
+        setReportDescription('')
+        setSelectedReviewId(null)
+        setIsSubmittingReport(false)
+      }, 1500)
+    },
+    []
+  )
 
   const handleOpenReport = (reviewId: number) => {
     setSelectedReviewId(reviewId)
@@ -218,7 +242,10 @@ export function ReviewManagement() {
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
-      <Star key={i} className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+      <Star
+        key={i}
+        className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+      />
     ))
   }
 
@@ -232,7 +259,12 @@ export function ReviewManagement() {
     <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'>
       <div className='relative flex-1'>
         <Search className='absolute left-3 top-3 h-4 w-4 text-muted-foreground' />
-        <Input placeholder='Search reviews...' value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className='pl-10' />
+        <Input
+          placeholder='Search reviews...'
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className='pl-10'
+        />
       </div>
       <Select value={ratingFilter} onValueChange={setRatingFilter}>
         <SelectTrigger className='w-full md:w-[140px]'>
@@ -254,7 +286,9 @@ export function ReviewManagement() {
         <SelectContent>
           <SelectItem value='all'>All Categories</SelectItem>
           {categories.map(cat => (
-            <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+            <SelectItem key={cat.id} value={cat.id.toString()}>
+              {cat.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -274,23 +308,41 @@ export function ReviewManagement() {
   )
 
   const renderReviewCard = (review: ReviewResponseDTO, isHidden: boolean) => (
-    <Card key={review.id} className={isHidden ? "opacity-70 border-red-200" : ""}>
+    <Card
+      key={review.id}
+      className={isHidden ? 'opacity-70 border-red-200' : ''}
+    >
       <CardHeader>
         <div className='flex items-start justify-between'>
           <div className='flex items-center space-x-3'>
             <Avatar>
-              {review.userAvatar && <AvatarImage src={review.userAvatar} alt={review.userName} />}
-              <AvatarFallback>{review.userName.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+              {review.userAvatar && (
+                <AvatarImage src={review.userAvatar} alt={review.userName} />
+              )}
+              <AvatarFallback>
+                {review.userName
+                  .split(' ')
+                  .map((n: string) => n[0])
+                  .join('')}
+              </AvatarFallback>
             </Avatar>
             <div>
               <h3 className='font-medium'>{review.userName}</h3>
-              <p className='text-sm text-muted-foreground'>{review.courseName}</p>
-              {isHidden && <span className='text-xs text-red-500 font-medium'>Hidden Review</span>}
+              <p className='text-sm text-muted-foreground'>
+                {review.courseName}
+              </p>
+              {isHidden && (
+                <span className='text-xs text-red-500 font-medium'>
+                  Hidden Review
+                </span>
+              )}
             </div>
           </div>
           <div className='flex items-center space-x-2'>
             <div className='flex'>{renderStars(review.star)}</div>
-            <span className='text-sm text-muted-foreground'>{displayDate(review.modifiedDate)}</span>
+            <span className='text-sm text-muted-foreground'>
+              {displayDate(review.modifiedDate)}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -298,11 +350,29 @@ export function ReviewManagement() {
         <div className='flex justify-between items-center'>
           <p className='text-sm mb-4 mr-4'>{review.comment}</p>
           <div className='flex gap-2'>
-            <Button variant='outline' size='sm' onClick={() => handleToggleVisibility(review.id, isHidden)}>
-              {isHidden ? (<><Eye className='mr-1 h-3 w-3' />Unhide</>) : (<><EyeOff className='mr-1 h-3 w-3' />Hide</>) }
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => handleToggleVisibility(review.id, isHidden)}
+            >
+              {isHidden ? (
+                <>
+                  <Eye className='mr-1 h-3 w-3' />
+                  Unhide
+                </>
+              ) : (
+                <>
+                  <EyeOff className='mr-1 h-3 w-3' />
+                  Hide
+                </>
+              )}
             </Button>
             {!isHidden && (
-              <Button variant='outline' size='sm' onClick={() => handleOpenReport(review.id)}>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => handleOpenReport(review.id)}
+              >
                 <Flag className='mr-1 h-3 w-3' />
                 Report
               </Button>
@@ -318,10 +388,14 @@ export function ReviewManagement() {
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-3xl font-bold'>Review Management</h1>
-          <p className='text-muted-foreground'>Manage student feedback and responses</p>
+          <p className='text-muted-foreground'>
+            Manage student feedback and responses
+          </p>
         </div>
         <Button onClick={handleRefresh} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+          />
           Refresh
         </Button>
       </div>
@@ -339,36 +413,43 @@ export function ReviewManagement() {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Average Rating</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              Average Rating
+            </CardTitle>
             <Star className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{globalAverageRating}</div>
-            <div className='flex mt-1'>{renderStars(Math.round(globalAverageRating))}</div>
+            <div className='flex mt-1'>
+              {renderStars(Math.round(globalAverageRating))}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'visible' | 'hidden')}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="visible" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
+      <Tabs
+        value={activeTab}
+        onValueChange={value => setActiveTab(value as 'visible' | 'hidden')}
+      >
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='visible' className='flex items-center gap-2'>
+            <Eye className='h-4 w-4' />
             Visible Reviews
           </TabsTrigger>
-          <TabsTrigger value="hidden" className="flex items-center gap-2">
-            <EyeOff className="h-4 w-4" />
+          <TabsTrigger value='hidden' className='flex items-center gap-2'>
+            <EyeOff className='h-4 w-4' />
             Hidden Reviews
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="visible" className="space-y-4">
+        <TabsContent value='visible' className='space-y-4'>
           {renderFilters()}
           <div className='space-y-4'>
             {displayedReviews.map(review => renderReviewCard(review, false))}
           </div>
         </TabsContent>
 
-        <TabsContent value="hidden" className="space-y-4">
+        <TabsContent value='hidden' className='space-y-4'>
           {renderFilters()}
           <div className='space-y-4'>
             {displayedReviews.map(review => renderReviewCard(review, true))}
@@ -377,16 +458,35 @@ export function ReviewManagement() {
       </Tabs>
 
       {pagination.totalElements > 0 && rowsPerPage !== 'all' && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-gray-50 rounded-lg">
-          <div className="text-sm text-gray-600">
-            Showing {pagination.number * pagination.size + 1} to {Math.min((pagination.number + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements} reviews
+        <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-gray-50 rounded-lg'>
+          <div className='text-sm text-gray-600'>
+            Showing {pagination.number * pagination.size + 1} to{' '}
+            {Math.min(
+              (pagination.number + 1) * pagination.size,
+              pagination.totalElements
+            )}{' '}
+            of {pagination.totalElements} reviews
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={pagination.number === 0 || loading} onClick={goToPreviousPage}>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={pagination.number === 0 || loading}
+              onClick={goToPreviousPage}
+            >
               Previous
             </Button>
-            <div className="text-sm text-gray-600 px-3">Page {pagination.number + 1} of {pagination.totalPages}</div>
-            <Button variant="outline" size="sm" disabled={pagination.number >= pagination.totalPages - 1 || loading} onClick={goToNextPage}>
+            <div className='text-sm text-gray-600 px-3'>
+              Page {pagination.number + 1} of {pagination.totalPages}
+            </div>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={
+                pagination.number >= pagination.totalPages - 1 || loading
+              }
+              onClick={goToNextPage}
+            >
               Next
             </Button>
           </div>
@@ -394,8 +494,10 @@ export function ReviewManagement() {
       )}
 
       {pagination.totalElements > 0 && rowsPerPage === 'all' && (
-        <div className="flex justify-center mt-6 p-4 bg-gray-50 rounded-lg">
-          <div className="text-sm text-gray-600">Showing all {pagination.totalElements} reviews</div>
+        <div className='flex justify-center mt-6 p-4 bg-gray-50 rounded-lg'>
+          <div className='text-sm text-gray-600'>
+            Showing all {pagination.totalElements} reviews
+          </div>
         </div>
       )}
 
@@ -405,7 +507,9 @@ export function ReviewManagement() {
             <MessageSquare className='mx-auto h-12 w-12 text-muted-foreground' />
             <h3 className='mt-2 text-sm font-semibold'>No reviews found</h3>
             <p className='mt-1 text-sm text-muted-foreground'>
-              {activeTab === 'visible' ? 'No visible reviews available.' : 'No hidden reviews found.'}
+              {activeTab === 'visible'
+                ? 'No visible reviews available.'
+                : 'No hidden reviews found.'}
             </p>
           </CardContent>
         </Card>
@@ -415,7 +519,9 @@ export function ReviewManagement() {
         <DialogContent className='max-w-md'>
           <DialogHeader>
             <DialogTitle>Report Review</DialogTitle>
-            <DialogDescription>Please let us know why you want to report this review</DialogDescription>
+            <DialogDescription>
+              Please let us know why you want to report this review
+            </DialogDescription>
           </DialogHeader>
           <div className='space-y-4 py-4'>
             <RadioGroup value={reportReason} onValueChange={setReportReason}>
@@ -428,13 +534,33 @@ export function ReviewManagement() {
             </RadioGroup>
             <div className='space-y-2'>
               <Label htmlFor='description'>Description (optional)</Label>
-              <Textarea id='description' value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} placeholder='Add more details about the issue...' rows={3} />
+              <Textarea
+                id='description'
+                value={reportDescription}
+                onChange={e => setReportDescription(e.target.value)}
+                placeholder='Add more details about the issue...'
+                rows={3}
+              />
             </div>
           </div>
           <div className='flex justify-end gap-3'>
-            <Button variant='outline' onClick={handleCloseReport} disabled={isSubmittingReport}>Cancel</Button>
-            <Button onClick={() => selectedReviewId && handleReport(selectedReviewId, reportReason, reportDescription)} disabled={!reportReason || isSubmittingReport}>
-              {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button
+              variant='outline'
+              onClick={handleCloseReport}
+              disabled={isSubmittingReport}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                selectedReviewId &&
+                handleReport(selectedReviewId, reportReason, reportDescription)
+              }
+              disabled={!reportReason || isSubmittingReport}
+            >
+              {isSubmittingReport && (
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              )}
               {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
             </Button>
           </div>

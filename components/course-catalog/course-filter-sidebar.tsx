@@ -17,8 +17,6 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
   levels,
   selectedLevels,
   onLevelChange,
-  minRating,
-  setMinRating,
   priceFilter,
   setPriceFilter,
   priceRange,
@@ -35,8 +33,6 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
   levels: string[]
   selectedLevels: string[]
   onLevelChange: (level: string, checked: boolean) => void
-  minRating: number | undefined
-  setMinRating: (value: number | undefined) => void
   priceFilter: string
   setPriceFilter: (value: string) => void
   priceRange: number[]
@@ -96,27 +92,7 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
           </div>
         ))}
       </div>
-      {/* Rating Filter */}
-      <div className='space-y-3'>
-        <h4 className='font-medium'>Rating</h4>
-        <Select
-          value={minRating?.toString()}
-          onValueChange={value =>
-            setMinRating(value ? Number(value) : undefined)
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder='Select minimum rating' />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='0'>Any Rating</SelectItem>
-            <SelectItem value='4'>4+ Stars</SelectItem>
-            <SelectItem value='3'>3+ Stars</SelectItem>
-            <SelectItem value='2'>2+ Stars</SelectItem>
-            <SelectItem value='1'>1+ Stars</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+
       {/* Price Filter */}
       <div className='space-y-3'>
         <h4 className='font-medium'>Price</h4>
@@ -157,8 +133,10 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
         <div className='flex items-center space-x-2'>
           <Checkbox
             id='discounted'
-            checked={isDiscounted}
-            onCheckedChange={checked => setIsDiscounted(checked as boolean)}
+            checked={isDiscounted || false}
+            onCheckedChange={checked =>
+              setIsDiscounted(checked ? true : undefined)
+            }
           />
           <label htmlFor='discounted' className='text-sm cursor-pointer'>
             Show only discounted courses

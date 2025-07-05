@@ -77,4 +77,4 @@ export const COLUMN_WIDTHS = {
     NEW_STUDENTS: 22,
     SHARE: 20,
   },
-} 
+}

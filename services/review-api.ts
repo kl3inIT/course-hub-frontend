@@ -81,8 +81,8 @@ export const reviewApi = {
       direction?: 'ASC' | 'DESC'
     }
   ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
-    const response = await httpClient.get('/api/reviews/by-visibility', { 
-      params: { visibilityStatus, ...params }
+    const response = await httpClient.get('/api/reviews/by-visibility', {
+      params: { visibilityStatus, ...params },
     })
     return response.data
   },

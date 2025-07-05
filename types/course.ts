@@ -87,7 +87,7 @@ export interface CourseSearchParams {
   // Basic pagination
   page?: number
   size?: number
-
+  
   // Search fields - match backend exactly
   searchTerm?: string // Backend: String searchTerm
   categoryId?: number // Backend: Long categoryId -> number
@@ -99,7 +99,7 @@ export interface CourseSearchParams {
   status?: string // Backend: String status
   sortBy?: string // Backend: String sortBy
   sortDirection?: string // Backend: String sortDirection
-
+  
   // Legacy fields for backward compatibility (deprecated)
   sort?: string
   search?: string

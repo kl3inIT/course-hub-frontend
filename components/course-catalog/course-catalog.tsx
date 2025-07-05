@@ -92,6 +92,8 @@ export function CourseCatalog() {
     setPriceRange(value)
   }, [])
 
+
+
   const handleIsFreeChange = useCallback((value: boolean | undefined) => {
     setIsFree(value)
   }, [])
@@ -165,14 +167,14 @@ export function CourseCatalog() {
               ? categories.find(cat => cat.name === selectedCategories[0])?.id
               : undefined,
           level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          // Fixed price filter logic
-          minPrice:
-            priceFilter === 'free'
-              ? 0
-              : priceFilter === 'paid'
-                ? Math.max(1, priceRange[0])
-                : undefined,
-          maxPrice: priceFilter === 'free' ? 0 : priceRange[1],
+          // Fix price filter logic - Only apply price filters when explicitly set
+          minPrice: 
+            priceFilter === 'free' ? 0 :
+            priceFilter === 'paid' ? Math.max(1, priceRange[0]) : 
+            undefined, // Don't filter by minPrice when 'all'
+          maxPrice: 
+            priceFilter === 'free' ? 0 : 
+            undefined, // Don't filter by maxPrice when 'all'
           isFree: priceFilter === 'free' ? true : isFree,
           isDiscounted: isDiscounted,
           sortBy:
@@ -202,14 +204,12 @@ export function CourseCatalog() {
         }
 
         // Client-side validation before sending request
-        if (
-          searchParams.minPrice &&
-          searchParams.maxPrice &&
-          searchParams.minPrice > searchParams.maxPrice
-        ) {
+        if (searchParams.minPrice && searchParams.maxPrice && searchParams.minPrice > searchParams.maxPrice) {
           setError('Minimum price cannot be greater than maximum price')
           return
         }
+
+        console.log('Search params being sent:', searchParams)
 
         // Use advancedSearch for server-side filtering
         const coursesResponse = await courseApi.advancedSearch(searchParams)
@@ -217,7 +217,7 @@ export function CourseCatalog() {
         // Lấy dữ liệu từ response có cấu trúc PagedResponse
         const { content = [], page = { totalPages: 0, totalElements: 0 } } =
           coursesResponse.data || {}
-
+        
         setCourses(content)
         setTotalPages(page.totalPages || 0)
         setTotalElements(page.totalElements || 0)

@@ -1,35 +1,39 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  PlusCircle,
-  BookOpen,
-  Users,
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  Star,
-  ArrowUpRight,
-  Activity,
-  Clock,
-  Target,
-  Home,
-  Settings,
-  Tags,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card'
+import {
+    ArrowUpRight,
+    BarChart3,
+    BookOpen,
+    DollarSign,
+    PlusCircle,
+    Settings,
+    Tags,
+    Target,
+    TrendingUp,
+    Users
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export function ManagerDashboard() {
   const router = useRouter()
 
   // Analytics data with navigation handlers
   const analyticsCards = [
+    {
+      title: 'Total Categories',
+      value: '15',
+      change: '+1 from last month',
+      icon: Settings,
+      onClick: () => router.push('/manager/categories'),
+      trend: 'up',
+    },
     {
       title: 'Total Courses',
       value: '12',
@@ -51,14 +55,6 @@ export function ManagerDashboard() {
       value: '$45,231',
       change: '+20.1% from last month',
       icon: DollarSign,
-      onClick: () => router.push('/manager/analytics'),
-      trend: 'up',
-    },
-    {
-      title: 'Course Completion',
-      value: '87%',
-      change: '+5% from last month',
-      icon: TrendingUp,
       onClick: () => router.push('/manager/analytics'),
       trend: 'up',
     },
@@ -100,38 +96,6 @@ export function ManagerDashboard() {
       icon: BarChart3,
       onClick: () => router.push('/manager/analytics'),
       variant: 'outline' as const,
-    },
-  ]
-
-  // Recent activity with navigation
-  const recentActivities = [
-    {
-      title: 'New student enrolled in "React Fundamentals"',
-      time: '2 hours ago',
-      type: 'enrollment',
-      color: 'bg-green-500',
-      onClick: () => router.push('/manager/students'),
-    },
-    {
-      title: 'Course "Advanced JavaScript" published',
-      time: '1 day ago',
-      type: 'course',
-      color: 'bg-blue-500',
-      onClick: () => router.push('/manager/courses'),
-    },
-    {
-      title: 'Review received for "CSS Mastery"',
-      time: '3 days ago',
-      type: 'review',
-      color: 'bg-yellow-500',
-      onClick: () => router.push('/manager/reviews'),
-    },
-    {
-      title: 'Monthly revenue target achieved',
-      time: '1 week ago',
-      type: 'milestone',
-      color: 'bg-purple-500',
-      onClick: () => router.push('/manager/analytics'),
     },
   ]
 
@@ -184,78 +148,32 @@ export function ManagerDashboard() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-        {/* Quick Actions */}
-        <Card className='lg:col-span-2'>
+      {/* Statistics Charts */}
+      <div className='grid gap-6 md:grid-cols-2 mt-8'>
+        <Card className='w-full h-full'>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
-              <Activity className='h-5 w-5' />
-              Quick Actions
+              <DollarSign className='h-5 w-5' />
+              Revenue Chart
             </CardTitle>
-            <CardDescription>Common tasks and shortcuts</CardDescription>
-          </CardHeader>
-          <CardContent className='grid gap-4 sm:grid-cols-2'>
-            {quickActions.map((action, index) => (
-              <Button
-                key={index}
-                variant={action.variant}
-                onClick={action.onClick}
-                className='h-auto p-4 justify-start flex-col items-start gap-2'
-              >
-                <div className='flex items-center gap-2 w-full'>
-                  <action.icon className='h-4 w-4' />
-                  <span className='font-medium'>{action.title}</span>
-                  <ArrowUpRight className='h-3 w-3 ml-auto opacity-50' />
-                </div>
-                <span className='text-xs text-muted-foreground text-left'>
-                  {action.description}
-                </span>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Clock className='h-5 w-5' />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Latest updates and notifications</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='space-y-4'>
-              {recentActivities.map((activity, index) => (
-                <div
-                  key={index}
-                  className='flex items-start space-x-4 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors'
-                  onClick={activity.onClick}
-                >
-                  <div
-                    className={`w-2 h-2 ${activity.color} rounded-full mt-2 flex-shrink-0`}
-                  ></div>
-                  <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-medium leading-tight'>
-                      {activity.title}
-                    </p>
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      {activity.time}
-                    </p>
-                  </div>
-                  <ArrowUpRight className='h-3 w-3 text-muted-foreground opacity-50 flex-shrink-0 mt-1' />
+            <div className='w-full h-64 md:h-72 flex items-center'>
+              <RevenueLineChart />
                 </div>
-              ))}
+          </CardContent>
+        </Card>
+        <Card className='w-full h-full'>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <BarChart3 className='h-5 w-5' />
+              New Courses Chart
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='w-full h-64 md:h-72 flex items-center'>
+              <NewCoursesBarChart />
             </div>
-            <Button
-              variant='ghost'
-              className='w-full mt-4 justify-center gap-2'
-              onClick={() => router.push('/manager/analytics')}
-            >
-              View All Activity
-              <ArrowUpRight className='h-4 w-4' />
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -287,13 +205,9 @@ export function ManagerDashboard() {
                 <div key={index} className='flex items-center justify-between'>
                   <div>
                     <p className='font-medium'>{course.name}</p>
-                    <p className='text-sm text-muted-foreground'>
-                      {course.students} students
-                    </p>
                   </div>
                   <div className='flex items-center gap-1'>
-                    <Star className='h-4 w-4 fill-yellow-400 text-yellow-400' />
-                    <span className='text-sm font-medium'>{course.rating}</span>
+                    <span className='text-sm text-muted-foreground'>{course.students} students</span>
                   </div>
                 </div>
               ))}
@@ -338,5 +252,117 @@ export function ManagerDashboard() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// RevenueLineChart: SVG line chart responsive
+function RevenueLineChart() {
+  // Dữ liệu mẫu: doanh thu từng tháng
+  const data = [1200, 2100, 1800, 2500, 3000, 2800, 3500, 4000, 3700, 4200, 3900, 4500]
+  const max = Math.max(...data)
+  const min = Math.min(...data)
+  const padding = 32
+  const w = 600
+  const h = 200
+  const points = data.map((v, i) => {
+    const x = padding + (i * (w - 2 * padding)) / (data.length - 1)
+    const y = h - padding - ((v - min) / (max - min)) * (h - 2 * padding)
+    return [x, y]
+  })
+  const path = points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(' ')
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+      {/* Đường biểu đồ */}
+      <polyline
+        fill="none"
+        stroke="#222"
+        strokeWidth="3"
+        points={points.map(([x, y]) => `${x},${y}`).join(' ')}
+      />
+      {/* Chấm tròn từng mốc */}
+      {points.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="5" fill="#222" />
+      ))}
+      {/* Trục X (tháng) */}
+      {data.map((_, i) => {
+        const x = padding + (i * (w - 2 * padding)) / (data.length - 1)
+        return (
+          <text
+            key={i}
+            x={x}
+            y={h - padding + 18}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#888"
+          >
+            {i + 1}
+          </text>
+        )
+      })}
+      {/* Trục Y (giá trị) */}
+      <text x={padding - 10} y={padding} fontSize="12" fill="#888" textAnchor="end">{max}</text>
+      <text x={padding - 10} y={h - padding} fontSize="12" fill="#888" textAnchor="end">{min}</text>
+    </svg>
+  )
+}
+
+// NewCoursesBarChart: SVG bar chart responsive
+function NewCoursesBarChart() {
+  // Dữ liệu mẫu: số khoá học mới từng tháng
+  const data = [3, 5, 2, 6, 4, 7, 8, 5, 6, 9, 4, 7]
+  const max = Math.max(...data)
+  const padding = 32
+  const w = 600
+  const h = 200
+  const barWidth = (w - 2 * padding) / data.length - 8
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+      {/* Cột */}
+      {data.map((v, i) => {
+        const x = padding + i * ((w - 2 * padding) / data.length)
+        const y = h - padding - (v / max) * (h - 2 * padding)
+        const barH = (v / max) * (h - 2 * padding)
+        return (
+          <g key={i}>
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barH}
+              fill="#222"
+              rx="4"
+            />
+            <text
+              x={x + barWidth / 2}
+              y={y - 6}
+              textAnchor="middle"
+              fontSize="12"
+              fill="#222"
+            >
+              {v}
+            </text>
+          </g>
+        )
+      })}
+      {/* Trục X (tháng) */}
+      {data.map((_, i) => {
+        const x = padding + i * ((w - 2 * padding) / data.length) + barWidth / 2
+        return (
+          <text
+            key={i}
+            x={x}
+            y={h - padding + 18}
+            textAnchor="middle"
+            fontSize="12"
+            fill="#888"
+          >
+            {i + 1}
+          </text>
+        )
+      })}
+      {/* Trục Y (giá trị) */}
+      <text x={padding - 10} y={padding} fontSize="12" fill="#888" textAnchor="end">{max}</text>
+      <text x={padding - 10} y={h - padding} fontSize="12" fill="#888" textAnchor="end">0</text>
+    </svg>
   )
 }

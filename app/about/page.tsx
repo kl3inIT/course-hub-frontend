@@ -1,48 +1,54 @@
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Users,
-  Target,
   Award,
-  Heart,
   BookOpen,
   Globe,
+  Heart,
   Lightbulb,
   Shield,
+  Target,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AboutPage() {
   const teamMembers = [
     {
-      name: 'Sarah Johnson',
+      name: 'Nguyen Duc Anh',
       role: 'CEO & Founder',
       image: '/placeholder.svg?height=200&width=200',
       description:
         'Former tech executive with 15+ years in education technology.',
     },
     {
-      name: 'Michael Chen',
+      name: 'Nhu Dinh Nhat',
       role: 'CTO',
       image: '/placeholder.svg?height=200&width=200',
       description:
         'Full-stack developer passionate about creating seamless learning experiences.',
     },
     {
-      name: 'Emily Rodriguez',
+      name: 'Nhu Xuan Viet',
       role: 'Head of Content',
       image: '/placeholder.svg?height=200&width=200',
       description:
         'Educational expert with a background in curriculum development.',
     },
     {
-      name: 'David Kim',
+      name: 'Pham Nhat Anh',
       role: 'Lead Designer',
       image: '/placeholder.svg?height=200&width=200',
       description:
         'UX/UI designer focused on making learning accessible and engaging.',
+    },
+    {
+      name: 'Phan Hong Dat',
+      role: 'Community Manager',
+      image: '/placeholder.svg?height=200&width=200',
+      description: 'Dedicated to building a vibrant and supportive learning community.',
     },
   ]
 
@@ -220,7 +226,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8'>
             {teamMembers.map((member, index) => (
               <Card
                 key={index}

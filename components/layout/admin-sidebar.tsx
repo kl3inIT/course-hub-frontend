@@ -30,6 +30,7 @@ import {
   Flag,
   Home,
   LogOut,
+  MessageSquare,
   Settings,
   Shield,
   Users,
@@ -57,6 +58,11 @@ const navigationItems = [
     title: 'Report Management',
     url: '/admin/reports',
     icon: Flag,
+  },
+  {
+    title: 'Feedback Management',
+    url: '/admin/feedback',
+    icon: MessageSquare,
   },
   {
     title: 'System Settings',

@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/context/auth-context'
+import { FeedbackDetailProvider } from '@/context/feedback-detail-context'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import type React from 'react'
@@ -21,7 +22,11 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <FeedbackDetailProvider>
+            {children}
+          </FeedbackDetailProvider>
+        </AuthProvider>
         <Toaster position='top-right' richColors closeButton />
       </body>
     </html>

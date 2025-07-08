@@ -7,6 +7,7 @@ import { TestimonialsSection } from '@/components/testimonials-section'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useFeedbackDetail } from '@/hooks'
 import { categoryApi } from '@/services/category-api'
 import { courseApi } from '@/services/course-api'
 import { CategoryResponseDTO } from '@/types/category'
@@ -18,7 +19,7 @@ import {
   Play,
   Search,
   Star,
-  Users,
+  Users
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
@@ -28,6 +29,7 @@ import { useEffect, useMemo, useState } from 'react'
 const Earth3D = dynamic(() => import('@/components/Earth3D'), { ssr: false })
 
 export default function HomePage() {
+  const { showFeedback } = useFeedbackDetail()
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>(

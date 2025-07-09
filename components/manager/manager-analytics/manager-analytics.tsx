@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyticsApi } from '@/services/analytics-api'
 import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, RevenueAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { formatDateForAPI } from '@/utils/analytics-utils'
-import { BookOpen, DollarSign, Download, Loader2, RefreshCw, Star, TrendingUp, Users } from 'lucide-react'
+import { BookOpen, DollarSign, Download, Loader2, RefreshCw, Star, Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
@@ -421,10 +421,6 @@ export function ManagerAnalytics() {
             <div className='text-2xl font-bold'>
               {totalRevenue.toLocaleString('vi-VN')} ₫
             </div>
-            <div className='flex items-center text-xs text-green-600'>
-              <TrendingUp className='mr-1 h-3 w-3' />
-              +12.5% from last period
-            </div>
           </CardContent>
         </Card>
 
@@ -439,10 +435,6 @@ export function ManagerAnalytics() {
             <div className='text-2xl font-bold'>
               {totalEnrollments.toLocaleString('en-US')}
             </div>
-            <div className='flex items-center text-xs text-green-600'>
-              <TrendingUp className='mr-1 h-3 w-3' />
-              +8.2% from last period
-            </div>
           </CardContent>
         </Card>
 
@@ -455,10 +447,6 @@ export function ManagerAnalytics() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{courseDetails.length}</div>
-            <div className='flex items-center text-xs text-green-600'>
-              <TrendingUp className='mr-1 h-3 w-3' />
-              +1 new this month
-            </div>
           </CardContent>
         </Card>
 
@@ -471,10 +459,6 @@ export function ManagerAnalytics() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{avgRating.toFixed(1)}</div>
-            <div className='flex items-center text-xs text-green-600'>
-              <TrendingUp className='mr-1 h-3 w-3' />
-              +0.2 from last period
-            </div>
           </CardContent>
         </Card>
       </div>

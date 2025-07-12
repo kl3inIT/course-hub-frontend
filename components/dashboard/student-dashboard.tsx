@@ -34,6 +34,23 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { CompletionCertificate } from './completion-certificate'
 import { CourseCard } from './course-card'
+// Thêm import cho menu share
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Copy } from 'lucide-react'
+
+// Thêm hàm chờ phần tử xuất hiện trong DOM
+function waitForElement(selector: string, timeout: number = 2000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    function check() {
+      const el = document.querySelector(selector);
+      if (el) return resolve(el);
+      if (Date.now() - start > timeout) return reject();
+      setTimeout(check, 50);
+    }
+    check();
+  });
+}
 
 export function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
@@ -47,9 +64,9 @@ export function StudentDashboard() {
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const certificateRef = useRef<HTMLDivElement>(null)
-  const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
-  const hiddenCertificateRef = useRef<HTMLDivElement>(null)
   const [learningStreak, setLearningStreak] = useState(0)
+  const [showPdfCertificate, setShowPdfCertificate] = useState(false);
+  const [pendingExport, setPendingExport] = useState(false);
 
   useEffect(() => {
     // Xóa các key không cần thiết trong localStorage
@@ -140,53 +157,73 @@ export function StudentDashboard() {
     })
   }
 
-  const handleDownloadPDF = async () => {
-    if (user && selectedCertificate) {
-      setShowHiddenCertificate(true)
-      setTimeout(async () => {
-        if (hiddenCertificateRef.current) {
-          try {
-            // Check if running in browser
-            if (typeof window === 'undefined') {
-              console.error('PDF generation is only available in the browser')
-              toast.error('PDF generation is not available')
-              return
-            }
+  // Thêm hàm tạo link chia sẻ
+  const getCertificateShareUrl = () => {
+    // Nếu có trang certificate public thì trả về link đó, tạm thời dùng trang profile hoặc trang completed course
+    if (selectedCertificate) {
+      // Ví dụ: `/profile/${user?.id}/certificate/${selectedCertificate.id}` hoặc `/courses/${selectedCertificate.title}`
+      // Ở đây dùng trang completed course
+      return `${window.location.origin}/courses/${selectedCertificate.title}`
+    }
+    return window.location.origin
+  }
 
-            // Dynamic import with proper handling for Next.js
-            const html2pdf = (await import('html2pdf.js')) as any
-            
-            const opt = {
-              margin: 0,
-              filename: `certificate-${selectedCertificate.title}.pdf`,
-              image: { type: 'jpeg', quality: 1 },
-              html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                logging: false,
-                allowTaint: true,
-                foreignObjectRendering: true
-              },
-              jsPDF: { unit: 'px', format: [1024, 724], orientation: 'landscape' as const },
-            }
-            
-            const pdfElement = document.getElementById('certificate-pdf')
-            if (pdfElement) {
-              await html2pdf().set(opt).from(pdfElement).save()
-            }
-            toast.success('Certificate downloaded successfully!')
-          } catch (error) {
-            console.error('Error generating PDF:', error)
-            toast.error('Failed to generate PDF. Please try again.')
-          }
-        }
-        setShowHiddenCertificate(false)
-      }, 200)
+  const handleShareFacebook = () => {
+    const url = encodeURIComponent(getCertificateShareUrl())
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank')
+  }
+
+  const handleShareLinkedIn = () => {
+    const url = encodeURIComponent(getCertificateShareUrl())
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank')
+  }
+
+  const handleCopyLink = async () => {
+    const url = getCertificateShareUrl()
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Link copied to clipboard!')
+    } catch {
+      toast.error('Failed to copy link')
     }
   }
 
+  const handleDownloadPDF = () => {
+    setShowPdfCertificate(true);
+    setPendingExport(true);
+  };
+
+  useEffect(() => {
+    if (pendingExport && showPdfCertificate) {
+      const exportPDF = async () => {
+        await new Promise(res => setTimeout(res, 200));
+        const pdfElement = document.getElementById('certificate-pdf');
+        if (!pdfElement) {
+          toast.error('Could not find certificate element for PDF export.');
+          setShowPdfCertificate(false);
+          setPendingExport(false);
+          return;
+        }
+        const html2pdfModule = await import('html2pdf.js');
+        const html2pdf = html2pdfModule.default || html2pdfModule;
+        const fileName = `certificate-${selectedCertificate?.title || 'course'}.pdf`;
+        const opt = {
+          margin: 0,
+          filename: fileName,
+          image: { type: 'jpeg', quality: 1 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'px', format: [1024, 724], orientation: 'landscape' as const }
+        };
+        await html2pdf().set(opt).from(pdfElement).save();
+        setShowPdfCertificate(false);
+        setPendingExport(false);
+      };
+      exportPDF();
+    }
+  }, [pendingExport, showPdfCertificate, selectedCertificate]);
+
   // Debug: log user khi render certificate ẩn
-  if (showHiddenCertificate && user) {
+  if (showCertificateModal && user) {
     console.log('DEBUG user for certificate:', user)
   }
 
@@ -455,7 +492,7 @@ export function StudentDashboard() {
                     courseTitle={selectedCertificate.title}
                     instructor={selectedCertificate.instructorName}
                     completionDate={
-                      selectedCertificate.completedDate
+                      selectedCertificate.completedDate && !isNaN(Date.parse(selectedCertificate.completedDate))
                         ? new Date(selectedCertificate.completedDate)
                         : undefined
                     }
@@ -467,10 +504,29 @@ export function StudentDashboard() {
                 </div>
               </div>
               <div className='flex justify-center gap-4 mt-0'>
-                <Button variant='outline' className='flex items-center gap-2'>
-                  <Share2 className='h-4 w-4' />
-                  Share Certificate
-                </Button>
+                {/* Dropdown menu share */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant='outline' className='flex items-center gap-2'>
+                      <Share2 className='h-4 w-4' />
+                      Share Certificate
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start'>
+                    <DropdownMenuItem onClick={handleShareFacebook}>
+                      <img src='https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg' alt='Facebook' className='h-4 w-4 mr-2' />
+                      Share on Facebook
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShareLinkedIn}>
+                      <img src='https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg' alt='LinkedIn' className='h-4 w-4 mr-2' />
+                      Share on LinkedIn
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleCopyLink}>
+                      <Copy className='h-4 w-4 mr-2' />
+                      Copy Link
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   className='flex items-center gap-2'
                   onClick={handleDownloadPDF}
@@ -490,17 +546,17 @@ export function StudentDashboard() {
       </Dialog>
 
       {/* Render certificate ẩn ngoài modal để export PDF */}
-      {showHiddenCertificate && user && selectedCertificate && (
-        <div className="fixed left-[-9999px] top-0 w-0 h-0 overflow-hidden">
+      {showPdfCertificate && selectedCertificate && (
+        <div style={{ display: 'none' }}>
           <CompletionCertificate
             courseTitle={selectedCertificate.title}
             instructor={selectedCertificate.instructorName}
             completionDate={
-              selectedCertificate.completedDate
+              selectedCertificate.completedDate && !isNaN(Date.parse(selectedCertificate.completedDate))
                 ? new Date(selectedCertificate.completedDate)
                 : undefined
             }
-            studentName={user.name || user.email || 'Student'}
+            studentName={user?.name || user?.email || 'Student'}
             certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
             elementId="certificate-pdf"
             isPdfVersion={true}

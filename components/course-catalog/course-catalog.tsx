@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -11,19 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
-import { courseApi } from '@/services/course-api'
+import { useDebounce } from '@/hooks/use-debounce'
 import { categoryApi } from '@/services/category-api'
-import { useSearchParams } from 'next/navigation'
+import { courseApi } from '@/services/course-api'
+import { CategoryResponseDTO } from '@/types/category'
 import {
   CourseResponseDTO,
-  CourseSearchStatsResponseDTO,
   CourseSearchParams,
+  CourseSearchStatsResponseDTO,
 } from '@/types/course'
-import { CategoryResponseDTO } from '@/types/category'
-import { useDebounce } from '@/hooks/use-debounce'
-import { CoursesCatalogSection } from './courses-catalog-section'
+import { ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import { CourseFilterSidebar } from './course-filter-sidebar'
+import { CoursesCatalogSection } from './courses-catalog-section'
 
 const levels = ['Beginner', 'Intermediate', 'Advanced']
 const sortOptions = [
@@ -170,21 +170,29 @@ export function CourseCatalog() {
               ? categories.find(cat => cat.name === selectedCategories[0])?.id
               : undefined,
           level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          minPrice: priceFilter === 'paid' ? priceRange[0] : undefined,
-          maxPrice: priceFilter === 'free' ? 0 : priceRange[1],
+          minPrice:
+            priceFilter === 'paid'
+              ? priceRange[0]
+              : priceFilter === 'all' && searchStats && priceRange[0] > searchStats.minPrice
+                ? priceRange[0]
+                : undefined,
+          maxPrice:
+            priceFilter === 'free'
+              ? 0
+              : priceFilter === 'all' && searchStats && priceRange[1] < searchStats.maxPrice
+                ? priceRange[1]
+                : undefined,
           minRating: minRating,
           isFree: isFree,
           isDiscounted: isDiscounted,
           sortBy:
-            sortBy === 'price-low'
+            sortBy === 'price-low' || sortBy === 'price-high'
               ? 'price'
-              : sortBy === 'price-high'
-                ? 'price'
-                : sortBy === 'newest'
-                  ? 'createdDate'
-                  : sortBy === 'rating'
-                    ? 'averageRating'
-                    : undefined,
+              : sortBy === 'newest'
+                ? 'createdDate'
+                : sortBy === 'rating'
+                  ? 'averageRating'
+                  : undefined,
           sortDirection:
             sortBy === 'price-low'
               ? 'asc'

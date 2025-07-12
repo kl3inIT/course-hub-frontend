@@ -1,11 +1,11 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { DashboardCourseResponseDTO } from '@/types/course'
@@ -24,6 +24,7 @@ export function CourseCard({
   onViewCertificate,
 }: CourseCardProps) {
   const formatDate = (dateString: string) => {
+    if (!dateString || isNaN(Date.parse(dateString))) return 'Not available';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',

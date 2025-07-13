@@ -3,23 +3,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { categoryApi } from '@/services/category-api'
@@ -28,16 +16,7 @@ import { reviewApi } from '@/services/review-api'
 import { CategoryResponseDTO } from '@/types/category'
 import { CourseResponseDTO } from '@/types/course'
 import { ReviewResponseDTO } from '@/types/review'
-import {
-  Eye,
-  EyeOff,
-  Flag,
-  Loader2,
-  MessageSquare,
-  RefreshCw,
-  Search,
-  Star
-} from 'lucide-react'
+import { Eye, EyeOff, Flag, Loader2, MessageSquare, RefreshCw, Search, Star } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -301,6 +280,7 @@ export function ReviewManagement() {
             onChange={e => setSearchTerm(e.target.value)} 
             onKeyPress={handleSearchKeyPress}
             className='pl-10' 
+            maxLength={100}
           />
         </div>
         <Button variant='outline' onClick={handleSearch} disabled={loading} className='px-4'>

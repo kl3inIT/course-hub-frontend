@@ -68,6 +68,7 @@ export function CategoryManagement() {
   const [totalCourses, setTotalCourses] = useState(0)
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchInput, setSearchInput] = useState('') // input field value
   const [currentPage, setCurrentPage] = useState(0)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -160,21 +161,16 @@ export function CategoryManagement() {
 
   // Handle search
   useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm.trim()) {
-        const filtered = allCategories.filter(cat => 
-          cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cat.description.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        setFilteredCategories(filtered)
-      } else {
-        setFilteredCategories(allCategories)
-      }
-      // Reset to first page when search changes
-      setCurrentPage(0)
-    }, 300)
-
-    return () => clearTimeout(delayedSearch)
+    if (searchTerm.trim()) {
+      const filtered = allCategories.filter(cat => 
+        cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cat.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredCategories(filtered)
+    } else {
+      setFilteredCategories(allCategories)
+    }
+    setCurrentPage(0)
   }, [searchTerm, allCategories])
 
   const handlePageChange = (newPage: number) => {
@@ -186,11 +182,17 @@ export function CategoryManagement() {
     if (!newCategory.name.trim()) {
       setNameError('Please enter a category name')
       hasError = true
+    } else if (newCategory.name.length > 30) {
+      setNameError('Category name must not exceed 30 characters')
+      hasError = true
     } else {
       setNameError('')
     }
     if (!newCategory.description.trim()) {
       setDescriptionError('Please enter a category description')
+      hasError = true
+    } else if (newCategory.description.length > 200) {
+      setDescriptionError('Description must not exceed 200 characters')
       hasError = true
     } else {
       setDescriptionError('')
@@ -217,13 +219,19 @@ export function CategoryManagement() {
   const handleEditCategory = async () => {
     let hasError = false
     if (!newCategory.name.trim()) {
-      setEditNameError('Please enter category name')
+      setEditNameError('Please enter a category name')
+      hasError = true
+    } else if (newCategory.name.length > 30) {
+      setEditNameError('Category name must not exceed 30 characters')
       hasError = true
     } else {
       setEditNameError('')
     }
     if (!newCategory.description.trim()) {
-      setEditDescriptionError('Please enter category description')
+      setEditDescriptionError('Please enter a category description')
+      hasError = true
+    } else if (newCategory.description.length > 200) {
+      setEditDescriptionError('Description must not exceed 200 characters')
       hasError = true
     } else {
       setEditDescriptionError('')
@@ -388,9 +396,16 @@ export function CategoryManagement() {
                     id='category-name'
                     placeholder='Enter category name'
                     value={newCategory.name}
+                    maxLength={30}
                     onChange={e => {
                       setNewCategory({ ...newCategory, name: e.target.value })
-                      if (e.target.value.trim()) setNameError('')
+                      if (e.target.value.length > 30) {
+                        setNameError('Category name must not exceed 30 characters')
+                      } else if (!e.target.value.trim()) {
+                        setNameError('Please enter a category name')
+                      } else {
+                        setNameError('')
+                      }
                     }}
                     onBlur={() => {
                       setNameTouched(true)
@@ -398,6 +413,9 @@ export function CategoryManagement() {
                         setNameError('Please enter a category name')
                     }}
                   />
+                  <p className='text-xs text-muted-foreground text-right'>
+                    {newCategory.name.length}/30
+                  </p>
                   {nameTouched && nameError && (
                     <p className='text-red-500 text-xs mt-1'>{nameError}</p>
                   )}
@@ -408,12 +426,19 @@ export function CategoryManagement() {
                     id='category-description'
                     placeholder='Enter category description'
                     value={newCategory.description}
+                    maxLength={200}
                     onChange={e => {
                       setNewCategory({
                         ...newCategory,
                         description: e.target.value,
                       })
-                      if (e.target.value.trim()) setDescriptionError('')
+                      if (e.target.value.length > 200) {
+                        setDescriptionError('Description must not exceed 200 characters')
+                      } else if (!e.target.value.trim()) {
+                        setDescriptionError('Please enter a category description')
+                      } else {
+                        setDescriptionError('')
+                      }
                     }}
                     onBlur={() => {
                       setDescriptionTouched(true)
@@ -424,6 +449,9 @@ export function CategoryManagement() {
                     }}
                     rows={3}
                   />
+                  <p className='text-xs text-muted-foreground text-right'>
+                    {newCategory.description.length}/200
+                  </p>
                   {descriptionTouched && descriptionError && (
                     <p className='text-red-500 text-xs mt-1'>
                       {descriptionError}
@@ -486,15 +514,36 @@ export function CategoryManagement() {
         </CardHeader>
         <CardContent>
           {/* Search */}
-          <div className='flex items-center gap-4 mb-6'>
-            <div className='relative flex-1 max-w-sm'>
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4' />
-              <Input
-                placeholder='Search categories...'
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className='pl-10'
-              />
+          <div className='flex items-center mb-6 gap-4'>
+            <div className='flex flex-col flex-1 max-w-sm'>
+              <div className='relative flex items-center'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4 pointer-events-none' />
+                <Input
+                  placeholder='Search categories...'
+                  value={searchInput}
+                  maxLength={100}
+                  onChange={e => {
+                    if (e.target.value.length <= 100) {
+                      setSearchInput(e.target.value)
+                    }
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      setSearchTerm(searchInput)
+                    }
+                  }}
+                  className='pl-10 pr-4 h-10'
+                />
+                <button
+                  type='button'
+                  onClick={() => setSearchTerm(searchInput)}
+                  className='ml-2 flex items-center justify-center h-10 w-10 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors'
+                  tabIndex={0}
+                >
+                  <Search className='h-5 w-5' />
+                </button>
+              </div>
+              <span className='text-xs text-muted-foreground text-right mt-1'>{searchInput.length}/100</span>
             </div>
             <div className='text-sm text-muted-foreground'>
               {searchTerm ? `${filteredCategories.length} of ${allCategories.length} categories` : `${filteredCategories.length} categories total`}
@@ -680,16 +729,26 @@ export function CategoryManagement() {
                 id='edit-category-name'
                 placeholder='Enter category name'
                 value={newCategory.name}
+                maxLength={30}
                 onChange={e => {
                   setNewCategory({ ...newCategory, name: e.target.value })
-                  if (e.target.value.trim()) setEditNameError('')
+                  if (e.target.value.length > 30) {
+                    setEditNameError('Category name must not exceed 30 characters')
+                  } else if (!e.target.value.trim()) {
+                    setEditNameError('Please enter a category name')
+                  } else {
+                    setEditNameError('')
+                  }
                 }}
                 onBlur={() => {
                   setEditNameTouched(true)
                   if (!newCategory.name.trim())
-                    setEditNameError('Please enter category name')
+                    setEditNameError('Please enter a category name')
                 }}
               />
+              <p className='text-xs text-muted-foreground text-right'>
+                {newCategory.name.length}/30
+              </p>
               {editNameTouched && editNameError && (
                 <p className='text-red-500 text-xs mt-1'>{editNameError}</p>
               )}
@@ -700,20 +759,30 @@ export function CategoryManagement() {
                 id='edit-category-description'
                 placeholder='Enter category description'
                 value={newCategory.description}
+                maxLength={200}
                 onChange={e => {
                   setNewCategory({
                     ...newCategory,
                     description: e.target.value,
                   })
-                  if (e.target.value.trim()) setEditDescriptionError('')
+                  if (e.target.value.length > 200) {
+                    setEditDescriptionError('Description must not exceed 200 characters')
+                  } else if (!e.target.value.trim()) {
+                    setEditDescriptionError('Please enter a category description')
+                  } else {
+                    setEditDescriptionError('')
+                  }
                 }}
                 onBlur={() => {
                   setEditDescriptionTouched(true)
                   if (!newCategory.description.trim())
-                    setEditDescriptionError('Please enter category description')
+                    setEditDescriptionError('Please enter a category description')
                 }}
                 rows={3}
               />
+              <p className='text-xs text-muted-foreground text-right'>
+                {newCategory.description.length}/200
+              </p>
               {editDescriptionTouched && editDescriptionError && (
                 <p className='text-red-500 text-xs mt-1'>
                   {editDescriptionError}

@@ -19,17 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -38,7 +28,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Textarea } from '@/components/ui/textarea'
 import { categoryApi } from '@/services/category-api'
 import {
   CategoryRequestDTO,
@@ -129,7 +118,10 @@ export function CategoryManagement() {
       
       console.log('API Response:', response)
       
-      const categoriesData = response.data.content || response.data
+      const categoriesData = (response.data.content || response.data).map((c: any) => ({
+        ...c,
+        id: c.id?.toString(),
+      }))
       setAllCategories(categoriesData)
       setFilteredCategories(categoriesData)
       setCategories(categoriesData)
@@ -240,7 +232,7 @@ export function CategoryManagement() {
     if (!selectedCategory) return
     try {
       await categoryApi.updateCategory(
-        selectedCategory.id.toString(),
+        Number(selectedCategory.id),
         newCategory
       )
       setNewCategory({ name: '', description: '' })
@@ -353,130 +345,13 @@ export function CategoryManagement() {
             />
             Refresh
           </Button>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={open => {
-              setIsCreateDialogOpen(open)
-              if (open) {
-                setNewCategory({ name: '', description: '' })
-                setNameError('')
-                setDescriptionError('')
-                setNameTouched(false)
-                setDescriptionTouched(false)
-              } else {
-                setNameError('')
-                setDescriptionError('')
-                setNewCategory({ name: '', description: '' })
-                setNameTouched(false)
-                setDescriptionTouched(false)
-              }
-            }}
+          <Button
+            className='gap-2'
+            onClick={() => router.push('/manager/categories/add')}
           >
-            <DialogTrigger asChild>
-              <Button className='gap-2'>
-                <Plus className='h-4 w-4' />
-                Add Category
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              key={
-                isCreateDialogOpen ? 'add-category-open' : 'add-category-closed'
-              }
-            >
-              <DialogHeader>
-                <DialogTitle>Create New Category</DialogTitle>
-                <DialogDescription>
-                  Add a new category to organize your courses better.
-                </DialogDescription>
-              </DialogHeader>
-              <div className='space-y-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='category-name'>Category Name</Label>
-                  <Input
-                    id='category-name'
-                    placeholder='Enter category name'
-                    value={newCategory.name}
-                    maxLength={30}
-                    onChange={e => {
-                      setNewCategory({ ...newCategory, name: e.target.value })
-                      if (e.target.value.length > 30) {
-                        setNameError('Category name must not exceed 30 characters')
-                      } else if (!e.target.value.trim()) {
-                        setNameError('Please enter a category name')
-                      } else {
-                        setNameError('')
-                      }
-                    }}
-                    onBlur={() => {
-                      setNameTouched(true)
-                      if (!newCategory.name.trim())
-                        setNameError('Please enter a category name')
-                    }}
-                  />
-                  <p className='text-xs text-muted-foreground text-right'>
-                    {newCategory.name.length}/30
-                  </p>
-                  {nameTouched && nameError && (
-                    <p className='text-red-500 text-xs mt-1'>{nameError}</p>
-                  )}
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='category-description'>Description</Label>
-                  <Textarea
-                    id='category-description'
-                    placeholder='Enter category description'
-                    value={newCategory.description}
-                    maxLength={200}
-                    onChange={e => {
-                      setNewCategory({
-                        ...newCategory,
-                        description: e.target.value,
-                      })
-                      if (e.target.value.length > 200) {
-                        setDescriptionError('Description must not exceed 200 characters')
-                      } else if (!e.target.value.trim()) {
-                        setDescriptionError('Please enter a category description')
-                      } else {
-                        setDescriptionError('')
-                      }
-                    }}
-                    onBlur={() => {
-                      setDescriptionTouched(true)
-                      if (!newCategory.description.trim())
-                        setDescriptionError(
-                          'Please enter a category description'
-                        )
-                    }}
-                    rows={3}
-                  />
-                  <p className='text-xs text-muted-foreground text-right'>
-                    {newCategory.description.length}/200
-                  </p>
-                  {descriptionTouched && descriptionError && (
-                    <p className='text-red-500 text-xs mt-1'>
-                      {descriptionError}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant='outline'
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateCategory}
-                  disabled={
-                    !newCategory.name.trim() || !newCategory.description.trim()
-                  }
-                >
-                  Create Category
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            <Plus className='h-4 w-4' />
+            Add category
+          </Button>
         </div>
       </div>
 
@@ -631,8 +506,8 @@ export function CategoryManagement() {
                           variant='ghost'
                           size='icon'
                           onClick={e => {
-                            e.stopPropagation()
-                            openEditDialog(category)
+                            e.stopPropagation();
+                            router.push(`/manager/categories/${category.id}/edit`);
                           }}
                           title='Edit'
                           className='hover:bg-blue-100 hover:text-blue-600'
@@ -698,124 +573,6 @@ export function CategoryManagement() {
           )}
         </CardContent>
       </Card>
-
-      {/* Edit Dialog */}
-      <Dialog
-        open={isEditDialogOpen}
-        onOpenChange={open => {
-          setIsEditDialogOpen(open)
-          if (!open) {
-            // Khi dialog đóng, reset newCategory và các lỗi/touched state
-            setNewCategory({ name: '', description: '' })
-            setSelectedCategory(null) // Đảm bảo selectedCategory cũng được reset
-            setEditNameError('')
-            setEditDescriptionError('')
-            setEditNameTouched(false)
-            setEditDescriptionTouched(false)
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>
-              Update the category information.
-            </DialogDescription>
-          </DialogHeader>
-          <div className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='edit-category-name'>Category Name</Label>
-              <Input
-                id='edit-category-name'
-                placeholder='Enter category name'
-                value={newCategory.name}
-                maxLength={30}
-                onChange={e => {
-                  setNewCategory({ ...newCategory, name: e.target.value })
-                  if (e.target.value.length > 30) {
-                    setEditNameError('Category name must not exceed 30 characters')
-                  } else if (!e.target.value.trim()) {
-                    setEditNameError('Please enter a category name')
-                  } else {
-                    setEditNameError('')
-                  }
-                }}
-                onBlur={() => {
-                  setEditNameTouched(true)
-                  if (!newCategory.name.trim())
-                    setEditNameError('Please enter a category name')
-                }}
-              />
-              <p className='text-xs text-muted-foreground text-right'>
-                {newCategory.name.length}/30
-              </p>
-              {editNameTouched && editNameError && (
-                <p className='text-red-500 text-xs mt-1'>{editNameError}</p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='edit-category-description'>Description</Label>
-              <Textarea
-                id='edit-category-description'
-                placeholder='Enter category description'
-                value={newCategory.description}
-                maxLength={200}
-                onChange={e => {
-                  setNewCategory({
-                    ...newCategory,
-                    description: e.target.value,
-                  })
-                  if (e.target.value.length > 200) {
-                    setEditDescriptionError('Description must not exceed 200 characters')
-                  } else if (!e.target.value.trim()) {
-                    setEditDescriptionError('Please enter a category description')
-                  } else {
-                    setEditDescriptionError('')
-                  }
-                }}
-                onBlur={() => {
-                  setEditDescriptionTouched(true)
-                  if (!newCategory.description.trim())
-                    setEditDescriptionError('Please enter a category description')
-                }}
-                rows={3}
-              />
-              <p className='text-xs text-muted-foreground text-right'>
-                {newCategory.description.length}/200
-              </p>
-              {editDescriptionTouched && editDescriptionError && (
-                <p className='text-red-500 text-xs mt-1'>
-                  {editDescriptionError}
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant='outline'
-              onClick={() => {
-                setIsEditDialogOpen(false)
-                setSelectedCategory(null)
-                setNewCategory({ name: '', description: '' })
-                setEditNameError('')
-                setEditDescriptionError('')
-                setEditNameTouched(false)
-                setEditDescriptionTouched(false)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEditCategory}
-              disabled={
-                !newCategory.name.trim() || !newCategory.description.trim()
-              }
-            >
-              Update Category
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

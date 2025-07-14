@@ -1,27 +1,28 @@
 'use client'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card'
 import dashboardApi from '@/services/dashboard-api'
 import { DashboardManagerData, DashboardManagerResponse } from '@/types/dashboard'
 import {
-  ArrowUpRight,
-  BarChart3,
-  BookOpen,
-  DollarSign,
-  Minus,
-  PlusCircle,
-  Settings,
-  Tags,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Users
+    ArrowUpRight,
+    BarChart3,
+    BookOpen,
+    DollarSign,
+    Minus,
+    PlusCircle,
+    RefreshCw,
+    Settings,
+    Tags,
+    Target,
+    TrendingDown,
+    TrendingUp,
+    Users
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -136,14 +137,33 @@ export function ManagerDashboard() {
             activities.
           </p>
         </div>
-        <Button
-          onClick={() => router.push('/manager/analytics')}
-          className='gap-2'
-        >
-          <BarChart3 className='h-4 w-4' />
-          View Full Analytics
-          <ArrowUpRight className='h-4 w-4' />
-        </Button>
+        <div className='flex gap-2'>
+          <Button
+            onClick={() => router.push('/manager/analytics')}
+            className='gap-2'
+          >
+            <BarChart3 className='h-4 w-4' />
+            View Full Analytics
+            <ArrowUpRight className='h-4 w-4' />
+          </Button>
+          <Button
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              dashboardApi.getManagerDashboard()
+                .then((res: DashboardManagerResponse) => setData(res.data))
+                .catch(() => setError('Failed to load dashboard data'))
+                .finally(() => setLoading(false));
+            }}
+            variant='outline'
+            disabled={loading}
+            className='gap-2'
+            title='Refresh dashboard'
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Analytics Cards */}

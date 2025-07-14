@@ -3,15 +3,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
+    Card,
+    CardContent,
 } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -67,7 +67,7 @@ export function CourseReviews({ courseId, averageRating, totalReviews }: CourseR
         const res = await reviewApi.getAllReviews({
           courseId: Number(courseId),
           page: reviewPage,
-          size: 6,
+          size: 5,
           sortBy: 'createdDate',
           direction: 'DESC',
         })

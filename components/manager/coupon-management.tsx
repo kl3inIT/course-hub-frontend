@@ -96,7 +96,7 @@ export function CouponManagement() {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [couponStatuses, setCouponStatuses] = useState<CouponStatusResponse | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('AVAILABLE')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterCourse, setFilterCourse] = useState<string>('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)

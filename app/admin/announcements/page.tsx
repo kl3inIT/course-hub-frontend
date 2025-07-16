@@ -1,8 +1,9 @@
-import { SystemSettings } from '@/components/admin/system-settings'
+'use client'
+import { AnnouncementManagement } from '@/components/admin/announcement/announcement-management'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
-export default function AdminSettingsPage() {
+export default function AnnouncementsPage() {
   return (
     <SidebarProvider>
       <AdminSidebar />
@@ -11,15 +12,14 @@ export default function AdminSettingsPage() {
           <div className='flex items-center justify-between'>
             <div>
               <h2 className='text-3xl font-bold tracking-tight'>
-                System Settings
+                Announcement Management
               </h2>
               <p className='text-muted-foreground'>
-                Configure platform settings, integrations, and system
-                preferences
+                Manage and view all announcements in the system
               </p>
             </div>
           </div>
-          <SystemSettings />
+          <AnnouncementManagement />
         </div>
       </SidebarInset>
     </SidebarProvider>

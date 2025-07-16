@@ -1,9 +1,5 @@
 'use client'
 
-import { commentApi } from '@/services/comment-api'
-import { reportApi } from '@/services/report-api'
-import { reviewApi } from '@/services/review-api'
-import { userApi } from '@/services/user-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,30 +25,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import {
-  ReportResponse,
-  ReportStatus,
-  ResourceLocationDTO,
-} from '@/types/report'
+import { adminApi } from '@/services/admin-api'
+import { commentApi } from '@/services/comment-api'
+import { reportApi } from '@/services/report-api'
+import { reviewApi } from '@/services/review-api'
+import { AggregatedReportDTO, ResourceLocationDTO } from '@/types/report'
+import { UserStatus } from '@/types/user'
 import { format } from 'date-fns'
 import {
   AlertTriangle,
   Ban,
   Calendar,
+  CheckCircle,
+  Clock,
   Eye,
+  EyeOff,
   Flag,
-  Info,
   Loader2,
-  MessageSquare,
   MoreHorizontal,
   Shield,
   Tag,
   User,
+  Users,
+  XCircle,
 } from 'lucide-react'
-import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -64,6 +62,12 @@ const badgeStyles = {
   APPROVED:
     'bg-green-100 text-green-800 hover:bg-green-100/80 border-green-200',
   REJECTED: 'bg-red-100 text-red-800 hover:bg-red-100/80 border-red-200',
+}
+
+const severityStyles = {
+  HIGH: 'bg-red-100 text-red-800 border-red-200',
+  MEDIUM: 'bg-orange-100 text-orange-800 border-orange-200',
+  LOW: 'bg-blue-100 text-blue-800 border-blue-200',
 }
 
 // Predefined action notes
@@ -85,9 +89,9 @@ const ACTION_NOTE_OPTIONS = {
 export function ReportDetail() {
   const router = useRouter()
   const params = useParams()
-  const reportId = Number(params.id)
+  const resourceId = Number(params.id)
 
-  const [report, setReport] = useState<ReportResponse | null>(null)
+  const [aggregated, setAggregated] = useState<AggregatedReportDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
@@ -99,16 +103,18 @@ export function ReportDetail() {
   const [hasWarned, setHasWarned] = useState(false)
   const [resourceLocation, setResourceLocation] =
     useState<ResourceLocationDTO | null>(null)
+  const [banReason, setBanReason] = useState('')
+  const [showBanReasonError, setShowBanReasonError] = useState(false)
 
   const loadReport = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const [reportResponse, locationResponse] = await Promise.all([
-        reportApi.getReportById(reportId),
-        reportApi.getResourceLocation(reportId),
+      const [aggResponse, locationResponse] = await Promise.all([
+        reportApi.getAggregatedReportByResourceId(resourceId),
+        reportApi.getResourceLocationByResourceId(resourceId),
       ])
-      setReport(reportResponse.data)
+      setAggregated(aggResponse.data)
       setResourceLocation(locationResponse.data)
     } catch (error) {
       setError('Failed to load report details')
@@ -116,14 +122,14 @@ export function ReportDetail() {
     } finally {
       setLoading(false)
     }
-  }, [reportId])
+  }, [resourceId])
 
   useEffect(() => {
     loadReport()
   }, [loadReport])
 
   const handleAction = async (action: 'APPROVED' | 'REJECTED') => {
-    if (!report) return
+    if (!aggregated) return
 
     // Validate notes before proceeding
     if (!notes.trim()) {
@@ -134,7 +140,7 @@ export function ReportDetail() {
     setShowNotesError(false)
     setIsProcessing(true)
     try {
-      await reportApi.updateReportStatus(report.reportId, {
+      await reportApi.updateReportStatus(aggregated.resourceId, {
         status: action,
         actionNote: notes,
       })
@@ -159,6 +165,10 @@ export function ReportDetail() {
     return badgeStyles[status as keyof typeof badgeStyles] || ''
   }
 
+  const getSeverityBadgeStyle = (severity: string) => {
+    return severityStyles[severity as keyof typeof severityStyles] || ''
+  }
+
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A'
     try {
@@ -170,12 +180,19 @@ export function ReportDetail() {
   }
 
   const handleBanUser = async (userId: number) => {
+    if (!banReason.trim()) {
+      setShowBanReasonError(true)
+      return
+    }
+
     setIsProcessing(true)
     try {
-      await userApi.admin.updateUserStatus(userId.toString(), 'banned')
+      await adminApi.updateUserStatus(userId, UserStatus.BANNED, banReason)
       toast.success('User has been banned')
+      setBanReason('')
+      setShowBanReasonError(false)
       await loadReport()
-    } catch (error) {
+    } catch (error: any) {
       toast.error('Failed to ban user')
     } finally {
       setIsProcessing(false)
@@ -184,12 +201,19 @@ export function ReportDetail() {
   }
 
   const handleUnbanUser = async (userId: number) => {
+    if (!banReason.trim()) {
+      setShowBanReasonError(true)
+      return
+    }
+
     setIsProcessing(true)
     try {
-      await userApi.admin.updateUserStatus(userId.toString(), 'active')
+      await adminApi.updateUserStatus(userId, UserStatus.ACTIVE, banReason)
       toast.success('User has been unbanned')
+      setBanReason('')
+      setShowBanReasonError(false)
       await loadReport()
-    } catch (error) {
+    } catch (error: any) {
       toast.error('Failed to unban user')
     } finally {
       setIsProcessing(false)
@@ -200,12 +224,12 @@ export function ReportDetail() {
   const handleWarnUser = async (userId: number) => {
     setIsProcessing(true)
     try {
-      await userApi.admin.warnUser(
+      await adminApi.warnUser(
         userId,
-        report?.type || undefined,
-        report?.resourceId || undefined
+        aggregated?.resourceType || undefined,
+        aggregated?.resourceId || undefined
       )
-      console.log(report?.type, report?.resourceId)
+      console.log(aggregated?.resourceType, aggregated?.resourceId)
       toast.success('Warning has been issued to user')
       setHasWarned(true)
       await loadReport()
@@ -242,244 +266,345 @@ export function ReportDetail() {
 
   if (loading) {
     return (
-      <div className='flex items-center justify-center py-8'>
-        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
+      <div className='flex items-center justify-center py-12'>
+        <div className='text-center'>
+          <Loader2 className='h-12 w-12 animate-spin text-primary mx-auto mb-4' />
+          <p className='text-muted-foreground'>Loading report details...</p>
+        </div>
       </div>
     )
   }
 
-  if (error || !report) {
+  if (error || !aggregated) {
     return (
-      <div className='flex flex-col items-center justify-center gap-4 py-8'>
-        <p className='text-sm text-destructive'>
-          {error || 'Report not found'}
-        </p>
-        <Button onClick={() => router.back()}>Go Back</Button>
+      <div className='flex flex-col items-center justify-center gap-4 py-12'>
+        <div className='text-center'>
+          <AlertTriangle className='h-12 w-12 text-destructive mx-auto mb-4' />
+          <p className='text-lg font-medium text-destructive mb-2'>
+            {error || 'Report not found'}
+          </p>
+          <p className='text-muted-foreground mb-4'>
+            The report you're looking for doesn't exist or has been removed.
+          </p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className='container max-w-4xl mx-auto py-6 space-y-6'>
-      {/* Report Information */}
-      <Card className='shadow-md'>
-        <CardHeader className='border-b bg-muted/20'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <div className='p-2 bg-primary/10 rounded-full'>
-                <Flag className='h-5 w-5 text-primary' />
-              </div>
-              <div>
-                <CardTitle>Report #{report.reportId}</CardTitle>
-                <CardDescription>
-                  <div className='flex items-center gap-2 mt-1'>
-                    <Calendar className='h-4 w-4' />
-                    {formatDate(report.createdAt)}
-                  </div>
-                </CardDescription>
-              </div>
+    <div className='max-w-6xl mx-auto space-y-6'>
+      {/* Header Section - Polished, no double title */}
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-4 mb-4'>
+        <div className='flex items-center gap-3'>
+          <div>
+            <div className='text-muted-foreground text-sm mt-0.5'>
+              Resource #{aggregated.resourceId} &bull; {aggregated.resourceType}
             </div>
-            <Badge
-              className={cn(
-                'px-4 py-1 text-sm font-medium',
-                getStatusBadgeStyle(report.status)
-              )}
-              variant='outline'
-            >
-              {report.status}
-            </Badge>
           </div>
-        </CardHeader>
+        </div>
+        <div className='flex items-center gap-2 mt-2 sm:mt-0'>
+          <Badge
+            className={cn(
+              'px-3 py-1 text-sm font-medium',
+              getStatusBadgeStyle(aggregated.status)
+            )}
+            variant='outline'
+          >
+            {aggregated.status === 'PENDING' && (
+              <Clock className='h-3 w-3 mr-1' />
+            )}
+            {aggregated.status === 'APPROVED' && (
+              <CheckCircle className='h-3 w-3 mr-1' />
+            )}
+            {aggregated.status === 'REJECTED' && (
+              <XCircle className='h-3 w-3 mr-1' />
+            )}
+            {aggregated.status}
+          </Badge>
+          <Badge
+            className={cn(
+              'px-3 py-1 text-sm font-medium',
+              getSeverityBadgeStyle(aggregated.severity)
+            )}
+            variant='outline'
+          >
+            <AlertTriangle className='h-3 w-3 mr-1' />
+            {aggregated.severity}
+          </Badge>
+        </div>
+      </div>
 
-        <CardContent className='pt-6'>
-          <div className='grid gap-8'>
-            {/* Basic Information */}
-            <div>
-              <h3 className='text-lg font-semibold mb-4'>Basic Information</h3>
-              <div className='grid grid-cols-2 gap-6'>
-                <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                    <Tag className='h-4 w-4' />
-                    Type
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        {/* Main Content - Left Column */}
+        <div className='lg:col-span-2 space-y-6'>
+          {/* Resource Content Card */}
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                  <div className='p-2 bg-primary/10 rounded-lg'>
+                    <Flag className='h-5 w-5 text-primary' />
                   </div>
-                  <Badge variant='outline' className='mt-1'>
-                    {report.type}
-                  </Badge>
+                  <div>
+                    <CardTitle className='text-lg'>Reported Content</CardTitle>
+                    <CardDescription>
+                      {aggregated.resourceType} •{' '}
+                      {formatDate(
+                        typeof aggregated.createdAt === 'string'
+                          ? aggregated.createdAt
+                          : ''
+                      )}
+                    </CardDescription>
+                  </div>
                 </div>
+                <div className='flex items-center gap-2'>
+                  {aggregated.hidden ? (
+                    <Badge
+                      variant='secondary'
+                      className='bg-gray-100 text-gray-600'
+                    >
+                      <EyeOff className='h-3 w-3 mr-1' />
+                      Hidden
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant='secondary'
+                      className='bg-green-100 text-green-600'
+                    >
+                      <Eye className='h-3 w-3 mr-1' />
+                      Visible
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className='p-4 rounded-lg bg-muted'>
+                <p className='text-sm leading-relaxed whitespace-pre-wrap'>
+                  Description: {aggregated.resourceContent}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className='space-y-1'>
-                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                    <AlertTriangle className='h-4 w-4' />
-                    Severity
-                  </div>
-                  <Badge
-                    variant={
-                      report.severity === 'HIGH' ? 'destructive' : 'default'
+          {/* Resource Owner Card */}
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <div className='flex items-center gap-2'>
+                <div className='p-2 bg-blue-500/10 rounded-lg'>
+                  <User className='h-5 w-5 text-blue-500' />
+                </div>
+                <div>
+                  <CardTitle className='text-lg'>Content Owner</CardTitle>
+                  <CardDescription>
+                    User who created this content
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className='flex items-center gap-4 p-4 rounded-lg bg-muted/20'>
+                <a
+                  href={`/admin/users/${aggregated.resourceOwnerId}/detail`}
+                  className='group outline-none focus:ring-2 focus:ring-primary rounded-full transition-shadow'
+                  tabIndex={0}
+                  title={`Go to ${aggregated.resourceOwner}'s profile`}
+                >
+                  <img
+                    src={
+                      aggregated.resourceOwnerAvatar || '/placeholder-user.jpg'
                     }
-                    className={cn(
-                      report.severity === 'HIGH'
-                        ? 'bg-red-100 text-red-800 hover:bg-red-100/80 border-red-200'
-                        : report.severity === 'MEDIUM'
-                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 border-orange-200'
-                          : 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 border-blue-200'
-                    )}
-                  >
-                    {report.severity}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* User Information */}
-            <div>
-              <h3 className='text-lg font-semibold mb-4'>User Information</h3>
-              <div className='grid grid-cols-2 gap-6'>
-                <div className='p-4 rounded-lg border bg-card'>
-                  <div className='flex items-center gap-3'>
-                    <div className='p-2 bg-blue-100 rounded-full'>
-                      <User className='h-4 w-4 text-blue-600' />
-                    </div>
-                    <div>
-                      <div className='text-sm font-medium'>
-                        {report.reporterName}
-                      </div>
-                      <div className='text-xs text-muted-foreground'>
-                        Reporter
-                      </div>
-                    </div>
+                    alt={aggregated.resourceOwner}
+                    className='w-16 h-16 rounded-full border-2 border-primary/20 object-cover group-hover:shadow-lg group-hover:border-primary transition-all duration-150'
+                  />
+                </a>
+                <div className='flex-1'>
+                  <h3 className='text-lg font-semibold'>
+                    {aggregated.resourceOwner}
+                  </h3>
+                  <div className='flex items-center gap-4 text-sm text-muted-foreground mt-1'>
+                    <span className='flex items-center gap-1'>
+                      <Shield className='h-3 w-3' />
+                      Status: {aggregated.resourceOwnerStatus}
+                    </span>
+                    <span className='flex items-center gap-1'>
+                      <Calendar className='h-3 w-3' />
+                      Member since{' '}
+                      {formatDate(
+                        typeof aggregated.resourceOwnerMemberSince === 'string'
+                          ? aggregated.resourceOwnerMemberSince
+                          : ''
+                      )}
+                    </span>
                   </div>
-                </div>
-
-                <div className='p-4 rounded-lg border bg-card'>
-                  <div className='flex items-center gap-3'>
-                    <div className='p-2 bg-red-100 rounded-full'>
-                      <User className='h-4 w-4 text-red-600' />
-                    </div>
-                    <div>
-                      <div className='text-sm font-medium'>
-                        {report.reportedUserName}
-                      </div>
-                      <div className='text-xs text-muted-foreground'>
-                        Reported User
-                      </div>
-                      <div className='text-xs text-muted-foreground'>
-                        Member since{' '}
-                        {formatDate(report.reportedUserMemberSince)}
-                      </div>
-                      <div className='text-xs text-muted-foreground'>
-                        Warning count: {report.warningCount}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Report Content */}
-            <div>
-              <h3 className='text-lg font-semibold mb-4'>Report Content</h3>
-              <div className='space-y-4'>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <MessageSquare className='h-4 w-4' />
-                      Reason
-                    </div>
-                    {resourceLocation && (
-                      <Link
-                        href={
-                          report.type === 'REVIEW'
-                            ? `/courses/${resourceLocation.courseId}`
-                            : `/learn/${resourceLocation.courseId}/${resourceLocation.lessonId}`
+                  <div className='flex items-center gap-2 mt-3'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setShowDialog('warn')}
+                      disabled={isProcessing || aggregated.status === 'PENDING'}
+                      title={
+                        aggregated.status === 'PENDING'
+                          ? 'Please approve or reject the report first'
+                          : 'Warn user about this content'
+                      }
+                    >
+                      <AlertTriangle className='h-3 w-3 mr-1' />
+                      Warn User
+                    </Button>
+                    {aggregated.resourceOwnerStatus === 'ACTIVE' ? (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setShowDialog('ban')}
+                        disabled={
+                          isProcessing || aggregated.status === 'PENDING'
                         }
-                        className='text-sm text-blue-600 hover:underline flex items-center gap-1'
-                        target='_blank'
+                        className='text-red-600 hover:text-red-700'
+                        title={
+                          aggregated.status === 'PENDING'
+                            ? 'Please approve or reject the report first'
+                            : 'Ban user from the platform'
+                        }
                       >
-                        <Eye className='h-4 w-4' />
-                        View {report.type.toLowerCase()}
-                      </Link>
+                        <Ban className='h-3 w-3 mr-1' />
+                        Ban User
+                      </Button>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setShowDialog('unban')}
+                        disabled={
+                          isProcessing || aggregated.status === 'PENDING'
+                        }
+                        className='text-green-600 hover:text-green-700'
+                        title={
+                          aggregated.status === 'PENDING'
+                            ? 'Please approve or reject the report first'
+                            : 'Unban user from the platform'
+                        }
+                      >
+                        <CheckCircle className='h-3 w-3 mr-1' />
+                        Unban User
+                      </Button>
                     )}
                   </div>
-                  <div className='p-4 rounded-lg border bg-muted/50'>
-                    {report.reason}
+                  {aggregated.status === 'PENDING' && (
+                    <p className='text-xs text-muted-foreground mt-2'>
+                      ⚠️ User actions are available after approving or rejecting
+                      this report
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reports List Card */}
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                  <div className='p-2 bg-red-500/10 rounded-lg'>
+                    <Users className='h-5 w-5 text-red-500' />
+                  </div>
+                  <div>
+                    <CardTitle className='text-lg'>
+                      Reports ({aggregated.totalReports})
+                    </CardTitle>
+                    <CardDescription>
+                      All reports submitted for this content
+                    </CardDescription>
                   </div>
                 </div>
-
-                {resourceLocation && (
-                  <div className='space-y-2'>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <Tag className='h-4 w-4' />
-                      Location
-                    </div>
-                    <div className='p-4 rounded-lg border bg-muted/50'>
-                      <div className='space-y-1'>
-                        <p className='text-sm'>
-                          Course: {resourceLocation.courseName}
-                        </p>
-                        {report.type === 'COMMENT' && (
-                          <>
-                            <p className='text-sm'>
-                              Module: {resourceLocation.moduleName}
-                            </p>
-                            <p className='text-sm'>
-                              Lesson: {resourceLocation.lessonName}
-                            </p>
-                          </>
-                        )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-4'>
+                {aggregated.reports.map((detail, idx) => (
+                  <div
+                    key={detail.reportId}
+                    className='p-4 border rounded-lg bg-white hover:bg-muted/30 transition-colors'
+                  >
+                    <div className='flex items-start gap-4'>
+                      <a
+                        href={`/admin/users/${detail.reporterId}/detail`}
+                        className='group outline-none focus:ring-2 focus:ring-primary rounded-full transition-shadow'
+                        tabIndex={0}
+                        title={`Go to ${detail.reporterName}'s profile`}
+                      >
+                        <img
+                          src={detail.reporterAvatar || '/placeholder-user.jpg'}
+                          alt={detail.reporterName}
+                          className='w-10 h-10 rounded-full border object-cover flex-shrink-0 group-hover:shadow-lg group-hover:border-primary transition-all duration-150'
+                        />
+                      </a>
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-center justify-between mb-2'>
+                          <h4 className='font-medium text-sm'>
+                            {detail.reporterName}
+                          </h4>
+                          <div className='flex items-center gap-2'>
+                            <Badge
+                              className={cn(
+                                'text-xs',
+                                getSeverityBadgeStyle(detail.severity)
+                              )}
+                              variant='outline'
+                            >
+                              {detail.severity}
+                            </Badge>
+                            <span className='text-xs text-muted-foreground'>
+                              {formatDate(
+                                typeof detail.createdAt === 'string'
+                                  ? detail.createdAt
+                                  : ''
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className='bg-muted/50 p-3 rounded-md'>
+                          <p className='text-sm leading-relaxed'>
+                            Description: {detail.reason}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
-
-                {report.description && (
-                  <div className='space-y-2'>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <Info className='h-4 w-4' />
-                      Additional Description
-                    </div>
-                    <div className='p-4 rounded-lg border bg-muted/50'>
-                      {report.description}
-                    </div>
-                  </div>
-                )}
-
-                {report.actionNote && (
-                  <div className='space-y-2'>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <Shield className='h-4 w-4' />
-                      Admin Notes
-                    </div>
-                    <div className='p-4 rounded-lg border bg-muted/50'>
-                      {report.actionNote}
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Action Notes - Only shown when status is Pending */}
-      {report.status === 'PENDING' && (
-        <Card className='shadow-md'>
-          <CardHeader>
-            <CardTitle className='text-lg'>Take Action</CardTitle>
-            <CardDescription>
-              Review the report and take appropriate action
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-6'>
-              <div className='space-y-4'>
-                <div className='flex gap-2'>
-                  <div className='flex-1'>
+        {/* Sidebar - Right Column */}
+        <div className='space-y-6'>
+          {/* Quick Actions Card */}
+          {aggregated.status === 'PENDING' && (
+            <Card className='shadow-sm border-l-4 border-l-yellow-500'>
+              <CardHeader className='pb-4'>
+                <div className='flex items-center gap-2'>
+                  <div className='p-2 bg-yellow-500/10 rounded-lg'>
+                    <Shield className='h-5 w-5 text-yellow-600' />
+                  </div>
+                  <div>
+                    <CardTitle className='text-lg'>Take Action</CardTitle>
+                    <CardDescription>
+                      Review and decide on this report
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <div>
+                  <label className='text-sm font-medium mb-2 block'>
+                    Action Notes
+                  </label>
+                  <div className='flex gap-2'>
                     <Textarea
-                      placeholder='Enter your notes here...'
+                      placeholder='Enter your decision notes...'
                       value={notes}
                       onChange={e => {
                         setNotes(e.target.value)
@@ -494,171 +619,260 @@ export function ReportDetail() {
                       )}
                       required
                     />
-                    {showNotesError && (
-                      <p className='text-sm text-red-500 mt-2'>
-                        Please add notes before taking any action
-                      </p>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant='outline'
+                          size='icon'
+                          className='h-10 w-10 shrink-0'
+                        >
+                          <MoreHorizontal className='h-4 w-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' className='w-[280px]'>
+                        <DropdownMenuItem
+                          className='font-medium text-xs uppercase text-muted-foreground'
+                          disabled
+                        >
+                          Approve Reasons
+                        </DropdownMenuItem>
+                        {ACTION_NOTE_OPTIONS.APPROVE.map((note, index) => (
+                          <DropdownMenuItem
+                            key={`approve-${index}`}
+                            onClick={() => handleSelectNote(note)}
+                          >
+                            {note}
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuItem
+                          className='font-medium text-xs uppercase text-muted-foreground mt-2'
+                          disabled
+                        >
+                          Reject Reasons
+                        </DropdownMenuItem>
+                        {ACTION_NOTE_OPTIONS.REJECT.map((note, index) => (
+                          <DropdownMenuItem
+                            key={`reject-${index}`}
+                            onClick={() => handleSelectNote(note)}
+                          >
+                            {note}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant='outline'
-                        size='icon'
-                        className='h-10 w-10 shrink-0'
-                      >
-                        <MoreHorizontal className='h-4 w-4' />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end' className='w-[280px]'>
-                      <DropdownMenuItem
-                        className='font-medium text-xs uppercase text-muted-foreground'
-                        disabled
-                      >
-                        Approve Reasons
-                      </DropdownMenuItem>
-                      {ACTION_NOTE_OPTIONS.APPROVE.map((note, index) => (
-                        <DropdownMenuItem
-                          key={`approve-${index}`}
-                          onClick={() => handleSelectNote(note)}
-                        >
-                          {note}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuItem
-                        className='font-medium text-xs uppercase text-muted-foreground mt-2'
-                        disabled
-                      >
-                        Reject Reasons
-                      </DropdownMenuItem>
-                      {ACTION_NOTE_OPTIONS.REJECT.map((note, index) => (
-                        <DropdownMenuItem
-                          key={`reject-${index}`}
-                          onClick={() => handleSelectNote(note)}
-                        >
-                          {note}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {showNotesError && (
+                    <p className='text-sm text-red-500 mt-2'>
+                      Please add notes before taking any action
+                    </p>
+                  )}
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    onClick={() => handleAction('APPROVED')}
+                    disabled={isProcessing}
+                    className='flex-1 bg-green-600 hover:bg-green-700'
+                  >
+                    <CheckCircle className='h-4 w-4 mr-2' />
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => handleAction('REJECTED')}
+                    disabled={isProcessing}
+                    variant='destructive'
+                    className='flex-1'
+                  >
+                    <XCircle className='h-4 w-4 mr-2' />
+                    Reject
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Actions Card */}
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <div className='flex items-center gap-2'>
+                <div className='p-2 bg-purple-500/10 rounded-lg'>
+                  <Eye className='h-5 w-5 text-purple-500' />
+                </div>
+                <div>
+                  <CardTitle className='text-lg'>Content Actions</CardTitle>
+                  <CardDescription>Manage content visibility</CardDescription>
                 </div>
               </div>
-
-              <div className='flex flex-wrap gap-4'>
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-3'>
                 <Button
-                  variant='default'
-                  onClick={() => handleAction('APPROVED')}
-                  disabled={isProcessing}
-                  className='min-w-[140px]'
+                  variant='outline'
+                  className='w-full justify-start'
+                  onClick={() =>
+                    handleContentVisibility(
+                      aggregated.resourceId,
+                      aggregated.resourceType,
+                      !aggregated.hidden
+                    )
+                  }
+                  disabled={isProcessing || aggregated.status === 'PENDING'}
+                  title={
+                    aggregated.status === 'PENDING'
+                      ? 'Please approve or reject the report first'
+                      : aggregated.hidden
+                        ? 'Show this content'
+                        : 'Hide this content'
+                  }
                 >
-                  <Shield className='mr-2 h-4 w-4' />
-                  Approve Report
+                  {aggregated.hidden ? (
+                    <>
+                      <Eye className='h-4 w-4 mr-2' />
+                      Show Content
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className='h-4 w-4 mr-2' />
+                      Hide Content
+                    </>
+                  )}
                 </Button>
-
-                <Button
-                  variant='destructive'
-                  onClick={() => handleAction('REJECTED')}
-                  disabled={isProcessing}
-                  className='min-w-[140px]'
-                >
-                  <Ban className='mr-2 h-4 w-4' />
-                  Reject Report
-                </Button>
+                {aggregated.status === 'PENDING' && (
+                  <p className='text-xs text-muted-foreground'>
+                    ⚠️ Content actions are available after approving or
+                    rejecting this report
+                  </p>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
-      {/* Additional actions when report is approved */}
-      {(report.status as ReportStatus) === 'APPROVED' && (
-        <Card className='shadow-md'>
-          <CardHeader>
-            <CardTitle className='text-lg'>Additional Actions</CardTitle>
-            <CardDescription>
-              Take additional actions on the reported content or user
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='flex flex-wrap gap-4'>
-              {report.reportedUserStatus === '1' ? (
-                <Button
-                  variant='outline'
-                  className='min-w-[140px] border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground'
-                  onClick={() => setShowDialog('ban')}
-                  disabled={isProcessing}
-                >
-                  <Ban className='mr-2 h-4 w-4' />
-                  Ban User
-                </Button>
-              ) : (
-                <Button
-                  variant='outline'
-                  className='min-w-[140px] border-green-500 text-green-600 hover:bg-green-500 hover:text-white'
-                  onClick={() => setShowDialog('unban')}
-                  disabled={isProcessing}
-                >
-                  <User className='mr-2 h-4 w-4' />
-                  Unban User
-                </Button>
-              )}
+          {/* Resource Location Card */}
+          {resourceLocation && (
+            <Card className='shadow-sm'>
+              <CardHeader className='pb-4'>
+                <div className='flex items-center gap-2'>
+                  <div className='p-2 bg-green-500/10 rounded-lg'>
+                    <Tag className='h-5 w-5 text-green-500' />
+                  </div>
+                  <div>
+                    <CardTitle className='text-lg'>Location</CardTitle>
+                    <CardDescription>
+                      Where this content is located
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className='space-y-3 text-sm'>
+                  {resourceLocation.courseName && (
+                    <div className='flex items-center justify-between p-2 bg-muted/30 rounded'>
+                      <span className='font-medium'>Course:</span>
+                      <span className='text-muted-foreground'>
+                        {resourceLocation.courseName}
+                      </span>
+                    </div>
+                  )}
+                  {resourceLocation.moduleName && (
+                    <div className='flex items-center justify-between p-2 bg-muted/30 rounded'>
+                      <span className='font-medium'>Module:</span>
+                      <span className='text-muted-foreground'>
+                        {resourceLocation.moduleName}
+                      </span>
+                    </div>
+                  )}
+                  {resourceLocation.lessonName && (
+                    <div className='flex items-center justify-between p-2 bg-muted/30 rounded'>
+                      <span className='font-medium'>Lesson:</span>
+                      <span className='text-muted-foreground'>
+                        {resourceLocation.lessonName}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-              {!hasWarned && (
-                <Button
-                  variant='outline'
-                  className='min-w-[140px] border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white'
-                  onClick={() => setShowDialog('warn')}
-                  disabled={isProcessing}
-                >
-                  <AlertTriangle className='mr-2 h-4 w-4' />
-                  Warn User
-                </Button>
-              )}
-
-              {report.hidden ? (
-                <Button
-                  variant='outline'
-                  className='min-w-[140px] border-green-500 text-green-600 hover:bg-green-500 hover:text-white'
-                  onClick={() => setShowDialog('show')}
-                  disabled={isProcessing}
-                >
-                  <Eye className='mr-2 h-4 w-4' />
-                  Show {report.type === 'COMMENT' ? 'Comment' : 'Review'}
-                </Button>
-              ) : (
-                <Button
-                  variant='outline'
-                  className='min-w-[140px]'
-                  onClick={() => setShowDialog('hide')}
-                  disabled={isProcessing}
-                >
-                  <Eye className='mr-2 h-4 w-4' />
-                  Hide {report.type === 'COMMENT' ? 'Comment' : 'Review'}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Statistics Card */}
+          <Card className='shadow-sm'>
+            <CardHeader className='pb-4'>
+              <div className='flex items-center gap-2'>
+                <div className='p-2 bg-blue-500/10 rounded-lg'>
+                  <Flag className='h-5 w-5 text-blue-500' />
+                </div>
+                <div>
+                  <CardTitle className='text-lg'>Statistics</CardTitle>
+                  <CardDescription>Report summary</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-3'>
+                <div className='flex items-center justify-between p-2 bg-muted/30 rounded'>
+                  <span className='text-sm font-medium'>Total Reports:</span>
+                  <Badge variant='secondary'>{aggregated.totalReports}</Badge>
+                </div>
+                <div className='flex items-center justify-between p-2 bg-muted/30 rounded'>
+                  <span className='text-sm font-medium'>Type:</span>
+                  <Badge variant='outline'>{aggregated.resourceType}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Confirmation Dialogs */}
       <AlertDialog
         open={showDialog === 'ban'}
         onOpenChange={() => setShowDialog(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className='max-w-md'>
           <AlertDialogHeader>
             <AlertDialogTitle>Ban User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to ban this user? This action cannot be
-              undone.
+              Are you sure you want to ban {aggregated.resourceOwner}? This
+              action will prevent them from accessing the platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className='py-4'>
+            <label className='text-sm font-medium mb-2 block'>
+              Reason for banning *
+            </label>
+            <Textarea
+              placeholder='Enter the reason for banning this user...'
+              value={banReason}
+              onChange={e => {
+                setBanReason(e.target.value)
+                if (showBanReasonError && e.target.value.trim()) {
+                  setShowBanReasonError(false)
+                }
+              }}
+              className={cn(
+                'min-h-[80px] resize-none',
+                showBanReasonError &&
+                  'border-red-500 focus-visible:ring-red-500'
+              )}
+              required
+            />
+            {showBanReasonError && (
+              <p className='text-sm text-red-500 mt-2'>
+                Please provide a reason for banning this user
+              </p>
+            )}
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() => {
+                setBanReason('')
+                setShowBanReasonError(false)
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-              onClick={() => handleBanUser(report?.reportedUserId || 0)}
+              onClick={() => handleBanUser(aggregated.resourceOwnerId)}
+              className='bg-red-600 hover:bg-red-700'
             >
               Ban User
             </AlertDialogAction>
@@ -670,19 +884,52 @@ export function ReportDetail() {
         open={showDialog === 'unban'}
         onOpenChange={() => setShowDialog(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className='max-w-md'>
           <AlertDialogHeader>
             <AlertDialogTitle>Unban User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to unban this user? They will regain access
-              to the platform.
+              Are you sure you want to unban {aggregated.resourceOwner}? This
+              will restore their access to the platform.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className='py-4'>
+            <label className='text-sm font-medium mb-2 block'>
+              Reason for unbanning *
+            </label>
+            <Textarea
+              placeholder='Enter the reason for unbanning this user...'
+              value={banReason}
+              onChange={e => {
+                setBanReason(e.target.value)
+                if (showBanReasonError && e.target.value.trim()) {
+                  setShowBanReasonError(false)
+                }
+              }}
+              className={cn(
+                'min-h-[80px] resize-none',
+                showBanReasonError &&
+                  'border-red-500 focus-visible:ring-red-500'
+              )}
+              required
+            />
+            {showBanReasonError && (
+              <p className='text-sm text-red-500 mt-2'>
+                Please provide a reason for unbanning this user
+              </p>
+            )}
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() => {
+                setBanReason('')
+                setShowBanReasonError(false)
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className='bg-green-500 text-white hover:bg-green-600'
-              onClick={() => handleUnbanUser(report?.reportedUserId || 0)}
+              onClick={() => handleUnbanUser(aggregated.resourceOwnerId)}
+              className='bg-green-600 hover:bg-green-700'
             >
               Unban User
             </AlertDialogAction>
@@ -698,73 +945,18 @@ export function ReportDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Warn User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to issue a warning to this user?
+              Are you sure you want to send a warning to{' '}
+              {aggregated.resourceOwner}? This will notify them about the
+              reported content.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className='bg-yellow-500 text-white hover:bg-yellow-600'
-              onClick={() => handleWarnUser(report?.reportedUserId || 0)}
+              onClick={() => handleWarnUser(aggregated.resourceOwnerId)}
+              className='bg-yellow-600 hover:bg-yellow-700'
             >
-              Warn User
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={showDialog === 'hide'}
-        onOpenChange={() => setShowDialog(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hide Content</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to hide this {report?.type.toLowerCase()}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                handleContentVisibility(
-                  report?.resourceId || 0,
-                  report?.type || '',
-                  true
-                )
-              }
-            >
-              Hide Content
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={showDialog === 'show'}
-        onOpenChange={() => setShowDialog(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Show Content</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to show this {report?.type.toLowerCase()}?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className='bg-green-500 text-white hover:bg-green-600'
-              onClick={() =>
-                handleContentVisibility(
-                  report?.resourceId || 0,
-                  report?.type || '',
-                  false
-                )
-              }
-            >
-              Show Content
+              Send Warning
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

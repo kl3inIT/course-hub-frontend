@@ -1,8 +1,6 @@
 'use client'
 
-import { commentApi } from '@/services/comment-api'
-import { reportApi } from '@/services/report-api'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +26,8 @@ import {
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
+import { commentApi } from '@/services/comment-api'
+import { reportApi } from '@/services/report-api'
 import { CommentDisplayData, transformComment } from '@/types/comment'
 import {
   Crown,
@@ -172,14 +172,9 @@ const CommentComponentBase = ({
             className={`h-8 w-8 ${comment.isManager ? 'ring-2 ring-red-500/70 ring-offset-2 shadow-sm shadow-red-500/20' : ''}`}
           >
             <AvatarImage
-              src={comment.avatar || `/placeholder.svg?height=32&width=32`}
+              src={comment.avatar || '/assets/default-avatar.svg'}
+              alt={comment.author}
             />
-            <AvatarFallback>
-              {comment.author
-                .split(' ')
-                .map(n => n[0])
-                .join('')}
-            </AvatarFallback>
           </Avatar>
           {comment.isManager && (
             <Crown className='h-3.5 w-3.5 text-yellow-500 absolute -top-1.5 -right-1 fill-yellow-500 transform rotate-45 drop-shadow-sm' />

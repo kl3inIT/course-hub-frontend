@@ -95,7 +95,6 @@ export function PaymentHistory() {
       }
     } catch (error) {
       toast.error('Failed to fetch payment history')
-      console.error('Error fetching payment history:', error)
     } finally {
       setLoading(false)
     }

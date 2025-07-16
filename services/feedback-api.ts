@@ -59,4 +59,4 @@ export const getAllFeedback = () => {
 
 export const getFeedbackById = (id: number) => {
   return httpClient.get(`/api/feedbacks/${id}`)
-} 
+}

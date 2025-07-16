@@ -445,11 +445,14 @@ export function Navbar() {
                                 notification.resourceType === 'FEEDBACK' &&
                                 typeof notification.resourceId === 'number'
                               ) {
-                                if (!notification.isRead) handleMarkAsRead(notification.id);
-                                showFeedback(notification.resourceId);
+                                if (!notification.isRead)
+                                  handleMarkAsRead(notification.id)
+                                showFeedback(notification.resourceId)
                               } else {
-                                if (!notification.isRead) handleMarkAsRead(notification.id);
-                                if (notification.link) window.location.href = notification.link;
+                                if (!notification.isRead)
+                                  handleMarkAsRead(notification.id)
+                                if (notification.link)
+                                  window.location.href = notification.link
                               }
                             }}
                           >

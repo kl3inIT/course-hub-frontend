@@ -23,9 +23,7 @@ export default function RootLayout({
     <html lang='en'>
       <body className={inter.className}>
         <AuthProvider>
-          <FeedbackDetailProvider>
-            {children}
-          </FeedbackDetailProvider>
+          <FeedbackDetailProvider>{children}</FeedbackDetailProvider>
         </AuthProvider>
         <Toaster position='top-right' richColors closeButton />
       </body>

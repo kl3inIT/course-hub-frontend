@@ -48,7 +48,8 @@ export default function AboutPage() {
       name: 'Phan Hong Dat',
       role: 'Community Manager',
       image: '/placeholder.svg?height=200&width=200',
-      description: 'Dedicated to building a vibrant and supportive learning community.',
+      description:
+        'Dedicated to building a vibrant and supportive learning community.',
     },
   ]
 

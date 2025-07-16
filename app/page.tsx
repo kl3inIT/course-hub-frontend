@@ -7,11 +7,7 @@ import { TestimonialsSection } from '@/components/testimonials-section'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-<<<<<<< HEAD
 import { useFeedbackDetail } from '@/hooks'
-import { categoryApi } from '@/services/category-api'
-=======
->>>>>>> main
 import { courseApi } from '@/services/course-api'
 import { CourseResponseDTO } from '@/types/course'
 import {
@@ -21,7 +17,7 @@ import {
   Play,
   Search,
   Star,
-  Users
+  Users,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'

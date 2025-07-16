@@ -1,11 +1,11 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { DashboardCourseResponseDTO } from '@/types/course'
@@ -24,7 +24,7 @@ export function CourseCard({
   onViewCertificate,
 }: CourseCardProps) {
   const formatDate = (dateString: string) => {
-    if (!dateString || isNaN(Date.parse(dateString))) return 'Not available';
+    if (!dateString || isNaN(Date.parse(dateString))) return 'Not available'
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -59,7 +59,9 @@ export function CourseCard({
           </div>
 
           <div className='flex items-center justify-between'>
-            <Badge variant='secondary'>{(course.totalDuration / 3600).toFixed(1)}h total</Badge>
+            <Badge variant='secondary'>
+              {(course.totalDuration / 3600).toFixed(1)}h total
+            </Badge>
             <Link href={`/learn/${course.id}`}>
               <Button size='sm'>
                 <Play className='h-4 w-4 mr-2' />
@@ -100,7 +102,8 @@ export function CourseCard({
             </div>
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Clock className='h-4 w-4' />
-              {(course.totalDuration / 3600).toFixed(1)}h • {course.totalLessons} lessons
+              {(course.totalDuration / 3600).toFixed(1)}h •{' '}
+              {course.totalLessons} lessons
             </div>
           </div>
 

@@ -9,23 +9,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { submitFeedback } from '@/services/feedback-api'
 import {
-    Briefcase,
-    Clock,
-    HelpCircle,
-    Mail,
-    MapPin,
-    MessageSquare,
-    Phone,
-    Users,
+  Briefcase,
+  Clock,
+  HelpCircle,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Users,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -33,15 +33,18 @@ import { useState } from 'react'
 const faqs = [
   {
     question: 'How do I register an account?',
-    answer: 'You can register by clicking the Sign Up button at the top right corner and filling in the required information.'
+    answer:
+      'You can register by clicking the Sign Up button at the top right corner and filling in the required information.',
   },
   {
     question: 'I forgot my password, what should I do?',
-    answer: 'Click "Forgot Password" on the login page and follow the instructions to reset your password.'
+    answer:
+      'Click "Forgot Password" on the login page and follow the instructions to reset your password.',
   },
   {
     question: 'How can I contact support?',
-    answer: 'You can use the contact form on this page or send an email to our support address.'
+    answer:
+      'You can use the contact form on this page or send an email to our support address.',
   },
 ]
 
@@ -257,7 +260,12 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type='submit' className='w-full' size='lg' disabled={loading}>
+                  <Button
+                    type='submit'
+                    className='w-full'
+                    size='lg'
+                    disabled={loading}
+                  >
                     {loading ? 'Sending...' : 'Send Message'}
                   </Button>
                 </form>
@@ -304,19 +312,27 @@ export default function ContactPage() {
                     Looking for Quick Answers?
                   </h3>
                   <p className='text-muted-foreground mb-4'>
-                    Check out our FAQ section for instant answers to common questions.
+                    Check out our FAQ section for instant answers to common
+                    questions.
                   </p>
-                  <Button variant='outline' onClick={() => setShowFAQ(!showFAQ)}>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowFAQ(!showFAQ)}
+                  >
                     {showFAQ ? 'Hide FAQ' : 'Visit FAQ'}
                   </Button>
                   {showFAQ && (
-                    <div className="mt-6 text-left">
-                      <h4 className="font-bold mb-2">Frequently Asked Questions</h4>
-                      <ul className="space-y-4">
+                    <div className='mt-6 text-left'>
+                      <h4 className='font-bold mb-2'>
+                        Frequently Asked Questions
+                      </h4>
+                      <ul className='space-y-4'>
                         {faqs.map((faq, idx) => (
                           <li key={idx}>
-                            <p className="font-medium">{faq.question}</p>
-                            <p className="text-muted-foreground">{faq.answer}</p>
+                            <p className='font-medium'>{faq.question}</p>
+                            <p className='text-muted-foreground'>
+                              {faq.answer}
+                            </p>
                           </li>
                         ))}
                       </ul>
@@ -374,16 +390,19 @@ export default function ContactPage() {
               Visit our office in the heart of San Francisco
             </p>
           </div>
-          <div className='bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden' style={{ height: 400 }}>
+          <div
+            className='bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden'
+            style={{ height: 400 }}
+          >
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29797.67416935781!2d105.5358976!3d21.004288!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2sFPT%20University!5e0!3m2!1sen!2s!4v1751609591466!5m2!1sen!2s"
-              width="100%"
-              height="400"
+              src='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29797.67416935781!2d105.5358976!3d21.004288!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2sFPT%20University!5e0!3m2!1sen!2s!4v1751609591466!5m2!1sen!2s'
+              width='100%'
+              height='400'
               style={{ border: 0 }}
               allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="FPT University Map"
+              loading='lazy'
+              referrerPolicy='no-referrer-when-downgrade'
+              title='FPT University Map'
             />
           </div>
         </div>

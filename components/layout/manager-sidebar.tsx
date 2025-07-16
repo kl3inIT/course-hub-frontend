@@ -10,7 +10,6 @@ import {
   Star,
   Tags,
   Ticket,
-  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -55,11 +54,6 @@ const navigationItems = [
     title: 'Categories',
     url: '/manager/categories',
     icon: Tags,
-  },
-  {
-    title: 'Students',
-    url: '/manager/students',
-    icon: Users,
   },
   {
     title: 'Analytics',

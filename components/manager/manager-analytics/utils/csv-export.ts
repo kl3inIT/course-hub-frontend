@@ -16,7 +16,7 @@ export const exportToCSV = (
   if (exportOptions.category.checked && exportData.category.length > 0) {
     csvContent += `CATEGORY PERFORMANCE ANALYSIS REPORT\n`
     csvContent += `Analytics report ${dateRangeText}\n\n`
-    csvContent += `No.,Category Name,Description,Total Courses,Total Students,Total Revenue (VND),Revenue Share (%)\n`
+    csvContent += `No.,Category Name,Description,Total Courses,Total Students,Total Revenue ($),Revenue Share (%)\n`
     
     exportData.category.forEach((cat: any, index: number) => {
       const row = [
@@ -25,7 +25,7 @@ export const exportToCSV = (
         sanitizeCSVText(cat.description || ''),
         cat.courseCount || 0,
         cat.totalStudents,
-        cat.totalRevenue,
+        (cat.totalRevenue?.toLocaleString('en-US') + ' $'),
         `${cat.revenueProportion.toFixed(2)}%`
       ]
       csvContent += row.join(',') + '\n'
@@ -36,7 +36,7 @@ export const exportToCSV = (
   if (exportOptions.course.checked && exportData.course.length > 0) {
     csvContent += `COURSE PERFORMANCE ANALYSIS REPORT\n`
     csvContent += `Analytics report ${dateRangeText}\n\n`
-    csvContent += `No.,Course Name,Total Students,Average Rating,Total Revenue (VND),Revenue Share (%),Total Reviews,Course Level\n`
+    csvContent += `No.,Course Name,Total Students,Average Rating,Total Revenue ($),Revenue Share (%),Total Reviews,Course Level\n`
     
     exportData.course.forEach((course: any, index: number) => {
       const row = [
@@ -44,7 +44,7 @@ export const exportToCSV = (
         sanitizeCSVText(course.courseName || ''),
         course.students,
         course.rating?.toFixed(1) || '0.0',
-        course.revenue,
+        (course.revenue?.toLocaleString('en-US') + ' $'),
         `${course.revenuePercent?.toFixed(2)}%`,
         course.reviews,
         course.level || 'N/A'
@@ -77,14 +77,14 @@ export const exportToCSV = (
   if (exportOptions.revenue.checked && exportData.revenue.length > 0) {
     csvContent += `REVENUE TRENDS ANALYSIS REPORT\n`
     csvContent += `Analytics report ${dateRangeText}\n\n`
-    csvContent += `No.,Course Name,Current Revenue (VND),Previously (VND),Growth Rate (%),Total Orders,New Students,Revenue Share (%)\n`
+    csvContent += `No.,Course Name,Current Revenue ($),Previously ($),Growth Rate (%),Total Orders,New Students,Revenue Share (%)\n`
     
     exportData.revenue.forEach((data: any, index: number) => {
       const row = [
         index + 1,
         sanitizeCSVText(data.courseName || ''),
-        data.revenue,
-        data.previousRevenue,
+        (data.revenue?.toLocaleString('en-US') + ' $'),
+        (data.previousRevenue?.toLocaleString('en-US') + ' $'),
         formatGrowthRate(data.growth),
         data.orders,
         data.newStudents,

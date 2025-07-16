@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyticsApi } from '@/services/analytics-api'
 import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, RevenueAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
 import { formatDateForAPI } from '@/utils/analytics-utils'
-import { BookOpen, DollarSign, Download, Loader2, RefreshCw, Star, Users } from 'lucide-react'
+import { DollarSign, Download, Loader2, RefreshCw, Star, Users } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
@@ -193,9 +193,9 @@ export function ManagerAnalytics() {
     0
   )
   const avgRating =
-    courseDetails.length > 0
-      ? courseDetails.reduce((sum, item) => sum + item.rating, 0) /
-      courseDetails.length
+    courseDetails.filter(item => item.rating > 0).length > 0
+      ? courseDetails.filter(item => item.rating > 0).reduce((sum, item) => sum + item.rating, 0) /
+        courseDetails.filter(item => item.rating > 0).length
       : 0
 
   const handleCategoryFilter = async () => {
@@ -411,7 +411,7 @@ export function ManagerAnalytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 px-2 md:px-0'>
+      <div className='grid gap-4 grid-cols-1 md:grid-cols-3 px-2 md:px-0'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Revenue</CardTitle>
@@ -419,7 +419,7 @@ export function ManagerAnalytics() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {totalRevenue.toLocaleString('vi-VN')} ₫
+              {totalRevenue.toLocaleString('en-US')} $
             </div>
           </CardContent>
         </Card>
@@ -435,18 +435,6 @@ export function ManagerAnalytics() {
             <div className='text-2xl font-bold'>
               {totalEnrollments.toLocaleString('en-US')}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Active Courses
-            </CardTitle>
-            <BookOpen className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{courseDetails.length}</div>
           </CardContent>
         </Card>
 
@@ -508,7 +496,7 @@ export function ManagerAnalytics() {
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Category Name', 'Details', 'Courses', 'Students', 'Revenue (VND)', 'Revenue Proportion (%)'])}
+                    {createTableHeader(['ID', 'Category Name', 'Details', 'Courses', 'Students', 'Revenue (USD)', 'Revenue Proportion (%)'])}
                     <tbody className='bg-white divide-y divide-gray-200'>
                     {loadingCategory ? createLoadingRow(7, 'Loading categories...') : paginatedData.length === 0 ? createEmptyRow(7) : paginatedData.map((cat, index) => (
                         <tr
@@ -536,7 +524,7 @@ export function ManagerAnalytics() {
                             {cat.totalStudents}
                           </td>
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.totalRevenue?.toLocaleString('vi-VN')} ₫
+                            {cat.totalRevenue?.toLocaleString('en-US')} $
                           </td>
                           <td className={`px-6 py-3 whitespace-nowrap text-sm text-center ${cat.revenueProportion === 0 ? 'text-black' : cat.revenueProportion > 0 && cat.revenueProportion <= 20 ? 'text-red-600' : 'text-green-600'}`}>
                             {cat.revenueProportion.toFixed(2)}%
@@ -577,7 +565,7 @@ export function ManagerAnalytics() {
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Course Name', 'Students', 'Rating', 'Revenue (VND)', 'Revenue %', 'Reviews', 'Level'])}
+                    {createTableHeader(['ID', 'Course Name', 'Students', 'Rating', 'Revenue (USD)', 'Revenue %', 'Reviews', 'Level'])}
                     <tbody className='bg-white divide-y divide-gray-200'>
                     {loadingCourse ? createLoadingRow(8, 'Loading courses...') : courseDetails.length === 0 ? createEmptyRow(8) : paginatedCourseData.map((course, idx) => (
                         <tr key={course.courseId}>
@@ -594,7 +582,7 @@ export function ManagerAnalytics() {
                             {course.rating?.toFixed(1) || '0.0'}
                           </td>
                           <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.revenue?.toLocaleString('vi-VN') || '0'} ₫
+                            {course.revenue?.toLocaleString('en-US') || '0'} $
                           </td>
                           <td className={`px-6 py-3 whitespace-nowrap text-sm text-center ${course.revenuePercent === 0 ? 'text-black' : course.revenuePercent > 0 && course.revenuePercent <= 20 ? 'text-red-600' : 'text-green-600'}`}>
                             {course.revenuePercent?.toFixed(2)}%
@@ -710,10 +698,10 @@ export function ManagerAnalytics() {
                             {data.courseName}
                           </td>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.revenue.toLocaleString('vi-VN')} ₫
+                            {data.revenue.toLocaleString('en-US')} $
                           </td>
                           <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.previousRevenue.toLocaleString('vi-VN')} ₫
+                            {data.previousRevenue.toLocaleString('en-US')} $
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${data.growth === 0 ? 'text-black' : data.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {data.growth > 0 ? '+' : ''}

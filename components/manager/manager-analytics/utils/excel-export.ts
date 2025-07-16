@@ -66,7 +66,7 @@ const addCategorySheet = async (
     'Description',
     'Total Courses',
     'Total Students',
-    'Total Revenue (VND)',
+    'Total Revenue ($)',
     'Revenue Share (%)'
   ]
   
@@ -102,7 +102,7 @@ const addCategorySheet = async (
       cat.description,
       cat.courseCount || 0,
       cat.totalStudents,
-      cat.totalRevenue,
+      cat.totalRevenue?.toLocaleString('en-US') + ' $',
       `${cat.revenueProportion.toFixed(2)}%`,
     ]
     
@@ -163,7 +163,7 @@ const addCourseSheet = async (
     'Course Name',
     'Total Students',
     'Average Rating',
-    'Total Revenue (VND)',
+    'Total Revenue ($)',
     'Revenue Share (%)',
     'Total Reviews',
     'Course Level'
@@ -201,7 +201,7 @@ const addCourseSheet = async (
       course.courseName,
       course.students,
       course.rating?.toFixed(1) || '0.0',
-      course.revenue,
+      course.revenue?.toLocaleString('en-US') + ' $',
       `${course.revenuePercent?.toFixed(2)}%`,
       course.reviews,
       course.level || 'N/A',
@@ -335,8 +335,8 @@ const addRevenueSheet = async (
   revenueSheet.getRow(4).values = [
     'No.',
     'Course Name',
-    'Current Revenue (VND)',
-    'Previously (VND)',
+    'Current Revenue ($)',
+    'Previously ($)',
     'Growth Rate (%)',
     'Total Orders',
     'New Students',
@@ -371,8 +371,8 @@ const addRevenueSheet = async (
     revenueSheet.getRow(rowIndex).values = [
       index + 1,
       data.courseName,
-      data.revenue,
-      data.previousRevenue,
+      data.revenue?.toLocaleString('en-US') + ' $',
+      data.previousRevenue?.toLocaleString('en-US') + ' $',
       data.growth,
       data.orders,
       data.newStudents,

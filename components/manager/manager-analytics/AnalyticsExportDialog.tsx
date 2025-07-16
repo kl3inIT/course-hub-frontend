@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/context/auth-context'
 import { analyticsApi } from '@/services/analytics-api'
@@ -19,18 +19,17 @@ import { toast } from 'react-hot-toast'
 
 // Import types
 import {
-  AnalyticsExportDialogProps,
-  ExportData,
-  ExportFormat,
-  ExportOptions,
-  ExportParams
+    AnalyticsExportDialogProps,
+    ExportData,
+    ExportFormat,
+    ExportOptions,
+    ExportParams
 } from './types/export-types'
 
 // Import constants
 import { DEFAULT_EXPORT_OPTIONS, EXPORT_SETTINGS } from './constants/export-constants'
 
 // Import utilities
-import { exportToCSV } from './utils/csv-export'
 import { exportToExcel } from './utils/excel-export'
 import { generateDateInfo } from './utils/export-utils'
 import { exportToPDF } from './utils/pdf-export'
@@ -129,9 +128,6 @@ export function AnalyticsExportDialog({
       switch (exportFormat) {
         case 'excel':
           await exportToExcel(freshExportData, dateInfo, exportOptions, exportDateRange, exportTimeRange)
-          break
-        case 'csv':
-          exportToCSV(freshExportData, dateInfo, exportOptions, exportDateRange, exportTimeRange)
           break
         case 'pdf':
           exportToPDF(freshExportData, dateInfo, exportOptions, exportDateRange, exportTimeRange, user?.name || '')
@@ -269,7 +265,6 @@ export function AnalyticsExportDialog({
                  className='w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
                >
                 <option value='excel'>Excel (.xlsx) - Advanced formatting</option>
-                <option value='csv'>CSV (.csv) - Simple format</option>
                 <option value='pdf'>PDF (.pdf) - Print-ready layout</option>
               </select>
             </div>

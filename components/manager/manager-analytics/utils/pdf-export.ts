@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { DateRange } from 'react-day-picker'
 import { ExportData, ExportOptions } from '../types/export-types'
-import { formatCurrencyVN, formatGrowthRate, getDateRangeText } from './export-utils'
+import { formatGrowthRate, getDateRangeText } from './export-utils'
 
 export const exportToPDF = (
   exportData: ExportData,
@@ -55,37 +55,43 @@ const addHeader = (doc: jsPDF, exportDateRange?: DateRange, exportTimeRange?: st
   doc.text(`Report Period: ${dateRangeText}`, 20, 65)
 }
 
-const TABLE_FONT_SIZE = 9;
-const TABLE_CELL_PADDING = 4;
-const TABLE_TOTAL_WIDTH = 200; // tăng width để header không xuống dòng
+const TABLE_FONT_SIZE = 7;
+const TABLE_CELL_PADDING = 1;
+const TABLE_TOTAL_WIDTH = 190; // vừa khổ A4 ngang, không tràn
 
-function getColumnWidths(numCols: number, nameColIdx: number = 1) {
+function getColumnWidths(numCols: number, nameColIdx: number = 1, moneyColIdxs: number[] = []) {
   const base = Math.floor(TABLE_TOTAL_WIDTH / numCols);
   const widths = Array(numCols).fill(base);
-  widths[nameColIdx] = base + 15;
-  const remain = TABLE_TOTAL_WIDTH - widths[nameColIdx];
-  const other = Math.floor(remain / (numCols - 1));
-  for (let i = 0; i < numCols; i++) {
-    if (i !== nameColIdx) widths[i] = other;
-  }
-  widths[numCols - 1] += TABLE_TOTAL_WIDTH - widths.reduce((a, b) => a + b, 0);
+  widths[0] = 12; // No.
+  widths[nameColIdx] = base + 6; // Name col
+  // Tăng width cho các cột số tiền vừa phải
+  moneyColIdxs.forEach(idx => { widths[idx] += 12; });
+  // Giảm width các cột ít chữ
+  if (numCols > 6) widths[numCols - 1] = 16; // Share %
+  // Cân đối lại tổng
+  const total = widths.reduce((a, b) => a + b, 0);
+  widths[numCols - 1] += TABLE_TOTAL_WIDTH - total;
   return widths;
 }
 
 const COMMON_HEAD_STYLE = {
-  fontSize: 7, // nhỏ hơn nữa
+  fontSize: 7,
   fontStyle: 'bold',
   halign: 'center',
   valign: 'middle',
   overflow: 'visible',
-  wordBreak: 'none',
-  cellPadding: 2,
+  wordBreak: 'break-all',
+  cellPadding: 1,
   minCellHeight: 10
 };
 
 function getCenterMargin(doc: jsPDF) {
   const pageWidth = doc.internal.pageSize.getWidth();
   return (pageWidth - TABLE_TOTAL_WIDTH) / 2;
+}
+
+function formatCurrencyUSD(amount: number) {
+  return amount?.toLocaleString('en-US') + ' $';
 }
 
 const addCategoryTable = (doc: jsPDF, data: any[], yPos: number): number => {
@@ -103,10 +109,10 @@ const addCategoryTable = (doc: jsPDF, data: any[], yPos: number): number => {
     item.name || '',
     item.courseCount || 0,
     item.totalStudents || 0,
-    formatCurrencyVN(item.totalRevenue || 0),
+    formatCurrencyUSD(item.totalRevenue || 0),
     (item.revenueProportion || 0).toFixed(2) + '%'
   ]);
-  const widths = getColumnWidths(6, 1);
+  const widths = getColumnWidths(6, 1, [4]);
   // @ts-ignore
   autoTable(doc, {
     head: [['No.', 'Category Name', 'Courses', 'Students', 'Revenue', 'Share %']],
@@ -143,12 +149,12 @@ const addCourseTable = (doc: jsPDF, data: any[], yPos: number): number => {
     item.courseName || '',
     item.students || 0,
     (item.rating || 0).toFixed(1),
-    formatCurrencyVN(item.revenue || 0),
+    formatCurrencyUSD(item.revenue || 0),
     (item.revenuePercent || 0).toFixed(2) + '%',
     item.reviews || 0,
     item.level || 'N/A'
   ]);
-  const widths = getColumnWidths(8, 1);
+  const widths = getColumnWidths(8, 1, [4]);
   // @ts-ignore
   autoTable(doc, {
     head: [['No.', 'Course Name', 'Students', 'Rating', 'Revenue', 'Revenue %', 'Reviews', 'Level']],
@@ -227,14 +233,14 @@ const addRevenueTable = (doc: jsPDF, data: any[], yPos: number): number => {
   const tableData: any[][] = data.map((item, index) => [
     index + 1,
     item.courseName || '',
-    formatCurrencyVN(item.revenue || 0),
-    formatCurrencyVN(item.previousRevenue || 0),
+    formatCurrencyUSD(item.revenue || 0),
+    formatCurrencyUSD(item.previousRevenue || 0),
     formatGrowthRate(item.growth),
     item.orders || 0,
     item.newStudents || 0,
     (item.revenueShare || 0) + '%'
   ]);
-  const widths = getColumnWidths(8, 1);
+  const widths = getColumnWidths(8, 1, [2,3]);
   // @ts-ignore
   autoTable(doc, {
     head: [['No.', 'Course Name', 'Revenue', 'Previous', 'Growth %', 'Orders', 'New Students', 'Share %']],

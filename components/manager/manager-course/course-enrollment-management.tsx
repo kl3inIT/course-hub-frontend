@@ -60,6 +60,7 @@ import {
 import { toast } from 'sonner'
 import { courseApi } from '@/services/course-api'
 import { CourseEnrollment, CourseEnrollmentStats } from '@/types/course'
+import Link from 'next/link'
 
 interface CourseEnrollmentManagementProps {
   courseId: string
@@ -520,9 +521,11 @@ export function CourseEnrollmentManagement({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align='end'>
-                            <DropdownMenuItem>
-                              <Eye className='mr-2 h-4 w-4' />
-                              View Profile
+                            <DropdownMenuItem asChild>
+                              <Link href={`/manager/users/${enrollment.studentId}/detail`}>
+                                <Eye className='mr-2 h-4 w-4' />
+                                View Profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Mail className='mr-2 h-4 w-4' />

@@ -664,7 +664,7 @@ export function UserDetail({ userId }: { userId: string }) {
   const { toast } = useToast()
   const { getToken } = useAuth()
   const pathname = usePathname()
-  const isAdminView = pathname?.startsWith('/admin')
+  const isManagementView = pathname?.startsWith('/admin') || pathname?.startsWith('/manager')
   const [activityTab, setActivityTab] = useState<string>('all')
   const [activityDateRange, setActivityDateRange] = useState<
     DateRange | undefined
@@ -727,7 +727,7 @@ export function UserDetail({ userId }: { userId: string }) {
 
   useEffect(() => {
     fetchUserDetail()
-  }, [userId, isAdminView])
+  }, [userId, isManagementView])
 
   const activitiesToShow = useMemo(() => {
     if (!userDetail?.activities) return []
@@ -852,8 +852,8 @@ export function UserDetail({ userId }: { userId: string }) {
   return (
     <div className='w-full min-h-screen bg-gray-50/30'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
-        {/* Back Button for Admin View */}
-        {isAdminView && (
+        {/* Back Button for Management View */}
+        {isManagementView && (
           <div className='flex items-center gap-4 mb-6'>
             <Button
               variant='ghost'
@@ -862,7 +862,7 @@ export function UserDetail({ userId }: { userId: string }) {
               className='gap-2'
             >
               <ArrowLeft className='h-4 w-4' />
-              Back to Users
+              Back to {pathname?.startsWith('/admin') ? 'Users' : 'Course Management'}
             </Button>
             <Separator orientation='vertical' className='h-6' />
             <h2 className='text-2xl font-bold'>User Profile</h2>

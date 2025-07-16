@@ -1,8 +1,8 @@
 import { httpClient } from '@/services/http-client'
 import {
-    CategoryRequestDTO,
-    CategoryResponseDTO,
-    CategorySearchParams,
+  CategoryRequestDTO,
+  CategoryResponseDTO,
+  CategorySearchParams,
 } from '@/types/category'
 import { ApiResponse, Page } from '@/types/common'
 

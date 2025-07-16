@@ -185,18 +185,31 @@ export const courseApi = {
     return response.data
   },
 
-  getCourseEnrollments: async (courseId: string): Promise<CourseEnrollment[]> => {
-    const response = await httpClient.get<ApiResponse<CourseEnrollment[]>>(`/api/courses/${courseId}/enrollments`)
+  getCourseEnrollments: async (
+    courseId: string
+  ): Promise<CourseEnrollment[]> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollment[]>>(
+      `/api/courses/${courseId}/enrollments`
+    )
     return response.data.data
   },
 
-  unenrollStudent: async (courseId: string, studentId: string): Promise<string> => {
-    const response = await httpClient.delete<ApiResponse<string>>(`/api/courses/${courseId}/enrollments/${studentId}`)
+  unenrollStudent: async (
+    courseId: string,
+    studentId: string
+  ): Promise<string> => {
+    const response = await httpClient.delete<ApiResponse<string>>(
+      `/api/courses/${courseId}/enrollments/${studentId}`
+    )
     return response.data.data
   },
 
-  getCourseEnrollmentStats: async (courseId: string): Promise<CourseEnrollmentStats> => {
-    const response = await httpClient.get<ApiResponse<CourseEnrollmentStats>>(`/api/courses/${courseId}/enrollments/stats`)
+  getCourseEnrollmentStats: async (
+    courseId: string
+  ): Promise<CourseEnrollmentStats> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollmentStats>>(
+      `/api/courses/${courseId}/enrollments/stats`
+    )
     return response.data.data
   },
 }

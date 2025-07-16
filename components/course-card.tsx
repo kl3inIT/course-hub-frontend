@@ -27,7 +27,7 @@ export function CourseCard({
 
   return (
     <Link href={`/courses/${course.id}`}>
-              <Card
+      <Card
         className={`hover:shadow-lg transition-shadow cursor-pointer h-full overflow-hidden ${className}`}
       >
         {/* Course Thumbnail */}

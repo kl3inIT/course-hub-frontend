@@ -87,7 +87,7 @@ export interface CourseSearchParams {
   // Basic pagination
   page?: number
   size?: number
-  
+
   // Search fields - match backend exactly
   searchTerm?: string // Backend: String searchTerm
   categoryId?: number // Backend: Long categoryId -> number
@@ -99,7 +99,7 @@ export interface CourseSearchParams {
   status?: string // Backend: String status
   sortBy?: string // Backend: String sortBy
   sortDirection?: string // Backend: String sortDirection
-  
+
   // Legacy fields for backward compatibility (deprecated)
   sort?: string
   search?: string
@@ -152,7 +152,7 @@ export interface CourseEnrollment {
   studentEmail: string
   studentAvatar: string
   enrollmentDate: string // Date -> string (ISO format)
-  lastAccessed: string // Date -> string (ISO format) 
+  lastAccessed: string // Date -> string (ISO format)
   progress: number // Double -> number
   completedLessons: number // Integer -> number
   totalLessons: number // Integer -> number
@@ -165,7 +165,7 @@ export interface CourseEnrollment {
 
 export interface CourseEnrollmentStats {
   totalEnrollments: number // Integer -> number
-  activeEnrollments: number // Integer -> number  
+  activeEnrollments: number // Integer -> number
   completedEnrollments: number // Integer -> number
   averageProgress: number // Double -> number
   averageTimeSpent: number // Double -> number (in minutes)

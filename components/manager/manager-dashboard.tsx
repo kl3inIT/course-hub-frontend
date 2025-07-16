@@ -7,8 +7,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import dashboardApi, { getManagerDashboardStats, getNewCoursesChartByYear, getRevenueChartByYear, getRevenueInsightsByMonthYear, getStudentEnrollmentChartByYear, getTopCoursesByMonthYear } from '@/services/dashboard-api'
-import { DashboardManagerData, DashboardManagerResponse } from '@/types/dashboard'
+import dashboardApi, {
+  getManagerDashboardStats,
+  getNewCoursesChartByYear,
+  getRevenueChartByYear,
+  getRevenueInsightsByMonthYear,
+  getStudentEnrollmentChartByYear,
+  getTopCoursesByMonthYear,
+} from '@/services/dashboard-api'
+import {
+  DashboardManagerData,
+  DashboardManagerResponse,
+} from '@/types/dashboard'
 import {
   ArrowUpRight,
   BarChart3,
@@ -22,7 +32,7 @@ import {
   Target,
   TrendingDown,
   TrendingUp,
-  Users
+  Users,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -33,18 +43,27 @@ export function ManagerDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   // State cho filter 4 thẻ đầu
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  )
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  )
   const [filterLoading, setFilterLoading] = useState(false)
-  const [filteredStats, setFilteredStats] = useState<DashboardManagerData | null>(null)
+  const [filteredStats, setFilteredStats] =
+    useState<DashboardManagerData | null>(null)
 
   // State cho từng năm và dữ liệu của từng biểu đồ
-  const [revenueYear, setRevenueYear] = useState<number>(new Date().getFullYear())
+  const [revenueYear, setRevenueYear] = useState<number>(
+    new Date().getFullYear()
+  )
   const [revenueChart, setRevenueChart] = useState<number[] | null>(null)
   const [revenueLoading, setRevenueLoading] = useState(false)
   const [revenueError, setRevenueError] = useState<string | null>(null)
 
-  const [coursesYear, setCoursesYear] = useState<number>(new Date().getFullYear())
+  const [coursesYear, setCoursesYear] = useState<number>(
+    new Date().getFullYear()
+  )
   const [coursesChart, setCoursesChart] = useState<number[] | null>(null)
   const [coursesLoading, setCoursesLoading] = useState(false)
   const [coursesError, setCoursesError] = useState<string | null>(null)
@@ -55,22 +74,34 @@ export function ManagerDashboard() {
   const [enrollError, setEnrollError] = useState<string | null>(null)
 
   // State cho filter Course Performance
-  const [coursePerfMonth, setCoursePerfMonth] = useState<number>(new Date().getMonth() + 1)
-  const [coursePerfYear, setCoursePerfYear] = useState<number>(new Date().getFullYear())
+  const [coursePerfMonth, setCoursePerfMonth] = useState<number>(
+    new Date().getMonth() + 1
+  )
+  const [coursePerfYear, setCoursePerfYear] = useState<number>(
+    new Date().getFullYear()
+  )
   const [coursePerfData, setCoursePerfData] = useState<any[] | null>(null)
   const [coursePerfLoading, setCoursePerfLoading] = useState(false)
   const [coursePerfError, setCoursePerfError] = useState<string | null>(null)
 
   // State cho filter Revenue Insights
-  const [revenueInsightsMonth, setRevenueInsightsMonth] = useState<number>(new Date().getMonth() + 1)
-  const [revenueInsightsYear, setRevenueInsightsYear] = useState<number>(new Date().getFullYear())
-  const [revenueInsightsData, setRevenueInsightsData] = useState<DashboardManagerData | null>(null)
+  const [revenueInsightsMonth, setRevenueInsightsMonth] = useState<number>(
+    new Date().getMonth() + 1
+  )
+  const [revenueInsightsYear, setRevenueInsightsYear] = useState<number>(
+    new Date().getFullYear()
+  )
+  const [revenueInsightsData, setRevenueInsightsData] =
+    useState<DashboardManagerData | null>(null)
   const [revenueInsightsLoading, setRevenueInsightsLoading] = useState(false)
-  const [revenueInsightsError, setRevenueInsightsError] = useState<string | null>(null)
+  const [revenueInsightsError, setRevenueInsightsError] = useState<
+    string | null
+  >(null)
 
   // Lấy data mặc định ban đầu
   useEffect(() => {
-    dashboardApi.getManagerDashboard()
+    dashboardApi
+      .getManagerDashboard()
       .then((res: DashboardManagerResponse) => setData(res.data))
       .catch(() => setError('Failed to load dashboard data'))
       .finally(() => setLoading(false))
@@ -78,39 +109,45 @@ export function ManagerDashboard() {
 
   // Khi đổi năm từng biểu đồ
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
     setRevenueLoading(true)
     setRevenueError(null)
     getRevenueChartByYear(revenueYear)
-      .then((res) => setRevenueChart(res && res.length ? res : data.monthlyRevenue))
+      .then(res =>
+        setRevenueChart(res && res.length ? res : data.monthlyRevenue)
+      )
       .catch(() => {
-        setRevenueError('Failed to load revenue data');
+        setRevenueError('Failed to load revenue data')
         setRevenueChart(data.monthlyRevenue)
       })
       .finally(() => setRevenueLoading(false))
   }, [revenueYear, data])
 
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
     setCoursesLoading(true)
     setCoursesError(null)
     getNewCoursesChartByYear(coursesYear)
-      .then((res) => setCoursesChart(res && res.length ? res : data.monthlyNewCourses))
+      .then(res =>
+        setCoursesChart(res && res.length ? res : data.monthlyNewCourses)
+      )
       .catch(() => {
-        setCoursesError('Failed to load new courses data');
+        setCoursesError('Failed to load new courses data')
         setCoursesChart(data.monthlyNewCourses)
       })
       .finally(() => setCoursesLoading(false))
   }, [coursesYear, data])
 
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
     setEnrollLoading(true)
     setEnrollError(null)
     getStudentEnrollmentChartByYear(enrollYear)
-      .then((res) => setEnrollChart(res && res.length ? res : data.monthlyStudentEnrollments))
+      .then(res =>
+        setEnrollChart(res && res.length ? res : data.monthlyStudentEnrollments)
+      )
       .catch(() => {
-        setEnrollError('Failed to load enrollment data');
+        setEnrollError('Failed to load enrollment data')
         setEnrollChart(data.monthlyStudentEnrollments)
       })
       .finally(() => setEnrollLoading(false))
@@ -118,27 +155,27 @@ export function ManagerDashboard() {
 
   // Khi đổi filter Course Performance
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
     setCoursePerfLoading(true)
     setCoursePerfError(null)
     getTopCoursesByMonthYear(coursePerfMonth, coursePerfYear)
-      .then((res) => {
+      .then(res => {
         if (res && res.length) {
           setCoursePerfData(res)
         } else {
           // Nếu không có data, lấy top 3 course nhiều người enroll nhất, set students = 0
           const top3 = (data.topCourses || []).slice(0, 3).map(course => ({
             ...course,
-            students: 0
+            students: 0,
           }))
           setCoursePerfData(top3)
         }
       })
       .catch(() => {
-        setCoursePerfError('Failed to load top courses data');
+        setCoursePerfError('Failed to load top courses data')
         const top3 = (data.topCourses || []).slice(0, 3).map(course => ({
           ...course,
-          students: 0
+          students: 0,
         }))
         setCoursePerfData(top3)
       })
@@ -147,11 +184,11 @@ export function ManagerDashboard() {
 
   // Khi đổi filter Revenue Insights
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
     setRevenueInsightsLoading(true)
     setRevenueInsightsError(null)
     getRevenueInsightsByMonthYear(revenueInsightsMonth, revenueInsightsYear)
-      .then((res) => {
+      .then(res => {
         if ('data' in res) {
           setRevenueInsightsData(res.data)
         } else {
@@ -159,7 +196,7 @@ export function ManagerDashboard() {
         }
       })
       .catch(() => {
-        setRevenueInsightsError('Failed to load revenue insights data');
+        setRevenueInsightsError('Failed to load revenue insights data')
         setRevenueInsightsData(data)
       })
       .finally(() => setRevenueInsightsLoading(false))
@@ -264,9 +301,21 @@ export function ManagerDashboard() {
 
   // Revenue insights (from API)
   const revenueInsights = [
-    { period: 'This Month', amount: `$${data.totalRevenue.toLocaleString()}`, change: `${data.revenueGrowth > 0 ? '+' : ''}${data.revenueGrowth}%` },
-    { period: 'Last Month', amount: `$${data.totalLastMonthRevenue.toLocaleString()}`, change: `${data.lastMonthRevenueGrowth > 0 ? '+' : ''}${data.lastMonthRevenueGrowth}%` },
-    { period: '3 Months Ago', amount: `$${data.totalThreeMonthsAgoRevenue.toLocaleString()}`, change: `${data.threeMonthsAgoRevenueGrowth > 0 ? '+' : ''}${data.threeMonthsAgoRevenueGrowth}%` },
+    {
+      period: 'This Month',
+      amount: `$${data.totalRevenue.toLocaleString()}`,
+      change: `${data.revenueGrowth > 0 ? '+' : ''}${data.revenueGrowth}%`,
+    },
+    {
+      period: 'Last Month',
+      amount: `$${data.totalLastMonthRevenue.toLocaleString()}`,
+      change: `${data.lastMonthRevenueGrowth > 0 ? '+' : ''}${data.lastMonthRevenueGrowth}%`,
+    },
+    {
+      period: '3 Months Ago',
+      amount: `$${data.totalThreeMonthsAgoRevenue.toLocaleString()}`,
+      change: `${data.threeMonthsAgoRevenueGrowth > 0 ? '+' : ''}${data.threeMonthsAgoRevenueGrowth}%`,
+    },
   ]
 
   return (
@@ -291,12 +340,13 @@ export function ManagerDashboard() {
           </Button>
           <Button
             onClick={() => {
-              setLoading(true);
-              setError(null);
-              dashboardApi.getManagerDashboard()
+              setLoading(true)
+              setError(null)
+              dashboardApi
+                .getManagerDashboard()
                 .then((res: DashboardManagerResponse) => setData(res.data))
                 .catch(() => setError('Failed to load dashboard data'))
-                .finally(() => setLoading(false));
+                .finally(() => setLoading(false))
             }}
             variant='outline'
             disabled={loading}
@@ -312,38 +362,42 @@ export function ManagerDashboard() {
       {/* Analytics Cards + Filter */}
       <div>
         {/* Filter tháng/năm chỉ cho 4 thẻ */}
-        <div className="flex justify-end mb-2 gap-2">
+        <div className='flex justify-end mb-2 gap-2'>
           <select
             value={selectedMonth}
             onChange={e => setSelectedMonth(Number(e.target.value))}
-            className="border rounded px-2 py-1"
+            className='border rounded px-2 py-1'
           >
             {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>Month {i + 1}</option>
+              <option key={i + 1} value={i + 1}>
+                Month {i + 1}
+              </option>
             ))}
           </select>
           <select
             value={selectedYear}
             onChange={e => setSelectedYear(Number(e.target.value))}
-            className="border rounded px-2 py-1"
+            className='border rounded px-2 py-1'
           >
             {[...Array(5)].map((_, i) => {
               const year = new Date().getFullYear() - i
-              return <option key={year} value={year}>{year}</option>
+              return (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              )
             })}
           </select>
           <Button
             onClick={handleFilter}
             disabled={filterLoading}
-            className="ml-2"
+            className='ml-2'
           >
             {filterLoading ? 'Loading...' : 'Filter'}
           </Button>
         </div>
         {error && (
-          <div className="text-red-500 text-sm text-right mb-2">
-            {error}
-          </div>
+          <div className='text-red-500 text-sm text-right mb-2'>{error}</div>
         )}
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
           {analyticsCards.map((card, index) => (
@@ -384,27 +438,31 @@ export function ManagerDashboard() {
 
       {/* Statistics Charts */}
       {/* Row 1: Quick Actions | Revenue Chart */}
-      <div className="grid md:grid-cols-3 gap-6 mt-8 items-stretch">
+      <div className='grid md:grid-cols-3 gap-6 mt-8 items-stretch'>
         {/* Quick Actions */}
-        <Card className="w-full h-full flex flex-col justify-center shadow-sm border border-gray-200">
-          <CardHeader className="border-b border-gray-100 pb-3">
-            <CardTitle className="text-lg font-bold">Quick Actions</CardTitle>
+        <Card className='w-full h-full flex flex-col justify-center shadow-sm border border-gray-200'>
+          <CardHeader className='border-b border-gray-100 pb-3'>
+            <CardTitle className='text-lg font-bold'>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-3">
+            <div className='flex flex-col gap-3'>
               {quickActions.map((action, idx) => (
                 <button
                   key={idx}
                   onClick={action.onClick}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 bg-gray-50 hover:bg-gray-100 transition group shadow-sm"
+                  className='flex items-center gap-3 rounded-lg px-3 py-2 bg-gray-50 hover:bg-gray-100 transition group shadow-sm'
                   style={{ minHeight: 48 }}
                 >
-                  <span className="flex items-center justify-center rounded-full bg-gray-200 group-hover:bg-primary/10 transition w-10 h-10">
-                    <action.icon className="h-6 w-6 text-primary" />
+                  <span className='flex items-center justify-center rounded-full bg-gray-200 group-hover:bg-primary/10 transition w-10 h-10'>
+                    <action.icon className='h-6 w-6 text-primary' />
                   </span>
-                  <span className="flex flex-col text-left">
-                    <span className="font-semibold text-sm">{action.title}</span>
-                    <span className="text-xs text-muted-foreground">{action.description}</span>
+                  <span className='flex flex-col text-left'>
+                    <span className='font-semibold text-sm'>
+                      {action.title}
+                    </span>
+                    <span className='text-xs text-muted-foreground'>
+                      {action.description}
+                    </span>
                   </span>
                 </button>
               ))}
@@ -412,87 +470,129 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
         {/* Revenue Chart (expand) */}
-        <Card className="w-full h-full md:col-span-2 shadow-sm border border-gray-200 flex flex-col">
-          <CardHeader className="border-b border-gray-100 pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <DollarSign className="h-5 w-5 text-primary" />
+        <Card className='w-full h-full md:col-span-2 shadow-sm border border-gray-200 flex flex-col'>
+          <CardHeader className='border-b border-gray-100 pb-3 flex flex-row items-center justify-between'>
+            <CardTitle className='flex items-center gap-2 text-lg font-bold'>
+              <DollarSign className='h-5 w-5 text-primary' />
               Revenue Chart
             </CardTitle>
             <div>
               <select
                 value={revenueYear}
                 onChange={e => setRevenueYear(Number(e.target.value))}
-                className="border rounded px-2 py-1 text-sm"
+                className='border rounded px-2 py-1 text-sm'
               >
                 {[...Array(5)].map((_, i) => {
                   const year = new Date().getFullYear() - i
-                  return <option key={year} value={year}>{year}</option>
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  )
                 })}
               </select>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center">
-            <div className="w-full h-64 md:h-72 flex items-center">
-              {revenueLoading ? <div className="w-full text-center">Loading...</div> : <RevenueLineChart data={revenueChart || data?.monthlyRevenue || []} />}
+          <CardContent className='flex-1 flex items-center'>
+            <div className='w-full h-64 md:h-72 flex items-center'>
+              {revenueLoading ? (
+                <div className='w-full text-center'>Loading...</div>
+              ) : (
+                <RevenueLineChart
+                  data={revenueChart || data?.monthlyRevenue || []}
+                />
+              )}
             </div>
-            {revenueError && <div className="text-red-500 text-xs text-right mt-1">{revenueError}</div>}
+            {revenueError && (
+              <div className='text-red-500 text-xs text-right mt-1'>
+                {revenueError}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
       {/* Row 2: New Courses Chart | Student Enrollment Area Chart */}
-      <div className="grid md:grid-cols-2 gap-6 mt-8 items-stretch">
+      <div className='grid md:grid-cols-2 gap-6 mt-8 items-stretch'>
         {/* New Courses Chart */}
-        <Card className="w-full h-full shadow-sm border border-gray-200 flex flex-col">
-          <CardHeader className="border-b border-gray-100 pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <BarChart3 className="h-5 w-5 text-primary" />
+        <Card className='w-full h-full shadow-sm border border-gray-200 flex flex-col'>
+          <CardHeader className='border-b border-gray-100 pb-3 flex flex-row items-center justify-between'>
+            <CardTitle className='flex items-center gap-2 text-lg font-bold'>
+              <BarChart3 className='h-5 w-5 text-primary' />
               New Courses Chart
             </CardTitle>
             <div>
               <select
                 value={coursesYear}
                 onChange={e => setCoursesYear(Number(e.target.value))}
-                className="border rounded px-2 py-1 text-sm"
+                className='border rounded px-2 py-1 text-sm'
               >
                 {[...Array(5)].map((_, i) => {
                   const year = new Date().getFullYear() - i
-                  return <option key={year} value={year}>{year}</option>
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  )
                 })}
               </select>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center">
-            <div className="w-full h-64 md:h-72 flex items-center">
-              {coursesLoading ? <div className="w-full text-center">Loading...</div> : <NewCoursesBarChart data={coursesChart || data?.monthlyNewCourses || []} />}
+          <CardContent className='flex-1 flex items-center'>
+            <div className='w-full h-64 md:h-72 flex items-center'>
+              {coursesLoading ? (
+                <div className='w-full text-center'>Loading...</div>
+              ) : (
+                <NewCoursesBarChart
+                  data={coursesChart || data?.monthlyNewCourses || []}
+                />
+              )}
             </div>
-            {coursesError && <div className="text-red-500 text-xs text-right mt-1">{coursesError}</div>}
+            {coursesError && (
+              <div className='text-red-500 text-xs text-right mt-1'>
+                {coursesError}
+              </div>
+            )}
           </CardContent>
         </Card>
         {/* Student Enrollment Area Chart */}
-        <Card className="w-full h-full shadow-sm border border-gray-200 flex flex-col">
-          <CardHeader className="border-b border-gray-100 pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Users className="h-5 w-5 text-primary" />
+        <Card className='w-full h-full shadow-sm border border-gray-200 flex flex-col'>
+          <CardHeader className='border-b border-gray-100 pb-3 flex flex-row items-center justify-between'>
+            <CardTitle className='flex items-center gap-2 text-lg font-bold'>
+              <Users className='h-5 w-5 text-primary' />
               Student Enrollment (Yearly Area Chart)
             </CardTitle>
             <div>
               <select
                 value={enrollYear}
                 onChange={e => setEnrollYear(Number(e.target.value))}
-                className="border rounded px-2 py-1 text-sm"
+                className='border rounded px-2 py-1 text-sm'
               >
                 {[...Array(5)].map((_, i) => {
                   const year = new Date().getFullYear() - i
-                  return <option key={year} value={year}>{year}</option>
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  )
                 })}
               </select>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center">
-            <div className="w-full h-64 md:h-72 flex items-center">
-              {enrollLoading ? <div className="w-full text-center">Loading...</div> : <StudentEnrollmentAreaChart data={enrollChart || data?.monthlyStudentEnrollments || []} />}
+          <CardContent className='flex-1 flex items-center'>
+            <div className='w-full h-64 md:h-72 flex items-center'>
+              {enrollLoading ? (
+                <div className='w-full text-center'>Loading...</div>
+              ) : (
+                <StudentEnrollmentAreaChart
+                  data={enrollChart || data?.monthlyStudentEnrollments || []}
+                />
+              )}
             </div>
-            {enrollError && <div className="text-red-500 text-xs text-right mt-1">{enrollError}</div>}
+            {enrollError && (
+              <div className='text-red-500 text-xs text-right mt-1'>
+                {enrollError}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -500,9 +600,7 @@ export function ManagerDashboard() {
       {/* Performance Overview */}
       <div className='grid gap-6 md:grid-cols-2'>
         {/* Course Performance */}
-        <Card
-          className='cursor-pointer transition-all hover:shadow-md'
-        >
+        <Card className='cursor-pointer transition-all hover:shadow-md'>
           <CardHeader>
             <div className='flex items-center justify-between'>
               <span className='flex items-center gap-2'>
@@ -516,7 +614,9 @@ export function ManagerDashboard() {
                   className='border rounded px-2 py-1 text-sm'
                 >
                   {[...Array(12)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>Month {i + 1}</option>
+                    <option key={i + 1} value={i + 1}>
+                      Month {i + 1}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -526,7 +626,11 @@ export function ManagerDashboard() {
                 >
                   {[...Array(5)].map((_, i) => {
                     const year = new Date().getFullYear() - i
-                    return <option key={year} value={year}>{year}</option>
+                    return (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    )
                   })}
                 </select>
               </div>
@@ -536,27 +640,36 @@ export function ManagerDashboard() {
           <CardContent>
             <div className='space-y-4'>
               {coursePerfLoading ? (
-                <div className='text-center text-muted-foreground'>Loading...</div>
+                <div className='text-center text-muted-foreground'>
+                  Loading...
+                </div>
               ) : coursePerfData && coursePerfData.length > 0 ? (
                 coursePerfData.map((course, index) => (
-                  <div key={index} className='flex items-center justify-between'>
+                  <div
+                    key={index}
+                    className='flex items-center justify-between'
+                  >
                     <div>
                       <p className='font-medium'>{course.name}</p>
                     </div>
                     <div className='flex items-center gap-1'>
-                      <span className='text-sm text-muted-foreground'>{course.students} students</span>
+                      <span className='text-sm text-muted-foreground'>
+                        {course.students} students
+                      </span>
                     </div>
                   </div>
                 ))
               ) : null}
-              {coursePerfError && <div className='text-red-500 text-xs text-right mt-1'>{coursePerfError}</div>}
+              {coursePerfError && (
+                <div className='text-red-500 text-xs text-right mt-1'>
+                  {coursePerfError}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
         {/* Revenue Insights */}
-        <Card
-          className='cursor-pointer transition-all hover:shadow-md'
-        >
+        <Card className='cursor-pointer transition-all hover:shadow-md'>
           <CardHeader>
             <div className='flex items-center justify-between'>
               <span className='flex items-center gap-2'>
@@ -566,11 +679,15 @@ export function ManagerDashboard() {
               <div className='flex items-center gap-2 ml-auto'>
                 <select
                   value={revenueInsightsMonth}
-                  onChange={e => setRevenueInsightsMonth(Number(e.target.value))}
+                  onChange={e =>
+                    setRevenueInsightsMonth(Number(e.target.value))
+                  }
                   className='border rounded px-2 py-1 text-sm'
                 >
                   {[...Array(12)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>Month {i + 1}</option>
+                    <option key={i + 1} value={i + 1}>
+                      Month {i + 1}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -580,7 +697,11 @@ export function ManagerDashboard() {
                 >
                   {[...Array(5)].map((_, i) => {
                     const year = new Date().getFullYear() - i
-                    return <option key={year} value={year}>{year}</option>
+                    return (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    )
                   })}
                 </select>
               </div>
@@ -590,39 +711,66 @@ export function ManagerDashboard() {
           <CardContent>
             <div className='space-y-4'>
               {revenueInsightsLoading ? (
-                <div className='text-center text-muted-foreground'>Loading...</div>
+                <div className='text-center text-muted-foreground'>
+                  Loading...
+                </div>
               ) : (
                 <>
                   <div className='flex items-center justify-between'>
                     <div>
                       <p className='font-medium'>This Month</p>
                       <p className='text-sm text-muted-foreground'>
-                        {revenueInsightsData?.revenueGrowth ?? data?.revenueGrowth}% growth
+                        {revenueInsightsData?.revenueGrowth ??
+                          data?.revenueGrowth}
+                        % growth
                       </p>
                     </div>
-                    <span className='text-lg font-bold'>${revenueInsightsData?.totalRevenue?.toLocaleString() ?? data?.totalRevenue?.toLocaleString() ?? 0}</span>
+                    <span className='text-lg font-bold'>
+                      $
+                      {revenueInsightsData?.totalRevenue?.toLocaleString() ??
+                        data?.totalRevenue?.toLocaleString() ??
+                        0}
+                    </span>
                   </div>
                   <div className='flex items-center justify-between'>
                     <div>
                       <p className='font-medium'>Last Month</p>
                       <p className='text-sm text-muted-foreground'>
-                        {revenueInsightsData?.lastMonthRevenueGrowth ?? data?.lastMonthRevenueGrowth}% growth
+                        {revenueInsightsData?.lastMonthRevenueGrowth ??
+                          data?.lastMonthRevenueGrowth}
+                        % growth
                       </p>
                     </div>
-                    <span className='text-lg font-bold'>${revenueInsightsData?.totalLastMonthRevenue?.toLocaleString() ?? data?.totalLastMonthRevenue?.toLocaleString() ?? 0}</span>
+                    <span className='text-lg font-bold'>
+                      $
+                      {revenueInsightsData?.totalLastMonthRevenue?.toLocaleString() ??
+                        data?.totalLastMonthRevenue?.toLocaleString() ??
+                        0}
+                    </span>
                   </div>
                   <div className='flex items-center justify-between'>
                     <div>
                       <p className='font-medium'>3 Months Ago</p>
                       <p className='text-sm text-muted-foreground'>
-                        {revenueInsightsData?.threeMonthsAgoRevenueGrowth ?? data?.threeMonthsAgoRevenueGrowth}% growth
+                        {revenueInsightsData?.threeMonthsAgoRevenueGrowth ??
+                          data?.threeMonthsAgoRevenueGrowth}
+                        % growth
                       </p>
                     </div>
-                    <span className='text-lg font-bold'>${revenueInsightsData?.totalThreeMonthsAgoRevenue?.toLocaleString() ?? data?.totalThreeMonthsAgoRevenue?.toLocaleString() ?? 0}</span>
+                    <span className='text-lg font-bold'>
+                      $
+                      {revenueInsightsData?.totalThreeMonthsAgoRevenue?.toLocaleString() ??
+                        data?.totalThreeMonthsAgoRevenue?.toLocaleString() ??
+                        0}
+                    </span>
                   </div>
                 </>
               )}
-              {revenueInsightsError && <div className='text-red-500 text-xs text-right mt-1'>{revenueInsightsError}</div>}
+              {revenueInsightsError && (
+                <div className='text-red-500 text-xs text-right mt-1'>
+                  {revenueInsightsError}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -633,7 +781,8 @@ export function ManagerDashboard() {
 
 // RevenueLineChart: SVG line chart responsive
 function RevenueLineChart({ data }: { data: number[] }) {
-  if (!data || data.length === 0) return <div className="text-center w-full">No data</div>;
+  if (!data || data.length === 0)
+    return <div className='text-center w-full'>No data</div>
   const max = Math.max(...data)
   const min = Math.min(...data)
   const padding = 32
@@ -645,26 +794,32 @@ function RevenueLineChart({ data }: { data: number[] }) {
     return [x, y]
   })
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width='100%'
+      height='100%'
+      preserveAspectRatio='none'
+      className='w-full h-full'
+    >
       {/* Đường biểu đồ */}
       <polyline
-        fill="none"
-        stroke="#222"
-        strokeWidth="3"
+        fill='none'
+        stroke='#222'
+        strokeWidth='3'
         points={points.map(([x, y]) => `${x},${y}`).join(' ')}
       />
       {/* Chấm tròn từng mốc và giá trị tiền */}
       {points.map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5" fill="#222" />
+          <circle cx={x} cy={y} r='5' fill='#222' />
           {data[i] !== 0 && (
             <text
               x={x}
               y={y - 12}
-              fontSize="10"
-              fill="#222"
-              textAnchor="middle"
-              fontWeight="bold"
+              fontSize='10'
+              fill='#222'
+              textAnchor='middle'
+              fontWeight='bold'
               style={{ pointerEvents: 'none' }}
             >
               {data[i].toLocaleString()}$
@@ -680,9 +835,9 @@ function RevenueLineChart({ data }: { data: number[] }) {
             key={i}
             x={x}
             y={h - padding + 18}
-            textAnchor="middle"
-            fontSize="12"
-            fill="#888"
+            textAnchor='middle'
+            fontSize='12'
+            fill='#888'
           >
             {i + 1}
           </text>
@@ -694,14 +849,21 @@ function RevenueLineChart({ data }: { data: number[] }) {
 
 // NewCoursesBarChart: SVG bar chart responsive
 function NewCoursesBarChart({ data }: { data: number[] }) {
-  if (!data || data.length === 0) return <div className="text-center w-full">No data</div>;
+  if (!data || data.length === 0)
+    return <div className='text-center w-full'>No data</div>
   const max = Math.max(...data)
   const padding = 32
   const w = 600
   const h = 200
   const barWidth = (w - 2 * padding) / data.length - 8
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width='100%'
+      height='100%'
+      preserveAspectRatio='none'
+      className='w-full h-full'
+    >
       {/* Cột */}
       {data.map((v, i) => {
         const x = padding + i * ((w - 2 * padding) / data.length)
@@ -714,15 +876,15 @@ function NewCoursesBarChart({ data }: { data: number[] }) {
               y={y}
               width={barWidth}
               height={barH}
-              fill="#222"
-              rx="4"
+              fill='#222'
+              rx='4'
             />
             <text
               x={x + barWidth / 2}
               y={y - 6}
-              textAnchor="middle"
-              fontSize="12"
-              fill="#222"
+              textAnchor='middle'
+              fontSize='12'
+              fill='#222'
             >
               {v}
             </text>
@@ -737,24 +899,41 @@ function NewCoursesBarChart({ data }: { data: number[] }) {
             key={i}
             x={x}
             y={h - padding + 18}
-            textAnchor="middle"
-            fontSize="12"
-            fill="#888"
+            textAnchor='middle'
+            fontSize='12'
+            fill='#888'
           >
             {i + 1}
           </text>
         )
       })}
       {/* Trục Y (giá trị) */}
-      <text x={padding - 10} y={padding} fontSize="12" fill="#888" textAnchor="end">{max}</text>
-      <text x={padding - 10} y={h - padding} fontSize="12" fill="#888" textAnchor="end">0</text>
+      <text
+        x={padding - 10}
+        y={padding}
+        fontSize='12'
+        fill='#888'
+        textAnchor='end'
+      >
+        {max}
+      </text>
+      <text
+        x={padding - 10}
+        y={h - padding}
+        fontSize='12'
+        fill='#888'
+        textAnchor='end'
+      >
+        0
+      </text>
     </svg>
   )
 }
 
 // AreaChart: SVG area chart for student enrollments per month
 function StudentEnrollmentAreaChart({ data }: { data: number[] }) {
-  if (!data || data.length === 0) return <div className="text-center w-full">No data</div>;
+  if (!data || data.length === 0)
+    return <div className='text-center w-full'>No data</div>
   const max = Math.max(...data)
   const min = Math.min(...data)
   const padding = 32
@@ -770,31 +949,37 @@ function StudentEnrollmentAreaChart({ data }: { data: number[] }) {
     `M${points[0][0]},${h - padding}`,
     ...points.map(([x, y]) => `L${x},${y}`),
     `L${points[points.length - 1][0]},${h - padding}`,
-    'Z'
+    'Z',
   ].join(' ')
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width='100%'
+      height='100%'
+      preserveAspectRatio='none'
+      className='w-full h-full'
+    >
       {/* Area fill */}
-      <path d={areaPath} fill="#000" fillOpacity="0.2" stroke="none" />
+      <path d={areaPath} fill='#000' fillOpacity='0.2' stroke='none' />
       {/* Line */}
       <polyline
-        fill="none"
-        stroke="#000"
-        strokeWidth="3"
+        fill='none'
+        stroke='#000'
+        strokeWidth='3'
         points={points.map(([x, y]) => `${x},${y}`).join(' ')}
       />
       {/* Dots và số lượng sinh viên trên mỗi chấm */}
       {points.map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5" fill="#000" />
+          <circle cx={x} cy={y} r='5' fill='#000' />
           {data[i] !== 0 && (
             <text
               x={x}
               y={y - 12}
-              fontSize="10"
-              fill="#000"
-              textAnchor="middle"
-              fontWeight="bold"
+              fontSize='10'
+              fill='#000'
+              textAnchor='middle'
+              fontWeight='bold'
               style={{ pointerEvents: 'none' }}
             >
               {data[i]}
@@ -810,17 +995,33 @@ function StudentEnrollmentAreaChart({ data }: { data: number[] }) {
             key={i}
             x={x}
             y={h - padding + 18}
-            textAnchor="middle"
-            fontSize="12"
-            fill="#888"
+            textAnchor='middle'
+            fontSize='12'
+            fill='#888'
           >
             {i + 1}
           </text>
         )
       })}
       {/* Y axis (values) */}
-      <text x={padding - 10} y={padding} fontSize="12" fill="#888" textAnchor="end">{max}</text>
-      <text x={padding - 10} y={h - padding} fontSize="12" fill="#888" textAnchor="end">{min}</text>
+      <text
+        x={padding - 10}
+        y={padding}
+        fontSize='12'
+        fill='#888'
+        textAnchor='end'
+      >
+        {max}
+      </text>
+      <text
+        x={padding - 10}
+        y={h - padding}
+        fontSize='12'
+        fill='#888'
+        textAnchor='end'
+      >
+        {min}
+      </text>
     </svg>
   )
 }

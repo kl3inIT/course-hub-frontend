@@ -1,6 +1,7 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page } from '@/types/common'
 import {
+  ReviewFiltersParams,
   ReviewRequestDTO,
   ReviewResponseDTO,
   ReviewSearchParams,
@@ -22,12 +23,9 @@ export const reviewApi = {
   },
 
   createReview: async (
-    userId: number,
     data: ReviewRequestDTO
   ): Promise<ApiResponse<ReviewResponseDTO>> => {
-    const response = await httpClient.post('/api/reviews', data, {
-      params: { userId },
-    })
+    const response = await httpClient.post('/api/reviews', data)
     return response.data
   },
 
@@ -58,6 +56,47 @@ export const reviewApi = {
   ): Promise<ApiResponse<string>> => {
     const response = await httpClient.patch(
       `/api/reviews/${reviewId}/hide?hide=${hide}`
+    )
+    return response.data
+  },
+
+  // Get total reviews from backend
+  getTotalReviews: async (): Promise<ApiResponse<number>> => {
+    const response = await httpClient.get('/api/reviews/total-visible')
+    return response.data
+  },
+
+  // Get overall average rating from backend
+  getOverallAverageRating: async (): Promise<ApiResponse<number>> => {
+    const response = await httpClient.get('/api/reviews/overall-average')
+    return response.data
+  },
+
+  // Get reviews by visibility status (old method)
+  getReviewsByVisibility: async (
+    visibilityStatus: number,
+    params?: {
+      page?: number
+      size?: number
+      sortBy?: string
+      direction?: 'ASC' | 'DESC'
+    }
+  ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
+    const response = await httpClient.get('/api/reviews/by-visibility', {
+      params: { visibilityStatus, ...params },
+    })
+    return response.data
+  },
+
+  // Get reviews by visibility with advanced filters (new method)
+  getReviewsByVisibilityWithFilters: async (
+    params: ReviewFiltersParams
+  ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
+    const response = await httpClient.get(
+      '/api/reviews/by-visibility-with-filters',
+      {
+        params,
+      }
     )
     return response.data
   },

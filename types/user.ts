@@ -22,10 +22,14 @@ export interface User {
   status: UserStatus
   avatar?: string
   joinDate?: string
+<<<<<<< HEAD
   bio?: string
   activities?: UserActivity[]
   enrolledCoursesCount?: number
   managedCoursesCount?: number
+=======
+  enrolledcourses?: number
+>>>>>>> main
 }
 
 export interface UserDetail {

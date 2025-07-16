@@ -65,15 +65,19 @@ export default function GoogleCallbackPage() {
         await login(user, token)
 
         // Điều hướng theo role hoặc returnUrl
+        const baseUrl = window.location.origin
         if (decodedToken.scope === 'ADMIN') {
-          window.location.href = '/admin'
+          window.location.href = `${baseUrl}/admin`
         } else if (decodedToken.scope === 'MANAGER') {
-          window.location.href = '/manager'
+          window.location.href = `${baseUrl}/manager`
         } else if (returnUrl) {
           // Nếu có returnUrl (từ state parameter), sử dụng nó
-          window.location.href = decodeURIComponent(returnUrl)
+          const fullUrl = returnUrl.startsWith('http')
+            ? returnUrl
+            : `${baseUrl}${returnUrl.startsWith('/') ? '' : '/'}${returnUrl}`
+          window.location.href = decodeURIComponent(fullUrl)
         } else {
-          window.location.href = '/'
+          window.location.href = baseUrl
         }
       } catch (error: any) {
         console.error('Google authentication error:', error)

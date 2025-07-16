@@ -11,6 +11,7 @@ export interface UseCourseDataProps {
   courseId: string
   lessonId: string
   userId?: string | null
+  userRole?: string
 }
 
 export interface UseCourseDataReturn {
@@ -49,6 +50,7 @@ export function useCourseData({
   courseId,
   lessonId,
   userId,
+  userRole,
 }: UseCourseDataProps): UseCourseDataReturn {
   // Data state
   const [course, setCourse] = useState<CourseDetailsResponseDTO | null>(null)
@@ -83,7 +85,20 @@ export function useCourseData({
   // Check enrollment status
   useEffect(() => {
     const checkEnrollment = async () => {
-      if (!courseId || !userId) {
+      if (!courseId) {
+        setIsEnrolled(false)
+        setIsCheckingEnrollment(false)
+        return
+      }
+
+      // Manager and Admin don't need to be enrolled
+      if (userRole === 'manager' || userRole === 'admin') {
+        setIsEnrolled(true)
+        setIsCheckingEnrollment(false)
+        return
+      }
+
+      if (!userId) {
         setIsEnrolled(false)
         setIsCheckingEnrollment(false)
         return
@@ -91,8 +106,11 @@ export function useCourseData({
 
       try {
         setIsCheckingEnrollment(true)
-        const response = await enrollmentApi.getEnrollmentStatus(courseId)
-        setIsEnrolled(response.data?.enrolled || false)
+        const response = await enrollmentApi.getEnhancedEnrollmentStatus(
+          courseId,
+          userRole
+        )
+        setIsEnrolled(response.data?.canAccess || false)
       } catch (error) {
         console.error('Failed to check enrollment:', error)
         setIsEnrolled(false)
@@ -102,7 +120,7 @@ export function useCourseData({
     }
 
     checkEnrollment()
-  }, [courseId, userId])
+  }, [courseId, userId, userRole])
 
   // Fetch course data and navigate to appropriate lesson
   const fetchCourseData = useCallback(async () => {

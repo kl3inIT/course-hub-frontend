@@ -39,8 +39,7 @@ import {
   ThumbsUp,
   Trash2,
 } from 'lucide-react'
-import type React from 'react'
-import { memo, useCallback, useEffect, useState } from 'react'
+import React, { memo, useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface DiscussionSectionProps {
@@ -115,8 +114,8 @@ const CommentComponentBase = ({
     try {
       await onEdit(comment.id, editContent)
       setIsEditing(false)
-    } catch (error) {
-      console.error('Error editing comment:', error)
+    } catch (_error) {
+      // Error editing comment
     } finally {
       setIsSubmitting(false)
     }
@@ -430,7 +429,7 @@ const CommentComponentBase = ({
 const CommentComponent = memo(CommentComponentBase)
 
 export function DiscussionSection({
-  courseId,
+  courseId: _courseId,
   lessonId,
 }: DiscussionSectionProps) {
   const [comments, setComments] = useState<CommentDisplayData[]>([])

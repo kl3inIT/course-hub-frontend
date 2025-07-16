@@ -75,7 +75,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export function CouponManagement() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
@@ -84,7 +84,7 @@ export function CouponManagement() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingCourses, setLoadingCourses] = useState(false)
-  const [visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
+  const [_visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
     {}
   )
 
@@ -101,7 +101,7 @@ export function CouponManagement() {
   // Thêm state pageSize
   const [pageSize, setPageSize] = useState(5)
 
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, _setSearchTerm] = useState('')
   const [couponStatuses, setCouponStatuses] =
     useState<CouponStatusResponse | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -168,7 +168,6 @@ export function CouponManagement() {
         courseIds: [],
       }))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationScope, categories, courses])
 
   // Add useEffect to fetch coupon statuses
@@ -581,7 +580,7 @@ export function CouponManagement() {
   }
 
   // Toggle coupon status
-  const toggleStatus = (couponId: string) => {
+  const _toggleStatus = (couponId: string) => {
     setCoupons(prev =>
       prev.map(coupon =>
         coupon.id === couponId
@@ -666,7 +665,7 @@ export function CouponManagement() {
   }
 
   // Get selected courses display
-  const getSelectedCoursesDisplay = () => {
+  const _getSelectedCoursesDisplay = () => {
     const selectedCourses = courses.filter(course =>
       formData.courseIds?.includes(Number(course.id))
     )
@@ -715,7 +714,7 @@ export function CouponManagement() {
   }
 
   // Get applicable items display
-  const getApplicableItemsDisplay = (coupon: Coupon) => {
+  const _getApplicableItemsDisplay = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -736,7 +735,7 @@ export function CouponManagement() {
   }
 
   // Get detailed tooltip content for applicable items
-  const getApplicableItemsTooltip = (coupon: Coupon) => {
+  const _getApplicableItemsTooltip = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -779,7 +778,7 @@ export function CouponManagement() {
   }
 
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const _formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -842,7 +841,7 @@ export function CouponManagement() {
   }
 
   // Add toggle code visibility function
-  const toggleCodeVisibility = (couponId: string) => {
+  const _toggleCodeVisibility = (couponId: string) => {
     setVisibleCodes(prev => ({
       ...prev,
       [couponId]: !prev[couponId],

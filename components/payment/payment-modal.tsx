@@ -297,16 +297,8 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
 
           {/* Right side - Payment Details */}
           <div className='col-span-2 p-6 border-l'>
-            <div className='flex justify-between items-start mb-6'>
-              <div className='flex items-center gap-4'>
-                <h2 className='text-xl font-bold'>Payment Details</h2>
-              </div>
-              <button
-                onClick={onClose}
-                className='text-gray-500 hover:text-gray-700'
-              >
-                <X className='h-4 w-4' />
-              </button>
+            <div className='mb-6'>
+              <h2 className='text-xl font-bold'>Payment Details</h2>
             </div>
 
             <div className='space-y-4'>

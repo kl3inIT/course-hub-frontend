@@ -150,21 +150,25 @@ export function StudentDashboard() {
 
             // Dynamic import with proper handling for Next.js
             const html2pdf = (await import('html2pdf.js')) as any
-            
+
             const opt = {
               margin: 0,
               filename: `certificate-${selectedCertificate.title}.pdf`,
               image: { type: 'jpeg', quality: 1 },
-              html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
                 logging: false,
                 allowTaint: true,
-                foreignObjectRendering: true
+                foreignObjectRendering: true,
               },
-              jsPDF: { unit: 'px', format: [1024, 724], orientation: 'landscape' as const },
+              jsPDF: {
+                unit: 'px',
+                format: [1024, 724],
+                orientation: 'landscape' as const,
+              },
             }
-            
+
             const pdfElement = document.getElementById('certificate-pdf')
             if (pdfElement) {
               await html2pdf().set(opt).from(pdfElement).save()
@@ -449,7 +453,7 @@ export function StudentDashboard() {
                   }
                   studentName={user.name || user.email || 'Student'}
                   certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-                  elementId="certificate-modal"
+                  elementId='certificate-modal'
                   isPdfVersion={false}
                 />
               </div>
@@ -478,7 +482,7 @@ export function StudentDashboard() {
 
       {/* Render certificate ẩn ngoài modal để export PDF */}
       {showHiddenCertificate && user && selectedCertificate && (
-        <div className="fixed left-[-9999px] top-0 w-0 h-0 overflow-hidden">
+        <div className='fixed left-[-9999px] top-0 w-0 h-0 overflow-hidden'>
           <CompletionCertificate
             courseTitle={selectedCertificate.title}
             instructor={selectedCertificate.instructorName}
@@ -489,7 +493,7 @@ export function StudentDashboard() {
             }
             studentName={user.name || user.email || 'Student'}
             certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-            elementId="certificate-pdf"
+            elementId='certificate-pdf'
             isPdfVersion={true}
           />
         </div>

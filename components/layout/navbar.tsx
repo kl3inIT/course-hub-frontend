@@ -455,8 +455,8 @@ export function Navbar() {
                 ></span>
               </Link>
 
-              {/* Only show "My Learning" link for authenticated users */}
-              {user && (
+              {/* Only show "My Learning" link for learners */}
+              {user && user.role === 'learner' && (
                 <Link
                   href='/dashboard'
                   className={`text-sm font-medium transition-colors relative group ${
@@ -546,12 +546,14 @@ export function Navbar() {
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href='/dashboard'>
-                        <GraduationCap className='mr-2 h-4 w-4' />
-                        My Learning
-                      </Link>
-                    </DropdownMenuItem>
+                    {user.role === 'learner' && (
+                      <DropdownMenuItem asChild>
+                        <Link href='/dashboard'>
+                          <GraduationCap className='mr-2 h-4 w-4' />
+                          My Learning
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href='/profile'>
                         <Settings className='mr-2 h-4 w-4' />
@@ -676,8 +678,8 @@ export function Navbar() {
                         Contact
                       </Link>
 
-                      {/* Only show "My Learning" link for authenticated users in mobile */}
-                      {user && (
+                      {/* Only show "My Learning" link for learners in mobile */}
+                      {user && user.role === 'learner' && (
                         <Link
                           href='/dashboard'
                           className={`text-lg font-medium transition-colors py-2 ${
@@ -733,12 +735,12 @@ export function Navbar() {
                           {(user.role === 'manager' ||
                             user.role === 'admin') && (
                             <Link
-                              href='/course-management'
+                              href='/manager'
                               className='flex items-center gap-2 text-sm py-2 hover:text-primary'
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
                               <BookOpen className='h-4 w-4' />
-                              Course Management
+                              Manager Panel
                             </Link>
                           )}
 

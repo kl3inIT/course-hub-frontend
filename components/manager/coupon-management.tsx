@@ -101,10 +101,9 @@ export function CouponManagement() {
   // Thêm state pageSize
   const [pageSize, setPageSize] = useState(5)
 
-  const [searchTerm, _setSearchTerm] = useState('')
-  const [couponStatuses, setCouponStatuses] =
-    useState<CouponStatusResponse | null>(null)
-  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [couponStatuses, setCouponStatuses] = useState<CouponStatusResponse | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('AVAILABLE')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterCourse, setFilterCourse] = useState<string>('all')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)

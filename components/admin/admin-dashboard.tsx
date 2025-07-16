@@ -1,5 +1,7 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -7,20 +9,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import {
-  Users,
-  BookOpen,
-  Shield,
-  UserPlus,
-  Settings,
-  DollarSign,
   Activity,
   AlertTriangle,
+  BookOpen,
   CheckCircle,
+  DollarSign,
+  Settings,
+  Shield,
+  UserPlus,
+  Users,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { useEffect, useState } from 'react'
 
 export function AdminDashboard() {
@@ -365,7 +365,7 @@ export function AdminDashboard() {
                   <Badge
                     variant={
                       transaction.status === 'success'
-                        ? 'success'
+                        ? 'default'
                         : transaction.status === 'pending'
                           ? 'secondary'
                           : 'destructive'

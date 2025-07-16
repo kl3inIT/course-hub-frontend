@@ -1,5 +1,6 @@
 'use client'
 
+import { Pagination } from '@/components/admin/user-management/user-pagination'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -668,6 +669,14 @@ export function UserDetail({ userId }: { userId: string }) {
   const [activityDateRange, setActivityDateRange] = useState<
     DateRange | undefined
   >()
+  // Pagination state for activities
+  const [activityPage, setActivityPage] = useState(1)
+  const [activityPageSize, setActivityPageSize] = useState(5)
+  // Pagination state for each activity type tab
+  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({})
+  const [tabPageSizes, setTabPageSizes] = useState<{ [key: string]: number }>(
+    {}
+  )
 
   const MANAGER_ACTIVITY_TYPES = [
     { key: 'course_creation', label: 'Course Created' },
@@ -732,6 +741,52 @@ export function UserDetail({ userId }: { userId: string }) {
       return true
     })
   }, [userDetail?.activities, activityDateRange])
+
+  // Paginated activities
+  const paginatedActivities = useMemo(() => {
+    const start = (activityPage - 1) * activityPageSize
+    const end = start + activityPageSize
+    return activitiesToShow
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp || 0).getTime() -
+          new Date(a.timestamp || 0).getTime()
+      )
+      .slice(start, end)
+  }, [activitiesToShow, activityPage, activityPageSize])
+
+  const totalActivityPages = Math.ceil(
+    activitiesToShow.length / activityPageSize
+  )
+
+  // Khi chuyển tab, reset page về 1
+  useEffect(() => {
+    setTabPages(p => ({ ...p, [activityTab]: 1 }))
+  }, [activityTab])
+
+  // Helper cho phân trang từng tab con
+  const getPaginatedTabActivities = (typeKey: string) => {
+    const filtered = activitiesToShow.filter(
+      a => a.type?.toLowerCase() === typeKey
+    )
+    const page = tabPages[typeKey] || 1
+    const pageSize = tabPageSizes[typeKey] || 5
+    const start = (page - 1) * pageSize
+    const end = start + pageSize
+    return {
+      data: filtered
+        .sort(
+          (a, b) =>
+            new Date(b.timestamp || 0).getTime() -
+            new Date(a.timestamp || 0).getTime()
+        )
+        .slice(start, end),
+      total: filtered.length,
+      page,
+      pageSize,
+      totalPages: Math.ceil(filtered.length / pageSize),
+    }
+  }
 
   if (isLoading) return <UserDetailSkeleton />
   if (!userDetail) {
@@ -896,14 +951,9 @@ export function UserDetail({ userId }: { userId: string }) {
                         </p>
                       </div>
                     ) : (
-                      <div className='space-y-4 max-w-4xl mx-auto'>
-                        {activitiesToShow
-                          .sort(
-                            (a, b) =>
-                              new Date(b.timestamp || 0).getTime() -
-                              new Date(a.timestamp || 0).getTime()
-                          )
-                          .map(activity => (
+                      <>
+                        <div className='space-y-4 max-w-4xl mx-auto'>
+                          {paginatedActivities.map(activity => (
                             <ActivityItem
                               key={[
                                 activity.id,
@@ -917,45 +967,93 @@ export function UserDetail({ userId }: { userId: string }) {
                               activity={activity}
                             />
                           ))}
-                      </div>
+                        </div>
+                        {totalActivityPages > 1 && (
+                          <div className='flex justify-center mt-6'>
+                            <Pagination
+                              pagination={{
+                                currentPage: activityPage - 1,
+                                totalPages: totalActivityPages,
+                                totalElements: activitiesToShow.length,
+                                pageSize: activityPageSize,
+                              }}
+                              activeTab='Activity'
+                              onPageChange={page => setActivityPage(page + 1)}
+                              onPageSizeChange={size => {
+                                setActivityPageSize(size)
+                                setActivityPage(1)
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </TabsContent>
                   {activityTypes.map(type => (
                     <TabsContent key={type.key} value={type.key}>
-                      {activitiesToShow.filter(
-                        a => a.type?.toLowerCase() === type.key
-                      ).length === 0 ? (
-                        <div className='text-center py-12'>
-                          <Clock className='h-12 w-12 text-gray-300 mx-auto mb-3' />
-                          <h3 className='text-base font-semibold text-gray-600 mb-2'>
-                            No {type.label} Activities
-                          </h3>
-                        </div>
-                      ) : (
-                        <div className='space-y-4 max-w-4xl mx-auto'>
-                          {activitiesToShow
-                            .filter(a => a.type?.toLowerCase() === type.key)
-                            .sort(
-                              (a, b) =>
-                                new Date(b.timestamp || 0).getTime() -
-                                new Date(a.timestamp || 0).getTime()
-                            )
-                            .map(activity => (
-                              <ActivityItem
-                                key={[
-                                  activity.id,
-                                  activity.type,
-                                  activity.timestamp,
-                                  activity.courseId,
-                                  activity.lessonId,
-                                ]
-                                  .filter(Boolean)
-                                  .join('-')}
-                                activity={activity}
-                              />
-                            ))}
-                        </div>
-                      )}
+                      {(() => {
+                        const { data, total, page, pageSize, totalPages } =
+                          getPaginatedTabActivities(type.key)
+                        if (total === 0) {
+                          return (
+                            <div className='text-center py-12'>
+                              <Clock className='h-12 w-12 text-gray-300 mx-auto mb-3' />
+                              <h3 className='text-base font-semibold text-gray-600 mb-2'>
+                                No {type.label} Activities
+                              </h3>
+                            </div>
+                          )
+                        }
+                        return (
+                          <>
+                            <div className='space-y-4 max-w-4xl mx-auto'>
+                              {data.map(activity => (
+                                <ActivityItem
+                                  key={[
+                                    activity.id,
+                                    activity.type,
+                                    activity.timestamp,
+                                    activity.courseId,
+                                    activity.lessonId,
+                                  ]
+                                    .filter(Boolean)
+                                    .join('-')}
+                                  activity={activity}
+                                />
+                              ))}
+                            </div>
+                            {totalPages > 1 && (
+                              <div className='flex justify-center mt-6'>
+                                <Pagination
+                                  pagination={{
+                                    currentPage: page - 1,
+                                    totalPages,
+                                    totalElements: total,
+                                    pageSize,
+                                  }}
+                                  activeTab={type.label}
+                                  onPageChange={p =>
+                                    setTabPages(tp => ({
+                                      ...tp,
+                                      [type.key]: p + 1,
+                                    }))
+                                  }
+                                  onPageSizeChange={size => {
+                                    setTabPageSizes(ts => ({
+                                      ...ts,
+                                      [type.key]: size,
+                                    }))
+                                    setTabPages(tp => ({
+                                      ...tp,
+                                      [type.key]: 1,
+                                    }))
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </TabsContent>
                   ))}
                 </Tabs>

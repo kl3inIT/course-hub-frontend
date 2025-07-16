@@ -137,3 +137,11 @@ export interface ManagerCourseResponseDTO {
   status: string
   canEdit: boolean
 }
+
+export interface Course {
+  id: number
+  title: string
+  description: string
+  thumbnail: string
+  enrollmentCount: number
+}

@@ -2,6 +2,7 @@ import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import {
   AggregatedReportDTO,
+  AggregatedReportPage,
   GetReportsParams,
   ReportListResponse,
   ReportRequest,
@@ -23,7 +24,7 @@ export const reportApi = {
   ): Promise<ApiResponse<ReportListResponse>> => {
     const {
       page = 0,
-      size = 10,
+      size = 55,
       sortBy = 'createdDate',
       sortDir = 'desc',
       type,
@@ -93,18 +94,10 @@ export const reportApi = {
 
   getAggregatedReports: async (
     params: GetReportsParams = {}
-  ): Promise<
-    ApiResponse<{
-      content: AggregatedReportDTO[]
-      totalElements: number
-      totalPages: number
-      size: number
-      number: number
-    }>
-  > => {
+  ): Promise<ApiResponse<AggregatedReportPage>> => {
     const {
       page = 0,
-      size = 10,
+      size = 5,
       sortBy = 'createdDate',
       sortDir = 'desc',
       type,

@@ -22,8 +22,8 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   CreateManagerDialog,
+  Pagination,
   UserFilters,
-  UserPagination,
   UserStatsCards,
   UserTable,
 } from './user-management/'
@@ -220,10 +220,8 @@ export function UserManagement() {
         <CardHeader>
           <div className='flex items-center justify-between'>
             <div>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts, roles, and permissions
-              </CardDescription>
+              <CardTitle>List of Users</CardTitle>
+              <CardDescription>List of users in the system</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -257,7 +255,7 @@ export function UserManagement() {
                   No learners found.
                 </div>
               )}
-              <UserPagination
+              <Pagination
                 pagination={pagination}
                 activeTab={activeTab}
                 onPageChange={handlePageChange}
@@ -293,7 +291,7 @@ export function UserManagement() {
                   No managers found.
                 </div>
               )}
-              <UserPagination
+              <Pagination
                 pagination={pagination}
                 activeTab={activeTab}
                 onPageChange={handlePageChange}

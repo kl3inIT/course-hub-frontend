@@ -1,5 +1,6 @@
 'use client'
 
+import { Pagination } from '@/components/admin/user-management/user-pagination'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,13 +11,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-} from '@/components/ui/pagination'
 import {
   Select,
   SelectContent,
@@ -37,18 +31,13 @@ import { cn } from '@/lib/utils'
 import { reportApi } from '@/services/report-api'
 import {
   AggregatedReportDTO,
+  AggregatedReportPage,
   ReportSeverity,
   ReportStatus,
   ReportType,
 } from '@/types/report'
 import { format } from 'date-fns'
-import {
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Loader2,
-} from 'lucide-react'
+import { ArrowUpDown, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -82,7 +71,7 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(5)
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -102,9 +91,12 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
         search: filters.search || undefined,
       }
       const response = await reportApi.getAggregatedReports(params)
-      setReports(response.data.content)
-      setTotalPages(response.data.totalPages)
-      setTotalElements(response.data.totalElements)
+      const data = response.data as AggregatedReportPage
+      setReports(data.content)
+      setTotalPages(data.page.totalPages)
+      setTotalElements(data.page.totalElements)
+      setPageSize(data.page.size)
+      setPage(data.page.number)
     } catch (error) {
       setError('Failed to load reports. Please try again later.')
       toast.error('Failed to load reports')
@@ -136,30 +128,7 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className='flex items-center justify-center py-8'>
-        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className='flex flex-col items-center justify-center gap-4 py-8'>
-        <p className='text-sm text-destructive'>{error}</p>
-        <Button onClick={() => loadReports()}>Try Again</Button>
-      </div>
-    )
-  }
-
-  if (!reports?.length) {
-    return (
-      <div className='flex flex-col items-center justify-center gap-2 py-8'>
-        <p className='text-sm text-muted-foreground'>No reports found</p>
-      </div>
-    )
-  }
+  const hasData = reports.length > 0
 
   return (
     <div className='space-y-4'>
@@ -231,175 +200,134 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reports.map(report => (
-              <TableRow key={report.resourceId}>
-                <TableCell className='max-w-[200px]'>
-                  <div className='truncate' title={report.resourceContent}>
-                    {report.resourceContent}
-                  </div>
-                </TableCell>
-                <TableCell className='max-w-[150px]'>
-                  <div className='flex items-center gap-2'>
-                    <img
-                      src={report.resourceOwnerAvatar}
-                      alt={report.resourceOwner}
-                      className='w-6 h-6 rounded-full border flex-shrink-0'
-                    />
-                    <div className='min-w-0'>
-                      <div
-                        className='font-medium truncate'
-                        title={report.resourceOwner}
-                      >
-                        {report.resourceOwner}
-                      </div>
-                      <div className='text-xs text-muted-foreground truncate'>
-                        {report.resourceOwnerStatus}
-                      </div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className='max-w-[100px]'>
-                  <Badge
-                    variant={
-                      report.status === 'APPROVED'
-                        ? 'outline'
-                        : report.status === 'REJECTED'
-                          ? 'destructive'
-                          : 'outline'
-                    }
-                    className={cn(
-                      'text-xs',
-                      report.status === 'APPROVED'
-                        ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
-                        : report.status === 'PENDING'
-                          ? 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                          : 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100'
-                    )}
-                  >
-                    {report.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className='max-w-[120px] text-center'>
-                  {report.reports.length}
-                </TableCell>
-                <TableCell className='max-w-[80px]'>
-                  {report.hidden ? (
-                    <Badge className='bg-red-100 text-red-800 border-red-200 text-xs'>
-                      Hidden
-                    </Badge>
-                  ) : (
-                    <Badge className='bg-green-100 text-green-800 border-green-200 text-xs'>
-                      Visible
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className='max-w-[120px]'>
-                  <div className='text-xs'>
-                    {formatDate(report.createdAt.toString())}
-                  </div>
-                </TableCell>
-                <TableCell className='max-w-[80px]'>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() =>
-                      router.push(`/admin/reports/${report.resourceId}`)
-                    }
-                  >
-                    <Eye className='h-4 w-4' />
-                  </Button>
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-muted-foreground'
+                >
+                  Loading...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-destructive'
+                >
+                  {error}
+                </TableCell>
+              </TableRow>
+            ) : !hasData ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-muted-foreground'
+                >
+                  No reports found
+                </TableCell>
+              </TableRow>
+            ) : (
+              reports.map(report => (
+                <TableRow key={report.resourceId}>
+                  <TableCell className='max-w-[200px]'>
+                    <div className='truncate' title={report.resourceContent}>
+                      {report.resourceContent}
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[150px]'>
+                    <div className='flex items-center gap-2'>
+                      <img
+                        src={report.resourceOwnerAvatar}
+                        alt={report.resourceOwner}
+                        className='w-6 h-6 rounded-full border flex-shrink-0'
+                      />
+                      <div className='min-w-0'>
+                        <div
+                          className='font-medium truncate'
+                          title={report.resourceOwner}
+                        >
+                          {report.resourceOwner}
+                        </div>
+                        <div className='text-xs text-muted-foreground truncate'>
+                          {report.resourceOwnerStatus}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[100px]'>
+                    <Badge
+                      variant={
+                        report.status === 'APPROVED'
+                          ? 'outline'
+                          : report.status === 'REJECTED'
+                            ? 'destructive'
+                            : 'outline'
+                      }
+                      className={cn(
+                        'text-xs',
+                        report.status === 'APPROVED'
+                          ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
+                          : report.status === 'PENDING'
+                            ? 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                            : 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100'
+                      )}
+                    >
+                      {report.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className='max-w-[120px] text-center'>
+                    {report.reports.length}
+                  </TableCell>
+                  <TableCell className='max-w-[80px]'>
+                    {report.hidden ? (
+                      <Badge className='bg-red-100 text-red-800 border-red-200 text-xs'>
+                        Hidden
+                      </Badge>
+                    ) : (
+                      <Badge className='bg-green-100 text-green-800 border-green-200 text-xs'>
+                        Visible
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className='max-w-[120px]'>
+                    <div className='text-xs'>
+                      {formatDate(report.createdAt.toString())}
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[80px]'>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() =>
+                        router.push(`/admin/reports/${report.resourceId}`)
+                      }
+                    >
+                      <Eye className='h-4 w-4' />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
-
-      {totalPages > 1 && (
-        <div className='flex flex-col gap-4'>
-          {/* Page size selector and info */}
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-              <span>
-                Showing {page * pageSize + 1} to{' '}
-                {Math.min((page + 1) * pageSize, totalElements)} of{' '}
-                {totalElements} results
-              </span>
-            </div>
-            <div className='flex items-center gap-2'>
-              <span className='text-sm text-muted-foreground'>Page size:</span>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={value => setPageSize(parseInt(value))}
-              >
-                <SelectTrigger className='w-[80px]'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='5'>5</SelectItem>
-                  <SelectItem value='10'>10</SelectItem>
-                  <SelectItem value='20'>20</SelectItem>
-                  <SelectItem value='50'>50</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Pagination controls */}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => page > 0 && setPage(p => p - 1)}
-                  disabled={page === 0}
-                  className='gap-1'
-                >
-                  <ChevronLeft className='h-4 w-4' />
-                  Previous
-                </Button>
-              </PaginationItem>
-              {[...Array(totalPages)].map((_, i) => {
-                if (
-                  i === 0 ||
-                  i === totalPages - 1 ||
-                  (i >= page - 1 && i <= page + 1)
-                ) {
-                  return (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        onClick={() => setPage(i)}
-                        isActive={page === i}
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                } else if (i === page - 2 || i === page + 2) {
-                  return (
-                    <PaginationItem key={i}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  )
-                }
-                return null
-              })}
-              <PaginationItem>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => page < totalPages - 1 && setPage(p => p + 1)}
-                  disabled={page >= totalPages - 1}
-                  className='gap-1'
-                >
-                  Next
-                  <ChevronRight className='h-4 w-4' />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+      {/* Chỉ render Pagination khi có nhiều hơn 1 trang */}
+      {hasData && totalPages > 1 && (
+        <Pagination
+          pagination={{
+            currentPage: page,
+            totalPages,
+            totalElements,
+            pageSize,
+          }}
+          activeTab={'report'}
+          onPageChange={setPage}
+          onPageSizeChange={size => {
+            setPageSize(size)
+            setPage(0)
+          }}
+        />
       )}
     </div>
   )
@@ -433,10 +361,8 @@ export function ReportManagement() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Report Management</CardTitle>
-        <CardDescription>
-          Manage and review reported content from the platform
-        </CardDescription>
+        <CardTitle>Report Overview</CardTitle>
+        <CardDescription>Overview of all reports in the system</CardDescription>
       </CardHeader>
       <CardContent>
         <div className='mb-6 flex flex-wrap items-center gap-4'>

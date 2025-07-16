@@ -15,7 +15,7 @@ const PAGE_SIZE_OPTIONS = [
   { value: '50', label: '50 / page' },
 ] as const
 
-export function UserPagination({
+export function Pagination({
   pagination,
   activeTab,
   onPageChange,

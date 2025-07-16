@@ -2,6 +2,8 @@
 
 import { UserDetail } from '@/components/profile/user-detail'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { Suspense, use } from 'react'
 
 interface UserPageProps {
@@ -11,7 +13,6 @@ interface UserPageProps {
 }
 
 export default function AdminUserDetailPage({ params }: UserPageProps) {
-  // Properly unwrap params using React.use()
   const resolvedParams = use(params)
   const userId = resolvedParams.id
 
@@ -33,7 +34,14 @@ export default function AdminUserDetailPage({ params }: UserPageProps) {
         </div>
       }
     >
-      <UserDetail userId={userId} />
+      <SidebarProvider>
+        <AdminSidebar />
+        <SidebarInset>
+          <div className='flex-1 space-y-4 p-8 pt-6'>
+            <UserDetail userId={userId} />
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </Suspense>
   )
 }

@@ -93,3 +93,13 @@ export interface ReportDetailDTO {
   severity: ReportSeverity
   createdAt: string
 }
+
+export interface AggregatedReportPage {
+  content: AggregatedReportDTO[]
+  page: {
+    size: number
+    number: number
+    totalElements: number
+    totalPages: number
+  }
+}

@@ -92,9 +92,12 @@ export const reviewApi = {
   getReviewsByVisibilityWithFilters: async (
     params: ReviewFiltersParams
   ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
-    const response = await httpClient.get('/api/reviews/by-visibility-with-filters', { 
-      params
-    })
+    const response = await httpClient.get(
+      '/api/reviews/by-visibility-with-filters',
+      {
+        params,
+      }
+    )
     return response.data
   },
 }

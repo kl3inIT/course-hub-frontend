@@ -498,7 +498,9 @@ export function ManagerCourseList() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
                       <DropdownMenuItem asChild>
-                        <Link href={`/manager/courses/${course.id}/enrollments`}>
+                        <Link
+                          href={`/manager/courses/${course.id}/enrollments`}
+                        >
                           Manage Enrollments
                         </Link>
                       </DropdownMenuItem>

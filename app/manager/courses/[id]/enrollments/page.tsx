@@ -16,7 +16,7 @@ export default function CourseEnrollmentsPage() {
   const params = useParams()
   const router = useRouter()
   const courseId = params.id as string
-  
+
   const [course, setCourse] = useState<CourseResponseDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -26,13 +26,14 @@ export default function CourseEnrollmentsPage() {
       try {
         setLoading(true)
         setError(null)
-        
+
         const response = await courseApi.getCourseById(courseId)
         if (response.data) {
           setCourse(response.data)
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load course'
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load course'
         setError(errorMessage)
         toast.error('Failed to load course details')
       } finally {
@@ -51,11 +52,13 @@ export default function CourseEnrollmentsPage() {
         <SidebarProvider>
           <ManagerSidebar />
           <SidebarInset>
-            <div className="flex-1 space-y-4 p-8 pt-6">
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="flex flex-col items-center space-y-4">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <p className="text-muted-foreground">Loading course details...</p>
+            <div className='flex-1 space-y-4 p-8 pt-6'>
+              <div className='flex items-center justify-center min-h-[400px]'>
+                <div className='flex flex-col items-center space-y-4'>
+                  <Loader2 className='h-8 w-8 animate-spin' />
+                  <p className='text-muted-foreground'>
+                    Loading course details...
+                  </p>
                 </div>
               </div>
             </div>
@@ -71,16 +74,18 @@ export default function CourseEnrollmentsPage() {
         <SidebarProvider>
           <ManagerSidebar />
           <SidebarInset>
-            <div className="flex-1 space-y-4 p-8 pt-6">
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center space-y-4">
-                  <div className="text-6xl">⚠️</div>
-                  <h3 className="text-xl font-semibold">Error Loading Course</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
+            <div className='flex-1 space-y-4 p-8 pt-6'>
+              <div className='flex items-center justify-center min-h-[400px]'>
+                <div className='text-center space-y-4'>
+                  <div className='text-6xl'>⚠️</div>
+                  <h3 className='text-xl font-semibold'>
+                    Error Loading Course
+                  </h3>
+                  <p className='text-muted-foreground max-w-md mx-auto'>
                     {error || 'Course not found'}
                   </p>
-                  <Button onClick={() => router.back()} variant="outline">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
+                  <Button onClick={() => router.back()} variant='outline'>
+                    <ArrowLeft className='mr-2 h-4 w-4' />
                     Go Back
                   </Button>
                 </div>
@@ -97,20 +102,20 @@ export default function CourseEnrollmentsPage() {
       <SidebarProvider>
         <ManagerSidebar />
         <SidebarInset>
-          <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
+          <div className='flex-1 space-y-4 p-8 pt-6'>
+            <div className='space-y-6'>
+              <div className='flex items-center space-x-4'>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
                   onClick={() => router.back()}
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <ArrowLeft className='mr-2 h-4 w-4' />
                   Back to Courses
                 </Button>
               </div>
 
-              <CourseEnrollmentManagement 
+              <CourseEnrollmentManagement
                 courseId={courseId}
                 courseTitle={course.title}
               />
@@ -120,4 +125,4 @@ export default function CourseEnrollmentsPage() {
       </SidebarProvider>
     </RoleGuard>
   )
-} 
+}

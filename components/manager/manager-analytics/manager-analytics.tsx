@@ -1,12 +1,30 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyticsApi } from '@/services/analytics-api'
-import { CategoryDetailDTO, CourseAnalyticsDetailResponseDTO, RevenueAnalyticsDetailResponseDTO, StudentAnalyticsDetailResponseDTO } from '@/types/analytics'
+import {
+  CategoryDetailDTO,
+  CourseAnalyticsDetailResponseDTO,
+  RevenueAnalyticsDetailResponseDTO,
+  StudentAnalyticsDetailResponseDTO,
+} from '@/types/analytics'
 import { formatDateForAPI } from '@/utils/analytics-utils'
-import { DollarSign, Download, Loader2, RefreshCw, Star, Users } from 'lucide-react'
+import {
+  DollarSign,
+  Download,
+  Loader2,
+  RefreshCw,
+  Star,
+  Users,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
@@ -16,7 +34,11 @@ import { PaginationComponent } from './PaginationComponent'
 // Helper function để tạo params cho API calls
 const createApiParams = (timeRange: string, selectedDateRange?: DateRange) => {
   const params: any = {}
-  if (timeRange === 'custom' && selectedDateRange?.from && selectedDateRange?.to) {
+  if (
+    timeRange === 'custom' &&
+    selectedDateRange?.from &&
+    selectedDateRange?.to
+  ) {
     params.startDate = formatDateForAPI(selectedDateRange.from)
     params.endDate = formatDateForAPI(selectedDateRange.to)
   } else {
@@ -28,18 +50,27 @@ const createApiParams = (timeRange: string, selectedDateRange?: DateRange) => {
 }
 
 // Helper function để tạo pagination logic
-const createPaginationLogic = (data: any[], currentPage: number, rowsPerPage: number) => {
+const createPaginationLogic = (
+  data: any[],
+  currentPage: number,
+  rowsPerPage: number
+) => {
   const totalRows = data.length
   const totalPages = rowsPerPage === -1 ? 1 : Math.ceil(totalRows / rowsPerPage)
-  const paginatedData = rowsPerPage === -1 
-    ? data 
-    : data.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage)
-  
+  const paginatedData =
+    rowsPerPage === -1
+      ? data
+      : data.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage)
+
   return { totalRows, totalPages, paginatedData }
 }
 
 // Helper function để tạo rows per page selector
-const createRowsPerPageSelector = (value: number, onChange: (value: number) => void, onPageReset: () => void) => (
+const createRowsPerPageSelector = (
+  value: number,
+  onChange: (value: number) => void,
+  onPageReset: () => void
+) => (
   <label className='flex items-center text-sm'>
     Show
     <select
@@ -81,7 +112,10 @@ const createTableHeader = (headers: string[]) => (
   <thead className='bg-gray-50'>
     <tr>
       {headers.map((header, index) => (
-        <th key={index} className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'>
+        <th
+          key={index}
+          className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'
+        >
           {header}
         </th>
       ))}
@@ -90,7 +124,14 @@ const createTableHeader = (headers: string[]) => (
 )
 
 // Custom label cho PieChart để tránh dính chữ
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const renderCustomizedLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+}: any) => {
   if (percent === 0) return null
   const RADIAN = Math.PI / 180
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5
@@ -113,18 +154,29 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 export function ManagerAnalytics() {
   const COLORS = [
-    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#a4de6c', '#d0ed57', '#8dd1e1', '#d88884',
+    '#8884d8',
+    '#82ca9d',
+    '#ffc658',
+    '#ff7300',
+    '#a4de6c',
+    '#d0ed57',
+    '#8dd1e1',
+    '#d88884',
   ]
-  
+
   // Common states
   const [timeRange, setTimeRange] = useState('6m')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
-  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | undefined>()
+  const [selectedDateRange, setSelectedDateRange] = useState<
+    DateRange | undefined
+  >()
 
   // Category Analytics State
   const [loadingCategory, setLoadingCategory] = useState(false)
-  const [categoryDetails, setCategoryDetails] = useState<CategoryDetailDTO[]>([])
+  const [categoryDetails, setCategoryDetails] = useState<CategoryDetailDTO[]>(
+    []
+  )
   const [totalCategoryElements, setTotalCategoryElements] = useState(0)
   const [totalCategoryPages, setTotalCategoryPages] = useState(1)
   const [page, setPage] = useState(0)
@@ -132,21 +184,27 @@ export function ManagerAnalytics() {
 
   // Course Analytics State
   const [loadingCourse, setLoadingCourse] = useState(false)
-  const [courseDetails, setCourseDetails] = useState<CourseAnalyticsDetailResponseDTO[]>([])
+  const [courseDetails, setCourseDetails] = useState<
+    CourseAnalyticsDetailResponseDTO[]
+  >([])
   const [totalCourseElements, setTotalCourseElements] = useState(0)
   const [coursePage, setCoursePage] = useState(0)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(5)
 
   // Student Analytics State
   const [loadingStudent, setLoadingStudent] = useState(false)
-  const [studentDetails, setStudentDetails] = useState<StudentAnalyticsDetailResponseDTO[]>([])
+  const [studentDetails, setStudentDetails] = useState<
+    StudentAnalyticsDetailResponseDTO[]
+  >([])
   const [totalStudentElements, setTotalStudentElements] = useState(0)
   const [studentPage, setStudentPage] = useState(0)
   const [studentRowsPerPage, setStudentRowsPerPage] = useState(5)
 
   // Revenue Analytics State
   const [loadingRevenue, setLoadingRevenue] = useState(false)
-  const [revenueDetails, setRevenueDetails] = useState<RevenueAnalyticsDetailResponseDTO[]>([])
+  const [revenueDetails, setRevenueDetails] = useState<
+    RevenueAnalyticsDetailResponseDTO[]
+  >([])
   const [totalRevenueElements, setTotalRevenueElements] = useState(0)
   const [revenuePage, setRevenuePage] = useState(0)
   const [revenueRowsPerPage, setRevenueRowsPerPage] = useState(5)
@@ -194,7 +252,9 @@ export function ManagerAnalytics() {
   )
   const avgRating =
     courseDetails.filter(item => item.rating > 0).length > 0
-      ? courseDetails.filter(item => item.rating > 0).reduce((sum, item) => sum + item.rating, 0) /
+      ? courseDetails
+          .filter(item => item.rating > 0)
+          .reduce((sum, item) => sum + item.rating, 0) /
         courseDetails.filter(item => item.rating > 0).length
       : 0
 
@@ -302,16 +362,32 @@ export function ManagerAnalytics() {
   }, [])
 
   // Pagination logic for category detail table - Convert to client-side for consistency
-  const { totalRows, totalPages, paginatedData } = createPaginationLogic(categoryDetails, page, rowsPerPage)
+  const { totalRows, totalPages, paginatedData } = createPaginationLogic(
+    categoryDetails,
+    page,
+    rowsPerPage
+  )
 
   // Pagination logic for course detail table - Client-side
-  const { totalRows: totalCourseRows, totalPages: totalCoursePages, paginatedData: paginatedCourseData } = createPaginationLogic(courseDetails, coursePage, courseRowsPerPage)
+  const {
+    totalRows: totalCourseRows,
+    totalPages: totalCoursePages,
+    paginatedData: paginatedCourseData,
+  } = createPaginationLogic(courseDetails, coursePage, courseRowsPerPage)
 
   // Pagination logic for student activity table
-  const { totalRows: totalStudentRows, totalPages: totalStudentPages, paginatedData: paginatedStudentData } = createPaginationLogic(studentDetails, studentPage, studentRowsPerPage)
+  const {
+    totalRows: totalStudentRows,
+    totalPages: totalStudentPages,
+    paginatedData: paginatedStudentData,
+  } = createPaginationLogic(studentDetails, studentPage, studentRowsPerPage)
 
   // Pagination logic for revenue trends table
-  const { totalRows: totalRevenueRows, totalPages: totalRevenuePages, paginatedData: paginatedRevenueData } = createPaginationLogic(revenueDetails, revenuePage, revenueRowsPerPage)
+  const {
+    totalRows: totalRevenueRows,
+    totalPages: totalRevenuePages,
+    paginatedData: paginatedRevenueData,
+  } = createPaginationLogic(revenueDetails, revenuePage, revenueRowsPerPage)
 
   const handleDateRangeChange = (dateRange: DateRange | undefined) => {
     setSelectedDateRange(dateRange)
@@ -368,7 +444,11 @@ export function ManagerAnalytics() {
           <div className='flex items-center gap-2 md:ml-auto'>
             <button
               onClick={handleFilter}
-              disabled={timeRange !== 'custom' || !selectedDateRange?.from || !selectedDateRange?.to}
+              disabled={
+                timeRange !== 'custom' ||
+                !selectedDateRange?.from ||
+                !selectedDateRange?.to
+              }
               className='h-10 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-md text-sm transition-colors inline-flex items-center gap-2'
             >
               <svg
@@ -488,7 +568,11 @@ export function ManagerAnalytics() {
                     </CardDescription>
                   </div>
                   <div className='flex items-center gap-2'>
-                    {createRowsPerPageSelector(rowsPerPage, setRowsPerPage, () => setPage(0))}
+                    {createRowsPerPageSelector(
+                      rowsPerPage,
+                      setRowsPerPage,
+                      () => setPage(0)
+                    )}
                     <span className='text-sm'></span>
                   </div>
                 </div>
@@ -496,41 +580,57 @@ export function ManagerAnalytics() {
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Category Name', 'Details', 'Courses', 'Students', 'Revenue (USD)', 'Revenue Proportion (%)'])}
+                    {createTableHeader([
+                      'ID',
+                      'Category Name',
+                      'Details',
+                      'Courses',
+                      'Students',
+                      'Revenue (USD)',
+                      'Revenue Proportion (%)',
+                    ])}
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingCategory ? createLoadingRow(7, 'Loading categories...') : paginatedData.length === 0 ? createEmptyRow(7) : paginatedData.map((cat, index) => (
-                        <tr
-                          key={cat.id}
-                          className='cursor-pointer hover:bg-gray-50'
-                        >
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {rowsPerPage === -1 ? index + 1 : page * rowsPerPage + (index + 1)}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
-                          </td>
-                          <td className='px-6 py-3 text-sm text-left text-gray-900'>
-                            <div className='line-clamp-2'>
-                              {(cat.description || '').replace(
-                                /\n|\r|\r\n/g,
-                                ' '
-                              )}
-                            </div>
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.courseCount || 0}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.totalStudents}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {cat.totalRevenue?.toLocaleString('en-US')} $
-                          </td>
-                          <td className={`px-6 py-3 whitespace-nowrap text-sm text-center ${cat.revenueProportion === 0 ? 'text-black' : cat.revenueProportion > 0 && cat.revenueProportion <= 20 ? 'text-red-600' : 'text-green-600'}`}>
-                            {cat.revenueProportion.toFixed(2)}%
-                          </td>
-                        </tr>
-                      ))}
+                      {loadingCategory
+                        ? createLoadingRow(7, 'Loading categories...')
+                        : paginatedData.length === 0
+                          ? createEmptyRow(7)
+                          : paginatedData.map((cat, index) => (
+                              <tr
+                                key={cat.id}
+                                className='cursor-pointer hover:bg-gray-50'
+                              >
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {rowsPerPage === -1
+                                    ? index + 1
+                                    : page * rowsPerPage + (index + 1)}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
+                                  {(cat.name || '').replace(/\n|\r|\r\n/g, ' ')}
+                                </td>
+                                <td className='px-6 py-3 text-sm text-left text-gray-900'>
+                                  <div className='line-clamp-2'>
+                                    {(cat.description || '').replace(
+                                      /\n|\r|\r\n/g,
+                                      ' '
+                                    )}
+                                  </div>
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {cat.courseCount || 0}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {cat.totalStudents}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {cat.totalRevenue?.toLocaleString('en-US')} $
+                                </td>
+                                <td
+                                  className={`px-6 py-3 whitespace-nowrap text-sm text-center ${cat.revenueProportion === 0 ? 'text-black' : cat.revenueProportion > 0 && cat.revenueProportion <= 20 ? 'text-red-600' : 'text-green-600'}`}
+                                >
+                                  {cat.revenueProportion.toFixed(2)}%
+                                </td>
+                              </tr>
+                            ))}
                     </tbody>
                   </table>
                 </div>
@@ -558,43 +658,67 @@ export function ManagerAnalytics() {
                     </CardDescription>
                   </div>
                   <div className='flex items-center gap-2'>
-                    {createRowsPerPageSelector(courseRowsPerPage, setCourseRowsPerPage, () => setCoursePage(0))}
+                    {createRowsPerPageSelector(
+                      courseRowsPerPage,
+                      setCourseRowsPerPage,
+                      () => setCoursePage(0)
+                    )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Course Name', 'Students', 'Rating', 'Revenue (USD)', 'Revenue %', 'Reviews', 'Level'])}
+                    {createTableHeader([
+                      'ID',
+                      'Course Name',
+                      'Students',
+                      'Rating',
+                      'Revenue (USD)',
+                      'Revenue %',
+                      'Reviews',
+                      'Level',
+                    ])}
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingCourse ? createLoadingRow(8, 'Loading courses...') : courseDetails.length === 0 ? createEmptyRow(8) : paginatedCourseData.map((course, idx) => (
-                        <tr key={course.courseId}>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {courseRowsPerPage === -1 ? idx + 1 : coursePage * courseRowsPerPage + (idx + 1)}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {course.courseName}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.students}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.rating?.toFixed(1) || '0.0'}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.revenue?.toLocaleString('en-US') || '0'} $
-                          </td>
-                          <td className={`px-6 py-3 whitespace-nowrap text-sm text-center ${course.revenuePercent === 0 ? 'text-black' : course.revenuePercent > 0 && course.revenuePercent <= 20 ? 'text-red-600' : 'text-green-600'}`}>
-                            {course.revenuePercent?.toFixed(2)}%
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.reviews}
-                          </td>
-                          <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {course.level || 'N/A'}
-                          </td>
-                        </tr>
-                      ))}
+                      {loadingCourse
+                        ? createLoadingRow(8, 'Loading courses...')
+                        : courseDetails.length === 0
+                          ? createEmptyRow(8)
+                          : paginatedCourseData.map((course, idx) => (
+                              <tr key={course.courseId}>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {courseRowsPerPage === -1
+                                    ? idx + 1
+                                    : coursePage * courseRowsPerPage +
+                                      (idx + 1)}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
+                                  {course.courseName}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {course.students}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {course.rating?.toFixed(1) || '0.0'}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {course.revenue?.toLocaleString('en-US') ||
+                                    '0'}{' '}
+                                  $
+                                </td>
+                                <td
+                                  className={`px-6 py-3 whitespace-nowrap text-sm text-center ${course.revenuePercent === 0 ? 'text-black' : course.revenuePercent > 0 && course.revenuePercent <= 20 ? 'text-red-600' : 'text-green-600'}`}
+                                >
+                                  {course.revenuePercent?.toFixed(2)}%
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {course.reviews}
+                                </td>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {course.level || 'N/A'}
+                                </td>
+                              </tr>
+                            ))}
                     </tbody>
                   </table>
                 </div>
@@ -621,40 +745,61 @@ export function ManagerAnalytics() {
                       Course-specific student engagement and completion metrics
                     </CardDescription>
                   </div>
-                  {createRowsPerPageSelector(studentRowsPerPage, setStudentRowsPerPage, () => setStudentPage(0))}
+                  {createRowsPerPageSelector(
+                    studentRowsPerPage,
+                    setStudentRowsPerPage,
+                    () => setStudentPage(0)
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Course Name', 'New Students', 'Previously', 'Growth (%)', 'Reviews', 'Avg Rating'])}
+                    {createTableHeader([
+                      'ID',
+                      'Course Name',
+                      'New Students',
+                      'Previously',
+                      'Growth (%)',
+                      'Reviews',
+                      'Avg Rating',
+                    ])}
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingStudent ? createLoadingRow(7, 'Loading student analytics...') : paginatedStudentData.length === 0 ? createEmptyRow(7) : paginatedStudentData.map((data, index) => (
-                        <tr key={data.id}>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {studentRowsPerPage === -1 ? index + 1 : studentPage * studentRowsPerPage + (index + 1)}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {data.courseName}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.newStudents}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.previousCompletion}
-                          </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${data.growth === 0 ? 'text-black' : data.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {data.growth > 0 ? '+' : ''}
-                            {data.growth}%
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.reviews}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.avgRating}
-                          </td>
-                        </tr>
-                      ))}
+                      {loadingStudent
+                        ? createLoadingRow(7, 'Loading student analytics...')
+                        : paginatedStudentData.length === 0
+                          ? createEmptyRow(7)
+                          : paginatedStudentData.map((data, index) => (
+                              <tr key={data.id}>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {studentRowsPerPage === -1
+                                    ? index + 1
+                                    : studentPage * studentRowsPerPage +
+                                      (index + 1)}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
+                                  {data.courseName}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.newStudents}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.previousCompletion}
+                                </td>
+                                <td
+                                  className={`px-6 py-4 whitespace-nowrap text-sm text-center ${data.growth === 0 ? 'text-black' : data.growth > 0 ? 'text-green-600' : 'text-red-600'}`}
+                                >
+                                  {data.growth > 0 ? '+' : ''}
+                                  {data.growth}%
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.reviews}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.avgRating}
+                                </td>
+                              </tr>
+                            ))}
                     </tbody>
                   </table>
                 </div>
@@ -681,43 +826,66 @@ export function ManagerAnalytics() {
                       Course-specific revenue performance and growth analysis
                     </CardDescription>
                   </div>
-                  {createRowsPerPageSelector(revenueRowsPerPage, setRevenueRowsPerPage, () => setRevenuePage(0))}
+                  {createRowsPerPageSelector(
+                    revenueRowsPerPage,
+                    setRevenueRowsPerPage,
+                    () => setRevenuePage(0)
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
                 <div className='overflow-x-auto border border-gray-200 rounded-md'>
                   <table className='min-w-full divide-y divide-gray-200'>
-                    {createTableHeader(['ID', 'Course Name', 'Revenue', 'Previously', 'Growth (%)', 'Orders', 'New Students', 'Revenue Share (%)'])}
+                    {createTableHeader([
+                      'ID',
+                      'Course Name',
+                      'Revenue',
+                      'Previously',
+                      'Growth (%)',
+                      'Orders',
+                      'New Students',
+                      'Revenue Share (%)',
+                    ])}
                     <tbody className='bg-white divide-y divide-gray-200'>
-                    {loadingRevenue ? createLoadingRow(8, 'Loading revenue analytics...') : paginatedRevenueData.length === 0 ? createEmptyRow(8) : paginatedRevenueData.map((data, index) => (
-                        <tr key={data.id}>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {revenueRowsPerPage === -1 ? index + 1 : revenuePage * revenueRowsPerPage + (index + 1)}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
-                            {data.courseName}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.revenue.toLocaleString('en-US')} $
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.previousRevenue.toLocaleString('en-US')} $
-                          </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${data.growth === 0 ? 'text-black' : data.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {data.growth > 0 ? '+' : ''}
-                            {data.growth}%
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.orders}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.newStudents}
-                          </td>
-                          <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
-                            {data.revenueShare}%
-                          </td>
-                        </tr>
-                      ))}
+                      {loadingRevenue
+                        ? createLoadingRow(8, 'Loading revenue analytics...')
+                        : paginatedRevenueData.length === 0
+                          ? createEmptyRow(8)
+                          : paginatedRevenueData.map((data, index) => (
+                              <tr key={data.id}>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {revenueRowsPerPage === -1
+                                    ? index + 1
+                                    : revenuePage * revenueRowsPerPage +
+                                      (index + 1)}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
+                                  {data.courseName}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.revenue.toLocaleString('en-US')} $
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.previousRevenue.toLocaleString('en-US')}{' '}
+                                  $
+                                </td>
+                                <td
+                                  className={`px-6 py-4 whitespace-nowrap text-sm text-center ${data.growth === 0 ? 'text-black' : data.growth > 0 ? 'text-green-600' : 'text-red-600'}`}
+                                >
+                                  {data.growth > 0 ? '+' : ''}
+                                  {data.growth}%
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.orders}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.newStudents}
+                                </td>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>
+                                  {data.revenueShare}%
+                                </td>
+                              </tr>
+                            ))}
                     </tbody>
                   </table>
                 </div>

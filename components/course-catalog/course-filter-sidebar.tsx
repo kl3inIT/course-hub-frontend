@@ -134,7 +134,9 @@ export const CourseFilterSidebar = React.memo(function CourseFilterSidebar({
           <Checkbox
             id='discounted'
             checked={isDiscounted || false}
-            onCheckedChange={checked => setIsDiscounted(checked ? true : undefined)}
+            onCheckedChange={checked =>
+              setIsDiscounted(checked ? true : undefined)
+            }
           />
           <label htmlFor='discounted' className='text-sm cursor-pointer'>
             Show only discounted courses

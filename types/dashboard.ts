@@ -27,4 +27,3 @@ export interface DashboardManagerData {
   monthlyStudentEnrollments: number[]
   topCourses: TopCourse[]
 }
-

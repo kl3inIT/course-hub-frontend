@@ -53,7 +53,9 @@ import { toast } from 'sonner'
 export function CategoryManagement() {
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [allCategories, setAllCategories] = useState<CategoryResponseDTO[]>([])
-  const [filteredCategories, setFilteredCategories] = useState<CategoryResponseDTO[]>([])
+  const [filteredCategories, setFilteredCategories] = useState<
+    CategoryResponseDTO[]
+  >([])
   const [totalCourses, setTotalCourses] = useState(0)
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -111,31 +113,32 @@ export function CategoryManagement() {
         size: 1000, // Fetch all categories
         name: searchName,
       }
-      
+
       console.log('Fetching all categories with params:', params)
-      
+
       const response = await categoryApi.getAllCategories(params)
-      
+
       console.log('API Response:', response)
-      
-      const categoriesData = (response.data.content || response.data).map((c: any) => ({
-        ...c,
-        id: c.id?.toString(),
-      }))
+
+      const categoriesData = (response.data.content || response.data).map(
+        (c: any) => ({
+          ...c,
+          id: c.id?.toString(),
+        })
+      )
       setAllCategories(categoriesData)
       setFilteredCategories(categoriesData)
       setCategories(categoriesData)
-      
+
       // Calculate total courses
       const totalCoursesCount = categoriesData.reduce(
         (sum: number, c: CategoryResponseDTO) => sum + c.courseCount,
         0
       )
       setTotalCourses(totalCoursesCount)
-      
+
       // Reset to first page when data changes
       setCurrentPage(0)
-      
     } catch (error) {
       console.error('Failed to fetch categories:', error)
       toast.error('Error', {
@@ -154,9 +157,10 @@ export function CategoryManagement() {
   // Handle search
   useEffect(() => {
     if (searchTerm.trim()) {
-      const filtered = allCategories.filter(cat => 
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = allCategories.filter(
+        cat =>
+          cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          cat.description.toLowerCase().includes(searchTerm.toLowerCase())
       )
       setFilteredCategories(filtered)
     } else {
@@ -231,10 +235,7 @@ export function CategoryManagement() {
     if (hasError) return
     if (!selectedCategory) return
     try {
-      await categoryApi.updateCategory(
-        Number(selectedCategory.id),
-        newCategory
-      )
+      await categoryApi.updateCategory(Number(selectedCategory.id), newCategory)
       setNewCategory({ name: '', description: '' })
       setSelectedCategory(null)
       setIsEditDialogOpen(false)
@@ -418,10 +419,14 @@ export function CategoryManagement() {
                   <Search className='h-5 w-5' />
                 </button>
               </div>
-              <span className='text-xs text-muted-foreground text-right mt-1'>{searchInput.length}/100</span>
+              <span className='text-xs text-muted-foreground text-right mt-1'>
+                {searchInput.length}/100
+              </span>
             </div>
             <div className='text-sm text-muted-foreground'>
-              {searchTerm ? `${filteredCategories.length} of ${allCategories.length} categories` : `${filteredCategories.length} categories total`}
+              {searchTerm
+                ? `${filteredCategories.length} of ${allCategories.length} categories`
+                : `${filteredCategories.length} categories total`}
             </div>
           </div>
 
@@ -506,8 +511,10 @@ export function CategoryManagement() {
                           variant='ghost'
                           size='icon'
                           onClick={e => {
-                            e.stopPropagation();
-                            router.push(`/manager/categories/${category.id}/edit`);
+                            e.stopPropagation()
+                            router.push(
+                              `/manager/categories/${category.id}/edit`
+                            )
                           }}
                           title='Edit'
                           className='hover:bg-blue-100 hover:text-blue-600'
@@ -544,7 +551,8 @@ export function CategoryManagement() {
           {paginationData.totalItems > 0 && (
             <div className='flex items-center justify-between mt-6'>
               <p className='text-sm text-muted-foreground'>
-                Showing {paginationData.startItem} to {paginationData.endItem} of {paginationData.totalItems} categories
+                Showing {paginationData.startItem} to {paginationData.endItem}{' '}
+                of {paginationData.totalItems} categories
               </p>
               <div className='flex items-center gap-2'>
                 <Button
@@ -557,7 +565,8 @@ export function CategoryManagement() {
                   Previous
                 </Button>
                 <span className='text-sm'>
-                  Page {currentPage + 1} of {Math.max(1, paginationData.totalPages)}
+                  Page {currentPage + 1} of{' '}
+                  {Math.max(1, paginationData.totalPages)}
                 </span>
                 <Button
                   variant='outline'

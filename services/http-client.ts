@@ -32,7 +32,6 @@ const PUBLIC_ENDPOINTS = [
   { url: '/api/reviews/', method: 'GET' }, // Matches /api/reviews/{id}
 ]
 
-
 export const httpClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,

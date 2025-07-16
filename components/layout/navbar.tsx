@@ -182,9 +182,15 @@ export function Navbar() {
     fetchCategories()
   }, [])
 
-  const handleLogout = () => {
-    logout()
-    window.location.href = '/login'
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Always redirect to login regardless of logout API result
+      window.location.href = '/login'
+    }
   }
 
   const isActiveLink = (href: string) => {
@@ -348,8 +354,8 @@ export function Navbar() {
                 ></span>
               </Link>
 
-              {/* Only show "My Learning" link for authenticated users */}
-              {user && (
+              {/* Only show "My Learning" link for learners */}
+              {user && user.role === 'learner' && (
                 <Link
                   href='/dashboard'
                   className={`text-sm font-medium transition-colors relative group ${
@@ -646,8 +652,8 @@ export function Navbar() {
                         Contact
                       </Link>
 
-                      {/* Only show "My Learning" link for authenticated users in mobile */}
-                      {user && (
+                      {/* Only show "My Learning" link for learners in mobile */}
+                      {user && user.role === 'learner' && (
                         <Link
                           href='/dashboard'
                           className={`text-lg font-medium transition-colors py-2 ${

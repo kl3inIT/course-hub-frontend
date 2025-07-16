@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth, type UserRole } from '@/context/auth-context'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Shield, LogIn } from 'lucide-react'
 
 interface ProtectedRouteProps {
@@ -14,6 +15,7 @@ interface ProtectedRouteProps {
   allowedRoles?: UserRole[]
   requireAuth?: boolean
   redirectTo?: string
+  fallback?: React.ReactNode
 }
 
 export function ProtectedRoute({
@@ -21,6 +23,7 @@ export function ProtectedRoute({
   allowedRoles = [],
   requireAuth = true,
   redirectTo = '/login',
+  fallback,
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -33,24 +36,19 @@ export function ProtectedRoute({
 
   // Show loading state while checking authentication
   if (isLoading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto'></div>
-          <p className='mt-2 text-muted-foreground'>
-            Checking authentication...
-          </p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message='Checking authentication...' fullScreen />
   }
 
   // Check role permissions
   if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    if (fallback) {
+      return <>{fallback}</>
+    }
+
     return (
       <div className='min-h-screen flex items-center justify-center p-4'>
-        <Alert className='max-w-md border-destructive'>
-          <Shield className='h-4 w-4' />
+        <Alert className='max-w-md border-destructive' role='alert'>
+          <Shield className='h-4 w-4' aria-hidden='true' />
           <AlertDescription className='mt-2'>
             <div className='space-y-3'>
               <div>
@@ -66,10 +64,15 @@ export function ProtectedRoute({
                   onClick={() => router.back()}
                   variant='outline'
                   size='sm'
+                  aria-label='Go back to previous page'
                 >
                   Go Back
                 </Button>
-                <Button onClick={() => router.push('/')} size='sm'>
+                <Button
+                  onClick={() => router.push('/')}
+                  size='sm'
+                  aria-label='Go to home page'
+                >
                   Go Home
                 </Button>
               </div>
@@ -82,17 +85,25 @@ export function ProtectedRoute({
 
   // User not authenticated and auth is required
   if (requireAuth && !user) {
+    if (fallback) {
+      return <>{fallback}</>
+    }
+
     return (
       <div className='min-h-screen flex items-center justify-center p-4'>
-        <Alert className='max-w-md'>
-          <LogIn className='h-4 w-4' />
+        <Alert className='max-w-md' role='alert'>
+          <LogIn className='h-4 w-4' aria-hidden='true' />
           <AlertDescription className='mt-2'>
             <div className='space-y-3'>
               <div>
                 <h3 className='font-semibold'>Authentication Required</h3>
                 <p>Please log in to access this page.</p>
               </div>
-              <Button onClick={() => router.push('/login')} size='sm'>
+              <Button
+                onClick={() => router.push('/login')}
+                size='sm'
+                aria-label='Go to login page'
+              >
                 Go to Login
               </Button>
             </div>

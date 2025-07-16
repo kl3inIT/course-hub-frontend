@@ -12,7 +12,9 @@ class WebSocketService {
       return
     }
 
-    const wsUrl = `http://localhost:8080/ws?token=${encodeURIComponent(token)}`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    // SockJS expects HTTP/HTTPS URLs, not WS/WSS
+    const wsUrl = `${baseUrl}/ws?token=${encodeURIComponent(token)}`
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
@@ -30,8 +32,8 @@ class WebSocketService {
 
     try {
       this.client.activate()
-    } catch (error) {
-      console.error('[WebSocket] Failed to connect to WebSocket:', error)
+    } catch (_error) {
+      // Failed to connect to WebSocket
     }
   }
 
@@ -60,12 +62,8 @@ class WebSocketService {
         try {
           const data = JSON.parse(message.body)
           this.notifySubscribers(event, data)
-        } catch (e) {
-          console.error(
-            '[WebSocket] Error parsing message.body:',
-            message.body,
-            e
-          )
+        } catch (_e) {
+          // Error parsing message.body
           this.notifySubscribers(event, message.body)
         }
       }
@@ -91,7 +89,7 @@ class WebSocketService {
     if (callback) {
       callback(data)
     } else {
-      console.warn('[WebSocket] No subscriber found for event:', event)
+      // No subscriber found for event
     }
   }
 }

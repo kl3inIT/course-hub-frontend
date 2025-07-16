@@ -1,8 +1,6 @@
 'use client'
 
-import type React from 'react'
-
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -52,7 +50,7 @@ type Step = 'basic-info' | 'content-structure' | 'final-review'
 
 export function CourseCreationForm() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
   const [currentStep, setCurrentStep] = useState<Step>('basic-info')
 
   // Course basic info state
@@ -65,7 +63,7 @@ export function CourseCreationForm() {
   })
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [isValidCourseData, setIsValidCourseData] = useState(false)
-  const [courseErrors, setCourseErrors] = useState<Record<string, string>>({})
+  const [_courseErrors, setCourseErrors] = useState<Record<string, string>>({})
 
   // Course creation state
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -80,7 +78,7 @@ export function CourseCreationForm() {
   const [modules, setModules] = useState<Module[]>([])
 
   // State lưu tiến trình upload cho từng lesson
-  const [lessonUploadProgress, setLessonUploadProgress] = useState<
+  const [_lessonUploadProgress, setLessonUploadProgress] = useState<
     Record<string, number>
   >({})
 
@@ -259,49 +257,49 @@ export function CourseCreationForm() {
 
   return (
     <RoleGuard allowedRoles={['manager', 'admin']}>
-        <div className='space-y-8'>
-          {/* Progress Header */}
-          <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h1 className='text-3xl font-bold'>{getStepTitle()}</h1>
-                <p className='text-muted-foreground'>
-                  {currentStep === 'basic-info' &&
-                    'Provide the basic details about your course'}
-                  {currentStep === 'content-structure' &&
-                    'Structure your course with modules and lessons'}
-                  {currentStep === 'final-review' &&
-                    'Review and finalize your course'}
+      <div className='space-y-8'>
+        {/* Progress Header */}
+        <div className='space-y-4'>
+          <div className='flex items-center justify-between'>
+            <div>
+              <h1 className='text-3xl font-bold'>{getStepTitle()}</h1>
+              <p className='text-muted-foreground'>
+                {currentStep === 'basic-info' &&
+                  'Provide the basic details about your course'}
+                {currentStep === 'content-structure' &&
+                  'Structure your course with modules and lessons'}
+                {currentStep === 'final-review' &&
+                  'Review and finalize your course'}
+              </p>
+            </div>
+            {createdCourse && (
+              <div className='text-right'>
+                <p className='text-sm text-muted-foreground'>
+                  Course ID: {createdCourse.id}
                 </p>
+                <p className='font-medium'>{createdCourse.title}</p>
               </div>
-              {createdCourse && (
-                <div className='text-right'>
-                  <p className='text-sm text-muted-foreground'>
-                    Course ID: {createdCourse.id}
-                  </p>
-                  <p className='font-medium'>{createdCourse.title}</p>
-                </div>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <div className='flex justify-between text-sm'>
-                <span>
-                  Step{' '}
-                  {currentStep === 'basic-info'
-                    ? '1'
-                    : currentStep === 'content-structure'
-                      ? '2'
-                      : '3'}{' '}
-                  of 3
-                </span>
-                <span>{getStepProgress()}% Complete</span>
-              </div>
-              <Progress value={getStepProgress()} className='h-2' />
-            </div>
+            )}
           </div>
+          <div className='space-y-2'>
+            <div className='flex justify-between text-sm'>
+              <span>
+                Step{' '}
+                {currentStep === 'basic-info'
+                  ? '1'
+                  : currentStep === 'content-structure'
+                    ? '2'
+                    : '3'}{' '}
+                of 3
+              </span>
+              <span>{getStepProgress()}% Complete</span>
+            </div>
+            <Progress value={getStepProgress()} className='h-2' />
+          </div>
+        </div>
 
-          {/* Step Content */}
-          {currentStep === 'basic-info' && (
+        {/* Step Content */}
+        {currentStep === 'basic-info' && (
           <div className='space-y-6'>
             {/* Course Basic Information Form */}
             <CourseBasicInfoForm
@@ -317,74 +315,74 @@ export function CourseCreationForm() {
             />
 
             {/* Submit Status */}
-                  {submitStatus === 'success' && (
+            {submitStatus === 'success' && (
               <Alert className='border-green-500 bg-green-50'>
-                      <CheckCircle className='h-4 w-4 text-green-600' />
-                      <AlertDescription className='text-green-800'>
-                        Course created successfully! You can now add modules and
-                        lessons.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                <CheckCircle className='h-4 w-4 text-green-600' />
+                <AlertDescription className='text-green-800'>
+                  Course created successfully! You can now add modules and
+                  lessons.
+                </AlertDescription>
+              </Alert>
+            )}
 
-                  {submitStatus === 'error' && (
+            {submitStatus === 'error' && (
               <Alert className='border-red-500 bg-red-50'>
-                      <AlertCircle className='h-4 w-4 text-red-600' />
-                      <AlertDescription className='text-red-800'>
+                <AlertCircle className='h-4 w-4 text-red-600' />
+                <AlertDescription className='text-red-800'>
                   Failed to create course. Please check the form and try again.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {(submitStatus === 'creating' || submitStatus === 'uploading') && (
               <Alert className='border-blue-500 bg-blue-50'>
-                      <Info className='h-4 w-4 text-blue-600' />
-                      <AlertDescription className='text-blue-800'>
-                        {submitStatus === 'creating'
-                          ? 'Creating your course...'
-                          : 'Uploading thumbnail...'}
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                <Info className='h-4 w-4 text-blue-600' />
+                <AlertDescription className='text-blue-800'>
+                  {submitStatus === 'creating'
+                    ? 'Creating your course...'
+                    : 'Uploading thumbnail...'}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Action Buttons */}
-                  <div className='flex gap-4'>
-                    <Button
-                      type='button'
-                      onClick={handleCreateCourse}
+            <div className='flex gap-4'>
+              <Button
+                type='button'
+                onClick={handleCreateCourse}
                 disabled={isSubmitting || !isValidCourseData}
-                      className='flex-1 md:flex-none md:min-w-[200px]'
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
-                          {submitStatus === 'creating'
-                            ? 'Creating course...'
-                            : 'Uploading thumbnail...'}
-                        </>
-                      ) : (
-                        <>
-                          <ArrowRight className='h-4 w-4 mr-2' />
-                          Create Course & Continue
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      disabled={isSubmitting}
+                className='flex-1 md:flex-none md:min-w-[200px]'
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
+                    {submitStatus === 'creating'
+                      ? 'Creating course...'
+                      : 'Uploading thumbnail...'}
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className='h-4 w-4 mr-2' />
+                    Create Course & Continue
+                  </>
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                disabled={isSubmitting}
                 onClick={() => router.back()}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
+              >
+                Cancel
+              </Button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Content Structure Step */}
-          {currentStep === 'content-structure' && createdCourse && (
+        {/* Content Structure Step */}
+        {currentStep === 'content-structure' && createdCourse && (
           <div className='space-y-6'>
-                  {/* Course Summary */}
+            {/* Course Summary */}
             <CourseSummaryCard
               course={{
                 title: createdCourse.title,
@@ -403,46 +401,46 @@ export function CourseCreationForm() {
               courseId={createdCourseId?.toString()}
             />
 
-              {/* Navigation Buttons */}
-                  <div className='flex gap-4'>
-                    <Button
-                      variant='outline'
-                      onClick={() => setCurrentStep('basic-info')}
+            {/* Navigation Buttons */}
+            <div className='flex gap-4'>
+              <Button
+                variant='outline'
+                onClick={() => setCurrentStep('basic-info')}
                 disabled={isSubmitting}
-                    >
-                      <ArrowLeft className='h-4 w-4 mr-2' />
-                      Back to Course Info
-                    </Button>
-                    <Button
-                      onClick={handleFinalizeCourse}
-                      disabled={isSubmitting}
-                      className='flex-1 md:flex-none'
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className='h-4 w-4 mr-2' />
-                          Complete Course Creation
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant='outline'
-                      onClick={() =>
-                        router.push(`/manager/courses/${createdCourseId}/edit`)
-                      }
+              >
+                <ArrowLeft className='h-4 w-4 mr-2' />
+                Back to Course Info
+              </Button>
+              <Button
+                onClick={handleFinalizeCourse}
                 disabled={isSubmitting}
-                    >
-                      Skip & Go to Editor
-                    </Button>
-                  </div>
+                className='flex-1 md:flex-none'
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className='h-4 w-4 mr-2' />
+                    Complete Course Creation
+                  </>
+                )}
+              </Button>
+              <Button
+                variant='outline'
+                onClick={() =>
+                  router.push(`/manager/courses/${createdCourseId}/edit`)
+                }
+                disabled={isSubmitting}
+              >
+                Skip & Go to Editor
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
     </RoleGuard>
   )
 }

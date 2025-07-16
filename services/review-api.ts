@@ -23,12 +23,9 @@ export const reviewApi = {
   },
 
   createReview: async (
-    userId: number,
     data: ReviewRequestDTO
   ): Promise<ApiResponse<ReviewResponseDTO>> => {
-    const response = await httpClient.post('/api/reviews', data, {
-      params: { userId },
-    })
+    const response = await httpClient.post('/api/reviews', data)
     return response.data
   },
 
@@ -85,8 +82,8 @@ export const reviewApi = {
       direction?: 'ASC' | 'DESC'
     }
   ): Promise<ApiResponse<Page<ReviewResponseDTO>>> => {
-    const response = await httpClient.get('/api/reviews/by-visibility', { 
-      params: { visibilityStatus, ...params }
+    const response = await httpClient.get('/api/reviews/by-visibility', {
+      params: { visibilityStatus, ...params },
     })
     return response.data
   },

@@ -1,7 +1,6 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page, PagedResponse } from '@/types/common'
 import {
-  CourseRequestDTO,
   CourseCreationRequestDTO,
   CourseUpdateRequestDTO,
   CourseCreateUpdateResponseDTO,
@@ -11,6 +10,8 @@ import {
   DashboardCourseResponseDTO,
   CourseSearchStatsResponseDTO,
   ManagerCourseResponseDTO,
+  CourseEnrollment,
+  CourseEnrollmentStats,
 } from '@/types/course'
 
 export const courseApi = {
@@ -74,57 +75,29 @@ export const courseApi = {
     return response.data
   },
 
-  getAllCourses: async (params?: CourseSearchParams) => {
-    const response = await httpClient.get<ApiResponse<PagedResponse<CourseResponseDTO>>>(
-      '/api/courses',
-      {
-        params: {
-          page: params?.page ?? 0,
-          size: params?.size ?? 20,
-          sort: params?.sort,
-          search: params?.search,
-          category: params?.category,
-          level: params?.level,
-          minPrice: params?.minPrice,
-          maxPrice: params?.maxPrice,
-          searchTerm: params?.searchTerm,
-          categoryId: params?.categoryId,
-          minRating: params?.minRating,
-          isFree: params?.isFree,
-          isDiscounted: params?.isDiscounted,
-          status: params?.status,
-          sortBy: params?.sortBy,
-          sortDirection: params?.sortDirection,
-        },
-      }
-    )
-    return response.data
-  },
-
   advancedSearch: async (params: CourseSearchParams) => {
-    const response = await httpClient.get<ApiResponse<PagedResponse<CourseResponseDTO>>>(
-      '/api/courses/search/advanced-search',
-      {
-        params: {
-          page: params?.page ?? 0,
-          size: params?.size ?? 20,
-          sort: params?.sort,
-          search: params?.search,
-          category: params?.category,
-          level: params?.level,
-          minPrice: params?.minPrice,
-          maxPrice: params?.maxPrice,
-          searchTerm: params?.searchTerm,
-          categoryId: params?.categoryId,
-          minRating: params?.minRating,
-          isFree: params?.isFree,
-          isDiscounted: params?.isDiscounted,
-          status: params?.status,
-          sortBy: params?.sortBy,
-          sortDirection: params?.sortDirection,
-        },
-      }
-    )
+    const response = await httpClient.get<
+      ApiResponse<PagedResponse<CourseResponseDTO>>
+    >('/api/courses/search/advanced-search', {
+      params: {
+        page: params?.page ?? 0,
+        size: params?.size ?? 20,
+        sort: params?.sort,
+        search: params?.search,
+        category: params?.category,
+        level: params?.level,
+        minPrice: params?.minPrice,
+        maxPrice: params?.maxPrice,
+        searchTerm: params?.searchTerm,
+        categoryId: params?.categoryId,
+
+        isFree: params?.isFree,
+        isDiscounted: params?.isDiscounted,
+        status: params?.status,
+        sortBy: params?.sortBy,
+        sortDirection: params?.sortDirection,
+      },
+    })
     return response.data
   },
 
@@ -196,5 +169,34 @@ export const courseApi = {
   restoreCourse: async (courseId: string): Promise<ApiResponse<string>> => {
     const response = await httpClient.patch(`/api/courses/${courseId}/restore`)
     return response.data
+  },
+
+  getRecommendedCourses: async (): Promise<
+    ApiResponse<DashboardCourseResponseDTO[]>
+  > => {
+    const response = await httpClient.get<
+      ApiResponse<DashboardCourseResponseDTO[]>
+    >('/api/courses/recommended')
+    return response.data
+  },
+
+  enrollFreeCourse: async (courseId: string): Promise<ApiResponse<string>> => {
+    const response = await httpClient.post(`/api/courses/${courseId}/enroll`)
+    return response.data
+  },
+
+  getCourseEnrollments: async (courseId: string): Promise<CourseEnrollment[]> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollment[]>>(`/api/courses/${courseId}/enrollments`)
+    return response.data.data
+  },
+
+  unenrollStudent: async (courseId: string, studentId: string): Promise<string> => {
+    const response = await httpClient.delete<ApiResponse<string>>(`/api/courses/${courseId}/enrollments/${studentId}`)
+    return response.data.data
+  },
+
+  getCourseEnrollmentStats: async (courseId: string): Promise<CourseEnrollmentStats> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollmentStats>>(`/api/courses/${courseId}/enrollments/stats`)
+    return response.data.data
   },
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { RoleGuard } from '@/components/auth/role-guard'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Card,
@@ -248,6 +249,17 @@ const mockCourseData: Record<string, CourseDetail> = {
 }
 
 export default function CourseDetailPage() {
+  return (
+    <RoleGuard
+      allowedRoles={['manager', 'admin']}
+      redirectOnUnauthorized={true}
+    >
+      <CourseDetailContent />
+    </RoleGuard>
+  )
+}
+
+function CourseDetailContent() {
   const params = useParams()
   const router = useRouter()
   const courseId = params.id as string

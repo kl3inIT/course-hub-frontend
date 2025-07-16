@@ -41,3 +41,11 @@ export interface LessonUploadResponseDTO {
   preSignedPutUrl: string
   s3Key: string
 }
+
+export interface LessonVideoUpdateResponseDTO {
+  lessonId: number
+  preSignedPutUrl: string
+  s3Key: string
+  fileName: string
+  fileType: string
+}

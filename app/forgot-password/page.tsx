@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
   }
 
   // Hàm xử lý khi OTP xác thực thành công
-  const handleOTPSuccess = async (data: any) => {
+  const handleOTPSuccess = async (_data: any) => {
     try {
       // Lưu email vào localStorage trước khi chuyển trang
       localStorage.setItem('reset_password_email', email)

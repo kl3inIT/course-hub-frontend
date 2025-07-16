@@ -6,7 +6,6 @@ import {
   DollarSign,
   Home,
   LogOut,
-  PlusCircle,
   Settings,
   Star,
   Tags,
@@ -51,11 +50,6 @@ const navigationItems = [
     title: 'Courses List',
     url: '/manager/courses',
     icon: BookOpen,
-  },
-  {
-    title: 'Create Course',
-    url: '/manager/create',
-    icon: PlusCircle,
   },
   {
     title: 'Categories',

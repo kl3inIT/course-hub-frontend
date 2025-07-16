@@ -1,5 +1,6 @@
 'use client'
 
+import { courseApi } from '@/services/course-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,14 +37,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from '@/hooks/use-toast'
-import { courseApi } from '@/services/course-api'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from 'sonner'
 import { ManagerCourseResponseDTO } from '@/types/course'
 import {
+  Archive,
+  BookOpen,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Download,
+  Edit,
+  Eye,
   Loader2,
   MoreVertical,
-  Star
+  Plus,
+  RefreshCw,
+  Search,
+  Star,
+  Trash2,
+  Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -72,12 +85,6 @@ export function ManagerCourseList() {
   const [statusFilter, setStatusFilter] = useState<string>('PUBLISHED')
   const [page, setPage] = useState(0)
   const [pageSize] = useState(10)
-
-  // Listen for changes in category query parameter
-  useEffect(() => {
-    const category = searchParams.get('category') || 'all'
-    setCategoryFilter(category)
-  }, [searchParams])
 
   // Lấy danh sách status động từ backend
   useEffect(() => {
@@ -193,16 +200,9 @@ export function ManagerCourseList() {
       if (categoryFilter !== 'all') params.category = categoryFilter
       const courses = await courseApi.getAllCoursesByStatus(params)
       setCourses(Array.isArray(courses) ? courses : [])
-      toast({
-        title: 'Data Refreshed',
-        description: 'Course data has been updated successfully.',
-      })
+      toast.success('Course data has been updated successfully.')
     } catch (err) {
-      toast({
-        title: 'Refresh Failed',
-        description: 'Failed to refresh course data. Please try again.',
-        variant: 'destructive',
-      })
+      toast.error('Failed to refresh course data. Please try again.')
     } finally {
       setIsRefreshing(false)
     }
@@ -217,18 +217,12 @@ export function ManagerCourseList() {
         throw new Error('Failed to delete course. Please try again.')
       }
       setCourses(prev => prev.filter(c => c.id !== course.id))
-      toast({
-        title: 'Course Deleted',
-        description: `"${course.title}" has been successfully deleted.`,
-      })
+      toast.success(`"${course.title}" has been successfully deleted.`)
       setDeleteDialog({ open: false, course: null })
     } catch (err) {
-      toast({
-        title: 'Deletion Failed',
-        description:
-          err instanceof Error ? err.message : 'An unexpected error occurred',
-        variant: 'destructive',
-      })
+      toast.error(
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      )
     } finally {
       setDeleting(false)
     }
@@ -361,48 +355,15 @@ export function ManagerCourseList() {
           </CardContent>
         </Card>
       </div>
-      {/* Show filter info if coming from category management */}
-      {searchParams.get('category') && searchParams.get('category') !== 'all' && (
-        <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <Badge variant='secondary' className='bg-blue-100 text-blue-800'>
-                Filtered by Category: {searchParams.get('category')}
-              </Badge>
-              <span className='text-sm text-blue-600'>
-                Showing courses in "{searchParams.get('category')}" category
-              </span>
-            </div>
-            <Button 
-              variant='ghost' 
-              size='sm' 
-              onClick={() => {
-                setCategoryFilter('all')
-                window.history.replaceState({}, '', '/manager/courses')
-              }}
-              className='text-blue-600 hover:text-blue-800'
-            >
-              Clear Filter
-            </Button>
-          </div>
-        </div>
-      )}
-
       <div className='flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 mb-4'>
         <Select
           value={categoryFilter}
           onValueChange={v => {
             setCategoryFilter(v)
             setPage(0)
-            // Update URL when manually changing category
-            if (v === 'all') {
-              window.history.replaceState({}, '', '/manager/courses')
-            } else {
-              window.history.replaceState({}, '', `/manager/courses?category=${encodeURIComponent(v)}`)
-            }
           }}
         >
-          <SelectTrigger className={`w-full md:w-[200px] ${categoryFilter !== 'all' ? 'border-blue-300 bg-blue-50' : ''}`}>
+          <SelectTrigger className='w-full md:w-[200px]'>
             <SelectValue placeholder='Category' />
           </SelectTrigger>
           <SelectContent>
@@ -537,8 +498,8 @@ export function ManagerCourseList() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
                       <DropdownMenuItem asChild>
-                        <Link href={`/manager/courses/${course.id}`}>
-                          View Details
+                        <Link href={`/manager/courses/${course.id}/enrollments`}>
+                          Manage Enrollments
                         </Link>
                       </DropdownMenuItem>
                       {course.canEdit && (
@@ -553,18 +514,44 @@ export function ManagerCourseList() {
                         <DropdownMenuItem
                           onClick={async () => {
                             try {
-                              await courseApi.restoreCourse(course.id.toString())
-                              toast({
-                                title: 'Course Restored',
-                                description: `"${course.title}" has been restored.`,
-                              })
+                              await courseApi.restoreCourse(
+                                course.id.toString()
+                              )
+                              toast.success(
+                                `"${course.title}" has been restored successfully.`
+                              )
                               await handleRefresh()
-                            } catch (err) {
-                              toast({
-                                title: 'Restore Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
-                                variant: 'destructive',
-                              })
+                            } catch (err: any) {
+                              // Don't log expected business logic errors to console
+                              if (err?.response?.status !== 400) {
+                                console.error('Unexpected restore error:', err)
+                              }
+
+                              let errorMessage =
+                                'An error occurred while restoring the course'
+
+                              // Parse backend error message
+                              if (err?.response?.data) {
+                                const backendMessage =
+                                  err.response.data.detail ||
+                                  err.response.data.message ||
+                                  err.response.data.error ||
+                                  err.message
+                                errorMessage = backendMessage
+                              } else if (err?.message) {
+                                errorMessage = err.message
+                              }
+
+                              // Add prefix if needed
+                              if (
+                                !errorMessage.toLowerCase().includes('cannot')
+                              ) {
+                                errorMessage = `Cannot restore: ${errorMessage}`
+                              }
+
+                              toast.error(
+                                `Cannot Restore Course: ${errorMessage}`
+                              )
                             }
                           }}
                         >
@@ -575,41 +562,100 @@ export function ManagerCourseList() {
                         <DropdownMenuItem
                           onClick={async () => {
                             try {
-                              await courseApi.publishCourse(course.id.toString())
-                              toast({
-                                title: 'Course Published',
-                                description: `"${course.title}" has been published.`,
-                              })
+                              await courseApi.publishCourse(
+                                course.id.toString()
+                              )
+                              toast.success(
+                                `"${course.title}" has been published successfully.`
+                              )
                               await handleRefresh()
-                            } catch (err) {
-                              toast({
-                                title: 'Publish Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
-                                variant: 'destructive',
-                              })
+                            } catch (err: any) {
+                              // Don't log expected business logic errors to console
+                              if (err?.response?.status !== 400) {
+                                console.error('Unexpected publish error:', err)
+                              }
+
+                              // Parse error message from backend API response
+                              let errorMessage =
+                                'An error occurred while publishing the course'
+
+                              // Check if it's an Axios error with response data
+                              if (err?.response?.data) {
+                                const responseData = err.response.data
+
+                                // Backend sends structured error response via ResponseGeneral
+                                const backendMessage =
+                                  responseData.detail ||
+                                  responseData.message ||
+                                  responseData.error
+
+                                if (backendMessage) {
+                                  errorMessage = backendMessage
+                                } else {
+                                  errorMessage = err.message || errorMessage
+                                }
+                              } else if (err?.message) {
+                                errorMessage = err.message
+                              }
+
+                              console.log(
+                                'Showing toast with message:',
+                                errorMessage
+                              )
+
+                              toast.error(
+                                `Cannot Publish Course: ${errorMessage}`
+                              )
                             }
                           }}
                         >
                           Publish Course
                         </DropdownMenuItem>
                       )}
-                      {(course.status?.toUpperCase() === 'PUBLISHED' || course.status?.toUpperCase() === 'DRAFT') && (
+                      {(course.status?.toUpperCase() === 'PUBLISHED' ||
+                        course.status?.toUpperCase() === 'DRAFT') && (
                         <DropdownMenuItem
                           className='text-destructive'
                           onClick={async () => {
                             try {
-                              await courseApi.archiveCourse(course.id.toString())
-                              toast({
-                                title: 'Course Archived',
-                                description: `"${course.title}" has been archived.`,
-                              })
+                              await courseApi.archiveCourse(
+                                course.id.toString()
+                              )
+                              toast.success(
+                                `"${course.title}" has been archived successfully.`
+                              )
                               await handleRefresh()
-                            } catch (err) {
-                              toast({
-                                title: 'Archive Failed',
-                                description: err instanceof Error ? err.message : 'An error occurred',
-                                variant: 'destructive',
-                              })
+                            } catch (err: any) {
+                              // Don't log expected business logic errors to console
+                              if (err?.response?.status !== 400) {
+                                console.error('Unexpected archive error:', err)
+                              }
+
+                              let errorMessage =
+                                'An error occurred while archiving the course'
+
+                              // Parse backend error message
+                              if (err?.response?.data) {
+                                const backendMessage =
+                                  err.response.data.detail ||
+                                  err.response.data.message ||
+                                  err.response.data.error ||
+                                  err.message
+                                errorMessage = backendMessage
+                              } else if (err?.message) {
+                                errorMessage = err.message
+                              }
+
+                              // Add prefix if needed
+                              if (
+                                !errorMessage.toLowerCase().includes('cannot')
+                              ) {
+                                errorMessage = `Cannot archive: ${errorMessage}`
+                              }
+
+                              toast.error(
+                                `Cannot Archive Course: ${errorMessage}`
+                              )
                             }
                           }}
                         >

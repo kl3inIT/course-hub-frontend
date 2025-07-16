@@ -7,7 +7,6 @@ export interface User {
   avatar?: string
   joinDate?: string
   enrolledcourses?: number
-  permissions?: string[]
 }
 
 export interface UserDetail {

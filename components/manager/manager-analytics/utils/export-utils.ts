@@ -8,11 +8,11 @@ export const getDateRangeText = (
   if (exportDateRange?.from && exportDateRange?.to) {
     return `from ${exportDateRange.from.toLocaleDateString('en-US')} to ${exportDateRange.to.toLocaleDateString('en-US')}`
   }
-  
+
   if (exportTimeRange && exportTimeRange in TIME_RANGES) {
     return TIME_RANGES[exportTimeRange as keyof typeof TIME_RANGES]
   }
-  
+
   return 'for selected period'
 }
 
@@ -51,4 +51,4 @@ export const sanitizeCSVText = (text: string): string => {
 
 export const formatGrowthRate = (growth: number): string => {
   return `${growth > 0 ? '+' : ''}${growth}%`
-} 
+}

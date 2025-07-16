@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { QRPayment } from '@/components/payment/qr-payment'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Loader2 } from 'lucide-react'
 
 interface PaymentResponseDTO {
@@ -66,28 +67,36 @@ export default function QRPaymentPage() {
 
   if (error) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <h1 className='text-2xl font-bold text-red-500 mb-2'>Error</h1>
-          <p className='text-gray-600'>{error}</p>
-          <button
-            onClick={() => router.push('/courses')}
-            className='mt-4 text-blue-500 hover:underline'
-          >
-            Return to Courses
-          </button>
+      <ProtectedRoute requireAuth={true}>
+        <div className='flex items-center justify-center min-h-screen'>
+          <div className='text-center'>
+            <h1 className='text-2xl font-bold text-red-500 mb-2'>Error</h1>
+            <p className='text-gray-600'>{error}</p>
+            <button
+              onClick={() => router.push('/courses')}
+              className='mt-4 text-blue-500 hover:underline'
+            >
+              Return to Courses
+            </button>
+          </div>
         </div>
-      </div>
+      </ProtectedRoute>
     )
   }
 
   if (!paymentData) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <Loader2 className='h-8 w-8 animate-spin' />
-      </div>
+      <ProtectedRoute requireAuth={true}>
+        <div className='flex items-center justify-center min-h-screen'>
+          <Loader2 className='h-8 w-8 animate-spin' />
+        </div>
+      </ProtectedRoute>
     )
   }
 
-  return <QRPayment paymentData={paymentData} />
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <QRPayment paymentData={paymentData} />
+    </ProtectedRoute>
+  )
 }

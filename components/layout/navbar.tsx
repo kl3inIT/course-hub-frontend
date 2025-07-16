@@ -1,7 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
-import { notificationApi } from '@/services/notification-api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +19,9 @@ import {
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/context/auth-context'
+import { useFeedbackDetail } from '@/context/feedback-detail-context'
+import { categoryApi } from '@/services/category-api'
+import { notificationApi } from '@/services/notification-api'
 import { websocketService } from '@/services/websocket-service'
 import { CategoryResponseDTO } from '@/types/category'
 import { NotificationDTO } from '@/types/notification'
@@ -41,6 +42,7 @@ import { useEffect, useState } from 'react'
 
 export function Navbar() {
   const { user, logout } = useAuth()
+  const { showFeedback } = useFeedbackDetail()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
@@ -438,25 +440,27 @@ export function Navbar() {
                           <DropdownMenuItem
                             key={notification.id}
                             className={`flex flex-col items-start p-3 gap-1 cursor-pointer hover:bg-muted ${!notification.isRead ? 'bg-slate-200' : ''}`}
-                            onClick={() =>
-                              !notification.isRead &&
-                              handleMarkAsRead(notification.id)
-                            }
+                            onClick={() => {
+                              if (
+                                notification.resourceType === 'FEEDBACK' &&
+                                typeof notification.resourceId === 'number'
+                              ) {
+                                if (!notification.isRead)
+                                  handleMarkAsRead(notification.id)
+                                showFeedback(notification.resourceId)
+                              } else {
+                                if (!notification.isRead)
+                                  handleMarkAsRead(notification.id)
+                                if (notification.link)
+                                  window.location.href = notification.link
+                              }
+                            }}
                           >
                             <div className='flex items-center justify-between w-full'>
                               <div className='flex-1 min-w-0'>
-                                {notification.link ? (
-                                  <Link
-                                    href={notification.link}
-                                    className='text-sm text-blue-600 hover:underline'
-                                  >
-                                    {notification.message}
-                                  </Link>
-                                ) : (
-                                  <p className='text-sm'>
-                                    {notification.message}
-                                  </p>
-                                )}
+                                <span className='text-sm text-blue-600 cursor-pointer hover:underline'>
+                                  {notification.message}
+                                </span>
                               </div>
                               <Button
                                 variant='ghost'

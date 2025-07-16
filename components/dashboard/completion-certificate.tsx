@@ -1,7 +1,5 @@
 'use client'
 
-import React from 'react'
-
 interface CompletionCertificateProps {
   courseTitle: string
   instructor: string
@@ -32,23 +30,27 @@ export function CompletionCertificate({
 
   const formattedDate = formatDate(completionDate)
 
+  // Khi export PDF, render layout giống hệt web (có watermark, SVG, ...)
   return (
     <div className='flex flex-col items-center gap-6'>
       {/* Modern Certificate */}
       <div
         id={elementId}
-        className={`${isPdfVersion ? 'w-[1024px] h-[724px]' : 'w-[1024px] min-h-[724px]'} font-serif bg-white text-gray-800 relative shadow-2xl overflow-hidden border border-gray-200`}
+        className='w-[1024px] h-[724px] font-serif bg-white text-gray-800 relative shadow-2xl overflow-hidden border border-gray-200'
+        style={{ width: 1024, height: 724 }}
       >
         {/* Watermark */}
-        <div
-          className='absolute inset-0 bg-repeat bg-center opacity-[0.02]'
-          style={{ backgroundImage: "url('/assets/watermark-logo.svg')" }}
-        ></div>
+        {!isPdfVersion && (
+          <div
+            className='absolute inset-0 bg-repeat bg-center opacity-[0.02]'
+            style={{ backgroundImage: "url('/assets/watermark-logo.svg')" }}
+          ></div>
+        )}
 
         {/* Left Content Area */}
         <div className='absolute top-0 left-0 w-2/3 h-full p-16 flex flex-col'>
           <header className='mb-10'>
-            <div className='text-green-700 font-bold text-2xl'>iT4Begginer</div>
+            <div className='text-green-700 font-bold text-2xl'>iT4Beginner</div>
             <p className='text-[10px] text-gray-500 tracking-[0.2em] ml-1'>
               EDUCATION &amp; TRAINING
             </p>

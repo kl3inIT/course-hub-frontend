@@ -7,6 +7,7 @@ import { TestimonialsSection } from '@/components/testimonials-section'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useFeedbackDetail } from '@/hooks'
 import { courseApi } from '@/services/course-api'
 import { CourseResponseDTO } from '@/types/course'
 import {
@@ -31,6 +32,7 @@ const Earth3D = dynamic(() => import('@/components/Earth3D'), {
 })
 
 export default function HomePage() {
+  const { showFeedback } = useFeedbackDetail()
   const [searchQuery, setSearchQuery] = useState('')
   const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>(
     []

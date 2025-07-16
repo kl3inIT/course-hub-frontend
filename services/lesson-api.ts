@@ -6,6 +6,7 @@ import {
   LessonUpdateRequestDTO,
   LessonResponseDTO,
   LessonUploadResponseDTO,
+  LessonVideoUpdateResponseDTO,
 } from '@/types/lesson'
 
 export const lessonApi = {
@@ -39,6 +40,18 @@ export const lessonApi = {
     data: LessonUpdateRequestDTO
   ): Promise<ApiResponse<LessonResponseDTO>> => {
     const response = await httpClient.put(`/api/lessons/${lessonId}`, data)
+    return response.data
+  },
+
+  // Cập nhật video của lesson (sẽ xóa video cũ và chuẩn bị upload video mới)
+  updateLessonVideo: async (
+    lessonId: string,
+    data: LessonUploadRequestDTO
+  ): Promise<ApiResponse<LessonVideoUpdateResponseDTO>> => {
+    const response = await httpClient.put(
+      `/api/lessons/${lessonId}/video`,
+      data
+    )
     return response.data
   },
 

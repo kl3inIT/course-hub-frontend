@@ -6,33 +6,24 @@ class WebSocketService {
   private subscribers: Map<string, (data: any) => void> = new Map()
   private subscriptions: Map<string, StompSubscription> = new Map()
 
-  connect(userId: string, token: string, onConnect?: () => void) {
+  connect(token: string, onConnect?: () => void) {
     if (this.client?.connected) {
-      if (onConnect) onConnect()
+      onConnect && onConnect()
       return
     }
-
     const wsUrl = `http://localhost:8080/ws?token=${encodeURIComponent(token)}`
-
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
       onConnect: () => {
-        if (onConnect) onConnect()
+        onConnect && onConnect()
       },
       onDisconnect: () => {
         this.subscriptions.forEach(sub => sub.unsubscribe())
         this.subscriptions.clear()
       },
     })
-
-    try {
-      this.client.activate()
-    } catch (error) {
-      console.error('[WebSocket] Failed to connect to WebSocket:', error)
-    }
+    this.client.activate()
   }
 
   disconnect() {
@@ -44,33 +35,48 @@ class WebSocketService {
     }
   }
 
-  subscribe(destination: string, event: string) {
-    if (!this.client?.connected) {
-      return
+  /**
+   * Đăng ký nhận thông báo từ topic theo vai trò user
+   * @param userRole Vai trò của user: 'ALL', 'LEARNER', 'MANAGER', ...
+   */
+  subscribeAnnouncements(userRole: string) {
+    if (userRole && userRole.toUpperCase() !== 'ADMIN') {
+      this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
+      console.log('userRole : ', userRole)
+      if (userRole.toUpperCase() === 'LEARNER') {
+        this.subscribeTopic(
+          '/topic/announcements/LEARNERS_ONLY',
+          'announcement-learners'
+        )
+        console.log('subscribeTopic : ', '/topic/announcements/LEARNERS_ONLY')
+      }
+      if (userRole.toUpperCase() === 'MANAGER') {
+        this.subscribeTopic(
+          '/topic/announcements/MANAGERS_ONLY',
+          'announcement-managers'
+        )
+        console.log('subscribeTopic : ', '/topic/announcements/MANAGERS_ONLY')
+      }
     }
+  }
 
-    if (this.subscriptions.has(event)) {
-      this.subscriptions.get(event)?.unsubscribe()
-      this.subscriptions.delete(event)
-    }
+  public subscribeTopic(destination: string, event: string) {
+    if (!this.client?.connected) return
+
+    // Hủy đăng ký cũ nếu có
+    this.subscriptions.get(event)?.unsubscribe()
+    this.subscriptions.delete(event)
 
     const subscription = this.client.subscribe(
       destination,
       (message: IMessage) => {
+        let data = message.body
         try {
-          const data = JSON.parse(message.body)
-          this.notifySubscribers(event, data)
-        } catch (e) {
-          console.error(
-            '[WebSocket] Error parsing message.body:',
-            message.body,
-            e
-          )
-          this.notifySubscribers(event, message.body)
-        }
+          data = JSON.parse(message.body)
+        } catch {}
+        this.notifySubscribers(event, data)
       }
     )
-
     this.subscriptions.set(event, subscription)
   }
 
@@ -80,19 +86,13 @@ class WebSocketService {
 
   removeSubscriber(event: string) {
     this.subscribers.delete(event)
-    if (this.subscriptions.has(event)) {
-      this.subscriptions.get(event)?.unsubscribe()
-      this.subscriptions.delete(event)
-    }
+    this.subscriptions.get(event)?.unsubscribe()
+    this.subscriptions.delete(event)
   }
 
   private notifySubscribers(event: string, data: any) {
     const callback = this.subscribers.get(event)
-    if (callback) {
-      callback(data)
-    } else {
-      console.warn('[WebSocket] No subscriber found for event:', event)
-    }
+    callback && callback(data)
   }
 }
 

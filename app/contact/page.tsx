@@ -2,13 +2,11 @@
 
 import type React from 'react'
 
-import { useState } from 'react'
-import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Navbar } from '@/components/layout/navbar'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -17,39 +15,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { submitFeedback } from '@/services/feedback-api'
 import {
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  MessageSquare,
-  HelpCircle,
-  Users,
   Briefcase,
+  Clock,
+  HelpCircle,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Users,
 } from 'lucide-react'
+import { useState } from 'react'
+
+// Danh sách các câu hỏi thường gặp
+const faqs = [
+  {
+    question: 'How do I register an account?',
+    answer:
+      'You can register by clicking the Sign Up button at the top right corner and filling in the required information.',
+  },
+  {
+    question: 'I forgot my password, what should I do?',
+    answer:
+      'Click "Forgot Password" on the login page and follow the instructions to reset your password.',
+  },
+  {
+    question: 'How can I contact support?',
+    answer:
+      'You can use the contact form on this page or send an email to our support address.',
+  },
+]
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     subject: '',
     category: '',
     message: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // State điều khiển hiển thị FAQ
+  const [showFAQ, setShowFAQ] = useState(false)
+
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      category: '',
-      message: '',
-    })
-    alert("Thank you for your message! We'll get back to you soon.")
+    setLoading(true)
+    try {
+      // Gửi feedback tới backend
+      await submitFeedback({
+        fullName: formData.fullName,
+        email: formData.email,
+        subject: formData.subject,
+        category: formData.category as any, // đã validate required
+        message: formData.message,
+      })
+      setFormData({
+        fullName: '',
+        email: '',
+        subject: '',
+        category: '',
+        message: '',
+      })
+      alert("Thank you for your message! We'll get back to you soon.")
+    } catch (error) {
+      alert('Failed to send message. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -63,7 +100,7 @@ export default function ContactPage() {
     {
       icon: <Mail className='h-6 w-6' />,
       title: 'Email Us',
-      details: 'hello@learnhub.com',
+      details: 'it4beginer@gmail.com',
       description: 'Send us an email anytime',
     },
     {
@@ -75,7 +112,7 @@ export default function ContactPage() {
     {
       icon: <MapPin className='h-6 w-6' />,
       title: 'Visit Us',
-      details: '123 Learning Street, San Francisco, CA 94105',
+      details: 'Hoa Lac, Ha Noi',
       description: 'Come say hello at our office',
     },
     {
@@ -146,9 +183,9 @@ export default function ContactPage() {
                       <Input
                         id='name'
                         placeholder='Your full name'
-                        value={formData.name}
+                        value={formData.fullName}
                         onChange={e =>
-                          handleInputChange('name', e.target.value)
+                          handleInputChange('fullName', e.target.value)
                         }
                         required
                       />
@@ -223,8 +260,13 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type='submit' className='w-full' size='lg'>
-                    Send Message
+                  <Button
+                    type='submit'
+                    className='w-full'
+                    size='lg'
+                    disabled={loading}
+                  >
+                    {loading ? 'Sending...' : 'Send Message'}
                   </Button>
                 </form>
               </CardContent>
@@ -273,7 +315,29 @@ export default function ContactPage() {
                     Check out our FAQ section for instant answers to common
                     questions.
                   </p>
-                  <Button variant='outline'>Visit FAQ</Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowFAQ(!showFAQ)}
+                  >
+                    {showFAQ ? 'Hide FAQ' : 'Visit FAQ'}
+                  </Button>
+                  {showFAQ && (
+                    <div className='mt-6 text-left'>
+                      <h4 className='font-bold mb-2'>
+                        Frequently Asked Questions
+                      </h4>
+                      <ul className='space-y-4'>
+                        {faqs.map((faq, idx) => (
+                          <li key={idx}>
+                            <p className='font-medium'>{faq.question}</p>
+                            <p className='text-muted-foreground'>
+                              {faq.answer}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -326,16 +390,20 @@ export default function ContactPage() {
               Visit our office in the heart of San Francisco
             </p>
           </div>
-          <div className='bg-muted/50 rounded-lg h-96 flex items-center justify-center'>
-            <div className='text-center space-y-2'>
-              <MapPin className='h-12 w-12 text-muted-foreground mx-auto' />
-              <p className='text-muted-foreground'>
-                Interactive map would be displayed here
-              </p>
-              <p className='text-sm text-muted-foreground'>
-                123 Learning Street, San Francisco, CA 94105
-              </p>
-            </div>
+          <div
+            className='bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden'
+            style={{ height: 400 }}
+          >
+            <iframe
+              src='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29797.67416935781!2d105.5358976!3d21.004288!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2sFPT%20University!5e0!3m2!1sen!2s!4v1751609591466!5m2!1sen!2s'
+              width='100%'
+              height='400'
+              style={{ border: 0 }}
+              allowFullScreen
+              loading='lazy'
+              referrerPolicy='no-referrer-when-downgrade'
+              title='FPT University Map'
+            />
           </div>
         </div>
       </section>

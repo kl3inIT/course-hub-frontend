@@ -10,14 +10,64 @@ import prettierPlugin from 'eslint-plugin-prettier'
 export default [
   {
     ignores: [
-      'dist',
-      '.next',
-      'node_modules',
-      'out',
-      'build',
+      // Dependencies
+      'node_modules/',
+      '.pnp',
+      '.pnp.js',
+      
+      // Production builds
+      '.next/',
+      'out/',
+      'build/',
+      'dist/',
+      
+      // Environment variables
+      '.env',
+      '.env.local',
+      '.env.development.local',
+      '.env.test.local',
+      '.env.production.local',
+      
+      // Logs
+      'npm-debug.log*',
+      'yarn-debug.log*',
+      'yarn-error.log*',
+      'pnpm-debug.log*',
+      'lerna-debug.log*',
+      
+      // Runtime data
+      'pids',
+      '*.pid',
+      '*.seed',
+      '*.pid.lock',
+      
+      // Coverage directory
+      'coverage/',
+      '*.lcov',
+      
+      // OS generated files
+      '.DS_Store',
+      '.DS_Store?',
+      '._*',
+      '.Spotlight-V100',
+      '.Trashes',
+      'ehthumbs.db',
+      'Thumbs.db',
+      
+      // IDE
+      '.vscode/',
+      '.idea/',
+      
+      // Package managers
+      'package-lock.json',
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      
+      // Config files
       '*.config.js',
       '*.config.ts',
-      '*.config.mjs'
+      '*.config.mjs',
+      'next-env.d.ts'
     ]
   },
   {

@@ -7,6 +7,9 @@ export enum NotificationType {
   USER_BANNED = 'USER_BANNED',
   USER_UNBANNED = 'USER_UNBANNED',
   ADMIN_ANNOUNCEMENT = 'ADMIN_ANNOUNCEMENT',
+  COURSE_UPDATE = 'COURSE_UPDATE',
+  SYSTEM_MAINTENANCE = 'SYSTEM_MAINTENANCE',
+  EMERGENCY = 'EMERGENCY',
 }
 
 export interface NotificationDTO {
@@ -22,6 +25,14 @@ export interface NotificationDTO {
   resourceType?: string
   createdAt: string
   link?: string
+  // Additional properties for admin notifications
+  title?: string
+  status?: string
+  recipientType?: string
+  readCount?: number
+  totalRecipients?: number
+  scheduledFor?: string
+  sentAt?: string
 }
 
 export interface NotificationCountResponse {

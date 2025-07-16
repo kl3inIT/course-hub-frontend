@@ -15,13 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { VideoPreviewModal } from '@/components/ui/video-preview-modal'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -49,6 +43,7 @@ import {
   Play,
   PlayCircle,
   Star,
+  Shield,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -121,8 +116,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
   )
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const checkEnrollmentStatus = async (courseId: string) => {
     if (!user) {
@@ -132,7 +126,11 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
     try {
       setEnrollmentLoading(true)
-      const response = await enrollmentApi.getEnrollmentStatus(courseId)
+      // Use enhanced enrollment status that considers role-based access
+      const response = await enrollmentApi.getEnhancedEnrollmentStatus(
+        courseId,
+        user.role
+      )
       if (response.data) {
         setEnrollmentStatus(response.data)
       }
@@ -227,7 +225,7 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
     }
   }
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!user) {
       toast({
         title: 'Authentication Required',
@@ -239,7 +237,40 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
       )
       return
     }
-    setShowPayment(true)
+
+    // Check if course is free (price is 0)
+    if (course && course.finalPrice === 0) {
+      try {
+        setEnrollmentLoading(true)
+        await courseApi.enrollFreeCourse(courseId)
+
+        toast({
+          title: 'Success',
+          description: 'You have successfully enrolled in this free course!',
+        })
+
+        // Refresh enrollment status
+        await checkEnrollmentStatus(courseId)
+      } catch (error: any) {
+        let errorMessage = 'Failed to enroll in course'
+
+        if (error?.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error?.response?.data?.detail) {
+          errorMessage = error.response.data.detail
+        }
+
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      } finally {
+        setEnrollmentLoading(false)
+      }
+    } else {
+      setShowPayment(true)
+    }
   }
 
   const toggleModule = (moduleId: number) => {
@@ -270,27 +301,29 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
 
     try {
       setPreviewLesson(lesson)
+      setPreviewLoading(true)
+      setShowPreview(true)
+
       const url = await lessonApi.getLessonPreviewUrl(lesson.id.toString())
       setPreviewVideoUrl(url)
-      setShowPreview(true)
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to load preview video.',
         variant: 'destructive',
       })
+      setShowPreview(false)
+    } finally {
+      setPreviewLoading(false)
     }
   }
 
   const handleClosePreview = () => {
     setShowPreview(false)
     setPreviewVideoUrl(null)
-    if (videoRef.current) {
-      videoRef.current.pause()
-    }
+    setPreviewLesson(null)
+    setPreviewLoading(false)
   }
-
-
 
   if (loading) {
     return (
@@ -402,22 +435,38 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
             <CardHeader>
               {enrollmentStatus?.enrolled ? null : (
                 <div className='flex items-center gap-2 mb-2'>
-                  <span className='text-3xl font-bold'>
-                    ${course.finalPrice.toFixed(2)}
-                  </span>
-                  {course.discount && course.discount > 0 && (
-                    <span className='text-lg text-muted-foreground line-through'>
-                      $
-                      {(
-                        course.finalPrice /
-                        (1 - course.discount / 100)
-                      ).toFixed(2)}
-                    </span>
-                  )}
-                  {course.discount && course.discount > 0 && (
-                    <Badge variant='destructive' className='ml-auto'>
-                      {course.discount}% OFF
-                    </Badge>
+                  {course.finalPrice === 0 ? (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-3xl font-bold text-green-600'>
+                        Free
+                      </span>
+                      <Badge
+                        variant='secondary'
+                        className='bg-green-100 text-green-800'
+                      >
+                        Free Course
+                      </Badge>
+                    </div>
+                  ) : (
+                    <>
+                      <span className='text-3xl font-bold'>
+                        ${course.finalPrice.toFixed(2)}
+                      </span>
+                      {course.discount && course.discount > 0 && (
+                        <span className='text-lg text-muted-foreground line-through'>
+                          $
+                          {(
+                            course.finalPrice /
+                            (1 - course.discount / 100)
+                          ).toFixed(2)}
+                        </span>
+                      )}
+                      {course.discount && course.discount > 0 && (
+                        <Badge variant='destructive' className='ml-auto'>
+                          {course.discount}% OFF
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -441,23 +490,28 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                     size='lg'
                   >
                     <Play className='h-4 w-4 mr-2' />
-                    Continue Learning
+                    {user?.role === 'manager' || user?.role === 'admin'
+                      ? 'Access Course'
+                      : 'Continue Learning'}
                   </Button>
-                  {enrollmentStatus.progress > 0 && (
-                    <div className='text-sm text-muted-foreground'>
-                      <div className='flex justify-between mb-1'>
-                        <span>Progress</span>
-                        <span>{Math.round(enrollmentStatus.progress)}%</span>
+
+                  {/* Show progress only for regular enrolled users */}
+                  {enrollmentStatus.progress > 0 &&
+                    user?.role === 'learner' && (
+                      <div className='text-sm text-muted-foreground'>
+                        <div className='flex justify-between mb-1'>
+                          <span>Progress</span>
+                          <span>{Math.round(enrollmentStatus.progress)}%</span>
+                        </div>
+                        <div className='w-full bg-gray-200 rounded-full h-2'>
+                          <div
+                            className='bg-primary h-2 rounded-full transition-all duration-300'
+                            style={{ width: `${enrollmentStatus.progress}%` }}
+                          ></div>
+                        </div>
                       </div>
-                      <div className='w-full bg-gray-200 rounded-full h-2'>
-                        <div
-                          className='bg-primary h-2 rounded-full transition-all duration-300'
-                          style={{ width: `${enrollmentStatus.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                  {enrollmentStatus.completed && (
+                    )}
+                  {enrollmentStatus.completed && user?.role === 'learner' && (
                     <div className='flex items-center gap-2 text-green-600 text-sm'>
                       <CheckCircle className='h-4 w-4' />
                       <span>Course Completed!</span>
@@ -465,8 +519,24 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                   )}
                 </div>
               ) : (
-                <Button onClick={handleEnroll} className='w-full' size='lg'>
-                  Enroll Now
+                <Button
+                  onClick={handleEnroll}
+                  className='w-full'
+                  size='lg'
+                  disabled={enrollmentLoading}
+                >
+                  {enrollmentLoading ? (
+                    <>
+                      <Loader2 className='h-4 w-4 animate-spin mr-2' />
+                      {course?.finalPrice === 0
+                        ? 'Enrolling...'
+                        : 'Processing...'}
+                    </>
+                  ) : course?.finalPrice === 0 ? (
+                    'Enroll for Free'
+                  ) : (
+                    'Enroll Now'
+                  )}
                 </Button>
               )}
 
@@ -611,45 +681,26 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
         </TabsContent>
 
         <TabsContent value='reviews' className='space-y-6'>
-          <CourseReviews 
-            courseId={courseId} 
-            averageRating={course.averageRating} 
-            totalReviews={course.totalReviews} 
+          <CourseReviews
+            courseId={courseId}
+            averageRating={course.averageRating ?? undefined}
+            totalReviews={course.totalReviews}
+            isEnrolled={enrollmentStatus?.enrolled}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Preview Video Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className='sm:max-w-[800px] p-0 gap-0'>
-          <DialogHeader className='p-4 border-b'>
-            <div className='flex items-center justify-between'>
-              <DialogTitle>
-                {previewLesson?.title || 'Lesson Preview'}
-              </DialogTitle>
-            </div>
-            <DialogDescription>
-              Preview video for this lesson. This is a sample of the course
-              content.
-            </DialogDescription>
-          </DialogHeader>
-          <div className='aspect-video bg-black'>
-            {previewVideoUrl ? (
-              <video
-                ref={videoRef}
-                src={previewVideoUrl}
-                controls
-                className='w-full h-full'
-                autoPlay
-              />
-            ) : (
-              <div className='flex items-center justify-center h-full'>
-                <Loader2 className='h-8 w-8 animate-spin text-white' />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Preview Video Modal */}
+      <VideoPreviewModal
+        isOpen={showPreview}
+        onClose={handleClosePreview}
+        title={previewLesson?.title || 'Lesson Preview'}
+        description='Preview video for this lesson. This is a sample of the course content.'
+        videoUrl={previewVideoUrl}
+        isLoading={previewLoading}
+        autoPlay={true}
+        showControls={true}
+      />
 
       <PaymentModal
         isOpen={showPayment}
@@ -666,8 +717,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
           totalStudents: course.totalStudents,
         }}
       />
-
-
     </div>
   )
 }

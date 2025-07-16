@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
+import { useState, useEffect, useRef } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -16,16 +22,14 @@ import {
   BookOpen,
   Clock,
   Award,
-  TrendingUp,
   Play,
   Download,
   Trophy,
   Calendar,
   Share2,
-  Eye,
 } from 'lucide-react'
 import Link from 'next/link'
-import { CompletionCertificate } from '../learning/completion-certificate'
+import { CompletionCertificate } from './completion-certificate'
 import { courseApi } from '@/services/course-api'
 import { DashboardCourseResponseDTO } from '@/types/course'
 import { toast } from 'sonner'
@@ -36,9 +40,16 @@ export function StudentDashboard() {
   const [dashboardCourses, setDashboardCourses] = useState<
     DashboardCourseResponseDTO[]
   >([])
+  const [recommendedCourses, setRecommendedCourses] = useState<
+    DashboardCourseResponseDTO[]
+  >([])
   const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const certificateRef = useRef<HTMLDivElement>(null)
+  const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
+  const hiddenCertificateRef = useRef<HTMLDivElement>(null)
+  const [learningStreak, setLearningStreak] = useState(0)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -47,6 +58,8 @@ export function StudentDashboard() {
     }
 
     fetchDashboardCourses()
+    fetchRecommendedCourses()
+    calculateLearningStreak()
   }, [])
 
   const fetchDashboardCourses = async () => {
@@ -62,7 +75,45 @@ export function StudentDashboard() {
     }
   }
 
-  const enrolledCourses = dashboardCourses.filter(course => !course.completed)
+  const fetchRecommendedCourses = async () => {
+    try {
+      const response = await courseApi.getRecommendedCourses()
+      setRecommendedCourses(response.data)
+    } catch (error) {
+      console.error('Error fetching recommended courses:', error)
+      toast.error('Failed to load recommended courses')
+    }
+  }
+
+  const calculateLearningStreak = () => {
+    const lastStudyDate = localStorage.getItem('lastStudyDate')
+    const currentStreak = parseInt(
+      localStorage.getItem('learningStreak') || '0'
+    )
+
+    const today = new Date().toDateString()
+
+    if (lastStudyDate === today) {
+      setLearningStreak(currentStreak)
+    } else {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      if (lastStudyDate === yesterday.toDateString()) {
+        const newStreak = currentStreak + 1
+        localStorage.setItem('learningStreak', newStreak.toString())
+        localStorage.setItem('lastStudyDate', today)
+        setLearningStreak(newStreak)
+      } else {
+        localStorage.setItem('learningStreak', '1')
+        localStorage.setItem('lastStudyDate', today)
+        setLearningStreak(1)
+      }
+    }
+  }
+
+  const enrolledCourses = dashboardCourses
+  const activeCourses = dashboardCourses.filter(course => !course.completed)
   const completedCourses = dashboardCourses.filter(course => course.completed)
 
   const totalProgress =
@@ -82,6 +133,60 @@ export function StudentDashboard() {
       month: 'long',
       day: 'numeric',
     })
+  }
+
+  const handleDownloadPDF = async () => {
+    if (user && selectedCertificate) {
+      setShowHiddenCertificate(true)
+      setTimeout(async () => {
+        if (hiddenCertificateRef.current) {
+          try {
+            // Check if running in browser
+            if (typeof window === 'undefined') {
+              console.error('PDF generation is only available in the browser')
+              toast.error('PDF generation is not available')
+              return
+            }
+
+            // Dynamic import with proper handling for Next.js
+            const html2pdf = (await import('html2pdf.js')) as any
+
+            const opt = {
+              margin: 0,
+              filename: `certificate-${selectedCertificate.title}.pdf`,
+              image: { type: 'jpeg', quality: 1 },
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                foreignObjectRendering: true,
+              },
+              jsPDF: {
+                unit: 'px',
+                format: [1024, 724],
+                orientation: 'landscape' as const,
+              },
+            }
+
+            const pdfElement = document.getElementById('certificate-pdf')
+            if (pdfElement) {
+              await html2pdf().set(opt).from(pdfElement).save()
+            }
+            toast.success('Certificate downloaded successfully!')
+          } catch (error) {
+            console.error('Error generating PDF:', error)
+            toast.error('Failed to generate PDF. Please try again.')
+          }
+        }
+        setShowHiddenCertificate(false)
+      }, 200)
+    }
+  }
+
+  // Debug: log user khi render certificate ẩn
+  if (showHiddenCertificate && user) {
+    console.log('DEBUG user for certificate:', user)
   }
 
   return (
@@ -104,7 +209,9 @@ export function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{enrolledCourses.length}</div>
-            <p className='text-xs text-muted-foreground'>Active courses</p>
+            <p className='text-xs text-muted-foreground'>
+              Total enrolled courses
+            </p>
           </CardContent>
         </Card>
 
@@ -124,15 +231,13 @@ export function StudentDashboard() {
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>
-              Average Progress
+              Learning Streak
             </CardTitle>
-            <TrendingUp className='h-4 w-4 text-muted-foreground' />
+            <Calendar className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>
-              {Math.round(totalProgress)}%
-            </div>
-            <p className='text-xs text-muted-foreground'>Across all courses</p>
+            <div className='text-2xl font-bold'>{learningStreak} days</div>
+            <p className='text-xs text-muted-foreground'>Keep it going!</p>
           </CardContent>
         </Card>
 
@@ -164,11 +269,11 @@ export function StudentDashboard() {
 
         {/* Active Courses Tab */}
         <TabsContent value='active' className='space-y-6'>
-          {enrolledCourses.length > 0 ? (
+          {activeCourses.length > 0 ? (
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>Continue Learning</h2>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                {enrolledCourses.map((course, index) => (
+                {activeCourses.map((course, index) => (
                   <CourseCard
                     key={`active-${course.title}-${index}`}
                     course={course}
@@ -234,7 +339,7 @@ export function StudentDashboard() {
           {completedCourses.length > 0 ? (
             <div className='space-y-4'>
               <h2 className='text-2xl font-bold'>My Certificates</h2>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch'>
                 {completedCourses.map((course, index) => (
                   <CourseCard
                     key={`certificate-${course.title}-${index}`}
@@ -265,6 +370,59 @@ export function StudentDashboard() {
         </TabsContent>
       </Tabs>
 
+      {/* Recommended Courses Section */}
+      <div className='mt-12 space-y-6'>
+        <div>
+          <h2 className='text-2xl font-bold'>Recommended for You</h2>
+          <p className='text-muted-foreground'>
+            Courses we think you'll love based on your interests
+          </p>
+        </div>
+
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+          {recommendedCourses.map((course, index) => (
+            <Card
+              key={`recommended-${course.title}-${index}`}
+              className='overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col'
+            >
+              <div className='aspect-video bg-muted'>
+                <img
+                  src={course.thumbnailUrl || '/placeholder.svg'}
+                  alt={course.title}
+                  className='w-full h-full object-cover'
+                />
+              </div>
+              <div className='flex flex-col flex-1'>
+                <CardHeader>
+                  <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
+                  <CardDescription>by {course.instructorName}</CardDescription>
+                </CardHeader>
+                <CardContent className='flex flex-col flex-1'>
+                  <div className='flex-1'>
+                    <p className='text-sm text-muted-foreground line-clamp-2 mb-4'>
+                      {course.description}
+                    </p>
+                  </div>
+                  <div className='flex items-center justify-between mb-4 w-full'>
+                    <Badge variant='secondary'>{course.category}</Badge>
+                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                      <Clock className='h-4 w-4' />
+                      {course.totalDuration}h • {course.totalLessons} lessons
+                    </div>
+                  </div>
+                  <Link href={`/courses/${course.title}`}>
+                    <Button className='w-full'>
+                      <Play className='h-4 w-4 mr-2' />
+                      View Course
+                    </Button>
+                  </Link>
+                </CardContent>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* Certificate Modal */}
       <Dialog
         open={showCertificateModal}
@@ -282,32 +440,64 @@ export function StudentDashboard() {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedCertificate && (
-            <div className='space-y-6'>
-              <CompletionCertificate
-                courseTitle={selectedCertificate.title}
-                instructor={selectedCertificate.instructorName}
-                completionDate={
-                  new Date(selectedCertificate.completedDate || '')
-                }
-                studentName={user?.name || user?.email || 'Student'}
-                certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-              />
-
-              <div className='flex justify-center gap-4'>
+          {selectedCertificate && user && (
+            <div className='space-y-6 flex flex-col items-center'>
+              <div ref={certificateRef}>
+                <CompletionCertificate
+                  courseTitle={selectedCertificate.title}
+                  instructor={selectedCertificate.instructorName}
+                  completionDate={
+                    selectedCertificate.completedDate
+                      ? new Date(selectedCertificate.completedDate)
+                      : undefined
+                  }
+                  studentName={user.name || user.email || 'Student'}
+                  certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+                  elementId='certificate-modal'
+                  isPdfVersion={false}
+                />
+              </div>
+              <div className='flex justify-center gap-4 mt-0'>
                 <Button variant='outline' className='flex items-center gap-2'>
                   <Share2 className='h-4 w-4' />
                   Share Certificate
                 </Button>
-                <Button className='flex items-center gap-2'>
+                <Button
+                  className='flex items-center gap-2'
+                  onClick={handleDownloadPDF}
+                >
                   <Download className='h-4 w-4' />
                   Download PDF
                 </Button>
               </div>
             </div>
           )}
+          {selectedCertificate && !user && (
+            <div className='flex justify-center items-center min-h-[200px]'>
+              <span>Loading user information...</span>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
+
+      {/* Render certificate ẩn ngoài modal để export PDF */}
+      {showHiddenCertificate && user && selectedCertificate && (
+        <div className='fixed left-[-9999px] top-0 w-0 h-0 overflow-hidden'>
+          <CompletionCertificate
+            courseTitle={selectedCertificate.title}
+            instructor={selectedCertificate.instructorName}
+            completionDate={
+              selectedCertificate.completedDate
+                ? new Date(selectedCertificate.completedDate)
+                : undefined
+            }
+            studentName={user.name || user.email || 'Student'}
+            certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+            elementId='certificate-pdf'
+            isPdfVersion={true}
+          />
+        </div>
+      )}
     </div>
   )
 }

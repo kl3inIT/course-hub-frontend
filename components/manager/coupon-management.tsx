@@ -54,7 +54,14 @@ import { useToast } from '@/hooks/use-toast'
 import { categoryApi } from '@/services/category-api'
 import { courseApi } from '@/services/course-api'
 import { discountApi } from '@/services/discount-api'
-import { Category, Coupon, CouponSearchParams, CouponStatsResponse, CouponStatusResponse, Course } from '@/types/discount'
+import {
+  Category,
+  Coupon,
+  CouponSearchParams,
+  CouponStatsResponse,
+  CouponStatusResponse,
+  Course,
+} from '@/types/discount'
 import {
   BookOpen,
   Calendar,
@@ -66,9 +73,9 @@ import {
   Tag,
   Trash2,
   Users,
-  X
+  X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 export function CouponManagement() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
@@ -77,7 +84,7 @@ export function CouponManagement() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingCourses, setLoadingCourses] = useState(false)
-  const [visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
+  const [_visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
     {}
   )
 
@@ -160,7 +167,6 @@ export function CouponManagement() {
         courseIds: [],
       }))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationScope, categories, courses])
 
   // Add useEffect to fetch coupon statuses
@@ -205,7 +211,7 @@ export function CouponManagement() {
   const validatePercentage = (value: string) => {
     // Remove any non-digit characters
     const numericValue = value.replace(/[^0-9]/g, '')
-    
+
     if (numericValue === '') {
       setSearchPercentage('')
       setPercentageError('')
@@ -270,7 +276,7 @@ export function CouponManagement() {
             totalCategory: backendCoupon.categoryIds?.length || 0,
             totalCourse: backendCoupon.courseIds?.length || 0,
             code: backendCoupon.code,
-            status: backendCoupon.status
+            status: backendCoupon.status,
           }
         }
       )
@@ -330,17 +336,18 @@ export function CouponManagement() {
   const fetchCourses = async () => {
     try {
       setLoadingCourses(true)
-      const response = await courseApi.getAllCoursesByStatus({ size: 100, status: 'PUBLISHED' })
+      const response = await courseApi.getAllCoursesByStatus({
+        size: 100,
+        status: 'PUBLISHED',
+      })
 
-      // Transform API response to match our Course interface  
-      const transformedCourses: Course[] = response.map(
-        course => ({
-          id: course.id.toString(),
-          title: course.title,
-          category: course.category || '',
-          price: 0, // ManagerCourseResponseDTO doesn't have price field
-        })
-      )
+      // Transform API response to match our Course interface
+      const transformedCourses: Course[] = response.map(course => ({
+        id: course.id.toString(),
+        title: course.title,
+        category: course.category || '',
+        price: 0, // ManagerCourseResponseDTO doesn't have price field
+      }))
 
       setCourses(transformedCourses)
     } catch (error) {
@@ -572,7 +579,7 @@ export function CouponManagement() {
   }
 
   // Toggle coupon status
-  const toggleStatus = (couponId: string) => {
+  const _toggleStatus = (couponId: string) => {
     setCoupons(prev =>
       prev.map(coupon =>
         coupon.id === couponId
@@ -657,7 +664,7 @@ export function CouponManagement() {
   }
 
   // Get selected courses display
-  const getSelectedCoursesDisplay = () => {
+  const _getSelectedCoursesDisplay = () => {
     const selectedCourses = courses.filter(course =>
       formData.courseIds?.includes(Number(course.id))
     )
@@ -706,7 +713,7 @@ export function CouponManagement() {
   }
 
   // Get applicable items display
-  const getApplicableItemsDisplay = (coupon: Coupon) => {
+  const _getApplicableItemsDisplay = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -727,7 +734,7 @@ export function CouponManagement() {
   }
 
   // Get detailed tooltip content for applicable items
-  const getApplicableItemsTooltip = (coupon: Coupon) => {
+  const _getApplicableItemsTooltip = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -770,7 +777,7 @@ export function CouponManagement() {
   }
 
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const _formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -792,13 +799,23 @@ export function CouponManagement() {
     const statusBadge = (() => {
       switch (status) {
         case 'Available':
-          return <Badge className='bg-green-100 text-green-800'>Available</Badge>
+          return (
+            <Badge className='bg-green-100 text-green-800'>Available</Badge>
+          )
         case 'Not Started':
-          return <Badge className='bg-blue-100 text-blue-800'>Not Started</Badge>
+          return (
+            <Badge className='bg-blue-100 text-blue-800'>Not Started</Badge>
+          )
         case 'Out of Stock':
-          return <Badge className='bg-yellow-100 text-yellow-800'>Out of Stock</Badge>
+          return (
+            <Badge className='bg-yellow-100 text-yellow-800'>
+              Out of Stock
+            </Badge>
+          )
         case 'Used Up':
-          return <Badge className='bg-purple-100 text-purple-800'>Used Up</Badge>
+          return (
+            <Badge className='bg-purple-100 text-purple-800'>Used Up</Badge>
+          )
         case 'Expired':
           return <Badge className='bg-red-100 text-red-800'>Expired</Badge>
         default:
@@ -807,15 +824,15 @@ export function CouponManagement() {
     })()
 
     return (
-      <div className="flex items-center gap-2">
+      <div className='flex items-center gap-2'>
         {statusBadge}
         {isActive === 1 ? (
-          <div className="flex items-center" title="Active">
-            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-200"></div>
+          <div className='flex items-center' title='Active'>
+            <div className='w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-200'></div>
           </div>
         ) : (
-          <div className="flex items-center" title="Inactive">
-            <div className="w-3 h-3 rounded-full bg-rose-400 shadow-sm shadow-rose-200"></div>
+          <div className='flex items-center' title='Inactive'>
+            <div className='w-3 h-3 rounded-full bg-rose-400 shadow-sm shadow-rose-200'></div>
           </div>
         )}
       </div>
@@ -823,7 +840,7 @@ export function CouponManagement() {
   }
 
   // Add toggle code visibility function
-  const toggleCodeVisibility = (couponId: string) => {
+  const _toggleCodeVisibility = (couponId: string) => {
     setVisibleCodes(prev => ({
       ...prev,
       [couponId]: !prev[couponId],
@@ -1082,18 +1099,18 @@ export function CouponManagement() {
       {/* Percentage filter */}
       <div className='flex-1 relative max-w-sm'>
         <Percent className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-        <div className="space-y-1">
+        <div className='space-y-1'>
           <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
+            type='text'
+            inputMode='numeric'
+            pattern='[0-9]*'
             placeholder='Filter by percentage...'
             value={searchPercentage}
             onChange={e => validatePercentage(e.target.value)}
             className={`pl-8 w-full ${percentageError ? 'border-red-500' : ''}`}
           />
           {percentageError && (
-            <p className="text-sm text-red-500">{percentageError}</p>
+            <p className='text-sm text-red-500'>{percentageError}</p>
           )}
         </div>
       </div>
@@ -1109,11 +1126,12 @@ export function CouponManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value='all'>All Status</SelectItem>
-            {couponStatuses && Object.entries(couponStatuses).map(([key, value]) => (
-              <SelectItem key={key} value={key}>
-                {value}
-              </SelectItem>
-            ))}
+            {couponStatuses &&
+              Object.entries(couponStatuses).map(([key, value]) => (
+                <SelectItem key={key} value={key}>
+                  {value}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -1176,9 +1194,9 @@ export function CouponManagement() {
       </div>
       {/* Apply Filters button */}
       <div className='flex-1 flex items-end'>
-        <Button 
+        <Button
           onClick={() => fetchCoupons(0, pageSize)}
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className='w-full bg-blue-600 hover:bg-blue-700'
         >
           Apply Filters
         </Button>
@@ -1239,7 +1257,9 @@ export function CouponManagement() {
             <Percent className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{stats?.totalDiscounts || '0'}</div>
+            <div className='text-2xl font-bold'>
+              {stats?.totalDiscounts || '0'}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -1261,9 +1281,7 @@ export function CouponManagement() {
             <Users className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>
-              {stats?.totalUsage || '0'}
-            </div>
+            <div className='text-2xl font-bold'>{stats?.totalUsage || '0'}</div>
           </CardContent>
         </Card>
       </div>
@@ -1462,7 +1480,11 @@ export function CouponManagement() {
               variant='outline'
               size='sm'
               onClick={() => fetchCoupons(pagination.page - 1, pageSize)}
-              disabled={pagination.first || loadingCoupons || pagination.totalElements === 0}
+              disabled={
+                pagination.first ||
+                loadingCoupons ||
+                pagination.totalElements === 0
+              }
             >
               Previous
             </Button>
@@ -1473,7 +1495,11 @@ export function CouponManagement() {
               variant='outline'
               size='sm'
               onClick={() => fetchCoupons(pagination.page + 1, pageSize)}
-              disabled={pagination.last || loadingCoupons || pagination.totalElements === 0}
+              disabled={
+                pagination.last ||
+                loadingCoupons ||
+                pagination.totalElements === 0
+              }
             >
               Next
             </Button>

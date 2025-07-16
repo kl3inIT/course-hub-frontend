@@ -104,19 +104,19 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
         // Convert to form data - only set once to avoid re-renders
         if (!initializedRef.current) {
           setCourseData({
-        title: course.title,
-        description: course.description,
+            title: course.title,
+            description: course.description,
             price: course.price,
             level: course.level,
             categoryCode: categoryCode,
           })
           initializedRef.current = true
         }
-    } catch (error) {
+      } catch (error) {
         console.error('Failed to load course:', error)
         setError('Failed to load course details')
         toast.error('Failed to load course details')
-    } finally {
+      } finally {
         setLoading(false)
       }
     }
@@ -204,9 +204,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
       const origModulesMap = new Map(
         originalModules.map((m: any) => [m.moduleId, m])
       )
-      const currModulesMap = new Map(
-        modules.map((m: any) => [m.moduleId, m])
-      )
+      const currModulesMap = new Map(modules.map((m: any) => [m.moduleId, m]))
       // 2. Delete removed modules
       for (const origModule of originalModules) {
         if (!modules.find((m: any) => m.moduleId === origModule.moduleId)) {
@@ -217,7 +215,9 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
       for (const currModule of modules) {
         if (!currModule.moduleId) {
           // New module
-          const res = await moduleApi.createModule(courseId, { title: currModule.title })
+          const res = await moduleApi.createModule(courseId, {
+            title: currModule.title,
+          })
           currModule.moduleId = res.data.id.toString()
           // Also update id for consistency
           currModule.id = currModule.moduleId
@@ -225,19 +225,32 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
           // Update title if changed
           const orig = origModulesMap.get(currModule.moduleId)
           if (orig && orig.title !== currModule.title) {
-            await moduleApi.updateModule(currModule.moduleId, { title: currModule.title })
+            await moduleApi.updateModule(currModule.moduleId, {
+              title: currModule.title,
+            })
           }
         }
       }
       // 4. Handle lessons for each module
       for (const currModule of modules) {
-        const origModule: any = originalModules.find((m: any) => m.moduleId === currModule.moduleId) || {}
+        const origModule: any =
+          originalModules.find(
+            (m: any) => m.moduleId === currModule.moduleId
+          ) || {}
         const origTitle = 'title' in origModule ? origModule.title : ''
-        const origLessonsArr = Array.isArray(origModule.lessons) ? origModule.lessons : []
-        const origLessonsMap = new Map(origLessonsArr.map((l: any) => [l.lessonId, l]))
+        const origLessonsArr = Array.isArray(origModule.lessons)
+          ? origModule.lessons
+          : []
+        const origLessonsMap = new Map(
+          origLessonsArr.map((l: any) => [l.lessonId, l])
+        )
         // Delete removed lessons
         for (const origLesson of origLessonsArr) {
-          if (!currModule.lessons.find((l: any) => l.lessonId === origLesson.lessonId)) {
+          if (
+            !currModule.lessons.find(
+              (l: any) => l.lessonId === origLesson.lessonId
+            )
+          ) {
             await lessonApi.deleteLesson(origLesson.lessonId)
           }
         }
@@ -267,29 +280,67 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               })
             }
             // Confirm upload
-            await lessonApi.completeUpload(lessonId.toString(), { duration: currLesson.duration })
+            await lessonApi.completeUpload(lessonId.toString(), {
+              duration: currLesson.duration,
+            })
             currLesson.lessonId = lessonId.toString()
             currLesson.id = lessonId.toString()
           } else {
-            // Update if changed
-            const orig = origLessonsMap.get(currLesson.lessonId)
+            // Existing lesson - check if video needs replacement
             if (
-              orig &&
-              typeof orig === 'object' &&
-              orig !== null &&
-              ((('title' in orig ? orig.title : '') !== currLesson.title) ||
-                (('duration' in orig ? orig.duration : 0) !== currLesson.duration))
+              currLesson.videoFile &&
+              (currLesson as any).needsVideoReplacement
             ) {
-              await lessonApi.updateLesson(currLesson.lessonId, {
+              // Replace existing video
+              const updateVideoData = {
                 title: currLesson.title,
+                fileName: currLesson.videoFile.name,
+                fileType: currLesson.videoFile.type,
+              }
+              const updateResponse = await lessonApi.updateLessonVideo(
+                currLesson.lessonId,
+                updateVideoData
+              )
+              const { preSignedPutUrl } = updateResponse.data
+
+              // Upload new video
+              await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest()
+                xhr.open('PUT', preSignedPutUrl, true)
+                xhr.setRequestHeader('Content-Type', currLesson.videoFile.type)
+                xhr.onload = () => resolve()
+                xhr.onerror = () => reject(new Error('Upload failed'))
+                xhr.send(currLesson.videoFile)
+              })
+
+              // Confirm upload with new duration
+              await lessonApi.completeUpload(currLesson.lessonId, {
                 duration: currLesson.duration,
               })
+            } else {
+              // Update only metadata if changed
+              const orig = origLessonsMap.get(currLesson.lessonId)
+              if (
+                orig &&
+                typeof orig === 'object' &&
+                orig !== null &&
+                (('title' in orig ? orig.title : '') !== currLesson.title ||
+                  ('duration' in orig ? orig.duration : 0) !==
+                    currLesson.duration)
+              ) {
+                await lessonApi.updateLesson(currLesson.lessonId, {
+                  title: currLesson.title,
+                  duration: currLesson.duration,
+                })
+              }
             }
           }
         }
         // Update module title if changed
         if (currModule.moduleId && origTitle !== currModule.title) {
-          await moduleApi.updateModule(currModule.moduleId, { title: currModule.title })
+          await moduleApi.updateModule(currModule.moduleId, {
+            title: currModule.title,
+          })
         }
       }
       toast.success('Course content updated successfully!')
@@ -385,8 +436,8 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
         <div className='flex flex-col items-center space-y-4'>
           <Loader2 className='h-8 w-8 animate-spin' />
           <p className='text-muted-foreground'>Loading course details...</p>
-                </div>
-                  </div>
+        </div>
+      </div>
     )
   }
 
@@ -401,8 +452,8 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
             <ArrowLeft className='h-4 w-4 mr-2' />
             Go Back
           </Button>
-                  </div>
-                </div>
+        </div>
+      </div>
     )
   }
 
@@ -410,7 +461,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
     <RoleGuard allowedRoles={['manager', 'admin']}>
       <div className='space-y-8'>
         {/* Header */}
-                <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-between'>
           <div className='flex items-center space-x-4'>
             <Button
               variant='outline'
@@ -419,20 +470,20 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
               <ArrowLeft className='mr-2 h-4 w-4' />
               Back to Courses
             </Button>
-                  <div>
+            <div>
               <h1 className='text-3xl font-bold'>Edit Course</h1>
               <p className='text-muted-foreground'>
                 Update course information and content
-                    </p>
-                  </div>
-                </div>
+              </p>
+            </div>
+          </div>
           <div className='text-right'>
-                    <p className='text-sm text-muted-foreground'>
+            <p className='text-sm text-muted-foreground'>
               Course ID: {originalCourse.id}
-                    </p>
+            </p>
             <p className='font-medium'>{originalCourse.title}</p>
-                  </div>
-                </div>
+          </div>
+        </div>
 
         {/* Course Summary */}
         <CourseSummaryCard
@@ -462,16 +513,19 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
             }
           }}
         >
-          <TabsList className='grid w-full grid-cols-3'>
+          <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='basic-info'>Basic Information</TabsTrigger>
             <TabsTrigger value='content'>Content & Structure</TabsTrigger>
-            <TabsTrigger value='settings'>Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value='basic-info' className='space-y-6'>
             {/* Course Basic Information Form */}
             <CourseBasicInfoForm
-              initialData={courseData}
+              initialData={{
+                ...courseData,
+                // Ensure level is properly passed
+                level: courseData.level || originalCourse?.level || '',
+              }}
               onDataChange={handleCourseDataChange}
               onValidationChange={handleValidationChange}
               isEditing={true}
@@ -513,7 +567,7 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
 
             {/* Action Buttons */}
             <div className='flex gap-4'>
-                        <Button
+              <Button
                 onClick={handleSaveCourse}
                 disabled={saving || !isValidCourseData || !hasChanges()}
                 className='flex-1 md:flex-none md:min-w-[200px]'
@@ -529,17 +583,17 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                     Save Changes
                   </>
                 )}
-                        </Button>
+              </Button>
 
-                    <Button
-                      variant='outline'
+              <Button
+                variant='outline'
                 onClick={() => router.push(`/manager/courses/${courseId}`)}
                 disabled={saving}
-                    >
+              >
                 View Course Details
-                    </Button>
-          </div>
-        </TabsContent>
+              </Button>
+            </div>
+          </TabsContent>
 
           <TabsContent value='content' className='space-y-6'>
             {loadingModules ? (
@@ -550,13 +604,13 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                     Loading course modules...
                   </p>
                 </div>
-          </div>
+              </div>
             ) : (
               <>
                 <div className='flex items-center justify-between'>
                   <div>
                     <h3 className='text-lg font-semibold'>Course Content</h3>
-              <p className='text-muted-foreground'>
+                    <p className='text-muted-foreground'>
                       Manage your course modules and lessons
                     </p>
                   </div>
@@ -564,7 +618,10 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                     <Button onClick={loadModules} variant='outline'>
                       Refresh Content
                     </Button>
-                    <Button onClick={handleSaveContentStructure} disabled={savingContent}>
+                    <Button
+                      onClick={handleSaveContentStructure}
+                      disabled={savingContent}
+                    >
                       {savingContent ? (
                         <>
                           <Loader2 className='h-4 w-4 mr-2 animate-spin' />
@@ -588,21 +645,9 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                 />
               </>
             )}
-        </TabsContent>
-
-          <TabsContent value='settings' className='space-y-6'>
-            <div className='text-center py-12'>
-              <h3 className='text-lg font-semibold mb-2'>Course Settings</h3>
-              <p className='text-muted-foreground mb-4'>
-                Advanced course settings will be implemented here
-              </p>
-              <Button variant='outline' disabled>
-                Coming Soon
-                      </Button>
-                    </div>
           </TabsContent>
         </Tabs>
-                  </div>
+      </div>
     </RoleGuard>
   )
 }

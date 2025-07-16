@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -283,6 +285,14 @@ const FilterSidebar = memo(function FilterSidebar({
 })
 
 export default function CouponsPage() {
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <CouponsContent />
+    </ProtectedRoute>
+  )
+}
+
+function CouponsContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState({
@@ -291,7 +301,7 @@ export default function CouponsPage() {
     percentage: '',
   })
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
-  const [isFilterVisible, setIsFilterVisible] = useState(true)
+  const [isFilterVisible, _setIsFilterVisible] = useState(true)
   const [activeTab, setActiveTab] = useState('available')
   const [copiedCodes, setCopiedCodes] = useState<Record<string, boolean>>({})
   const discountInputRef = useRef<HTMLInputElement>(null)
@@ -313,7 +323,8 @@ export default function CouponsPage() {
   const router = useRouter()
 
   // Replace useCoupon with useAvailableCoupons
-  const { coupons, loadingCoupons, pagination, fetchCoupons } = useAvailableCoupons()
+  const { coupons, loadingCoupons, pagination, fetchCoupons } =
+    useAvailableCoupons()
 
   // Fetch data on component mount
   useEffect(() => {
@@ -345,8 +356,7 @@ export default function CouponsPage() {
         setIsLoading(false)
         // Initial coupon fetch
         await fetchCoupons(0)
-      } catch (error) {
-        console.error('Error fetching data:', error)
+      } catch (_error) {
         toast.error('Failed to load data', {
           description: 'Please try refreshing the page.',
         })
@@ -391,7 +401,7 @@ export default function CouponsPage() {
   }, [fetchCoupons])
 
   // Get category and course names
-  const getCategoryNames = useCallback(
+  const _getCategoryNames = useCallback(
     (categoryIds: number[]) => {
       if (!categoryIds) return ''
       return allCategories
@@ -402,7 +412,7 @@ export default function CouponsPage() {
     [allCategories]
   )
 
-  const getCourseNames = useCallback(
+  const _getCourseNames = useCallback(
     (courseIds: number[]) => {
       if (!courseIds) return ''
       return allCourses
@@ -450,7 +460,9 @@ export default function CouponsPage() {
         isActive: 1,
         ...(filter.category ? { categoryId: Number(filter.category) } : {}),
         ...(filter.course ? { courseId: Number(filter.course) } : {}),
-        ...(filter.percentage ? { percentage: parseInt(filter.percentage) } : {}),
+        ...(filter.percentage
+          ? { percentage: parseInt(filter.percentage) }
+          : {}),
       }
       try {
         const res = await discountApi.getMyCoupons(params)
@@ -580,7 +592,7 @@ export default function CouponsPage() {
   }
 
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const _formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -624,7 +636,7 @@ export default function CouponsPage() {
     }
   }
 
-  const handleCopyCode = async (code: string) => {
+  const _handleCopyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
       setCopiedCodes(prev => ({ ...prev, [code]: true }))
@@ -637,7 +649,7 @@ export default function CouponsPage() {
       setTimeout(() => {
         setCopiedCodes(prev => ({ ...prev, [code]: false }))
       }, 2000)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to copy', {
         description: 'Please try copying the code manually.',
       })
@@ -856,39 +868,49 @@ export default function CouponsPage() {
                     </div>
                   )}
                   {/* Pagination for Available - Chỉ hiển thị khi có dữ liệu */}
-                  {activeTab === 'available' && pagination.totalElements > 0 && (
-                    <div className='flex items-center justify-between mt-4'>
-                      <div className='text-sm text-muted-foreground'>
-                        Showing {pagination.page * pagination.size + 1} to{' '}
-                        {Math.min(
-                          (pagination.page + 1) * pagination.size,
-                          pagination.totalElements
-                        )}{' '}
-                        of {pagination.totalElements} results
+                  {activeTab === 'available' &&
+                    pagination.totalElements > 0 && (
+                      <div className='flex items-center justify-between mt-4'>
+                        <div className='text-sm text-muted-foreground'>
+                          Showing {pagination.page * pagination.size + 1} to{' '}
+                          {Math.min(
+                            (pagination.page + 1) * pagination.size,
+                            pagination.totalElements
+                          )}{' '}
+                          of {pagination.totalElements} results
+                        </div>
+                        <div className='flex items-center space-x-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => fetchCoupons(pagination.page - 1)}
+                            disabled={
+                              pagination.first ||
+                              loadingCoupons ||
+                              pagination.totalElements === 0
+                            }
+                          >
+                            Previous
+                          </Button>
+                          <span className='text-sm'>
+                            Page {pagination.page + 1} of{' '}
+                            {pagination.totalPages || 1}
+                          </span>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => fetchCoupons(pagination.page + 1)}
+                            disabled={
+                              pagination.last ||
+                              loadingCoupons ||
+                              pagination.totalElements === 0
+                            }
+                          >
+                            Next
+                          </Button>
+                        </div>
                       </div>
-                      <div className='flex items-center space-x-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => fetchCoupons(pagination.page - 1)}
-                          disabled={pagination.first || loadingCoupons || pagination.totalElements === 0}
-                        >
-                          Previous
-                        </Button>
-                        <span className='text-sm'>
-                          Page {pagination.page + 1} of {pagination.totalPages || 1}
-                        </span>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => fetchCoupons(pagination.page + 1)}
-                          disabled={pagination.last || loadingCoupons || pagination.totalElements === 0}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </>
               )}
             </TabsContent>
@@ -920,52 +942,57 @@ export default function CouponsPage() {
                     </div>
                   )}
                   {/* Pagination for My Coupons - Chỉ hiển thị khi có dữ liệu */}
-                  {activeTab === 'my-coupons' && myCouponsPagination.totalElements > 0 && (
-                    <div className='flex items-center justify-between mt-4'>
-                      <div className='text-sm text-muted-foreground'>
-                        Showing{' '}
-                        {myCouponsPagination.page * myCouponsPagination.size +
-                          1}{' '}
-                        to{' '}
-                        {Math.min(
-                          (myCouponsPagination.page + 1) *
-                            myCouponsPagination.size,
-                          myCouponsPagination.totalElements
-                        )}{' '}
-                        of {myCouponsPagination.totalElements} results
+                  {activeTab === 'my-coupons' &&
+                    myCouponsPagination.totalElements > 0 && (
+                      <div className='flex items-center justify-between mt-4'>
+                        <div className='text-sm text-muted-foreground'>
+                          Showing{' '}
+                          {myCouponsPagination.page * myCouponsPagination.size +
+                            1}{' '}
+                          to{' '}
+                          {Math.min(
+                            (myCouponsPagination.page + 1) *
+                              myCouponsPagination.size,
+                            myCouponsPagination.totalElements
+                          )}{' '}
+                          of {myCouponsPagination.totalElements} results
+                        </div>
+                        <div className='flex items-center space-x-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                              fetchMyCoupons(myCouponsPagination.page - 1)
+                            }
+                            disabled={
+                              myCouponsPagination.first ||
+                              loadingMyCoupons ||
+                              myCouponsPagination.totalElements === 0
+                            }
+                          >
+                            Previous
+                          </Button>
+                          <span className='text-sm'>
+                            Page {myCouponsPagination.page + 1} of{' '}
+                            {myCouponsPagination.totalPages || 1}
+                          </span>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() =>
+                              fetchMyCoupons(myCouponsPagination.page + 1)
+                            }
+                            disabled={
+                              myCouponsPagination.last ||
+                              loadingMyCoupons ||
+                              myCouponsPagination.totalElements === 0
+                            }
+                          >
+                            Next
+                          </Button>
+                        </div>
                       </div>
-                      <div className='flex items-center space-x-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() =>
-                            fetchMyCoupons(myCouponsPagination.page - 1)
-                          }
-                          disabled={
-                            myCouponsPagination.first || loadingMyCoupons || myCouponsPagination.totalElements === 0
-                          }
-                        >
-                          Previous
-                        </Button>
-                        <span className='text-sm'>
-                          Page {myCouponsPagination.page + 1} of{' '}
-                          {myCouponsPagination.totalPages || 1}
-                        </span>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() =>
-                            fetchMyCoupons(myCouponsPagination.page + 1)
-                          }
-                          disabled={
-                            myCouponsPagination.last || loadingMyCoupons || myCouponsPagination.totalElements === 0
-                          }
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </>
               )}
             </TabsContent>

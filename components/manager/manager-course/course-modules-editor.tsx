@@ -6,14 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { VideoPreviewModal } from '@/components/ui/video-preview-modal'
 import {
   DragDropContext,
   Droppable,
@@ -28,8 +21,10 @@ import {
   FileText,
   GripVertical,
   Upload,
+  Eye,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { lessonApi } from '@/services/lesson-api'
 
 interface Lesson {
   id: string
@@ -37,6 +32,7 @@ interface Lesson {
   duration: number
   lessonId?: string
   videoFile?: File
+  needsVideoReplacement?: boolean
 }
 
 interface Module {
@@ -67,6 +63,12 @@ export function CourseModulesEditor({
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null)
   const [isAddingModule, setIsAddingModule] = useState(false)
   const [isAddingLesson, setIsAddingLesson] = useState(false)
+
+  // Video preview states
+  const [showVideoPreview, setShowVideoPreview] = useState(false)
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null)
+  const [previewVideoTitle, setPreviewVideoTitle] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
@@ -232,9 +234,29 @@ export function CourseModulesEditor({
     video.preload = 'metadata'
     video.onloadedmetadata = () => {
       const durationInSeconds = Math.round(video.duration)
+
+      // Check if this is an existing lesson with video (needs replacement)
+      const module = modules.find(m => m.id === moduleId)
+      const lesson = module?.lessons?.find(l => l.id === lessonId)
+      const isExistingLessonWithVideo =
+        lesson?.lessonId && (lesson.videoFile || isEditing)
+
+      if (isExistingLessonWithVideo) {
+        // Show confirmation dialog for video replacement
+        const shouldReplace = window.confirm(
+          `This lesson already has a video. Replacing it will permanently delete the old video from storage. Do you want to continue?`
+        )
+
+        if (!shouldReplace) {
+          URL.revokeObjectURL(video.src)
+          return
+        }
+      }
+
       updateLesson(moduleId, lessonId, {
         videoFile: file,
         duration: durationInSeconds,
+        ...(isExistingLessonWithVideo && { needsVideoReplacement: true }),
       })
       URL.revokeObjectURL(video.src)
     }
@@ -246,6 +268,43 @@ export function CourseModulesEditor({
     const m = Math.floor(seconds / 60)
     const s = seconds % 60
     return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const handlePreviewVideo = async (lesson: Lesson) => {
+    if (lesson.videoFile) {
+      // Preview local file
+      const localUrl = URL.createObjectURL(lesson.videoFile)
+      setPreviewVideoUrl(localUrl)
+      setPreviewVideoTitle(`${lesson.title} (Local Preview)`)
+      setShowVideoPreview(true)
+    } else if (lesson.lessonId && isEditing) {
+      // Preview existing video from server
+      try {
+        setPreviewLoading(true)
+        setPreviewVideoTitle(lesson.title)
+        setShowVideoPreview(true)
+
+        const url = await lessonApi.getLessonVideoUrl(lesson.lessonId)
+        setPreviewVideoUrl(url)
+      } catch (error) {
+        toast.error('Failed to load video preview')
+        setShowVideoPreview(false)
+      } finally {
+        setPreviewLoading(false)
+      }
+    } else {
+      toast.error('No video available to preview')
+    }
+  }
+
+  const handleClosePreview = () => {
+    setShowVideoPreview(false)
+    if (previewVideoUrl && previewVideoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewVideoUrl)
+    }
+    setPreviewVideoUrl(null)
+    setPreviewVideoTitle('')
+    setPreviewLoading(false)
   }
 
   return (
@@ -398,6 +457,21 @@ export function CourseModulesEditor({
                                                     lesson.duration
                                                   )}
                                                 </span>
+                                                {(lesson.videoFile ||
+                                                  lesson.lessonId) && (
+                                                  <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={e => {
+                                                      e.stopPropagation()
+                                                      handlePreviewVideo(lesson)
+                                                    }}
+                                                    className='h-4 w-4 p-0 text-blue-600'
+                                                    title='Preview video'
+                                                  >
+                                                    <Eye className='h-2 w-2' />
+                                                  </Button>
+                                                )}
                                                 <Button
                                                   variant='ghost'
                                                   size='sm'
@@ -492,6 +566,22 @@ export function CourseModulesEditor({
           </Button>
         </CardContent>
       </Card>
+
+      {/* Video Preview Modal */}
+      <VideoPreviewModal
+        isOpen={showVideoPreview}
+        onClose={handleClosePreview}
+        title={previewVideoTitle}
+        description={
+          previewVideoUrl?.startsWith('blob:')
+            ? 'Local file preview - this video will be uploaded when you save the course.'
+            : 'Preview of the current lesson video.'
+        }
+        videoUrl={previewVideoUrl}
+        isLoading={previewLoading}
+        autoPlay={true}
+        showControls={true}
+      />
     </div>
   )
 }

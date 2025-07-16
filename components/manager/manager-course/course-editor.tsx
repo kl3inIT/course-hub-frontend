@@ -513,10 +513,9 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
             }
           }}
         >
-          <TabsList className='grid w-full grid-cols-3'>
+          <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='basic-info'>Basic Information</TabsTrigger>
             <TabsTrigger value='content'>Content & Structure</TabsTrigger>
-            <TabsTrigger value='settings'>Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value='basic-info' className='space-y-6'>
@@ -646,18 +645,6 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                 />
               </>
             )}
-          </TabsContent>
-
-          <TabsContent value='settings' className='space-y-6'>
-            <div className='text-center py-12'>
-              <h3 className='text-lg font-semibold mb-2'>Course Settings</h3>
-              <p className='text-muted-foreground mb-4'>
-                Advanced course settings will be implemented here
-              </p>
-              <Button variant='outline' disabled>
-                Coming Soon
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
       </div>

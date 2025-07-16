@@ -23,8 +23,6 @@ const PUBLIC_ENDPOINTS = [
   '/api/courses/search/stats',
   '/api/courses/levels/levels',
   '/api/courses/status/statuses',
-  // Individual course details are public for browsing
-  { url: '/api/courses/', method: 'GET' }, // Matches /api/courses/{id}
 
   // ========== CATEGORY ENDPOINTS (Public) ==========
   '/api/categories',
@@ -34,18 +32,6 @@ const PUBLIC_ENDPOINTS = [
   { url: '/api/reviews/', method: 'GET' }, // Matches /api/reviews/{id}
 ]
 
-// All other endpoints require authentication, including:
-// - User profile management (/api/users/*)
-// - Course enrollment (/api/enrollments/*)
-// - Payment processing (/api/payments/*)
-// - Progress tracking (/api/progress/*)
-// - Notifications (/api/notifications/*)
-// - Comments (/api/comments/*)
-// - Admin functions (/api/admin/*)
-// - Analytics (/api/analytics/*)
-// - Discount/Coupon management (/api/discounts/*)
-// - Course creation/management (POST/PUT/DELETE to /api/courses/*)
-// - Review creation/management (POST/PUT/DELETE to /api/reviews/*)
 
 export const httpClient = axios.create({
   baseURL: BASE_URL,

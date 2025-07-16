@@ -10,6 +10,8 @@ import {
   DashboardCourseResponseDTO,
   CourseSearchStatsResponseDTO,
   ManagerCourseResponseDTO,
+  CourseEnrollment,
+  CourseEnrollmentStats,
 } from '@/types/course'
 
 export const courseApi = {
@@ -88,7 +90,7 @@ export const courseApi = {
         maxPrice: params?.maxPrice,
         searchTerm: params?.searchTerm,
         categoryId: params?.categoryId,
-        minRating: params?.minRating,
+
         isFree: params?.isFree,
         isDiscounted: params?.isDiscounted,
         status: params?.status,
@@ -181,5 +183,20 @@ export const courseApi = {
   enrollFreeCourse: async (courseId: string): Promise<ApiResponse<string>> => {
     const response = await httpClient.post(`/api/courses/${courseId}/enroll`)
     return response.data
+  },
+
+  getCourseEnrollments: async (courseId: string): Promise<CourseEnrollment[]> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollment[]>>(`/api/courses/${courseId}/enrollments`)
+    return response.data.data
+  },
+
+  unenrollStudent: async (courseId: string, studentId: string): Promise<string> => {
+    const response = await httpClient.delete<ApiResponse<string>>(`/api/courses/${courseId}/enrollments/${studentId}`)
+    return response.data.data
+  },
+
+  getCourseEnrollmentStats: async (courseId: string): Promise<CourseEnrollmentStats> => {
+    const response = await httpClient.get<ApiResponse<CourseEnrollmentStats>>(`/api/courses/${courseId}/enrollments/stats`)
+    return response.data.data
   },
 }

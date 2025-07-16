@@ -495,22 +495,6 @@ export function CourseDetail({ courseId }: CourseDetailProps) {
                       : 'Continue Learning'}
                   </Button>
 
-                  {/* Show access reason for manager/admin */}
-                  {enrollmentStatus.accessReason &&
-                    (user?.role === 'manager' || user?.role === 'admin') && (
-                      <div className='text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg'>
-                        <div className='flex items-center gap-2 mb-1'>
-                          <Shield className='h-4 w-4 text-blue-600' />
-                          <span className='font-medium text-blue-800'>
-                            Privileged Access
-                          </span>
-                        </div>
-                        <p className='text-blue-700'>
-                          {enrollmentStatus.accessReason}
-                        </p>
-                      </div>
-                    )}
-
                   {/* Show progress only for regular enrolled users */}
                   {enrollmentStatus.progress > 0 &&
                     user?.role === 'learner' && (

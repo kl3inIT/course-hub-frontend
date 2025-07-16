@@ -143,3 +143,32 @@ export interface ManagerCourseResponseDTO {
   status: string
   canEdit: boolean // Boolean -> boolean
 }
+
+// Course Enrollment Management Types - Updated to match backend DTOs
+export interface CourseEnrollment {
+  id: number // Long -> number to match backend
+  studentId: number // Long -> number to match backend
+  studentName: string
+  studentEmail: string
+  studentAvatar: string
+  enrollmentDate: string // Date -> string (ISO format)
+  lastAccessed: string // Date -> string (ISO format) 
+  progress: number // Double -> number
+  completedLessons: number // Integer -> number
+  totalLessons: number // Integer -> number
+  timeSpent: number // Integer -> number (in minutes)
+  status: string // String in backend, more flexible than enum
+  certificateIssued: boolean // Boolean -> boolean
+  completionDate?: string // Date -> string (ISO format)
+  rating?: number // Double -> number
+}
+
+export interface CourseEnrollmentStats {
+  totalEnrollments: number // Integer -> number
+  activeEnrollments: number // Integer -> number  
+  completedEnrollments: number // Integer -> number
+  averageProgress: number // Double -> number
+  averageTimeSpent: number // Double -> number (in minutes)
+  completionRate: number // Double -> number (percentage)
+  averageRating: number // Double -> number
+}

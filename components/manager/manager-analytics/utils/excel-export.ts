@@ -35,11 +35,7 @@ export const exportToExcel = async (
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
   const filename = `analytics-report-${dateInfo}-${new Date().toISOString().split('T')[0]}.xlsx`
-  downloadFile(
-    blob,
-    filename,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  )
+  downloadFile(blob, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 }
 
 const addCategorySheet = async (
@@ -48,27 +44,21 @@ const addCategorySheet = async (
   dateRangeText: string
 ): Promise<void> => {
   const categorySheet = workbook.addWorksheet('Category Analysis')
-
+  
   // Add title rows
   categorySheet.mergeCells('A1:G1')
   categorySheet.getCell('A1').value = `CATEGORY PERFORMANCE ANALYSIS REPORT`
   categorySheet.getCell('A1').font = { bold: true, size: 16 }
-  categorySheet.getCell('A1').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
-
+  categorySheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+  
   categorySheet.mergeCells('A2:G2')
   categorySheet.getCell('A2').value = `Analytics report ${dateRangeText}`
   categorySheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-  categorySheet.getCell('A2').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
-
+  categorySheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+  
   // Add empty row
   categorySheet.getRow(3).height = 10
-
+  
   // Set up columns starting from row 4
   categorySheet.getRow(4).values = [
     'No.',
@@ -76,37 +66,33 @@ const addCategorySheet = async (
     'Description',
     'Total Courses',
     'Total Students',
-    'Total Revenue (VND)',
-    'Revenue Share (%)',
+    'Total Revenue ($)',
+    'Revenue Share (%)'
   ]
-
+  
   // Style header row
   const headerRow = categorySheet.getRow(4)
   headerRow.font = { bold: true }
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
   headerRow.height = 25
-
+  
   // Apply background color only to cells with data (A4:G4)
   for (let col = 1; col <= 7; col++) {
     const cell = headerRow.getCell(col)
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'E6F3FF' },
-    }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
   }
-
+  
   // Set column widths
   categorySheet.columns = [
-    { width: 8 }, // No.
-    { width: 35 }, // Category Name
-    { width: 50 }, // Description
-    { width: 18 }, // Total Courses
-    { width: 18 }, // Total Students
-    { width: 25 }, // Total Revenue
-    { width: 20 }, // Revenue Share
+    { width: 8 },   // No.
+    { width: 35 },  // Category Name
+    { width: 50 },  // Description
+    { width: 18 },  // Total Courses
+    { width: 18 },  // Total Students
+    { width: 25 },  // Total Revenue
+    { width: 20 },  // Revenue Share
   ]
-
+  
   // Add data rows
   categoryData.forEach((cat: any, index: number) => {
     const rowIndex = index + 5
@@ -116,28 +102,16 @@ const addCategorySheet = async (
       cat.description,
       cat.courseCount || 0,
       cat.totalStudents,
-      cat.totalRevenue,
+      cat.totalRevenue?.toLocaleString('en-US') + ' $',
       `${cat.revenueProportion.toFixed(2)}%`,
     ]
-
+    
     // Style data rows
     const dataRow = categorySheet.getRow(rowIndex)
-    dataRow.alignment = {
-      horizontal: 'center',
-      vertical: 'middle',
-      wrapText: true,
-    }
-    dataRow.getCell(2).alignment = {
-      horizontal: 'left',
-      vertical: 'middle',
-      wrapText: true,
-    } // Category Name
-    dataRow.getCell(3).alignment = {
-      horizontal: 'left',
-      vertical: 'middle',
-      wrapText: true,
-    } // Description
-
+    dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Category Name
+    dataRow.getCell(3).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Description
+    
     // Add borders to data cells only (specific number of columns)
     for (let col = 1; col <= 7; col++) {
       const cell = dataRow.getCell(col)
@@ -145,11 +119,11 @@ const addCategorySheet = async (
         top: { style: 'thin' },
         left: { style: 'thin' },
         bottom: { style: 'thin' },
-        right: { style: 'thin' },
+        right: { style: 'thin' }
       }
     }
   })
-
+  
   // Add borders to header cells with data only
   for (let col = 1; col <= 7; col++) {
     const cell = headerRow.getCell(col)
@@ -157,7 +131,7 @@ const addCategorySheet = async (
       top: { style: 'thick' },
       left: { style: 'thick' },
       bottom: { style: 'thick' },
-      right: { style: 'thick' },
+      right: { style: 'thick' }
     }
   }
 }
@@ -168,67 +142,57 @@ const addCourseSheet = async (
   dateRangeText: string
 ): Promise<void> => {
   const courseSheet = workbook.addWorksheet('Course Analysis')
-
+  
   // Add title rows
   courseSheet.mergeCells('A1:H1')
   courseSheet.getCell('A1').value = `COURSE PERFORMANCE ANALYSIS REPORT`
   courseSheet.getCell('A1').font = { bold: true, size: 16 }
-  courseSheet.getCell('A1').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
-
+  courseSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
+  
   courseSheet.mergeCells('A2:H2')
   courseSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
   courseSheet.getCell('A2').font = { bold: false, size: 12, italic: true }
-  courseSheet.getCell('A2').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
-
+  courseSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
+  
   // Add empty row
   courseSheet.getRow(3).height = 10
-
+  
   // Set up columns starting from row 4
   courseSheet.getRow(4).values = [
     'No.',
     'Course Name',
     'Total Students',
     'Average Rating',
-    'Total Revenue (VND)',
+    'Total Revenue ($)',
     'Revenue Share (%)',
     'Total Reviews',
-    'Course Level',
+    'Course Level'
   ]
-
+  
   // Style header row
   const headerRow = courseSheet.getRow(4)
   headerRow.font = { bold: true }
   headerRow.alignment = { horizontal: 'center', vertical: 'middle' }
   headerRow.height = 25
-
+  
   // Apply background color only to cells with data (A4:H4)
   for (let col = 1; col <= 8; col++) {
     const cell = headerRow.getCell(col)
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'E6F3FF' },
-    }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
   }
-
+  
   // Set column widths
   courseSheet.columns = [
-    { width: 8 }, // No.
-    { width: 45 }, // Course Name
-    { width: 15 }, // Total Students
-    { width: 15 }, // Average Rating
-    { width: 25 }, // Total Revenue
-    { width: 20 }, // Revenue Share
-    { width: 15 }, // Total Reviews
-    { width: 15 }, // Course Level
+    { width: 8 },   // No.
+    { width: 45 },  // Course Name
+    { width: 15 },  // Total Students
+    { width: 15 },  // Average Rating
+    { width: 25 },  // Total Revenue
+    { width: 20 },  // Revenue Share
+    { width: 15 },  // Total Reviews
+    { width: 15 },  // Course Level
   ]
-
+  
   // Add data rows
   courseData.forEach((course: any, index: number) => {
     const rowIndex = index + 5
@@ -237,25 +201,17 @@ const addCourseSheet = async (
       course.courseName,
       course.students,
       course.rating?.toFixed(1) || '0.0',
-      course.revenue,
+      course.revenue?.toLocaleString('en-US') + ' $',
       `${course.revenuePercent?.toFixed(2)}%`,
       course.reviews,
       course.level || 'N/A',
     ]
-
+    
     // Style data rows
     const dataRow = courseSheet.getRow(rowIndex)
-    dataRow.alignment = {
-      horizontal: 'center',
-      vertical: 'middle',
-      wrapText: true,
-    }
-    dataRow.getCell(2).alignment = {
-      horizontal: 'left',
-      vertical: 'middle',
-      wrapText: true,
-    } // Course Name
-
+    dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true } // Course Name
+    
     // Add borders to data cells only (specific number of columns)
     for (let col = 1; col <= 8; col++) {
       const cell = dataRow.getCell(col)
@@ -263,11 +219,11 @@ const addCourseSheet = async (
         top: { style: 'thin' },
         left: { style: 'thin' },
         bottom: { style: 'thin' },
-        right: { style: 'thin' },
+        right: { style: 'thin' }
       }
     }
   })
-
+  
   // Add borders to header cells with data only
   for (let col = 1; col <= 8; col++) {
     const cell = headerRow.getCell(col)
@@ -275,7 +231,7 @@ const addCourseSheet = async (
       top: { style: 'thick' },
       left: { style: 'thick' },
       bottom: { style: 'thick' },
-      right: { style: 'thick' },
+      right: { style: 'thick' }
     }
   }
 }
@@ -290,18 +246,12 @@ const addStudentSheet = async (
   studentSheet.mergeCells('A1:G1')
   studentSheet.getCell('A1').value = `STUDENT ACTIVITY ANALYSIS REPORT`
   studentSheet.getCell('A1').font = { bold: true, size: 16 }
-  studentSheet.getCell('A1').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
+  studentSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
 
   studentSheet.mergeCells('A2:G2')
   studentSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
   studentSheet.getCell('A2').font = { italic: true, size: 12 }
-  studentSheet.getCell('A2').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
+  studentSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
 
   studentSheet.getRow(3).height = 10
 
@@ -312,7 +262,7 @@ const addStudentSheet = async (
     'Previously',
     'Growth Rate (%)',
     'Total Reviews',
-    'Average Rating',
+    'Average Rating'
   ]
   const headerRow = studentSheet.getRow(4)
   headerRow.font = { bold: true }
@@ -320,16 +270,12 @@ const addStudentSheet = async (
   headerRow.height = 25
   for (let col = 1; col <= 7; col++) {
     const cell = headerRow.getCell(col)
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'E6F3FF' },
-    }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
     cell.border = {
       top: { style: 'thick' },
       left: { style: 'thick' },
       bottom: { style: 'thick' },
-      right: { style: 'thick' },
+      right: { style: 'thick' }
     }
   }
   studentSheet.columns = [
@@ -339,7 +285,7 @@ const addStudentSheet = async (
     { width: 18 },
     { width: 18 },
     { width: 18 },
-    { width: 18 },
+    { width: 18 }
   ]
   studentData.forEach((data: any, index: number) => {
     const rowIndex = index + 5
@@ -350,26 +296,18 @@ const addStudentSheet = async (
       data.previousCompletion,
       data.growth,
       data.reviews,
-      data.avgRating,
+      data.avgRating
     ]
     const dataRow = studentSheet.getRow(rowIndex)
-    dataRow.alignment = {
-      horizontal: 'center',
-      vertical: 'middle',
-      wrapText: true,
-    }
-    dataRow.getCell(2).alignment = {
-      horizontal: 'left',
-      vertical: 'middle',
-      wrapText: true,
-    }
+    dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
     for (let col = 1; col <= 7; col++) {
       const cell = dataRow.getCell(col)
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
         bottom: { style: 'thin' },
-        right: { style: 'thin' },
+        right: { style: 'thin' }
       }
     }
   })
@@ -385,30 +323,24 @@ const addRevenueSheet = async (
   revenueSheet.mergeCells('A1:H1')
   revenueSheet.getCell('A1').value = `REVENUE TRENDS ANALYSIS REPORT`
   revenueSheet.getCell('A1').font = { bold: true, size: 16 }
-  revenueSheet.getCell('A1').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
+  revenueSheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
 
   revenueSheet.mergeCells('A2:H2')
   revenueSheet.getCell('A2').value = `Analytics report ${dateRangeText}`
   revenueSheet.getCell('A2').font = { italic: true, size: 12 }
-  revenueSheet.getCell('A2').alignment = {
-    horizontal: 'center',
-    vertical: 'middle',
-  }
+  revenueSheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
 
   revenueSheet.getRow(3).height = 10
 
   revenueSheet.getRow(4).values = [
     'No.',
     'Course Name',
-    'Current Revenue (VND)',
-    'Previously (VND)',
+    'Current Revenue ($)',
+    'Previously ($)',
     'Growth Rate (%)',
     'Total Orders',
     'New Students',
-    'Revenue Share (%)',
+    'Revenue Share (%)'
   ]
   const headerRow = revenueSheet.getRow(4)
   headerRow.font = { bold: true }
@@ -416,16 +348,12 @@ const addRevenueSheet = async (
   headerRow.height = 25
   for (let col = 1; col <= 8; col++) {
     const cell = headerRow.getCell(col)
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'E6F3FF' },
-    }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6F3FF' } }
     cell.border = {
       top: { style: 'thick' },
       left: { style: 'thick' },
       bottom: { style: 'thick' },
-      right: { style: 'thick' },
+      right: { style: 'thick' }
     }
   }
   revenueSheet.columns = [
@@ -436,39 +364,31 @@ const addRevenueSheet = async (
     { width: 18 },
     { width: 18 },
     { width: 18 },
-    { width: 18 },
+    { width: 18 }
   ]
   revenueData.forEach((data: any, index: number) => {
     const rowIndex = index + 5
     revenueSheet.getRow(rowIndex).values = [
       index + 1,
       data.courseName,
-      data.revenue,
-      data.previousRevenue,
+      data.revenue?.toLocaleString('en-US') + ' $',
+      data.previousRevenue?.toLocaleString('en-US') + ' $',
       data.growth,
       data.orders,
       data.newStudents,
-      data.revenueShare,
+      data.revenueShare
     ]
     const dataRow = revenueSheet.getRow(rowIndex)
-    dataRow.alignment = {
-      horizontal: 'center',
-      vertical: 'middle',
-      wrapText: true,
-    }
-    dataRow.getCell(2).alignment = {
-      horizontal: 'left',
-      vertical: 'middle',
-      wrapText: true,
-    }
+    dataRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    dataRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
     for (let col = 1; col <= 8; col++) {
       const cell = dataRow.getCell(col)
       cell.border = {
         top: { style: 'thin' },
         left: { style: 'thin' },
         bottom: { style: 'thin' },
-        right: { style: 'thin' },
+        right: { style: 'thin' }
       }
     }
   })
-}
+} 

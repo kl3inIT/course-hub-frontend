@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/context/auth-context'
 import { analyticsApi } from '@/services/analytics-api'
@@ -19,41 +19,29 @@ import { toast } from 'react-hot-toast'
 
 // Import types
 import {
-  AnalyticsExportDialogProps,
-  ExportData,
-  ExportFormat,
-  ExportOptions,
-  ExportParams,
+    AnalyticsExportDialogProps,
+    ExportData,
+    ExportFormat,
+    ExportOptions,
+    ExportParams
 } from './types/export-types'
 
 // Import constants
-import {
-  DEFAULT_EXPORT_OPTIONS,
-  EXPORT_SETTINGS,
-} from './constants/export-constants'
+import { DEFAULT_EXPORT_OPTIONS, EXPORT_SETTINGS } from './constants/export-constants'
 
 // Import utilities
-import { exportToCSV } from './utils/csv-export'
 import { exportToExcel } from './utils/excel-export'
 import { generateDateInfo } from './utils/export-utils'
 import { exportToPDF } from './utils/pdf-export'
 
-export function AnalyticsExportDialog({
-  open,
-  onOpenChange,
+export function AnalyticsExportDialog({ 
+  open, 
+  onOpenChange 
 }: AnalyticsExportDialogProps) {
-  const [exportOptions, setExportOptions] = useState<ExportOptions>(
-    DEFAULT_EXPORT_OPTIONS
-  )
-  const [exportDateRange, setExportDateRange] = useState<
-    DateRange | undefined
-  >()
-  const [exportTimeRange, setExportTimeRange] = useState(
-    EXPORT_SETTINGS.DEFAULT_TIME_RANGE
-  )
-  const [exportFormat, setExportFormat] = useState<ExportFormat>(
-    EXPORT_SETTINGS.DEFAULT_FORMAT
-  )
+  const [exportOptions, setExportOptions] = useState<ExportOptions>(DEFAULT_EXPORT_OPTIONS)
+  const [exportDateRange, setExportDateRange] = useState<DateRange | undefined>()
+  const [exportTimeRange, setExportTimeRange] = useState(EXPORT_SETTINGS.DEFAULT_TIME_RANGE)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(EXPORT_SETTINGS.DEFAULT_FORMAT)
   const [isExporting, setIsExporting] = useState(false)
   const { user } = useAuth()
 
@@ -71,73 +59,59 @@ export function AnalyticsExportDialog({
   }, [onOpenChange])
 
   const fetchExportData = async (): Promise<ExportData> => {
-    // 1. Determine export parameters
+      // 1. Determine export parameters
     const exportParams: ExportParams = {
       page: 0,
-      size: EXPORT_SETTINGS.MAX_EXPORT_SIZE,
+      size: EXPORT_SETTINGS.MAX_EXPORT_SIZE
     }
 
-    if (exportDateRange?.from && exportDateRange?.to) {
-      exportParams.startDate = exportDateRange.from.toISOString().split('T')[0]
-      exportParams.endDate = exportDateRange.to.toISOString().split('T')[0]
-    } else {
-      exportParams.range = exportTimeRange
-    }
+      if (exportDateRange?.from && exportDateRange?.to) {
+        exportParams.startDate = exportDateRange.from.toISOString().split('T')[0]
+        exportParams.endDate = exportDateRange.to.toISOString().split('T')[0]
+      } else {
+        exportParams.range = exportTimeRange
+      }
 
-    // 2. Fetch fresh data from API for export
-    const exportPromises = []
+      // 2. Fetch fresh data from API for export
+      const exportPromises = []
 
-    if (exportOptions.category.checked) {
-      exportPromises.push(
-        analyticsApi.getCategoryAnalyticsDetails(exportParams)
-      )
-    }
-    if (exportOptions.course.checked) {
+      if (exportOptions.category.checked) {
+      exportPromises.push(analyticsApi.getCategoryAnalyticsDetails(exportParams))
+      }
+      if (exportOptions.course.checked) {
       exportPromises.push(analyticsApi.getCourseAnalyticsDetails(exportParams))
-    }
-    if (exportOptions.student.checked) {
+      }
+      if (exportOptions.student.checked) {
       exportPromises.push(analyticsApi.getStudentAnalyticsDetails(exportParams))
-    }
-    if (exportOptions.revenue.checked) {
+      }
+      if (exportOptions.revenue.checked) {
       exportPromises.push(analyticsApi.getRevenueAnalyticsDetails(exportParams))
-    }
+      }
 
-    const results = await Promise.all(exportPromises)
+      const results = await Promise.all(exportPromises)
 
-    // 3. Map results to export data
-    let resultIndex = 0
+      // 3. Map results to export data
+      let resultIndex = 0
     const freshExportData: ExportData = {
       category: exportOptions.category.checked
-        ? exportOptions.category.rowCount === -1
-          ? results[resultIndex++].data.content
-          : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.category.rowCount
-            )
+          ? exportOptions.category.rowCount === -1
+            ? results[resultIndex++].data.content
+          : results[resultIndex++].data.content.slice(0, exportOptions.category.rowCount)
         : [],
       course: exportOptions.course.checked
-        ? exportOptions.course.rowCount === -1
-          ? results[resultIndex++].data.content
-          : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.course.rowCount
-            )
+          ? exportOptions.course.rowCount === -1
+            ? results[resultIndex++].data.content
+          : results[resultIndex++].data.content.slice(0, exportOptions.course.rowCount)
         : [],
       student: exportOptions.student.checked
-        ? exportOptions.student.rowCount === -1
-          ? results[resultIndex++].data.content
-          : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.student.rowCount
-            )
+          ? exportOptions.student.rowCount === -1
+            ? results[resultIndex++].data.content
+          : results[resultIndex++].data.content.slice(0, exportOptions.student.rowCount)
         : [],
       revenue: exportOptions.revenue.checked
-        ? exportOptions.revenue.rowCount === -1
-          ? results[resultIndex++].data.content
-          : results[resultIndex++].data.content.slice(
-              0,
-              exportOptions.revenue.rowCount
-            )
+          ? exportOptions.revenue.rowCount === -1
+            ? results[resultIndex++].data.content
+          : results[resultIndex++].data.content.slice(0, exportOptions.revenue.rowCount)
         : [],
     }
 
@@ -153,32 +127,10 @@ export function AnalyticsExportDialog({
       // Export based on selected format
       switch (exportFormat) {
         case 'excel':
-          await exportToExcel(
-            freshExportData,
-            dateInfo,
-            exportOptions,
-            exportDateRange,
-            exportTimeRange
-          )
-          break
-        case 'csv':
-          exportToCSV(
-            freshExportData,
-            dateInfo,
-            exportOptions,
-            exportDateRange,
-            exportTimeRange
-          )
+          await exportToExcel(freshExportData, dateInfo, exportOptions, exportDateRange, exportTimeRange)
           break
         case 'pdf':
-          exportToPDF(
-            freshExportData,
-            dateInfo,
-            exportOptions,
-            exportDateRange,
-            exportTimeRange,
-            user?.name || ''
-          )
+          exportToPDF(freshExportData, dateInfo, exportOptions, exportDateRange, exportTimeRange, user?.name || '')
           break
         default:
           throw new Error('Invalid export format')
@@ -197,7 +149,7 @@ export function AnalyticsExportDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={open => {
+      onOpenChange={(open) => {
         if (!open) {
           handleCloseExportDialog()
         }
@@ -213,8 +165,8 @@ export function AnalyticsExportDialog({
             Export Analytics Report
           </DialogTitle>
           <p className='text-sm text-gray-600 mt-2'>
-            Configure your export settings and download comprehensive analytics
-            data
+            Configure your export settings and download comprehensive
+            analytics data
           </p>
         </DialogHeader>
 
@@ -237,7 +189,8 @@ export function AnalyticsExportDialog({
                     <Checkbox
                       id={key}
                       checked={Boolean(
-                        exportOptions[key as keyof typeof exportOptions].checked
+                        exportOptions[key as keyof typeof exportOptions]
+                          .checked
                       )}
                       onCheckedChange={value =>
                         setExportOptions(prev => ({
@@ -260,7 +213,8 @@ export function AnalyticsExportDialog({
                       {key === 'revenue' ? '💰 Revenue Trends' : ''}
                     </label>
                   </div>
-                  {exportOptions[key as keyof typeof exportOptions].checked && (
+                  {exportOptions[key as keyof typeof exportOptions]
+                    .checked && (
                     <div className='ml-8 mt-2'>
                       <label className='block text-sm font-medium text-gray-600 mb-2'>
                         Number of records:
@@ -268,7 +222,7 @@ export function AnalyticsExportDialog({
                       <select
                         value={exportOptions[
                           key as keyof typeof exportOptions
-                        ].rowCount.toString()}
+                          ].rowCount.toString()}
                         onChange={e =>
                           setExportOptions(prev => ({
                             ...prev,
@@ -305,15 +259,12 @@ export function AnalyticsExportDialog({
               <label className='block text-sm font-medium text-gray-700'>
                 Select format:
               </label>
-              <select
-                value={exportFormat}
-                onChange={e => setExportFormat(e.target.value as ExportFormat)}
-                className='w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
-              >
-                <option value='excel'>
-                  Excel (.xlsx) - Advanced formatting
-                </option>
-                <option value='csv'>CSV (.csv) - Simple format</option>
+                <select
+                 value={exportFormat}
+                 onChange={e => setExportFormat(e.target.value as ExportFormat)}
+                 className='w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+               >
+                <option value='excel'>Excel (.xlsx) - Advanced formatting</option>
                 <option value='pdf'>PDF (.pdf) - Print-ready layout</option>
               </select>
             </div>
@@ -360,17 +311,13 @@ export function AnalyticsExportDialog({
                 </label>
                 <DateRangePicker
                   value={exportDateRange}
-                  onChange={dateRange => {
+                  onChange={(dateRange) => {
                     setExportDateRange(dateRange)
                     if (dateRange) {
                       setExportTimeRange('custom')
                     }
                   }}
-                  className={
-                    exportTimeRange !== 'custom'
-                      ? 'opacity-50 pointer-events-none'
-                      : ''
-                  }
+                  className={exportTimeRange !== 'custom' ? 'opacity-50 pointer-events-none' : ''}
                 />
               </div>
             </div>
@@ -429,7 +376,8 @@ export function AnalyticsExportDialog({
               handleExport()
             }}
             disabled={
-              isExporting || !Object.values(exportOptions).some(o => o.checked)
+              isExporting ||
+              !Object.values(exportOptions).some(o => o.checked)
             }
             className='px-6 bg-blue-600 hover:bg-blue-700'
           >
@@ -446,4 +394,4 @@ export function AnalyticsExportDialog({
       </DialogContent>
     </Dialog>
   )
-}
+} 

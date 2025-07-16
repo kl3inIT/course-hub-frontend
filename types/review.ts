@@ -29,3 +29,15 @@ export interface ReviewSearchParams {
   sortBy?: string
   direction?: 'ASC' | 'DESC'
 }
+
+export interface ReviewFiltersParams {
+  visibilityStatus: number
+  star?: number
+  categoryId?: number
+  courseId?: number
+  search?: string
+  page?: number
+  size?: number
+  sortBy?: string
+  direction?: 'ASC' | 'DESC'
+}

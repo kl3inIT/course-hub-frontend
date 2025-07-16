@@ -1,7 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useRef } from 'react'
 import {
   Card,
   CardContent,
@@ -9,6 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -16,41 +18,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { courseApi } from '@/services/course-api'
-import { DashboardCourseResponseDTO } from '@/types/course'
 import {
-  Award,
   BookOpen,
   Clock,
-  Download,
-  Flame,
+  Award,
   Play,
+  Download,
+  Trophy,
+  Calendar,
   Share2,
-  Trophy
 } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 import { CompletionCertificate } from './completion-certificate'
+import { courseApi } from '@/services/course-api'
+import { DashboardCourseResponseDTO } from '@/types/course'
+import { toast } from 'sonner'
 import { CourseCard } from './course-card'
-// Thêm import cho menu share
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Copy } from 'lucide-react'
-
-// Thêm hàm chờ phần tử xuất hiện trong DOM
-function waitForElement(selector: string, timeout: number = 2000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    function check() {
-      const el = document.querySelector(selector);
-      if (el) return resolve(el);
-      if (Date.now() - start > timeout) return reject();
-      setTimeout(check, 50);
-    }
-    check();
-  });
-}
 
 export function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
@@ -64,16 +47,11 @@ export function StudentDashboard() {
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const certificateRef = useRef<HTMLDivElement>(null)
+  const [showHiddenCertificate, setShowHiddenCertificate] = useState(false)
+  const hiddenCertificateRef = useRef<HTMLDivElement>(null)
   const [learningStreak, setLearningStreak] = useState(0)
-  const [showPdfCertificate, setShowPdfCertificate] = useState(false);
-  const [pendingExport, setPendingExport] = useState(false);
 
   useEffect(() => {
-    // Xóa các key không cần thiết trong localStorage
-    localStorage.removeItem('lastShownStreakDate');
-    localStorage.removeItem('lastShownStreakForToast');
-    localStorage.removeItem('lastStreakToastDate');
-
     const userData = localStorage.getItem('user')
     if (userData) {
       setUser(JSON.parse(userData))
@@ -157,73 +135,57 @@ export function StudentDashboard() {
     })
   }
 
-  // Thêm hàm tạo link chia sẻ
-  const getCertificateShareUrl = () => {
-    // Nếu có trang certificate public thì trả về link đó, tạm thời dùng trang profile hoặc trang completed course
-    if (selectedCertificate) {
-      // Ví dụ: `/profile/${user?.id}/certificate/${selectedCertificate.id}` hoặc `/courses/${selectedCertificate.title}`
-      // Ở đây dùng trang completed course
-      return `${window.location.origin}/courses/${selectedCertificate.title}`
-    }
-    return window.location.origin
-  }
+  const handleDownloadPDF = async () => {
+    if (user && selectedCertificate) {
+      setShowHiddenCertificate(true)
+      setTimeout(async () => {
+        if (hiddenCertificateRef.current) {
+          try {
+            // Check if running in browser
+            if (typeof window === 'undefined') {
+              console.error('PDF generation is only available in the browser')
+              toast.error('PDF generation is not available')
+              return
+            }
 
-  const handleShareFacebook = () => {
-    const url = encodeURIComponent(getCertificateShareUrl())
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank')
-  }
+            // Dynamic import with proper handling for Next.js
+            const html2pdf = (await import('html2pdf.js')) as any
 
-  const handleShareLinkedIn = () => {
-    const url = encodeURIComponent(getCertificateShareUrl())
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank')
-  }
+            const opt = {
+              margin: 0,
+              filename: `certificate-${selectedCertificate.title}.pdf`,
+              image: { type: 'jpeg', quality: 1 },
+              html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                foreignObjectRendering: true,
+              },
+              jsPDF: {
+                unit: 'px',
+                format: [1024, 724],
+                orientation: 'landscape' as const,
+              },
+            }
 
-  const handleCopyLink = async () => {
-    const url = getCertificateShareUrl()
-    try {
-      await navigator.clipboard.writeText(url)
-      toast.success('Link copied to clipboard!')
-    } catch {
-      toast.error('Failed to copy link')
-    }
-  }
-
-  const handleDownloadPDF = () => {
-    setShowPdfCertificate(true);
-    setPendingExport(true);
-  };
-
-  useEffect(() => {
-    if (pendingExport && showPdfCertificate) {
-      const exportPDF = async () => {
-        await new Promise(res => setTimeout(res, 200));
-        const pdfElement = document.getElementById('certificate-pdf');
-        if (!pdfElement) {
-          toast.error('Could not find certificate element for PDF export.');
-          setShowPdfCertificate(false);
-          setPendingExport(false);
-          return;
+            const pdfElement = document.getElementById('certificate-pdf')
+            if (pdfElement) {
+              await html2pdf().set(opt).from(pdfElement).save()
+            }
+            toast.success('Certificate downloaded successfully!')
+          } catch (error) {
+            console.error('Error generating PDF:', error)
+            toast.error('Failed to generate PDF. Please try again.')
+          }
         }
-        const html2pdfModule = await import('html2pdf.js');
-        const html2pdf = html2pdfModule.default || html2pdfModule;
-        const fileName = `certificate-${selectedCertificate?.title || 'course'}.pdf`;
-        const opt = {
-          margin: 0,
-          filename: fileName,
-          image: { type: 'jpeg', quality: 1 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'px', format: [1024, 724], orientation: 'landscape' as const }
-        };
-        await html2pdf().set(opt).from(pdfElement).save();
-        setShowPdfCertificate(false);
-        setPendingExport(false);
-      };
-      exportPDF();
+        setShowHiddenCertificate(false)
+      }, 200)
     }
-  }, [pendingExport, showPdfCertificate, selectedCertificate]);
+  }
 
   // Debug: log user khi render certificate ẩn
-  if (showCertificateModal && user) {
+  if (showHiddenCertificate && user) {
     console.log('DEBUG user for certificate:', user)
   }
 
@@ -243,7 +205,7 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Enrolled Courses
             </CardTitle>
-            <BookOpen className='h-5 w-5 text-blue-500' />
+            <BookOpen className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{enrolledCourses.length}</div>
@@ -258,7 +220,7 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Completed Courses
             </CardTitle>
-            <Trophy className='h-5 w-5 text-yellow-500' />
+            <Trophy className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{completedCourses.length}</div>
@@ -271,31 +233,25 @@ export function StudentDashboard() {
             <CardTitle className='text-sm font-medium'>
               Learning Streak
             </CardTitle>
-            <Flame className='h-5 w-5 text-orange-500' />
+            <Calendar className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold flex items-center gap-2'>
-              {learningStreak} days
-            </div>
-            <p className='text-xs text-muted-foreground'>
-              Keep it going!
-            </p>
+            <div className='text-2xl font-bold'>{learningStreak} days</div>
+            <p className='text-xs text-muted-foreground'>Keep it going!</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Study Time</CardTitle>
-            <Clock className='h-5 w-5 text-purple-500' />
+            <Clock className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {(
-                enrolledCourses.reduce(
-                  (acc, course) => acc + course.totalDuration,
-                  0
-                ) / 3600
-              ).toFixed(1)}
+              {enrolledCourses.reduce(
+                (acc, course) => acc + course.totalDuration,
+                0
+              )}
               h
             </div>
             <p className='text-xs text-muted-foreground'>Total duration</p>
@@ -472,7 +428,7 @@ export function StudentDashboard() {
         open={showCertificateModal}
         onOpenChange={setShowCertificateModal}
       >
-        <DialogContent className='max-w-6xl w-full max-h-[90vh] overflow-y-auto'>
+        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <Award className='h-5 w-5 text-yellow-500' />
@@ -486,47 +442,26 @@ export function StudentDashboard() {
 
           {selectedCertificate && user && (
             <div className='space-y-6 flex flex-col items-center'>
-              <div className="w-full flex justify-center">
-                <div ref={certificateRef} className="w-full max-w-5xl">
-                  <CompletionCertificate
-                    courseTitle={selectedCertificate.title}
-                    instructor={selectedCertificate.instructorName}
-                    completionDate={
-                      selectedCertificate.completedDate && !isNaN(Date.parse(selectedCertificate.completedDate))
-                        ? new Date(selectedCertificate.completedDate)
-                        : undefined
-                    }
-                    studentName={user.name || user.email || 'Student'}
-                    certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-                    elementId="certificate-modal"
-                    isPdfVersion={false}
-                  />
-                </div>
+              <div ref={certificateRef}>
+                <CompletionCertificate
+                  courseTitle={selectedCertificate.title}
+                  instructor={selectedCertificate.instructorName}
+                  completionDate={
+                    selectedCertificate.completedDate
+                      ? new Date(selectedCertificate.completedDate)
+                      : undefined
+                  }
+                  studentName={user.name || user.email || 'Student'}
+                  certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
+                  elementId='certificate-modal'
+                  isPdfVersion={false}
+                />
               </div>
               <div className='flex justify-center gap-4 mt-0'>
-                {/* Dropdown menu share */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant='outline' className='flex items-center gap-2'>
-                      <Share2 className='h-4 w-4' />
-                      Share Certificate
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='start'>
-                    <DropdownMenuItem onClick={handleShareFacebook}>
-                      <img src='https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg' alt='Facebook' className='h-4 w-4 mr-2' />
-                      Share on Facebook
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleShareLinkedIn}>
-                      <img src='https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/linkedin.svg' alt='LinkedIn' className='h-4 w-4 mr-2' />
-                      Share on LinkedIn
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleCopyLink}>
-                      <Copy className='h-4 w-4 mr-2' />
-                      Copy Link
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button variant='outline' className='flex items-center gap-2'>
+                  <Share2 className='h-4 w-4' />
+                  Share Certificate
+                </Button>
                 <Button
                   className='flex items-center gap-2'
                   onClick={handleDownloadPDF}
@@ -546,19 +481,19 @@ export function StudentDashboard() {
       </Dialog>
 
       {/* Render certificate ẩn ngoài modal để export PDF */}
-      {showPdfCertificate && selectedCertificate && (
-        <div style={{ display: 'none' }}>
+      {showHiddenCertificate && user && selectedCertificate && (
+        <div className='fixed left-[-9999px] top-0 w-0 h-0 overflow-hidden'>
           <CompletionCertificate
             courseTitle={selectedCertificate.title}
             instructor={selectedCertificate.instructorName}
             completionDate={
-              selectedCertificate.completedDate && !isNaN(Date.parse(selectedCertificate.completedDate))
+              selectedCertificate.completedDate
                 ? new Date(selectedCertificate.completedDate)
                 : undefined
             }
-            studentName={user?.name || user?.email || 'Student'}
+            studentName={user.name || user.email || 'Student'}
             certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-            elementId="certificate-pdf"
+            elementId='certificate-pdf'
             isPdfVersion={true}
           />
         </div>

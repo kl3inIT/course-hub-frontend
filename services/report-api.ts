@@ -46,7 +46,7 @@ export const reportApi = {
       const response = await httpClient.get(`/api/reports?${queryParams}`)
       return response.data
     } catch (error) {
-      console.error('Error fetching reports:', error)
+      // Error fetching reports
       throw error
     }
   },

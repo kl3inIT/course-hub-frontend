@@ -7,10 +7,12 @@ import { TestimonialsSection } from '@/components/testimonials-section'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+<<<<<<< HEAD
 import { useFeedbackDetail } from '@/hooks'
 import { categoryApi } from '@/services/category-api'
+=======
+>>>>>>> main
 import { courseApi } from '@/services/course-api'
-import { CategoryResponseDTO } from '@/types/category'
 import { CourseResponseDTO } from '@/types/course'
 import {
   Award,
@@ -26,44 +28,20 @@ import Link from 'next/link'
 import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-const Earth3D = dynamic(() => import('@/components/Earth3D'), { ssr: false })
+const Earth3D = dynamic(() => import('@/components/Earth3D'), {
+  ssr: false,
+  loading: () => (
+    <div className='w-[400px] h-[400px] animate-pulse bg-gradient-to-br from-blue-300/20 to-purple-400/20 rounded-full' />
+  ),
+})
 
 export default function HomePage() {
   const { showFeedback } = useFeedbackDetail()
   const [searchQuery, setSearchQuery] = useState('')
-  const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [featuredCourses, setFeaturedCourses] = useState<CourseResponseDTO[]>(
     []
   )
-  const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingFeaturedCourses, setLoadingFeaturedCourses] = useState(false)
-
-  // Fetch categories from API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoadingCategories(true)
-        const response = await categoryApi.getAllCategories({
-          page: 0,
-          size: 6,
-        })
-
-        // Sort by courseCount descending if available
-        const sortedCategories = response.data.content.sort((a, b) => {
-          const aCount = a.courseCount || 0
-          const bCount = b.courseCount || 0
-          return bCount - aCount
-        })
-        setCategories(sortedCategories)
-      } catch (error) {
-        console.error('Failed to fetch categories:', error)
-      } finally {
-        setLoadingCategories(false)
-      }
-    }
-
-    fetchCategories()
-  }, [])
 
   // Fetch featured courses from API
   useEffect(() => {
@@ -250,83 +228,6 @@ export default function HomePage() {
             <div className='text-center py-12'>
               <p className='text-muted-foreground'>
                 No featured courses available at the moment.
-              </p>
-            </div>
-          )}
-
-          <div className='text-center'>
-            <Link href='/courses'>
-              <Button variant='outline' size='lg'>
-                View All Courses
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Course Categories - Updated with real API data */}
-      <section className='py-16 px-4 bg-muted/50'>
-        <div className='container mx-auto space-y-8'>
-          <div className='text-center space-y-4'>
-            <h2 className='text-3xl font-bold'>Explore Categories</h2>
-            <p className='text-muted-foreground max-w-2xl mx-auto'>
-              Choose from a wide range of categories to find the perfect course
-              for your goals
-            </p>
-          </div>
-
-          {loadingCategories ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <Card key={i} className='animate-pulse'>
-                  <CardHeader>
-                    <div className='flex items-center gap-4'>
-                      <div className='w-12 h-12 bg-muted rounded-lg'></div>
-                      <div className='space-y-2'>
-                        <div className='h-4 bg-muted rounded w-24'></div>
-                        <div className='h-3 bg-muted rounded w-16'></div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='h-4 bg-muted rounded w-full'></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {categories.map(category => (
-                <Link
-                  key={category.id}
-                  href={`/courses?category=${encodeURIComponent(category.name)}`}
-                >
-                  <Card className='hover:shadow-lg transition-shadow cursor-pointer h-full'>
-                    <CardHeader>
-                      <div className='space-y-2'>
-                        <CardTitle className='text-lg'>
-                          {category.name}
-                        </CardTitle>
-                        <p className='text-sm text-muted-foreground'>
-                          {category.courseCount || 0} courses
-                        </p>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className='text-muted-foreground'>
-                        {category.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {!loadingCategories && categories.length === 0 && (
-            <div className='text-center py-12'>
-              <p className='text-muted-foreground'>
-                No categories available at the moment.
               </p>
             </div>
           )}

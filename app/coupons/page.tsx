@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -283,6 +285,14 @@ const FilterSidebar = memo(function FilterSidebar({
 })
 
 export default function CouponsPage() {
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <CouponsContent />
+    </ProtectedRoute>
+  )
+}
+
+function CouponsContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState({
@@ -291,7 +301,7 @@ export default function CouponsPage() {
     percentage: '',
   })
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
-  const [isFilterVisible, setIsFilterVisible] = useState(true)
+  const [isFilterVisible, _setIsFilterVisible] = useState(true)
   const [activeTab, setActiveTab] = useState('available')
   const [copiedCodes, setCopiedCodes] = useState<Record<string, boolean>>({})
   const discountInputRef = useRef<HTMLInputElement>(null)
@@ -346,8 +356,7 @@ export default function CouponsPage() {
         setIsLoading(false)
         // Initial coupon fetch
         await fetchCoupons(0)
-      } catch (error) {
-        console.error('Error fetching data:', error)
+      } catch (_error) {
         toast.error('Failed to load data', {
           description: 'Please try refreshing the page.',
         })
@@ -392,7 +401,7 @@ export default function CouponsPage() {
   }, [fetchCoupons])
 
   // Get category and course names
-  const getCategoryNames = useCallback(
+  const _getCategoryNames = useCallback(
     (categoryIds: number[]) => {
       if (!categoryIds) return ''
       return allCategories
@@ -403,7 +412,7 @@ export default function CouponsPage() {
     [allCategories]
   )
 
-  const getCourseNames = useCallback(
+  const _getCourseNames = useCallback(
     (courseIds: number[]) => {
       if (!courseIds) return ''
       return allCourses
@@ -583,7 +592,7 @@ export default function CouponsPage() {
   }
 
   // Format currency
-  const formatCurrency = (amount: number) => {
+  const _formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -627,7 +636,7 @@ export default function CouponsPage() {
     }
   }
 
-  const handleCopyCode = async (code: string) => {
+  const _handleCopyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
       setCopiedCodes(prev => ({ ...prev, [code]: true }))
@@ -640,7 +649,7 @@ export default function CouponsPage() {
       setTimeout(() => {
         setCopiedCodes(prev => ({ ...prev, [code]: false }))
       }, 2000)
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to copy', {
         description: 'Please try copying the code manually.',
       })

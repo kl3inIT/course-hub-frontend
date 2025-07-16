@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 export default function ManagerPage() {
   return (
     <RoleGuard
-      allowedRoles={['learner', 'manager', 'admin']}
+      allowedRoles={['manager', 'admin']}
       redirectOnUnauthorized={true}
     >
       <SidebarProvider>

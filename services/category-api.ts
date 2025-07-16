@@ -1,10 +1,10 @@
 import { httpClient } from '@/services/http-client'
-import { ApiResponse, Page } from '@/types/common'
 import {
   CategoryRequestDTO,
   CategoryResponseDTO,
   CategorySearchParams,
 } from '@/types/category'
+import { ApiResponse, Page } from '@/types/common'
 
 export const categoryApi = {
   getAllCategories: async (
@@ -21,7 +21,7 @@ export const categoryApi = {
   },
 
   getCategoryById: async (
-    id: string
+    id: number
   ): Promise<ApiResponse<CategoryResponseDTO>> => {
     const response = await httpClient.get(`/api/categories/${id}`)
     return response.data
@@ -35,7 +35,7 @@ export const categoryApi = {
   },
 
   updateCategory: async (
-    id: string,
+    id: number,
     data: CategoryRequestDTO
   ): Promise<ApiResponse<CategoryResponseDTO>> => {
     const response = await httpClient.put(`/api/categories/${id}`, data)

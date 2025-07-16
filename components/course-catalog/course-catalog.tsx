@@ -1,8 +1,9 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -10,20 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useDebounce } from '@/hooks/use-debounce'
-import { categoryApi } from '@/services/category-api'
+import { Search, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { courseApi } from '@/services/course-api'
-import { CategoryResponseDTO } from '@/types/category'
+import { categoryApi } from '@/services/category-api'
+import { useSearchParams } from 'next/navigation'
 import {
   CourseResponseDTO,
-  CourseSearchParams,
   CourseSearchStatsResponseDTO,
+  CourseSearchParams,
 } from '@/types/course'
-import { ChevronLeft, ChevronRight, Loader2, Search, X } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
-import { CourseFilterSidebar } from './course-filter-sidebar'
+import { CategoryResponseDTO } from '@/types/category'
+import { useDebounce } from '@/hooks/use-debounce'
 import { CoursesCatalogSection } from './courses-catalog-section'
+import { CourseFilterSidebar } from './course-filter-sidebar'
 
 const levels = ['Beginner', 'Intermediate', 'Advanced']
 const sortOptions = [
@@ -42,7 +42,6 @@ export function CourseCatalog() {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([])
   const [priceFilter, setPriceFilter] = useState<string>('all')
   const [priceRange, setPriceRange] = useState([0, 200])
-  const [minRating, setMinRating] = useState<number | undefined>()
   const [isFree, setIsFree] = useState<boolean | undefined>()
   const [isDiscounted, setIsDiscounted] = useState<boolean | undefined>()
   const [sortBy, setSortBy] = useState('relevance')
@@ -91,10 +90,6 @@ export function CourseCatalog() {
 
   const handlePriceRangeChange = useCallback((value: number[]) => {
     setPriceRange(value)
-  }, [])
-
-  const handleMinRatingChange = useCallback((value: number | undefined) => {
-    setMinRating(value)
   }, [])
 
   const handleIsFreeChange = useCallback((value: boolean | undefined) => {
@@ -170,29 +165,28 @@ export function CourseCatalog() {
               ? categories.find(cat => cat.name === selectedCategories[0])?.id
               : undefined,
           level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
+          // Fix price filter logic - Only apply price filters when explicitly set
           minPrice:
-            priceFilter === 'paid'
-              ? priceRange[0]
-              : priceFilter === 'all' && searchStats && priceRange[0] > searchStats.minPrice
-                ? priceRange[0]
-                : undefined,
-          maxPrice:
             priceFilter === 'free'
               ? 0
-              : priceFilter === 'all' && searchStats && priceRange[1] < searchStats.maxPrice
-                ? priceRange[1]
-                : undefined,
-          minRating: minRating,
-          isFree: isFree,
+              : priceFilter === 'paid'
+                ? Math.max(1, priceRange[0])
+                : undefined, // Don't filter by minPrice when 'all'
+          maxPrice: priceFilter === 'free' ? 0 : undefined, // Don't filter by maxPrice when 'all'
+          isFree: priceFilter === 'free' ? true : isFree,
           isDiscounted: isDiscounted,
           sortBy:
-            sortBy === 'price-low' || sortBy === 'price-high'
+            sortBy === 'price-low'
               ? 'price'
-              : sortBy === 'newest'
-                ? 'createdDate'
-                : sortBy === 'rating'
-                  ? 'averageRating'
-                  : undefined,
+              : sortBy === 'price-high'
+                ? 'price'
+                : sortBy === 'newest'
+                  ? 'createdDate'
+                  : sortBy === 'relevance'
+                    ? 'title' // Use title for relevance sort instead of averageRating
+                    : sortBy === 'rating'
+                      ? 'createdDate' // Fallback to createdDate since averageRating is calculated
+                      : undefined,
           sortDirection:
             sortBy === 'price-low'
               ? 'asc'
@@ -202,7 +196,19 @@ export function CourseCatalog() {
                   ? 'desc'
                   : sortBy === 'rating'
                     ? 'desc'
-                    : undefined,
+                    : sortBy === 'relevance'
+                      ? 'asc'
+                      : undefined,
+        }
+
+        // Client-side validation before sending request
+        if (
+          searchParams.minPrice &&
+          searchParams.maxPrice &&
+          searchParams.minPrice > searchParams.maxPrice
+        ) {
+          setError('Minimum price cannot be greater than maximum price')
+          return
         }
 
         console.log('Search params being sent:', searchParams)
@@ -213,6 +219,7 @@ export function CourseCatalog() {
         // Lấy dữ liệu từ response có cấu trúc PagedResponse
         const { content = [], page = { totalPages: 0, totalElements: 0 } } =
           coursesResponse.data || {}
+
         setCourses(content)
         setTotalPages(page.totalPages || 0)
         setTotalElements(page.totalElements || 0)
@@ -237,7 +244,6 @@ export function CourseCatalog() {
     selectedLevels,
     priceFilter,
     priceRange,
-    minRating,
     isFree,
     isDiscounted,
     sortBy,
@@ -254,7 +260,6 @@ export function CourseCatalog() {
     selectedLevels,
     priceFilter,
     priceRange,
-    minRating,
     isFree,
     isDiscounted,
     sortBy,
@@ -266,7 +271,6 @@ export function CourseCatalog() {
     setSelectedLevels([])
     setPriceFilter('all')
     setPriceRange([0, 200])
-    setMinRating(undefined)
     setIsFree(undefined)
     setIsDiscounted(undefined)
     setSortBy('relevance')
@@ -278,7 +282,6 @@ export function CourseCatalog() {
     selectedLevels.length +
     (priceFilter !== 'all' ? 1 : 0) +
     (searchTerm ? 1 : 0) +
-    (minRating ? 1 : 0) +
     (isFree ? 1 : 0) +
     (isDiscounted ? 1 : 0)
 
@@ -484,15 +487,7 @@ export function CourseCatalog() {
               />
             </Badge>
           )}
-          {minRating && (
-            <Badge variant='secondary' className='flex items-center gap-1'>
-              Rating: {minRating}+
-              <X
-                className='h-3 w-3 cursor-pointer'
-                onClick={() => setMinRating(undefined)}
-              />
-            </Badge>
-          )}
+
           {isFree && (
             <Badge variant='secondary' className='flex items-center gap-1'>
               Free Courses
@@ -523,8 +518,6 @@ export function CourseCatalog() {
           levels={levels}
           selectedLevels={selectedLevels}
           onLevelChange={handleLevelChange}
-          minRating={minRating}
-          setMinRating={handleMinRatingChange}
           priceFilter={priceFilter}
           setPriceFilter={handlePriceFilterChange}
           priceRange={priceRange}

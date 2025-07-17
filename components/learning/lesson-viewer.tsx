@@ -351,28 +351,6 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
 
   return (
     <div className='max-w-7xl mx-auto space-y-6'>
-      {/* Admin/Manager Access Indicator */}
-      {(user?.role === 'manager' || user?.role === 'admin') && (
-        <Alert className='bg-blue-50 border-blue-200'>
-          <Shield className='h-4 w-4 text-blue-600' />
-          <AlertDescription>
-            <div className='flex items-center justify-between'>
-              <div>
-                <span className='font-medium text-blue-800'>
-                  {user.role === 'admin' ? 'Administrator' : 'Manager'} Access
-                </span>
-                <p className='text-blue-700 text-sm mt-1'>
-                  You have full access to this course without enrollment.
-                </p>
-              </div>
-              <Badge variant='secondary' className='bg-blue-100 text-blue-800'>
-                {user.role.toUpperCase()}
-              </Badge>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Breadcrumb Navigation */}
       <Breadcrumb>
         <BreadcrumbList>

@@ -1,6 +1,6 @@
 'use client'
 
-import { ProtectedRoute } from '@/components/auth/protected-route'
+import { RoleGuard } from '@/components/auth/role-guard'
 import FeedbackDetail from '@/components/feedback/FeedbackDetail'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { Badge } from '@/components/ui/badge'
@@ -191,7 +191,7 @@ export default function AdminFeedbackPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['admin']} requireAuth={true}>
+    <RoleGuard allowedRoles={['admin']} redirectOnUnauthorized={true}>
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
@@ -432,6 +432,6 @@ export default function AdminFeedbackPage() {
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </ProtectedRoute>
+    </RoleGuard>
   )
 }

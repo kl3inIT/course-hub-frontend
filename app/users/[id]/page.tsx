@@ -1,4 +1,5 @@
 import { UserDetail } from '@/components/profile/user-detail'
+import { Navbar } from '@/components/layout/navbar'
 import { Suspense, use } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -13,10 +14,13 @@ export default function UserPage({ params }: UserPageProps) {
   const userId = resolvedParams.id
 
   return (
-    <div className='container py-6'>
-      <Suspense fallback={<UserDetailSkeleton />}>
-        <UserDetail userId={userId} />
-      </Suspense>
+    <div className='min-h-screen bg-background'>
+      <Navbar />
+      <div className='container py-6'>
+        <Suspense fallback={<UserDetailSkeleton />}>
+          <UserDetail userId={userId} />
+        </Suspense>
+      </div>
     </div>
   )
 }

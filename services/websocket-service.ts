@@ -18,18 +18,19 @@ class WebSocketService {
       return 'http://localhost:8080/ws'
     }
     
-    // Production - convert HTTPS to WSS
+    // Production - SockJS needs HTTP/HTTPS URLs, not WS/WSS
+    // It will auto-upgrade to WebSocket (WSS) if available
     if (apiUrl.startsWith('https://')) {
-      return apiUrl.replace('https://', 'wss://') + '/ws'
+      return apiUrl + '/ws'  // Keep https:// for SockJS
     }
     
     // Fallback for HTTP
     if (apiUrl.startsWith('http://')) {
-      return apiUrl.replace('http://', 'ws://') + '/ws'
+      return apiUrl + '/ws'  // Keep http:// for SockJS
     }
     
-    // Default fallback
-    return 'wss://api.coursehub.io.vn/ws'
+    // Default fallback - use HTTPS for production
+    return 'https://api.coursehub.io.vn/ws'
   }
 
   connect(token: string, onConnect?: () => void) {

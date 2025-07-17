@@ -51,13 +51,13 @@ export function useNotificationSocket(
         return 'http://localhost:8080/ws'
       }
       
-      // Production - convert HTTPS to WSS
+      // Production - SockJS needs HTTPS URLs (auto-upgrades to WSS)
       if (apiUrl.startsWith('https://')) {
-        return apiUrl.replace('https://', 'wss://') + '/ws'
+        return apiUrl + '/ws'  // Keep https:// for SockJS
       }
       
       // Fallback
-      return 'wss://api.coursehub.io.vn/ws'
+      return 'https://api.coursehub.io.vn/ws'
     }
 
     const wsUrl = getWebSocketUrl()

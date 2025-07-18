@@ -172,3 +172,11 @@ export interface CourseEnrollmentStats {
   completionRate: number // Double -> number (percentage)
   averageRating: number // Double -> number
 }
+
+export interface Course {
+  id: number
+  title: string
+  description: string
+  thumbnail: string
+  enrollmentCount: number
+}

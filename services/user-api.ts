@@ -1,13 +1,7 @@
 import { httpClient } from '@/services/http-client'
-import { ApiResponse, Page } from '@/types/common'
+import { ApiResponse } from '@/types/common'
 import { CouponSearchParams, PaginatedCouponResponse } from '@/types/discount'
-import {
-  CreateManagerRequest,
-  ProfileData,
-  User,
-  UserDetail,
-  UserSearchParams,
-} from '@/types/user'
+import { ProfileData, UserDetail } from '@/types/user'
 
 export const userApi = {
   // Get user's own profile info
@@ -18,7 +12,7 @@ export const userApi = {
 
   // Get user profile by ID
   getUserProfile: async (userId: string): Promise<ApiResponse<UserDetail>> => {
-    const response = await httpClient.get(`/api/users/profile/${userId}`)
+    const response = await httpClient.get(`/api/users/${userId}`)
     return response.data
   },
 
@@ -80,59 +74,5 @@ export const userApi = {
   getActiveUserCount: async (): Promise<number> => {
     const response = await httpClient.get('/api/users/active')
     return response.data.data
-  },
-
-  // Admin APIs
-  admin: {
-    // Get all users with pagination and filters
-    getUsers: async (
-      params: UserSearchParams
-    ): Promise<ApiResponse<Page<User>>> => {
-      const response = await httpClient.get('/api/admin/users', { params })
-      return response.data
-    },
-
-    // Create new manager
-    createManager: async (
-      data: CreateManagerRequest
-    ): Promise<ApiResponse<User>> => {
-      const response = await httpClient.post('/api/admin/users', data)
-      return response.data
-    },
-
-    // Update user status
-    updateUserStatus: async (
-      userId: string,
-      status: 'active' | 'banned'
-    ): Promise<ApiResponse<void>> => {
-      const response = await httpClient.put(
-        `/api/admin/users/${userId}/status`,
-        null,
-        { params: { status } }
-      )
-      return response.data
-    },
-
-    // Delete user (manager only)
-    deleteUser: async (userId: string): Promise<ApiResponse<void>> => {
-      const response = await httpClient.delete(`/api/admin/users/${userId}`)
-      return response.data
-    },
-
-    // Warn user
-    warnUser: async (
-      userId: number,
-      resourceType?: string,
-      resourceId?: number
-    ): Promise<ApiResponse<void>> => {
-      const response = await httpClient.post(
-        `/api/admin/users/${userId}/warn`,
-        {
-          resourceType,
-          resourceId,
-        }
-      )
-      return response.data
-    },
   },
 }

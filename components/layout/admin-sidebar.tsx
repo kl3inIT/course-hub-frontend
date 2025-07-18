@@ -26,11 +26,10 @@ import {
 import { useAuth } from '@/context/auth-context'
 import {
   BarChart3,
-  CreditCard,
   Flag,
   Home,
   LogOut,
-  MessageSquare,
+  Megaphone,
   Settings,
   Shield,
   Users,
@@ -50,24 +49,14 @@ const navigationItems = [
     icon: Users,
   },
   {
-    title: 'Transaction Management',
-    url: '/admin/transactions',
-    icon: CreditCard,
+    title: 'Announcement Management',
+    url: '/admin/announcements',
+    icon: Megaphone,
   },
   {
     title: 'Report Management',
     url: '/admin/reports',
     icon: Flag,
-  },
-  {
-    title: 'Feedback Management',
-    url: '/admin/feedback',
-    icon: MessageSquare,
-  },
-  {
-    title: 'System Settings',
-    url: '/admin/settings',
-    icon: Settings,
   },
 ]
 

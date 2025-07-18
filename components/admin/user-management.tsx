@@ -1,537 +1,206 @@
 'use client'
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Toaster } from '@/components/ui/toaster'
-import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
-import { User } from '@/types/user'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { format } from 'date-fns'
+import { adminApi } from '@/services/admin-api'
+import { User, UserStatus } from '@/types/user'
 import {
-  Ban,
-  CheckCircle,
-  Eye,
-  GraduationCap,
-  MoreHorizontal,
-  Search,
-  Trash2,
-  Users,
-} from 'lucide-react'
+  CourseStats,
+  CreateManagerRequest,
+  PaginationState,
+  UserStats,
+} from '@/types/user-management'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
-
-const BACKEND_URL = 'http://localhost:8080'
-
-// Add form schema
-const createManagerSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Name must be at least 2 characters')
-    .nonempty('Name is required'),
-  email: z
-    .string()
-    .nonempty('Email is required')
-    .email('Invalid email address'),
-})
-
-type CreateManagerForm = z.infer<typeof createManagerSchema>
+import { toast } from 'sonner'
+import {
+  CreateManagerDialog,
+  Pagination,
+  UserFilters,
+  UserStatsCards,
+  UserTable,
+} from './user-management/'
 
 export function UserManagement() {
-  const { toast } = useToast()
-  const { getToken } = useAuth()
+  const { toast: showToast } = useToast()
   const router = useRouter()
   const [isCreateManagerOpen, setIsCreateManagerOpen] = useState(false)
-
-  const form = useForm<CreateManagerForm>({
-    resolver: zodResolver(createManagerSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-    },
-  })
-
-  // Constants
-  const ITEMS_PER_PAGE_OPTIONS = [
-    { value: '5', label: '5 / page' },
-    { value: '10', label: '10 / page' },
-    { value: '20', label: '20 / page' },
-    { value: '50', label: '50 / page' },
-  ]
-
-  const STATUS_OPTIONS = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'banned', label: 'Banned' },
-  ]
-
-  // States
+  const [isLoading, setIsLoading] = useState(true)
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('all')
-  const [activeTab, setActiveTab] = useState('learner')
-  const [isLoading, setIsLoading] = useState(true)
-  const [userStats, setUserStats] = useState({
+  const [selectedStatus, setSelectedStatus] = useState<'all' | UserStatus>(
+    'all'
+  )
+  const [activeTab, setActiveTab] = useState<'learner' | 'manager'>('learner')
+  const [userStats, setUserStats] = useState<UserStats>({
     total: 0,
     active: 0,
     banned: 0,
+    inactive: 0,
   })
-  const [pagination, setPagination] = useState({
+  const [courseStats, setCourseStats] = useState<CourseStats>({
+    totalCourses: 0,
+  })
+  const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 0,
     totalPages: 0,
     totalElements: 0,
     pageSize: 10,
   })
 
-  // Effects
   useEffect(() => {
-    setPagination(prev => ({ ...prev, currentPage: 0 }))
-    fetchUsers()
+    setPagination(prev => {
+      const next = { ...prev, currentPage: 0 }
+      fetchUsers(next, true)
+      return next
+    })
+    fetchCourseStats()
   }, [activeTab, selectedStatus])
 
-  useEffect(() => {
-    fetchUsers()
-  }, [pagination.currentPage, pagination.pageSize])
-
-  // API Calls
-  const fetchUsersWithStatus = async (status: string) => {
-    const response = await fetch(
-      `${BACKEND_URL}/api/admin/users?pageSize=1&pageNo=0&role=${activeTab.toUpperCase()}&status=${status}`,
-      {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
-    )
-    if (!response.ok) return 0
-    const data = await response.json()
-    return data.data?.totalElements || 0
+  const fetchCourseStats = async () => {
+    try {
+      const totalCourses = await adminApi.getTotalCourseStats(activeTab)
+      setCourseStats({ totalCourses: totalCourses || 0 })
+    } catch {
+      setCourseStats({ totalCourses: 0 })
+    }
   }
 
-  const fetchUsers = async () => {
+  const fetchUsersWithStatus = async (
+    status: UserStatus | 'all'
+  ): Promise<number> => {
     try {
-      const token = getToken()
-      if (!token) {
-        toast({
-          title: 'Error',
-          description: 'No auth token',
-          variant: 'destructive',
-        })
-        return
-      }
+      const allUsersResponse = await adminApi.getAllUsers({
+        pageSize: 1000,
+        pageNo: 0,
+        role: activeTab,
+        status: 'all',
+      })
+      if (!allUsersResponse.data?.content) return 0
+      return status === 'all'
+        ? allUsersResponse.data.content.length
+        : allUsersResponse.data.content.filter(user => user.status === status)
+            .length
+    } catch {
+      return 0
+    }
+  }
 
-      // Fetch stats on first page
-      if (pagination.currentPage === 0) {
-        const [activeCount, bannedCount] = await Promise.all([
-          fetchUsersWithStatus('active'),
-          fetchUsersWithStatus('banned'),
-        ])
-
-        setUserStats({
-          total: activeCount + bannedCount,
-          active: activeCount,
-          banned: bannedCount,
-        })
-      }
-
-      // Fetch current page data
-      const queryParams = new URLSearchParams({
-        pageSize: pagination.pageSize.toString(),
-        pageNo: pagination.currentPage.toString(),
-        role: activeTab.toUpperCase(),
-        status: selectedStatus !== 'all' ? selectedStatus : '',
+  const fetchUsers = async (
+    customPagination?: PaginationState,
+    fetchStats = false
+  ) => {
+    try {
+      setIsLoading(true)
+      const pag = customPagination || pagination
+      const usersApiPromise = adminApi.getAllUsers({
+        pageSize: pag.pageSize,
+        pageNo: pag.currentPage,
+        role: activeTab,
+        status: selectedStatus,
       })
 
-      const response = await fetch(
-        `${BACKEND_URL}/api/admin/users?${queryParams}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(
-          (await response.json()).message || 'Failed to fetch users'
-        )
+      let statsPromise: Promise<[number, number, number]> | undefined
+      if (fetchStats || pag.currentPage === 0) {
+        statsPromise = Promise.all([
+          fetchUsersWithStatus(UserStatus.ACTIVE),
+          fetchUsersWithStatus(UserStatus.BANNED),
+          fetchUsersWithStatus(UserStatus.INACTIVE),
+        ])
       }
 
-      const { data } = await response.json()
-      if (!data) throw new Error('Failed to fetch users')
-
+      const usersApiResponse = await usersApiPromise
+      const statsResponse = statsPromise ? await statsPromise : undefined
+      const data = usersApiResponse.data
       setUsers(data.content || [])
       setPagination(prev => ({
         ...prev,
-        totalElements: data.totalElements || 0,
-        totalPages: data.totalPages || 0,
+        totalElements: data.page.totalElements ?? 0,
+        totalPages: data.page.totalPages ?? 0,
+        currentPage: data.page.pageNumber ?? prev.currentPage,
       }))
+      if (statsResponse) {
+        const [activeCount, bannedCount, inactiveCount] = statsResponse
+        setUserStats({
+          total: (activeCount || 0) + (bannedCount || 0) + (inactiveCount || 0),
+          active: activeCount || 0,
+          banned: bannedCount || 0,
+          inactive: inactiveCount || 0,
+        })
+      }
     } catch (error: any) {
-      console.error('Error fetching users:', error)
-      toast({
+      showToast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
       })
       setUsers([])
-      setPagination(prev => ({
-        ...prev,
-        totalElements: 0,
-        totalPages: 0,
-      }))
-      if (pagination.currentPage === 0) {
-        setUserStats({ total: 0, active: 0, banned: 0 })
-      }
+      setPagination(prev => ({ ...prev, totalElements: 0, totalPages: 0 }))
+      setUserStats({ total: 0, active: 0, banned: 0, inactive: 0 })
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handlers
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, currentPage: newPage }))
+    setPagination({ ...pagination, currentPage: newPage })
+    fetchUsers({ ...pagination, currentPage: newPage })
   }
-
   const handlePageSizeChange = (newSize: number) => {
-    setPagination(prev => ({
-      ...prev,
-      pageSize: newSize,
-      currentPage: 0,
-    }))
+    setPagination({ ...pagination, pageSize: newSize, currentPage: 0 })
+    fetchUsers({ ...pagination, pageSize: newSize, currentPage: 0 })
   }
-
-  const handleUpdateUserStatus = async (
-    userId: string,
-    newStatus: 'active' | 'banned'
-  ) => {
+  const handleUpdateUserStatus = async (userId: number, status: UserStatus) => {
     try {
-      const token = getToken()
-      if (!token) {
-        toast({
-          title: 'Error',
-          description: 'No auth token',
-          variant: 'destructive',
-        })
-        return
-      }
-
-      const response = await fetch(
-        `${BACKEND_URL}/api/admin/users/${userId}/status`,
-        {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${token}` },
-          body: new URLSearchParams({ status: newStatus }),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(
-          (await response.json()).message || 'Failed to update user status'
-        )
-      }
-
-      setUsers(
-        users.map(u => (u.id === userId ? { ...u, status: newStatus } : u))
-      )
-
-      toast({
-        description: `User status updated to ${newStatus}`,
+      await adminApi.updateUserStatus(userId, status)
+      showToast({
+        title: 'Success',
+        description: 'User status updated successfully.',
       })
-    } catch (error: any) {
-      console.error('Error updating status:', error)
-      toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      const token = getToken()
-      if (!token) {
-        toast({
-          title: 'Error',
-          description: 'No auth token',
-          variant: 'destructive',
-        })
-        return
-      }
-
-      const response = await fetch(`${BACKEND_URL}/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      if (!response.ok) {
-        throw new Error(
-          (await response.json()).message || 'Failed to delete user'
-        )
-      }
-
-      setUsers(users.filter(u => u.id !== userId))
-      toast({ description: 'User deleted successfully' })
       fetchUsers()
     } catch (error: any) {
-      console.error('Error deleting user:', error)
-      toast({
+      showToast({
         title: 'Error',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
+        description:
+          error.response?.data?.message || 'Failed to update user status.',
       })
     }
   }
-
-  const handleViewProfile = async (userId: string) => {
-    try {
-      const token = getToken()
-      if (!token) {
-        toast({
-          title: 'Error',
-          description: 'No auth token',
-          variant: 'destructive',
-        })
-        return
-      }
-
-      const response = await fetch(
-        `${BACKEND_URL}/api/admin/users/${userId}/detail`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(
-          (await response.json()).message || 'Failed to access user profile'
-        )
-      }
-
-      router.push(`/admin/users/${userId}/detail`)
-    } catch (error: any) {
-      console.error('Error accessing profile:', error)
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to access user profile',
-        variant: 'destructive',
-      })
-    }
+  const handleViewProfile = (userId: number) => {
+    router.push(`/admin/users/${userId}/detail`)
   }
-
-  // Computed values
-  const displayedUsers = users.filter(user => {
-    if (!searchTerm) return true
-    return (
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })
-
-  // Render helpers
-  const renderStatsCard = (
-    title: string,
-    value: number,
-    icon: React.ReactNode
-  ) => (
-    <Card>
-      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-        <CardTitle className='text-sm font-medium'>{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className='text-2xl font-bold'>{value}</div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderPaginationControls = () => (
-    <div className='flex items-center justify-between space-x-2 py-4'>
-      <div className='flex-1 text-sm text-muted-foreground'>
-        {displayedUsers.length > 0
-          ? `Showing ${pagination.currentPage * pagination.pageSize + 1} to ${Math.min(
-              (pagination.currentPage + 1) * pagination.pageSize,
-              pagination.totalElements
-            )} of ${pagination.totalElements} ${activeTab}s`
-          : `No ${activeTab}s found`}
-      </div>
-      <div className='flex items-center space-x-2'>
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => handlePageChange(pagination.currentPage - 1)}
-          disabled={
-            pagination.currentPage === 0 || pagination.totalElements === 0
-          }
-        >
-          Previous
-        </Button>
-        {pagination.totalElements > 0 && (
-          <div className='flex items-center justify-center text-sm font-medium'>
-            Page {pagination.currentPage + 1} of {pagination.totalPages}
-          </div>
-        )}
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => handlePageChange(pagination.currentPage + 1)}
-          disabled={
-            pagination.currentPage >= pagination.totalPages - 1 ||
-            pagination.totalElements === 0
-          }
-        >
-          Next
-        </Button>
-        <Select
-          value={pagination.pageSize.toString()}
-          onValueChange={value => handlePageSizeChange(Number(value))}
-        >
-          <SelectTrigger className='w-[110px]'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ITEMS_PER_PAGE_OPTIONS.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  )
-
-  // Helper functions
-  const formatJoinDate = (date: string | undefined) => {
-    if (!date) return '-'
+  const handleCreateManager = async (data: CreateManagerRequest) => {
     try {
-      const dateObj = new Date(date)
-      if (isNaN(dateObj.getTime())) return '-'
-      return format(dateObj, 'dd/MM/yyyy')
-    } catch (error) {
-      console.error('Invalid date:', date)
-      return '-'
-    }
-  }
-
-  const onCreateManager = async (data: CreateManagerForm) => {
-    try {
-      const token = getToken()
-      if (!token) {
-        toast({
-          title: 'Error',
-          description: 'No auth token',
-          variant: 'destructive',
-        })
-        return
-      }
-
-      const response = await fetch(
-        `${BACKEND_URL}/api/admin/users/create-manager`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(
-          (await response.json()).message || 'Failed to create manager'
-        )
-      }
-
-      const responseData = await response.json()
-      if (!responseData.data) {
-        throw new Error('Failed to create manager')
-      }
-
+      await adminApi.createManager(data)
       await fetchUsers()
       setIsCreateManagerOpen(false)
-      form.reset()
-
-      toast({
-        title: 'Manager Created',
-        description:
-          'An email with login credentials has been sent to the manager.',
-      })
+      toast.success(
+        'An email with login credentials has been sent to the manager.'
+      )
     } catch (error: any) {
-      console.error('Error creating manager:', error)
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create manager',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to create manager')
     }
   }
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'learner' | 'manager')
+    setSearchTerm('')
+    setSelectedStatus('all')
+  }
 
-  if (isLoading) {
+  const displayedUsers = users.filter(
+    user =>
+      !searchTerm ||
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (isLoading)
     return (
       <div className='flex items-center justify-center min-h-[400px]'>
         <div className='text-center space-y-3'>
@@ -539,383 +208,95 @@ export function UserManagement() {
         </div>
       </div>
     )
-  }
 
   return (
     <div className='space-y-6'>
-      <Toaster />
-
-      {/* Stats Cards */}
-      <div
-        className={`grid gap-4 md:grid-cols-2 ${activeTab === 'learner' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
-      >
-        {renderStatsCard(
-          activeTab === 'learner' ? 'Total Learners' : 'Total Managers',
-          userStats.total,
-          <Users className='h-4 w-4 text-muted-foreground' />
-        )}
-        {renderStatsCard(
-          'Active',
-          userStats.active,
-          <CheckCircle className='h-4 w-4 text-green-600' />
-        )}
-        {activeTab === 'learner' &&
-          renderStatsCard(
-            'Banned',
-            userStats.banned,
-            <Ban className='h-4 w-4 text-red-600' />
-          )}
-        {renderStatsCard(
-          activeTab === 'learner' ? 'Enrolled Courses' : 'Managed Courses',
-          0,
-          <GraduationCap className='h-4 w-4 text-blue-600' />
-        )}
-      </div>
-
-      {/* User Management with Tabs */}
+      <UserStatsCards
+        userStats={userStats}
+        courseStats={courseStats}
+        activeTab={activeTab}
+      />
       <Card>
         <CardHeader>
           <div className='flex items-center justify-between'>
             <div>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Manage user accounts, roles, and permissions
-              </CardDescription>
+              <CardTitle>List of Users</CardTitle>
+              <CardDescription>List of users in the system</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs
-            defaultValue='learner'
+            value={activeTab}
             className='space-y-4'
-            onValueChange={value => {
-              setActiveTab(value)
-              setSearchTerm('') // Reset search when changing tabs
-              setSelectedStatus('all') // Reset status filter when changing tabs
-            }}
+            onValueChange={handleTabChange}
           >
             <TabsList>
               <TabsTrigger value='learner'>Learners</TabsTrigger>
               <TabsTrigger value='manager'>Managers</TabsTrigger>
             </TabsList>
-
-            {/* Learner Tab Content */}
             <TabsContent value='learner'>
-              <div className='flex items-center space-x-2 mb-4'>
-                <div className='relative flex-1'>
-                  <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-                  <Input
-                    placeholder='Search learners...'
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className='pl-8'
-                  />
+              <UserFilters
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                selectedStatus={selectedStatus}
+                onStatusChange={setSelectedStatus}
+                activeTab={activeTab}
+              />
+              {displayedUsers.length > 0 ? (
+                <UserTable
+                  users={displayedUsers}
+                  activeTab='learner'
+                  onViewProfile={handleViewProfile}
+                  onUpdateUserStatus={handleUpdateUserStatus}
+                />
+              ) : (
+                <div className='text-center p-8 border-t'>
+                  No learners found.
                 </div>
-                <Select
-                  value={selectedStatus}
-                  onValueChange={setSelectedStatus}
-                >
-                  <SelectTrigger className='w-[150px]'>
-                    <SelectValue placeholder='Filter by status' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Enrolled Courses</TableHead>
-                    <TableHead className='text-right'>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedUsers
-                    .filter(user => user.role === 'learner')
-                    .map(user => (
-                      <TableRow key={user.id}>
-                        <TableCell className='font-medium'>
-                          <div className='flex items-center space-x-3'>
-                            <Avatar className='h-8 w-8'>
-                              <AvatarImage
-                                src={
-                                  user.avatar ||
-                                  '/placeholder.svg?height=32&width=32'
-                                }
-                              />
-                              <AvatarFallback>
-                                {user.name
-                                  ? user.name
-                                      .split(' ')
-                                      .map(n => n[0])
-                                      .join('')
-                                  : user.email?.charAt(0).toUpperCase() || 'U'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className='font-medium'>{user.name}</div>
-                              <div className='text-sm text-muted-foreground'>
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              user.status === 'active'
-                                ? 'default'
-                                : 'destructive'
-                            }
-                          >
-                            {user.status === 'active' ? 'Active' : 'Banned'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
-                        <TableCell>{user.enrolledcourses || 0}</TableCell>
-                        <TableCell className='text-right'>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant='ghost' className='h-8 w-8 p-0'>
-                                <MoreHorizontal className='h-4 w-4' />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align='end'>
-                              <DropdownMenuItem
-                                onClick={() => handleViewProfile(user.id)}
-                              >
-                                <Eye className='mr-2 h-4 w-4' />
-                                View Profile
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-
-              {renderPaginationControls()}
+              )}
+              <Pagination
+                pagination={pagination}
+                activeTab={activeTab}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
             </TabsContent>
-
-            {/* Manager Tab Content */}
             <TabsContent value='manager' className='space-y-4'>
               <div className='flex items-center justify-between mb-4'>
                 <div className='flex items-center space-x-2'>
-                  <div className='relative flex-1'>
-                    <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-                    <Input
-                      placeholder='Search managers...'
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      className='pl-8'
-                    />
-                  </div>
+                  <UserFilters
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    selectedStatus={selectedStatus}
+                    onStatusChange={setSelectedStatus}
+                    activeTab={activeTab}
+                  />
                 </div>
-                <Dialog
+                <CreateManagerDialog
                   open={isCreateManagerOpen}
                   onOpenChange={setIsCreateManagerOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button>Create Manager</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Manager</DialogTitle>
-                      <DialogDescription>
-                        Add a new manager account by entering their information.
-                      </DialogDescription>
-                      <div className='text-sm text-muted-foreground'>
-                        A temporary password will be generated and sent to this
-                        email address.
-                      </div>
-                    </DialogHeader>
-                    <Form {...form}>
-                      <form
-                        onSubmit={form.handleSubmit(onCreateManager)}
-                        className='space-y-4'
-                      >
-                        <FormField
-                          control={form.control}
-                          name='name'
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Name <span className='text-destructive'>*</span>
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder='Enter manager name'
-                                  required
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name='email'
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Email{' '}
-                                <span className='text-destructive'>*</span>
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder='manager@example.com'
-                                  required
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter className='gap-2 sm:gap-0'>
-                          <Button
-                            type='button'
-                            variant='outline'
-                            onClick={() => {
-                              setIsCreateManagerOpen(false)
-                              form.reset()
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button type='submit'>Create Manager</Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+                  onSubmit={handleCreateManager}
+                />
               </div>
-
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Managed Courses</TableHead>
-                    <TableHead className='text-right'>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedUsers
-                    .filter(user => user.role === 'manager')
-                    .map(user => (
-                      <TableRow key={user.id}>
-                        <TableCell className='font-medium'>
-                          <div className='flex items-center space-x-3'>
-                            <Avatar className='h-8 w-8'>
-                              <AvatarImage
-                                src={
-                                  user.avatar ||
-                                  '/placeholder.svg?height=32&width=32'
-                                }
-                              />
-                              <AvatarFallback>
-                                {user.name
-                                  ? user.name
-                                      .split(' ')
-                                      .map(n => n[0])
-                                      .join('')
-                                  : user.email?.charAt(0).toUpperCase() ||
-                                    'User'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className='font-medium'>{user.name}</div>
-                              <div className='text-sm text-muted-foreground'>
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              user.status === 'active'
-                                ? 'default'
-                                : 'destructive'
-                            }
-                          >
-                            {user.status === 'active' ? 'Active' : 'Banned'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatJoinDate(user.joinDate)}</TableCell>
-                        <TableCell>{user.enrolledcourses || 0}</TableCell>
-                        <TableCell className='text-right'>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant='ghost' className='h-8 w-8 p-0'>
-                                <MoreHorizontal className='h-4 w-4' />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align='end'>
-                              <DropdownMenuItem
-                                onClick={() => handleViewProfile(user.id)}
-                              >
-                                <Eye className='mr-2 h-4 w-4' />
-                                View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem
-                                    onSelect={e => e.preventDefault()}
-                                    className='text-red-600 cursor-pointer'
-                                  >
-                                    <Trash2 className='mr-2 h-4 w-4' />
-                                    Delete Manager
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Are you absolutely sure?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will
-                                      permanently delete the manager account and
-                                      remove all associated data from our
-                                      servers.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                      Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(user.id)}
-                                      className='bg-red-600 hover:bg-red-700'
-                                    >
-                                      Delete Permanently
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-
-              {renderPaginationControls()}
+              {displayedUsers.length > 0 ? (
+                <UserTable
+                  users={displayedUsers}
+                  activeTab='manager'
+                  onViewProfile={handleViewProfile}
+                  onUpdateUserStatus={handleUpdateUserStatus}
+                />
+              ) : (
+                <div className='text-center p-8 border-t'>
+                  No managers found.
+                </div>
+              )}
+              <Pagination
+                pagination={pagination}
+                activeTab={activeTab}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

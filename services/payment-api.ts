@@ -1,9 +1,9 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import {
-  PageResponse,
-  PaymentHistoryRequestDTO,
-  PaymentHistoryResponseDTO,
+    PageResponse,
+    PaymentHistoryRequestDTO,
+    PaymentHistoryResponseDTO,
 } from '@/types/payment'
 
 interface PaymentRequestDTO {
@@ -98,5 +98,23 @@ export const paymentApi = {
   ): Promise<ApiResponse<PageResponse<PaymentHistoryResponseDTO>>> => {
     const response = await httpClient.get('/api/payments/my', { params })
     return response.data
+  },
+
+  // Get all payment history (not paginated)
+  getAllPaymentHistory: async (): Promise<PaymentHistoryResponseDTO[]> => {
+    const response = await httpClient.get('/api/payments/list')
+    return response.data.data
+  },
+
+  // Get total platform revenue
+  getTotalRevenue: async (): Promise<number> => {
+    const response = await httpClient.get('/api/payments/revenue')
+    return response.data.data
+  },
+
+  // Get total payment count
+  getTotalPaymentCount: async (): Promise<number> => {
+    const response = await httpClient.get('/api/payments/count')
+    return response.data.data
   },
 }

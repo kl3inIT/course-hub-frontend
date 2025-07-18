@@ -1,5 +1,7 @@
 'use client'
 
+import { useCallback, useState } from 'react'
+
 interface CompletionCertificateProps {
   courseTitle: string
   instructor: string
@@ -30,6 +32,22 @@ export function CompletionCertificate({
 
   const formattedDate = formatDate(completionDate)
 
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const shareUrl = `https://course.learnhub.academy/verify/${certificateId}`
+  const shareText = encodeURIComponent(`I just completed the course: ${courseTitle} on LearnHub! Check out my certificate.`)
+
+  const handleShareFacebook = useCallback(() => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${shareText}`
+    window.open(url, '_blank', 'width=600,height=600')
+    setShowShareMenu(false)
+  }, [shareUrl, shareText])
+
+  const handleShareLinkedIn = useCallback(() => {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`
+    window.open(url, '_blank', 'width=600,height=600')
+    setShowShareMenu(false)
+  }, [shareUrl])
+
   // Khi export PDF, render layout giống hệt web (có watermark, SVG, ...)
   return (
     <div className='flex flex-col items-center gap-6'>
@@ -39,8 +57,64 @@ export function CompletionCertificate({
         className='w-[1024px] h-[724px] font-serif bg-white text-gray-800 relative shadow-2xl overflow-hidden border border-gray-200'
         style={{ width: 1024, height: 724 }}
       >
-        {/* Watermark */}
-        {!isPdfVersion && (
+        {/* Ribbon with circle and web name - improved style */}
+        <div className="absolute top-0 right-8 h-full w-60 flex items-start justify-center pointer-events-none select-none">
+          {/* Ribbon */}
+          <div className="relative w-full h-full">
+            <div className="absolute left-1/2 -translate-x-1/2 top-0 z-0">
+              <svg width="480" height="600" viewBox="0 0 176 450" className="block">
+                <defs>
+                  <linearGradient id="ribbonGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4ade80" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </linearGradient>
+                </defs>
+                <polygon
+                  points="0,0 176,0 176,340 88,400 0,340"
+                  fill="url(#ribbonGradient)"
+                  filter="drop-shadow(0 8px 24px rgba(34,197,94,0.2))"
+                />
+              </svg>
+            </div>
+            {/* Circle */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-10 z-10 flex flex-col items-center justify-center">
+              <div className="w-44 h-44 bg-white border-4 border-green-600 rounded-full flex flex-col items-center justify-center shadow-2xl relative">
+                <span className="absolute inset-0 flex items-center justify-center text-green-700 font-extrabold text-2xl text-center leading-tight drop-shadow-sm z-10">
+                  iT4Beginner
+                </span>
+                <svg width="176" height="176" viewBox="0 0 176 176" className="absolute left-0 top-0">
+                  <defs>
+                    <circle id="circlePath" cx="88" cy="88" r="72" fill="none" />
+                  </defs>
+                  {/* Slogan nửa trên */}
+                  <text fill="#9ca3af" fontSize="14" fontWeight="500" letterSpacing="2">
+                    <textPath
+                      href="#circlePath"
+                      startOffset="10%"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      EDUCATION & TRAINING
+                    </textPath>
+                  </text>
+                  {/* Slogan nửa dưới */}
+                  <text fill="#9ca3af" fontSize="14" fontWeight="500" letterSpacing="2">
+                    <textPath
+                      href="#circlePath"
+                      startOffset="60%"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      EDUCATION & TRAINING
+                    </textPath>
+                  </text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Watermark tạm thời tắt để test export PDF */}
+        {false && !isPdfVersion && (
           <div
             className='absolute inset-0 bg-repeat bg-center opacity-[0.02]'
             style={{ backgroundImage: "url('/assets/watermark-logo.svg')" }}
@@ -74,54 +148,12 @@ export function CompletionCertificate({
           </main>
         </div>
 
-        {/* Right Ribbon Area */}
-        <div className='absolute top-0 right-8 h-4/5 w-48'>
+        {/* Right Ribbon Area tạm thời bỏ SVG để test export PDF */}
+        {/* <div className='absolute top-0 right-8 h-4/5 w-48'>
           <div className='relative w-full h-full bg-slate-300'>
-            {/* The pointed tip using an SVG shape for PDF compatibility */}
-            <div className='absolute -bottom-12 left-0 w-full h-12'>
-              <svg
-                viewBox='0 0 192 48'
-                preserveAspectRatio='none'
-                className='w-full h-full'
-              >
-                <path d='M 0,0 L 96,48 L 192,0 Z' fill='#cbd5e1' />
-              </svg>
-            </div>
-
-            {/* Ribbon Content */}
-            <div className='text-center pt-20 relative z-10'>
-              <p className='font-semibold tracking-[0.3em] text-gray-700'>
-                COURSE
-              </p>
-              <p className='font-semibold tracking-[0.3em] text-gray-700 mb-12'>
-                CERTIFICATE
-              </p>
-              {/* Seal */}
-              <div className='w-36 h-36 rounded-full mx-auto flex items-center justify-center relative p-2 bg-gray-100 border-4 border-gray-300'>
-                <div className='text-xl font-bold text-gray-700'>LearnHub</div>
-                <svg
-                  className='absolute top-0 left-0 w-full h-full'
-                  viewBox='0 0 100 100'
-                >
-                  <defs>
-                    <path
-                      id='circlePath'
-                      d='M 50, 50 m -40, 0 a 40, 40 0 1, 1 80, 0 a 40, 40 0 1, 1 -80, 0'
-                    ></path>
-                  </defs>
-                  <text
-                    fill='#6b7280'
-                    style={{ fontSize: '8px', letterSpacing: '0.1em' }}
-                  >
-                    <textPath href='#circlePath'>
-                      EDUCATION FOR EVERYONE • COURSE CERTIFICATE •
-                    </textPath>
-                  </text>
-                </svg>
-              </div>
-            </div>
+            ... SVG ...
           </div>
-        </div>
+        </div> */}
 
         {/* Footer Elements */}
         <div className='absolute bottom-8 left-20'>

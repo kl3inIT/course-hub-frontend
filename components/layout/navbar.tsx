@@ -1,7 +1,5 @@
 'use client'
 
-import { categoryApi } from '@/services/category-api'
-import { notificationApi } from '@/services/notification-api'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +19,8 @@ import {
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/context/auth-context'
+import { categoryApi } from '@/services/category-api'
+import { notificationApi } from '@/services/notification-api'
 import { websocketService } from '@/services/websocket-service'
 import { CategoryResponseDTO } from '@/types/category'
 import { NotificationDTO } from '@/types/notification'
@@ -183,6 +183,7 @@ export function Navbar() {
   }, [])
 
   const handleLogout = () => {
+    alert('Logout successfully')
     logout()
     window.location.href = '/login'
   }

@@ -1,8 +1,8 @@
 'use client'
 
-import type React from 'react'
-import { createContext, useContext, useState, useEffect } from 'react'
 import { httpClient } from '@/services/http-client'
+import type React from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 // Định nghĩa các role có trong hệ thống
 export type UserRole = 'learner' | 'manager' | 'admin'
@@ -84,15 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('accessToken')
       if (token) {
         // Gọi API logout
-        await httpClient.post('/api/auth/logout', { token })
+        // Xóa thông tin user và token
+        setUser(null)
+        localStorage.clear()
+        await httpClient.post('/api/auth/logout', { token })     
       }
     } catch (error) {
       console.error('Logout error:', error)
-    } finally {
-      // Xóa thông tin user và token
-      setUser(null)
-      localStorage.removeItem('user')
-      localStorage.removeItem('accessToken')
     }
   }
 

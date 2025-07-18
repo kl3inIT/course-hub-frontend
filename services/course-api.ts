@@ -1,17 +1,17 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page, PagedResponse } from '@/types/common'
 import {
-  CourseCreationRequestDTO,
-  CourseUpdateRequestDTO,
   CourseCreateUpdateResponseDTO,
-  CourseResponseDTO,
-  CourseSearchParams,
+  CourseCreationRequestDTO,
   CourseDetailsResponseDTO,
-  DashboardCourseResponseDTO,
-  CourseSearchStatsResponseDTO,
-  ManagerCourseResponseDTO,
   CourseEnrollment,
   CourseEnrollmentStats,
+  CourseResponseDTO,
+  CourseSearchParams,
+  CourseSearchStatsResponseDTO,
+  CourseUpdateRequestDTO,
+  DashboardCourseResponseDTO,
+  ManagerCourseResponseDTO,
 } from '@/types/course'
 
 export const courseApi = {
@@ -210,6 +210,12 @@ export const courseApi = {
     const response = await httpClient.get<ApiResponse<CourseEnrollmentStats>>(
       `/api/courses/${courseId}/enrollments/stats`
     )
+    return response.data.data
+  },
+
+  // Get total course count
+  getCourseCount: async (): Promise<number> => {
+    const response = await httpClient.get('/api/courses/count')
     return response.data.data
   },
 }

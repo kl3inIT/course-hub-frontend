@@ -63,4 +63,16 @@ export const userApi = {
     const response = await httpClient.post(`/api/users/discounts/${couponId}`)
     return response.data
   },
+
+  // Get total user count
+  getUserCount: async (): Promise<number> => {
+    const response = await httpClient.get('/api/users/count')
+    return response.data.data
+  },
+
+  // Get active user count
+  getActiveUserCount: async (): Promise<number> => {
+    const response = await httpClient.get('/api/users/active')
+    return response.data.data
+  },
 }

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+     <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>User Management - Balsamiq Prototype</title>
+          <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Comic Neue', cursive;
+            background: #f5f5f5;
+            color: #222;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 24px;
+            border: 4px solid #222;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        .header {
+            background: #eee;
+            border: 3px solid #333;
+            border-radius: 8px;
+            padding: 18px 24px;
+            margin-bottom: 18px;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+        }
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        .sketchy-tabs {
+            display: flex;
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #f0f0f0;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+        .sketchy-tab {
+            padding: 12px 36px;
+            font-size: 18px;
+            font-weight: 700;
+            border-right: 3px solid #333;
+            background: #f0f0f0;
+            cursor: pointer;
+            font-family: 'Comic Neue', cursive;
+            transition: background 0.15s;
+        }
+        .sketchy-tab:last-child {
+            border-right: none;
+        }
+        .sketchy-tab.active {
+            background: #fffbe7;
+            color: #d17b00;
+            border-bottom: 3px solid #fffbe7;
+        }
+        .stats-cards {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .stats-card {
+            flex: 1;
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #fff;
+            padding: 18px 0;
+            text-align: center;
+        }
+        .stats-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stats-card .label {
+            font-size: 15px;
+            color: #555;
+        }
+        .filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 18px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #f0f0f0;
+            padding: 16px 18px;
+        }
+        .filters select, .filters input {
+            font-family: 'Comic Neue', cursive;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 7px 12px;
+            font-size: 15px;
+            background: #fff;
+        }
+        .filters label {
+            font-weight: 700;
+            margin-right: 6px;
+        }
+        .user-table-box {
+            border: 3px solid #333;
+            border-radius: 8px;
+            background: #fff;
+            padding: 0;
+            margin-bottom: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 15px;
+        }
+        thead {
+            background: #f0f0f0;
+        }
+        th, td {
+            border-bottom: 2px solid #333;
+            padding: 12px 8px;
+            text-align: left;
+        }
+        th {
+            font-weight: 700;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            background: #e3f2fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #1976d2;
+            font-size: 18px;
+        }
+        .role-badge {
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 2px 10px;
+            font-size: 13px;
+            background: #ffeb3b;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .status-badge {
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 2px 10px;
+            font-size: 13px;
+            background: #e0e0e0;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        .action-btn {
+            border: 2px solid #333;
+            border-radius: 6px;
+            background: #e8e8e8;
+            padding: 4px 10px;
+            font-family: 'Comic Neue', cursive;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .pagination-btn {
+            border: 2px solid #333;
+            border-radius: 6px;
+            background: #fff;
+            padding: 4px 14px;
+            font-family: 'Comic Neue', cursive;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .pagination-btn.active {
+            background: #ffeb3b;
+        }
+        @media (max-width: 900px) {
+            .stats-cards { flex-direction: column; }
+            .filters { flex-direction: column; }
+        }
+    </style>
+     </head>
+     <body>
+          <div class="container">
+               <div class="header">
+                    <h1>👥 User Management</h1>
+                    <p>Manage users, assign roles, and monitor activity</p>
+               </div>
+               <div class="sketchy-tabs">
+                    <div class="sketchy-tab active">All</div>
+                    <div class="sketchy-tab">Manager</div>
+                    <div class="sketchy-tab">Learner</div>
+                    <div class="sketchy-tab">Inactive</div>
+               </div>
+               <div class="stats-cards">
+                    <div class="stats-card">
+                         <div class="value">1,234</div>
+                         <div class="label">Total Users</div>
+                    </div>
+                    <div class="stats-card">
+                         <div class="value">12</div>
+                         <div class="label">Managers</div>
+                    </div>
+                    <div class="stats-card">
+                         <div class="value">1,100</div>
+                         <div class="label">Learners</div>
+                    </div>
+                    <div class="stats-card">
+                         <div class="value">122</div>
+                         <div class="label">Inactive</div>
+                    </div>
+               </div>
+               <div class="filters">
+                    <div>
+                         <label for="role">Role:</label>
+                         <select id="role">
+                              <option value>All</option>
+                              <option value="manager">Manager</option>
+                              <option value="learner">Learner</option>
+                         </select>
+                    </div>
+                    <div>
+                         <label for="status">Status:</label>
+                         <select id="status">
+                              <option value>All</option>
+                              <option value="active">Active</option>
+                              <option value="inactive">Inactive</option>
+                         </select>
+                    </div>
+                    <div style="flex:1">
+                         <label for="search">Search:</label>
+                         <input id="search" type="text"
+                              placeholder="Search users...">
+                    </div>
+                    <button class="action-btn">Filter</button>
+                    <button class="action-btn">Reset</button>
+                    <button class="action-btn" style="background:#ffeb3b;">+ Add
+                         User</button>
+               </div>
+               <div class="user-table-box">
+                    <table>
+                         <thead>
+                              <tr>
+                                   <th>Avatar</th>
+                                   <th>Name</th>
+                                   <th>Email</th>
+                                   <th>Role</th>
+                                   <th>Status</th>
+                                   <th>Actions</th>
+                              </tr>
+                         </thead>
+                         <tbody>
+                              <tr>
+                                   <td><div class="avatar">A</div></td>
+                                   <td>Alice Nguyen</td>
+                                   <td>alice@example.com</td>
+                                   <td><span
+                                             class="role-badge">Manager</span></td>
+                                   <td><span
+                                             class="status-badge">Active</span></td>
+                                   <td class="actions">
+                                        <button class="action-btn">Edit</button>
+                                        <button
+                                             class="action-btn">Disable</button>
+                                   </td>
+                              </tr>
+                              <tr>
+                                   <td><div class="avatar">B</div></td>
+                                   <td>Bob Tran</td>
+                                   <td>bob@example.com</td>
+                                   <td><span
+                                             class="role-badge">Learner</span></td>
+                                   <td><span
+                                             class="status-badge">Inactive</span></td>
+                                   <td class="actions">
+                                        <button class="action-btn">Edit</button>
+                                        <button
+                                             class="action-btn">Enable</button>
+                                   </td>
+                              </tr>
+                              <tr>
+                                   <td><div class="avatar">C</div></td>
+                                   <td>Carol Pham</td>
+                                   <td>carol@example.com</td>
+                                   <td><span
+                                             class="role-badge">Learner</span></td>
+                                   <td><span
+                                             class="status-badge">Active</span></td>
+                                   <td class="actions">
+                                        <button class="action-btn">Edit</button>
+                                        <button
+                                             class="action-btn">Disable</button>
+                                   </td>
+                              </tr>
+                         </tbody>
+                    </table>
+               </div>
+               <div class="pagination">
+                    <button class="pagination-btn">Previous</button>
+                    <button class="pagination-btn active">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">3</button>
+                    <button class="pagination-btn">Next</button>
+               </div>
+          </div>
+     </body>
+</html>

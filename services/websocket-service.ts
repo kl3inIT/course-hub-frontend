@@ -42,13 +42,11 @@ class WebSocketService {
   subscribeAnnouncements(userRole: string) {
     if (userRole && userRole.toUpperCase() !== 'ADMIN') {
       this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
-      console.log('userRole : ', userRole)
       if (userRole.toUpperCase() === 'LEARNER') {
         this.subscribeTopic(
           '/topic/announcements/LEARNERS_ONLY',
           'announcement-learners'
         )
-        console.log('subscribeTopic : ', '/topic/announcements/LEARNERS_ONLY')
       }
       if (userRole.toUpperCase() === 'MANAGER') {
         this.subscribeTopic(

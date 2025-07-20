@@ -322,10 +322,6 @@ export function ManagerCourseList() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>{courses.length}</div>
-            <p className='text-xs text-muted-foreground'>
-              {publishedCourses} published, {draftCourses} draft,{' '}
-              {archivedCourses} archived
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -383,7 +379,7 @@ export function ManagerCourseList() {
             className='pl-10'
           />
         </div>
-        <Button variant='outline'>Export</Button>
+
       </div>
       <div className='border rounded-lg overflow-x-auto'>
         <Table>

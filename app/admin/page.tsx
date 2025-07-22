@@ -7,6 +7,7 @@ import { courseApi } from '@/services/course-api'
 import { feedbackApi } from '@/services/feedback-api'
 import { paymentApi } from '@/services/payment-api'
 import { userApi } from '@/services/user-api'
+import type { PaymentHistoryResponseDTO } from '@/types/payment'
 import { ArcElement, BarElement, CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js'
 import { useEffect, useState } from 'react'
 import { Bar, Line } from 'react-chartjs-2'
@@ -132,49 +133,72 @@ function IncomeLineChart() {
   )
 }
 
-// Bảng đơn hàng gần đây
-function RecentOrdersTable() {
-  const orders = [
-    { id: 'ORD001', user: 'John Smith', amount: '$120', status: 'Success', date: '2024-07-20' },
-    { id: 'ORD002', user: 'Jane Doe', amount: '$90', status: 'Failed', date: '2024-07-19' },
-    { id: 'ORD003', user: 'Michael Lee', amount: '$200', status: 'Success', date: '2024-07-18' },
-    { id: 'ORD004', user: 'Emily Clark', amount: '$150', status: 'Processing', date: '2024-07-17' },
-  ]
+function RecentTransactions() {
+  const [transactions, setTransactions] = useState<PaymentHistoryResponseDTO[]>([])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let isMounted = true
+    async function fetchData() {
+      setLoading(true)
+      try {
+        const res = await paymentApi.getAllPaymentHistory()
+        if (isMounted) setTransactions(res.slice(0, 10))
+      } catch (e) {
+        setTransactions([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+    return () => { isMounted = false }
+  }, [])
+
+  function formatTimeAgo(dateStr: string) {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - date.getTime()) / 60000) // minutes
+    if (diff < 1) return 'just now'
+    if (diff < 60) return `${diff} minute${diff > 1 ? 's' : ''} ago`
+    const hours = Math.floor(diff / 60)
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
+    const days = Math.floor(hours / 24)
+    return `${days} day${days > 1 ? 's' : ''} ago`
+  }
+
+  const statusColor: Record<string, string> = {
+    success: 'bg-green-500 text-white',
+    failed: 'bg-red-500 text-white',
+    pending: 'bg-gray-100 text-gray-700',
+    processing: 'bg-yellow-100 text-yellow-700',
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6 overflow-x-auto">
-      <h2 className="text-lg font-semibold mb-4">Transaction History</h2>
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="py-2 px-4 text-left">Order ID</th>
-            <th className="py-2 px-4 text-left">Customer</th>
-            <th className="py-2 px-4 text-left">Amount</th>
-            <th className="py-2 px-4 text-left">Status</th>
-            <th className="py-2 px-4 text-left">Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} className="border-b">
-              <td className="py-2 px-4">{order.id}</td>
-              <td className="py-2 px-4">{order.user}</td>
-              <td className="py-2 px-4">{order.amount}</td>
-              <td className="py-2 px-4">
-                <span className={
-                  order.status === 'Success'
-                    ? 'text-green-600'
-                    : order.status === 'Failed'
-                    ? 'text-red-600'
-                    : 'text-yellow-600'
-                }>
-                  {order.status}
-                </span>
-              </td>
-              <td className="py-2 px-4">{order.date}</td>
-            </tr>
+    <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 className="text-xl font-bold mb-1">Recent Transactions</h2>
+      <div className="text-gray-500 mb-4 text-sm">Last 10 transactions with quick actions</div>
+      {loading ? (
+        <div className="text-center py-8">Loading...</div>
+      ) : transactions.length === 0 ? (
+        <div className="text-center py-8 text-gray-400">No transactions found.</div>
+      ) : (
+        <div className="space-y-4">
+          {transactions.map((txn: PaymentHistoryResponseDTO) => (
+            <div key={txn.transactionCode} className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg px-4 py-3 bg-gray-50 hover:bg-gray-100 transition">
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold">Transaction ID: {txn.transactionCode}</div>
+                <div className="text-sm text-gray-500">Amount: ${txn.amount} • {formatTimeAgo((txn as any).createdDate || (txn as any).createdAt || (txn as any).date || (txn as any).paymentDate || '')}</div>
+              </div>
+              <div className="flex items-center gap-2 mt-2 md:mt-0">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${statusColor[(txn.status || '').toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{txn.status}</span>
+                <button className="px-4 py-1 rounded border text-sm font-medium hover:bg-gray-100 transition">View</button>
+                {txn.status === 'success' && (
+                  <button className="px-4 py-1 rounded bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">Refund</button>
+                )}
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -248,7 +272,7 @@ export default function AdminPage() {
               <IncomeLineChart />
               <TopCoursesBarChart />
             </div>
-            <RecentOrdersTable />
+            <RecentTransactions />
           </div>
         </SidebarInset>
       </SidebarProvider>

@@ -7,24 +7,24 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { getAllFeedback, type Feedback } from '@/services/feedback-api'
+import { feedbackApi, type Feedback } from '@/services/feedback-api'
 import { httpClient } from '@/services/http-client'
 import { Client } from '@stomp/stompjs'
 import { Eye, Filter, MessageSquare, Search } from 'lucide-react'
@@ -93,8 +93,8 @@ export default function AdminFeedbackPage() {
   const loadFeedbacks = async () => {
     try {
       setLoading(true)
-      const response = await getAllFeedback()
-      setFeedbacks(response.data.data || [])
+      const response = await feedbackApi.getAllFeedback()
+      setFeedbacks(response.data?.data || response.data || [])
     } catch (error) {
       console.error('Failed to load feedbacks:', error)
     } finally {

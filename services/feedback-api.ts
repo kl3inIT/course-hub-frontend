@@ -32,7 +32,6 @@ export interface Feedback {
   }
 }
 
-// Map frontend category to backend FeedbackType
 const categoryMap: Record<FeedbackCategory, string> = {
   general: 'GENERAL_SUPPORT',
   technical: 'TECHNICAL_ISSUE',
@@ -42,21 +41,33 @@ const categoryMap: Record<FeedbackCategory, string> = {
   feedback: 'FEEDBACK',
 }
 
-export async function submitFeedback(data: FeedbackRequest) {
-  const payload = {
-    fullName: data.fullName,
-    email: data.email,
-    category: categoryMap[data.category],
-    subject: data.subject,
-    message: data.message,
-  }
-  return httpClient.post('/api/feedbacks', payload)
+export const feedbackApi = {
+  submitFeedback: async (data: FeedbackRequest) => {
+    const payload = {
+      fullName: data.fullName,
+      email: data.email,
+      category: categoryMap[data.category],
+      subject: data.subject,
+      message: data.message,
+    }
+    const response = await httpClient.post('/api/feedbacks', payload)
+    return response.data
+  },
+
+  getAllFeedback: async () => {
+    const response = await httpClient.get('/api/feedbacks/getAllFeedback')
+    return response.data
+  },
+
+  getFeedbackById: async (id: number) => {
+    const response = await httpClient.get(`/api/feedbacks/${id}`)
+    return response.data
+  },
+
+  countAllFeedbacks: async () => {
+    const response = await httpClient.get('/api/feedbacks/count')
+    return response.data
+  },
 }
 
-export const getAllFeedback = () => {
-  return httpClient.get('/api/feedbacks/getAllFeedback')
-}
-
-export const getFeedbackById = (id: number) => {
-  return httpClient.get(`/api/feedbacks/${id}`)
-}
+export default feedbackApi

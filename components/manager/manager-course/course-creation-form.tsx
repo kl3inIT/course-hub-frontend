@@ -390,7 +390,7 @@ export function CourseCreationForm() {
                 price: createdCourse.price,
                 level: createdCourse.level,
                 category: createdCourse.category,
-                thumbnailUrl: createdCourse.thumbnailUrl,
+                thumbnailUrl: thumbnailFile || createdCourse.thumbnailUrl,
               }}
             />
 

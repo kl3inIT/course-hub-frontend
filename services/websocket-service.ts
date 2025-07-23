@@ -12,23 +12,27 @@ class WebSocketService {
 
   private getWebSocketUrl(): string {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    
+
     // Development
-    if (!apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+    if (
+      !apiUrl ||
+      apiUrl.includes('localhost') ||
+      apiUrl.includes('127.0.0.1')
+    ) {
       return 'http://localhost:8080/ws'
     }
-    
+
     // Production - SockJS needs HTTP/HTTPS URLs, not WS/WSS
     // It will auto-upgrade to WebSocket (WSS) if available
     if (apiUrl.startsWith('https://')) {
-      return apiUrl + '/ws'  // Keep https:// for SockJS
+      return apiUrl + '/ws' // Keep https:// for SockJS
     }
-    
+
     // Fallback for HTTP
     if (apiUrl.startsWith('http://')) {
-      return apiUrl + '/ws'  // Keep http:// for SockJS
+      return apiUrl + '/ws' // Keep http:// for SockJS
     }
-    
+
     // Default fallback - use HTTPS for production
     return 'https://api.coursehub.io.vn/ws'
   }
@@ -38,51 +42,47 @@ class WebSocketService {
       onConnect && onConnect()
       return
     }
-
     this.currentToken = token
-    const wsUrl = this.getWebSocketUrl()
-    console.log('🔌 Connecting to WebSocket:', wsUrl)
+    const wsUrl = this.getWebSocketUrl() + `?token=${token}`
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS(wsUrl, null, {
-        transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
-        timeout: 20000
-      }),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
-      },
+      webSocketFactory: () =>
+        new SockJS(wsUrl, null, {
+          transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+          timeout: 20000,
+        }),
+      // Không cần connectHeaders!
       reconnectDelay: this.reconnectInterval,
-      onConnect: (frame) => {
-        console.log('✅ WebSocket Connected:', frame)
+      onConnect: frame => {
         this.reconnectAttempts = 0
         onConnect && onConnect()
       },
       onDisconnect: () => {
-        console.log('🔌 WebSocket Disconnected')
         this.subscriptions.forEach(sub => sub.unsubscribe())
         this.subscriptions.clear()
         this.handleReconnect()
       },
-      onStompError: (frame) => {
+      onStompError: frame => {
         console.error('❌ STOMP Error:', frame)
         this.handleReconnect()
       },
-      onWebSocketError: (error) => {
+      onWebSocketError: error => {
         console.error('❌ WebSocket Error:', error)
         this.handleReconnect()
       },
-      // Disable debug in production
-      debug: process.env.NODE_ENV === 'development' ? console.log : () => {}
+      debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
 
     this.client.activate()
   }
 
   private handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentToken) {
+    if (
+      this.reconnectAttempts < this.maxReconnectAttempts &&
+      this.currentToken
+    ) {
       this.reconnectAttempts++
-      console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}`)
-      
+
       setTimeout(() => {
         if (!this.client?.connected && this.currentToken) {
           this.connect(this.currentToken)
@@ -104,36 +104,35 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Đăng ký nhận thông báo từ topic theo vai trò user
-   * @param userRole Vai trò của user: 'ALL', 'LEARNER', 'MANAGER', ...
-   */
   subscribeAnnouncements(userRole: string) {
     if (userRole && userRole.toUpperCase() !== 'ADMIN') {
       this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
-      console.log('userRole:', userRole)
-      
+
       if (userRole.toUpperCase() === 'LEARNER') {
         this.subscribeTopic(
           '/topic/announcements/LEARNERS_ONLY',
           'announcement-learners'
         )
-        console.log('subscribeTopic:', '/topic/announcements/LEARNERS_ONLY')
       }
-      
+
       if (userRole.toUpperCase() === 'MANAGER') {
         this.subscribeTopic(
           '/topic/announcements/MANAGERS_ONLY',
           'announcement-managers'
         )
-        console.log('subscribeTopic:', '/topic/announcements/MANAGERS_ONLY')
       }
     }
+  }
+  subscribeUserNotification() {
+    this.subscribeTopic('/user/queue/notifications', 'user-notification')
   }
 
   public subscribeTopic(destination: string, event: string) {
     if (!this.client?.connected) {
-      console.warn('⚠️ WebSocket not connected, cannot subscribe to:', destination)
+      console.warn(
+        '⚠️ WebSocket not connected, cannot subscribe to:',
+        destination
+      )
       return
     }
 
@@ -155,7 +154,6 @@ class WebSocketService {
         }
       )
       this.subscriptions.set(event, subscription)
-      console.log(`📡 Subscribed to: ${destination}`)
     } catch (error) {
       console.error(`❌ Failed to subscribe to ${destination}:`, error)
     }

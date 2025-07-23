@@ -1,13 +1,11 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from '@/components/ui/card'
 import {
   Dialog,
@@ -27,9 +25,8 @@ import {
   Calendar,
   Clock,
   Download,
-  Play,
   Share2,
-  Trophy,
+  Trophy
 } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -55,11 +52,17 @@ export function StudentDashboard() {
   const [showShareMenu, setShowShareMenu] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
   const shareButtonRef = useRef<HTMLButtonElement>(null)
-  const shareUrl = selectedCertificate ? `https://course.learnhub.academy/verify/CERT-${selectedCertificate.title}-${Date.now()}` : ''
-  const shareText = selectedCertificate ? encodeURIComponent(`I just completed the course: ${selectedCertificate.title} on LearnHub! Check out my certificate.`) : ''
+  const shareUrl = selectedCertificate
+    ? `https://course.learnhub.academy/verify/CERT-${selectedCertificate.title}-${Date.now()}`
+    : ''
+  const shareText = selectedCertificate
+    ? encodeURIComponent(
+        `I just completed the course: ${selectedCertificate.title} on LearnHub! Check out my certificate.`
+      )
+    : ''
 
   useEffect(() => {
-    if (!showShareMenu) return;
+    if (!showShareMenu) return
     function handleClickOutside(event: MouseEvent) {
       if (
         shareMenuRef.current &&
@@ -175,33 +178,33 @@ export function StudentDashboard() {
       setShowHiddenCertificate(true)
       setTimeout(async () => {
         try {
-          const pdfElement = document.getElementById('certificate-pdf');
+          const pdfElement = document.getElementById('certificate-pdf')
           if (pdfElement) {
             const canvas = await html2canvas(pdfElement, {
               scale: 2,
               useCORS: true,
               backgroundColor: '#fff',
-            });
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            })
+            const imgData = canvas.toDataURL('image/jpeg', 1.0)
             // Lấy kích thước thực tế của canvas
-            const pdfWidth = canvas.width;
-            const pdfHeight = canvas.height;
+            const pdfWidth = canvas.width
+            const pdfHeight = canvas.height
             // Chuyển px sang mm (1px = 0.264583mm)
-            const mmWidth = pdfWidth * 0.264583;
-            const mmHeight = pdfHeight * 0.264583;
+            const mmWidth = pdfWidth * 0.264583
+            const mmHeight = pdfHeight * 0.264583
             const pdf = new jsPDF({
               orientation: 'landscape',
               unit: 'mm',
               format: [mmWidth, mmHeight],
-            });
-            pdf.addImage(imgData, 'JPEG', 0, 0, mmWidth, mmHeight);
-            pdf.save(`certificate-${selectedCertificate.title}.pdf`);
-            toast.success('Certificate downloaded successfully!');
+            })
+            pdf.addImage(imgData, 'JPEG', 0, 0, mmWidth, mmHeight)
+            pdf.save(`certificate-${selectedCertificate.title}.pdf`)
+            toast.success('Certificate downloaded successfully!')
           } else {
-            toast.error('Could not find certificate to export');
+            toast.error('Could not find certificate to export')
           }
         } catch (error) {
-          toast.error('Failed to generate PDF. Please try again.');
+          toast.error('Failed to generate PDF. Please try again.')
         }
         setShowHiddenCertificate(false)
       }, 600)
@@ -272,10 +275,12 @@ export function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {(enrolledCourses.reduce(
-                (acc, course) => acc + course.totalDuration,
-                0
-              ) / 3600).toFixed(1)}
+              {(
+                enrolledCourses.reduce(
+                  (acc, course) => acc + course.totalDuration,
+                  0
+                ) / 3600
+              ).toFixed(1)}
               h
             </div>
             <p className='text-xs text-muted-foreground'>Total duration</p>
@@ -394,59 +399,6 @@ export function StudentDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* Recommended Courses Section */}
-      <div className='mt-12 space-y-6'>
-        <div>
-          <h2 className='text-2xl font-bold'>Recommended for You</h2>
-          <p className='text-muted-foreground'>
-            Courses we think you'll love based on your interests
-          </p>
-        </div>
-
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {recommendedCourses.map((course, index) => (
-            <Card
-              key={`recommended-${course.title}-${index}`}
-              className='overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col'
-            >
-              <div className='aspect-video bg-muted'>
-                <img
-                  src={course.thumbnailUrl || '/placeholder.svg'}
-                  alt={course.title}
-                  className='w-full h-full object-cover'
-                />
-              </div>
-              <div className='flex flex-col flex-1'>
-                <CardHeader>
-                  <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
-                  <CardDescription>by {course.instructorName}</CardDescription>
-                </CardHeader>
-                <CardContent className='flex flex-col flex-1'>
-                  <div className='flex-1'>
-                    <p className='text-sm text-muted-foreground line-clamp-2 mb-4'>
-                      {course.description}
-                    </p>
-                  </div>
-                  <div className='flex items-center justify-between mb-4 w-full'>
-                    <Badge variant='secondary'>{course.category}</Badge>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <Clock className='h-4 w-4' />
-                      {course.totalDuration}h • {course.totalLessons} lessons
-                    </div>
-                  </div>
-                  <Link href={`/courses/${course.id}`}>
-                    <Button className='w-full'>
-                      <Play className='h-4 w-4 mr-2' />
-                      View Course
-                    </Button>
-                  </Link>
-                </CardContent>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-
       {/* Certificate Modal */}
       <Dialog
         open={showCertificateModal}
@@ -502,7 +454,14 @@ export function StudentDashboard() {
                         className='flex items-center gap-2 px-4 py-2 rounded hover:bg-blue-50 text-blue-700 font-medium transition-colors justify-start'
                         type='button'
                       >
-                        <svg width='20' height='20' fill='currentColor' viewBox='0 0 24 24'><path d='M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.406.595 24 1.325 24h11.495v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.674V1.326C24 .592 23.406 0 22.675 0'/></svg>
+                        <svg
+                          width='20'
+                          height='20'
+                          fill='currentColor'
+                          viewBox='0 0 24 24'
+                        >
+                          <path d='M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.406.595 24 1.325 24h11.495v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.406 24 22.674V1.326C24 .592 23.406 0 22.675 0' />
+                        </svg>
                         Share on Facebook
                       </button>
                       <button
@@ -510,7 +469,14 @@ export function StudentDashboard() {
                         className='flex items-center gap-2 px-4 py-2 rounded hover:bg-blue-100 text-blue-800 font-medium transition-colors justify-start mt-1'
                         type='button'
                       >
-                        <svg width='20' height='20' fill='currentColor' viewBox='0 0 24 24'><path d='M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.966 0-1.75-.79-1.75-1.75s.784-1.75 1.75-1.75 1.75.79 1.75 1.75-.784 1.75-1.75 1.75zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.38v4.59h-3v-9h2.89v1.23h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.59v4.72z'/></svg>
+                        <svg
+                          width='20'
+                          height='20'
+                          fill='currentColor'
+                          viewBox='0 0 24 24'
+                        >
+                          <path d='M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.966 0-1.75-.79-1.75-1.75s.784-1.75 1.75-1.75 1.75.79 1.75 1.75-.784 1.75-1.75 1.75zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.38v4.59h-3v-9h2.89v1.23h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.59v4.72z' />
+                        </svg>
                         Share on LinkedIn
                       </button>
                     </div>
@@ -559,7 +525,7 @@ export function StudentDashboard() {
             }
             studentName={user.name || user.email || 'Student'}
             certificateId={`CERT-${selectedCertificate.title}-${Date.now()}`}
-            elementId="certificate-pdf"
+            elementId='certificate-pdf'
             isPdfVersion={true}
           />
         </div>

@@ -31,7 +31,7 @@ export function Pagination({
         variant='outline'
         size='sm'
         onClick={() => onPageChange(page - 1)}
-        disabled={page === 0}
+        disabled={page === 0 || totalPages === 0}
       >
         Previous
       </Button>
@@ -42,7 +42,7 @@ export function Pagination({
         variant='outline'
         size='sm'
         onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages - 1}
+        disabled={page >= totalPages - 1 || totalPages === 0}
       >
         Next
       </Button>

@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import { Navbar } from '@/components/layout/navbar'
+import { Footer } from '@/components/layout/footer'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -287,7 +289,13 @@ const FilterSidebar = memo(function FilterSidebar({
 export default function CouponsPage() {
   return (
     <ProtectedRoute requireAuth={true}>
-      <CouponsContent />
+      <div className='min-h-screen bg-background flex flex-col'>
+        <Navbar />
+        <div className='container mx-auto py-8 flex-1'>
+          <CouponsContent />
+        </div>
+        <Footer />
+      </div>
     </ProtectedRoute>
   )
 }

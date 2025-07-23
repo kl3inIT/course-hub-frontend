@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/navigation-menu'
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
 import { announcementApi } from '@/services/announcement-api'
 import { categoryApi } from '@/services/category-api'
@@ -214,17 +215,15 @@ export function Navbar() {
     if (!token) return
 
     websocketService.connect(token, () => {
+      // Đăng ký nhận notification cá nhân
       websocketService.addSubscriber(
-        'notification',
+        'user-notification',
         (notification: NotificationDTO) => {
           setNotifications(prev => [notification, ...prev])
           setUnreadCount(prev => prev + 1)
         }
       )
-      websocketService.subscribeTopic(
-        '/user/queue/notifications',
-        'notification'
-      )
+      websocketService.subscribeUserNotification()
 
       // Đăng ký nhận announcement theo role
       websocketService.addSubscriber(
@@ -250,7 +249,7 @@ export function Navbar() {
 
     // Cleanup
     return () => {
-      websocketService.removeSubscriber('notification')
+      websocketService.removeSubscriber('user-notification')
       websocketService.removeSubscriber('announcement-all')
       websocketService.removeSubscriber('announcement-learners')
       websocketService.removeSubscriber('announcement-managers')
@@ -480,6 +479,7 @@ export function Navbar() {
 
           {/* Right Side - Auth & Mobile Menu */}
           <div className='flex items-center gap-4'>
+            <ThemeToggle />
             {/* Desktop User Menu - Keep avatar dropdown with Course Management and Admin Panel */}
             {user ? (
               <div className='hidden lg:flex items-center gap-4'>
@@ -676,6 +676,18 @@ export function Navbar() {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Contact
+                      </Link>
+
+                      <Link
+                        href='/coupons'
+                        className={`text-lg font-medium transition-colors py-2 ${
+                          isActiveLink('/coupons')
+                            ? 'text-primary'
+                            : 'hover:text-primary'
+                        }`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Coupons
                       </Link>
 
                       {/* Only show "My Learning" link for learners in mobile */}

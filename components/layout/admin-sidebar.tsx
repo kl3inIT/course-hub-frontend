@@ -33,6 +33,7 @@ import {
   Settings,
   Shield,
   Users,
+  MessageSquare, // thêm icon feedback
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -57,6 +58,12 @@ const navigationItems = [
     title: 'Report Management',
     url: '/admin/reports',
     icon: Flag,
+  },
+  // Thêm Feedback Management
+  {
+    title: 'Feedback Management',
+    url: '/admin/feedback',
+    icon: MessageSquare,
   },
 ]
 

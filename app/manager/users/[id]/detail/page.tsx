@@ -50,4 +50,4 @@ export default function ManagerUserDetailPage({ params }: UserPageProps) {
       </Suspense>
     </RoleGuard>
   )
-} 
+}

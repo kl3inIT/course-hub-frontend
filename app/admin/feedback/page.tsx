@@ -7,24 +7,24 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { getAllFeedback, type Feedback } from '@/services/feedback-api'
+import { feedbackApi, type Feedback } from '@/services/feedback-api'
 import { httpClient } from '@/services/http-client'
 import { Client } from '@stomp/stompjs'
 import { Eye, Filter, MessageSquare, Search } from 'lucide-react'
@@ -45,17 +45,21 @@ export function useNotificationSocket(
   useEffect(() => {
     const getWebSocketUrl = () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      
+
       // Development
-      if (!apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+      if (
+        !apiUrl ||
+        apiUrl.includes('localhost') ||
+        apiUrl.includes('127.0.0.1')
+      ) {
         return 'http://localhost:8080/ws'
       }
-      
+
       // Production - SockJS needs HTTPS URLs (auto-upgrades to WSS)
       if (apiUrl.startsWith('https://')) {
-        return apiUrl + '/ws'  // Keep https:// for SockJS
+        return apiUrl + '/ws' // Keep https:// for SockJS
       }
-      
+
       // Fallback
       return 'https://api.coursehub.io.vn/ws'
     }
@@ -65,7 +69,7 @@ export function useNotificationSocket(
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       },
       onConnect: () => {
         client.subscribe(`/topic/notifications/user-${userId}`, message => {
@@ -73,7 +77,7 @@ export function useNotificationSocket(
           onNotification(notification)
         })
       },
-      debug: process.env.NODE_ENV === 'development' ? console.log : () => {}
+      debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
     client.activate()
     return () => {
@@ -115,8 +119,8 @@ export default function AdminFeedbackPage() {
   const loadFeedbacks = async () => {
     try {
       setLoading(true)
-      const response = await getAllFeedback()
-      setFeedbacks(response.data.data || [])
+      const response = await feedbackApi.getAllFeedback()
+      setFeedbacks(response.data?.data || response.data || [])
     } catch (error) {
       console.error('Failed to load feedbacks:', error)
     } finally {
@@ -427,8 +431,6 @@ export default function AdminFeedbackPage() {
                 ))
               )}
             </div>
-
-            {selectedFeedback && <FeedbackDetail feedback={selectedFeedback} />}
           </div>
         </SidebarInset>
       </SidebarProvider>

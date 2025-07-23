@@ -528,7 +528,9 @@ export function CourseEnrollmentManagement({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align='end'>
                             <DropdownMenuItem asChild>
-                              <Link href={`/manager/users/${enrollment.studentId}/detail`}>
+                              <Link
+                                href={`/manager/users/${enrollment.studentId}/detail`}
+                              >
                                 <Eye className='mr-2 h-4 w-4' />
                                 View Profile
                               </Link>

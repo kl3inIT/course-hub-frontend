@@ -9,4 +9,8 @@ export { useCourseMeta } from './use-course-meta'
 export { useLessonProgress } from './useLessonProgress'
 export { useTransactionCheck } from './useTransactionCheck'
 export { useVideoPlayer } from './useVideoPlayer'
-export { useWebSocket, useNotifications, useAnnouncements } from './useWebSocket'
+export {
+  useWebSocket,
+  useNotifications,
+  useAnnouncements,
+} from './useWebSocket'

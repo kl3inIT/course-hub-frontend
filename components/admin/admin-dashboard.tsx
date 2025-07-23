@@ -20,7 +20,7 @@ import {
   Settings,
   Shield,
   UserPlus,
-  Users
+  Users,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -47,8 +47,8 @@ export function AdminDashboard() {
             payment.status?.toUpperCase() === 'SUCCESS'
               ? 'success'
               : payment.status?.toUpperCase() === 'FAILED'
-              ? 'failed'
-              : 'pending',
+                ? 'failed'
+                : 'pending',
           time: payment.date || '',
         }))
       )
@@ -103,7 +103,9 @@ export function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Platform Revenue</CardTitle>
+            <CardTitle className='text-sm font-medium'>
+              Platform Revenue
+            </CardTitle>
             <DollarSign className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
@@ -191,7 +193,9 @@ export function AdminDashboard() {
                           : 'destructive'
                     }
                     className={
-                      transaction.status === 'success' ? 'bg-green-600 text-white hover:bg-green-700 border-green-600' : ''
+                      transaction.status === 'success'
+                        ? 'bg-green-600 text-white hover:bg-green-700 border-green-600'
+                        : ''
                     }
                   >
                     {transaction.status}
@@ -219,7 +223,9 @@ export function AdminDashboard() {
             </div>
             <div>
               <div className='text-2xl font-bold'>{totalTransactions}</div>
-              <p className='text-sm text-muted-foreground'>Total Transactions</p>
+              <p className='text-sm text-muted-foreground'>
+                Total Transactions
+              </p>
             </div>
           </div>
           {/* Add Login activity chart here */}

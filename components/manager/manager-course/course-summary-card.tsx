@@ -22,7 +22,9 @@ export function CourseSummaryCard({
   className = '',
 }: CourseSummaryCardProps) {
   const [thumbnailSrc, setThumbnailSrc] = useState<string | undefined>(
-    typeof course.thumbnailUrl === 'string' ? course.thumbnailUrl || undefined : undefined
+    typeof course.thumbnailUrl === 'string'
+      ? course.thumbnailUrl || undefined
+      : undefined
   )
 
   useEffect(() => {

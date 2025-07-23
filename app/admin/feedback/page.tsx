@@ -45,17 +45,21 @@ export function useNotificationSocket(
   useEffect(() => {
     const getWebSocketUrl = () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      
+
       // Development
-      if (!apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+      if (
+        !apiUrl ||
+        apiUrl.includes('localhost') ||
+        apiUrl.includes('127.0.0.1')
+      ) {
         return 'http://localhost:8080/ws'
       }
-      
+
       // Production - SockJS needs HTTPS URLs (auto-upgrades to WSS)
       if (apiUrl.startsWith('https://')) {
-        return apiUrl + '/ws'  // Keep https:// for SockJS
+        return apiUrl + '/ws' // Keep https:// for SockJS
       }
-      
+
       // Fallback
       return 'https://api.coursehub.io.vn/ws'
     }
@@ -65,7 +69,7 @@ export function useNotificationSocket(
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
       },
       onConnect: () => {
         client.subscribe(`/topic/notifications/user-${userId}`, message => {
@@ -73,7 +77,7 @@ export function useNotificationSocket(
           onNotification(notification)
         })
       },
-      debug: process.env.NODE_ENV === 'development' ? console.log : () => {}
+      debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
     client.activate()
     return () => {

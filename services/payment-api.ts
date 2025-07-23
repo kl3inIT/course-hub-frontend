@@ -1,9 +1,9 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse } from '@/types/common'
 import {
-    PageResponse,
-    PaymentHistoryRequestDTO,
-    PaymentHistoryResponseDTO,
+  PageResponse,
+  PaymentHistoryRequestDTO,
+  PaymentHistoryResponseDTO,
 } from '@/types/payment'
 
 interface PaymentRequestDTO {

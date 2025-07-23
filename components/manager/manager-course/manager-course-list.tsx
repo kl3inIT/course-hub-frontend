@@ -379,7 +379,6 @@ export function ManagerCourseList() {
             className='pl-10'
           />
         </div>
-
       </div>
       <div className='border rounded-lg overflow-x-auto'>
         <Table>

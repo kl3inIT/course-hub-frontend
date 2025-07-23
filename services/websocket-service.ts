@@ -12,23 +12,27 @@ class WebSocketService {
 
   private getWebSocketUrl(): string {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    
+
     // Development
-    if (!apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+    if (
+      !apiUrl ||
+      apiUrl.includes('localhost') ||
+      apiUrl.includes('127.0.0.1')
+    ) {
       return 'http://localhost:8080/ws'
     }
-    
+
     // Production - SockJS needs HTTP/HTTPS URLs, not WS/WSS
     // It will auto-upgrade to WebSocket (WSS) if available
     if (apiUrl.startsWith('https://')) {
-      return apiUrl + '/ws'  // Keep https:// for SockJS
+      return apiUrl + '/ws' // Keep https:// for SockJS
     }
-    
+
     // Fallback for HTTP
     if (apiUrl.startsWith('http://')) {
-      return apiUrl + '/ws'  // Keep http:// for SockJS
+      return apiUrl + '/ws' // Keep http:// for SockJS
     }
-    
+
     // Default fallback - use HTTPS for production
     return 'https://api.coursehub.io.vn/ws'
   }
@@ -44,15 +48,16 @@ class WebSocketService {
     console.log('🔌 Connecting to WebSocket:', wsUrl)
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS(wsUrl, null, {
-        transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
-        timeout: 20000
-      }),
+      webSocketFactory: () =>
+        new SockJS(wsUrl, null, {
+          transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+          timeout: 20000,
+        }),
       connectHeaders: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       reconnectDelay: this.reconnectInterval,
-      onConnect: (frame) => {
+      onConnect: frame => {
         console.log('✅ WebSocket Connected:', frame)
         this.reconnectAttempts = 0
         onConnect && onConnect()
@@ -63,26 +68,29 @@ class WebSocketService {
         this.subscriptions.clear()
         this.handleReconnect()
       },
-      onStompError: (frame) => {
+      onStompError: frame => {
         console.error('❌ STOMP Error:', frame)
         this.handleReconnect()
       },
-      onWebSocketError: (error) => {
+      onWebSocketError: error => {
         console.error('❌ WebSocket Error:', error)
         this.handleReconnect()
       },
       // Disable debug in production
-      debug: process.env.NODE_ENV === 'development' ? console.log : () => {}
+      debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
 
     this.client.activate()
   }
 
   private handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentToken) {
+    if (
+      this.reconnectAttempts < this.maxReconnectAttempts &&
+      this.currentToken
+    ) {
       this.reconnectAttempts++
       console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}`)
-      
+
       setTimeout(() => {
         if (!this.client?.connected && this.currentToken) {
           this.connect(this.currentToken)
@@ -112,7 +120,7 @@ class WebSocketService {
     if (userRole && userRole.toUpperCase() !== 'ADMIN') {
       this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
       console.log('userRole:', userRole)
-      
+
       if (userRole.toUpperCase() === 'LEARNER') {
         this.subscribeTopic(
           '/topic/announcements/LEARNERS_ONLY',
@@ -120,7 +128,7 @@ class WebSocketService {
         )
         console.log('subscribeTopic:', '/topic/announcements/LEARNERS_ONLY')
       }
-      
+
       if (userRole.toUpperCase() === 'MANAGER') {
         this.subscribeTopic(
           '/topic/announcements/MANAGERS_ONLY',
@@ -133,7 +141,10 @@ class WebSocketService {
 
   public subscribeTopic(destination: string, event: string) {
     if (!this.client?.connected) {
-      console.warn('⚠️ WebSocket not connected, cannot subscribe to:', destination)
+      console.warn(
+        '⚠️ WebSocket not connected, cannot subscribe to:',
+        destination
+      )
       return
     }
 

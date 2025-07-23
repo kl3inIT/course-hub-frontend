@@ -407,6 +407,7 @@ export function CourseCatalog() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className='pl-10'
+            maxLength={100}
           />
         </div>
         <div className='flex gap-2'>

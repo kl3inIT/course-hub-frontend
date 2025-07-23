@@ -34,7 +34,9 @@ export function CompletionCertificate({
 
   const [showShareMenu, setShowShareMenu] = useState(false)
   const shareUrl = `https://course.learnhub.academy/verify/${certificateId}`
-  const shareText = encodeURIComponent(`I just completed the course: ${courseTitle} on LearnHub! Check out my certificate.`)
+  const shareText = encodeURIComponent(
+    `I just completed the course: ${courseTitle} on LearnHub! Check out my certificate.`
+  )
 
   const handleShareFacebook = useCallback(() => {
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${shareText}`
@@ -58,52 +60,84 @@ export function CompletionCertificate({
         style={{ width: 1024, height: 724 }}
       >
         {/* Ribbon with circle and web name - improved style */}
-        <div className="absolute top-0 right-8 h-full w-60 flex items-start justify-center pointer-events-none select-none">
+        <div className='absolute top-0 right-8 h-full w-60 flex items-start justify-center pointer-events-none select-none'>
           {/* Ribbon */}
-          <div className="relative w-full h-full">
-            <div className="absolute left-1/2 -translate-x-1/2 top-0 z-0">
-              <svg width="480" height="600" viewBox="0 0 176 450" className="block">
+          <div className='relative w-full h-full'>
+            <div className='absolute left-1/2 -translate-x-1/2 top-0 z-0'>
+              <svg
+                width='480'
+                height='600'
+                viewBox='0 0 176 450'
+                className='block'
+              >
                 <defs>
-                  <linearGradient id="ribbonGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#4ade80" />
-                    <stop offset="100%" stopColor="#22c55e" />
+                  <linearGradient
+                    id='ribbonGradient'
+                    x1='0'
+                    y1='0'
+                    x2='0'
+                    y2='1'
+                  >
+                    <stop offset='0%' stopColor='#4ade80' />
+                    <stop offset='100%' stopColor='#22c55e' />
                   </linearGradient>
                 </defs>
                 <polygon
-                  points="0,0 176,0 176,340 88,400 0,340"
-                  fill="url(#ribbonGradient)"
-                  filter="drop-shadow(0 8px 24px rgba(34,197,94,0.2))"
+                  points='0,0 176,0 176,340 88,400 0,340'
+                  fill='url(#ribbonGradient)'
+                  filter='drop-shadow(0 8px 24px rgba(34,197,94,0.2))'
                 />
               </svg>
             </div>
             {/* Circle */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-10 z-10 flex flex-col items-center justify-center">
-              <div className="w-44 h-44 bg-white border-4 border-green-600 rounded-full flex flex-col items-center justify-center shadow-2xl relative">
-                <span className="absolute inset-0 flex items-center justify-center text-green-700 font-extrabold text-2xl text-center leading-tight drop-shadow-sm z-10">
+            <div className='absolute left-1/2 -translate-x-1/2 top-10 z-10 flex flex-col items-center justify-center'>
+              <div className='w-44 h-44 bg-white border-4 border-green-600 rounded-full flex flex-col items-center justify-center shadow-2xl relative'>
+                <span className='absolute inset-0 flex items-center justify-center text-green-700 font-extrabold text-2xl text-center leading-tight drop-shadow-sm z-10'>
                   iT4Beginner
                 </span>
-                <svg width="176" height="176" viewBox="0 0 176 176" className="absolute left-0 top-0">
+                <svg
+                  width='176'
+                  height='176'
+                  viewBox='0 0 176 176'
+                  className='absolute left-0 top-0'
+                >
                   <defs>
-                    <circle id="circlePath" cx="88" cy="88" r="72" fill="none" />
+                    <circle
+                      id='circlePath'
+                      cx='88'
+                      cy='88'
+                      r='72'
+                      fill='none'
+                    />
                   </defs>
                   {/* Slogan nửa trên */}
-                  <text fill="#9ca3af" fontSize="14" fontWeight="500" letterSpacing="2">
+                  <text
+                    fill='#9ca3af'
+                    fontSize='14'
+                    fontWeight='500'
+                    letterSpacing='2'
+                  >
                     <textPath
-                      href="#circlePath"
-                      startOffset="10%"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
+                      href='#circlePath'
+                      startOffset='10%'
+                      textAnchor='middle'
+                      dominantBaseline='middle'
                     >
                       EDUCATION & TRAINING
                     </textPath>
                   </text>
                   {/* Slogan nửa dưới */}
-                  <text fill="#9ca3af" fontSize="14" fontWeight="500" letterSpacing="2">
+                  <text
+                    fill='#9ca3af'
+                    fontSize='14'
+                    fontWeight='500'
+                    letterSpacing='2'
+                  >
                     <textPath
-                      href="#circlePath"
-                      startOffset="60%"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
+                      href='#circlePath'
+                      startOffset='60%'
+                      textAnchor='middle'
+                      dominantBaseline='middle'
                     >
                       EDUCATION & TRAINING
                     </textPath>

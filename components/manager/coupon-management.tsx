@@ -102,7 +102,8 @@ export function CouponManagement() {
   const [pageSize, setPageSize] = useState(5)
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [couponStatuses, setCouponStatuses] = useState<CouponStatusResponse | null>(null)
+  const [couponStatuses, setCouponStatuses] =
+    useState<CouponStatusResponse | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('AVAILABLE')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [filterCourse, setFilterCourse] = useState<string>('all')

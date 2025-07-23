@@ -27,9 +27,8 @@ const PUBLIC_ENDPOINTS = [
   // ========== CATEGORY ENDPOINTS (Public) ==========
   '/api/categories',
 
-  // ========== REVIEW ENDPOINTS (Public - Read Only) ==========
-  { url: '/api/reviews', method: 'GET' },
-  { url: '/api/reviews/', method: 'GET' }, // Matches /api/reviews/{id}
+  // // ========== REVIEW ENDPOINTS (Public - Read Only) ==========
+  // { url: '/api/reviews', method: 'GET' }, // Chỉ đúng /api/reviews (list), KHÔNG match /api/reviews/check hay /api/reviews/{id}/is-mine
 ]
 
 export const httpClient = axios.create({
@@ -43,17 +42,13 @@ export const httpClient = axios.create({
 // Add request interceptor for authentication
 httpClient.interceptors.request.use(
   config => {
-    // Check if the current endpoint is in the public endpoints list
+    // Chỉ match chính xác url và method
     const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => {
       if (typeof endpoint === 'string') {
-        return config.url?.includes(endpoint)
+        return config.url === endpoint
       } else {
-        // More precise matching for URL patterns with methods
-        const urlMatches =
-          config.url?.includes(endpoint.url) ||
-          (endpoint.url.endsWith('/') && config.url?.startsWith(endpoint.url))
-        const methodMatches = config.method?.toUpperCase() === endpoint.method
-        return urlMatches && methodMatches
+        // So khớp chính xác url và method
+        return config.url === endpoint.url && config.method?.toUpperCase() === endpoint.method
       }
     })
 

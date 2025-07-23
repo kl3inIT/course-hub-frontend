@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -12,24 +11,39 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useAuth } from '@/context/auth-context'
 import { useToast } from '@/hooks/use-toast'
 import { reviewApi } from '@/services/review-api'
-import { useAuth } from '@/context/auth-context'
-import { Star, PenTool, MessageSquare } from 'lucide-react'
+import { MessageSquare, PenTool, Star } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface WriteReviewProps {
   courseId: string
   onReviewSubmitted?: () => void
+  initialData?: {
+    star: number
+    comment: string
+    reviewId: number
+  }
+  isEdit?: boolean
+  onCancel?: () => void
+  disabled?: boolean
 }
 
-export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
+export function WriteReview({ courseId, onReviewSubmitted, initialData, isEdit, onCancel, disabled }: WriteReviewProps) {
+  if (disabled) return null
   const { user } = useAuth()
   const { toast } = useToast()
   const [showDialog, setShowDialog] = useState(false)
-  const [rating, setRating] = useState(0)
+  const [rating, setRating] = useState(initialData?.star || 0)
   const [hoveredRating, setHoveredRating] = useState(0)
-  const [comment, setComment] = useState('')
+  const [comment, setComment] = useState(initialData?.comment || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Hiện dialog ngay nếu là edit
+  useEffect(() => {
+    if (isEdit) setShowDialog(true)
+  }, [isEdit])
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -61,23 +75,32 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
 
     try {
       setIsSubmitting(true)
-      await reviewApi.createReview({
-        courseId: Number(courseId),
-        star: rating,
-        comment: comment.trim(),
-      })
-
-      toast({
-        title: 'Success',
-        description: 'Your review has been submitted successfully!',
-      })
-
+      if (isEdit && initialData?.reviewId) {
+        await reviewApi.updateReview(initialData.reviewId, {
+          courseId: Number(courseId),
+          star: rating,
+          comment: comment.trim(),
+        })
+        toast({
+          title: 'Success',
+          description: 'Your review has been updated successfully!',
+        })
+      } else {
+        await reviewApi.createReview({
+          courseId: Number(courseId),
+          star: rating,
+          comment: comment.trim(),
+        })
+        toast({
+          title: 'Success',
+          description: 'Your review has been submitted successfully!',
+        })
+      }
       // Reset form
       setRating(0)
       setHoveredRating(0)
       setComment('')
       setShowDialog(false)
-
       // Notify parent component
       onReviewSubmitted?.()
     } catch (error: any) {
@@ -148,13 +171,17 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <Dialog open={showDialog} onOpenChange={v => {
+        setShowDialog(v)
+        if (!v && isEdit) onCancel?.()
+      }}>
         <DialogContent className='max-w-md'>
           <DialogHeader>
-            <DialogTitle>Write Your Review</DialogTitle>
+            <DialogTitle>{isEdit ? 'Edit Your Review' : 'Write Your Review'}</DialogTitle>
             <DialogDescription>
-              Share your experience with this course to help other students make
-              informed decisions.
+              {isEdit
+                ? 'Update your review for this course.'
+                : 'Share your experience with this course to help other students make informed decisions.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -202,6 +229,7 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
                 setRating(0)
                 setHoveredRating(0)
                 setComment('')
+                if (isEdit) onCancel?.()
               }}
               disabled={isSubmitting}
             >
@@ -213,7 +241,9 @@ export function WriteReview({ courseId, onReviewSubmitted }: WriteReviewProps) {
                 rating === 0 || comment.trim().length < 10 || isSubmitting
               }
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Review'}
+              {isSubmitting
+                ? (isEdit ? 'Saving...' : 'Submitting...')
+                : (isEdit ? 'Save' : 'Submit Review')}
             </Button>
           </div>
         </DialogContent>

@@ -100,4 +100,21 @@ export const reviewApi = {
     )
     return response.data
   },
+
+  checkUserReview: async (courseId: number): Promise<ApiResponse<boolean>> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+    const response = await httpClient.get('/api/reviews/check', {
+      params: { courseId },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    return response.data
+  },
+
+  checkReviewOwnership: async (reviewId: number): Promise<ApiResponse<boolean>> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+    const response = await httpClient.get(`/api/reviews/${reviewId}/is-mine`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    return response.data
+  },
 }

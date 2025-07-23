@@ -266,10 +266,6 @@ export function CourseEnrollmentManagement({
             />
             Refresh
           </Button>
-          <Button variant='outline'>
-            <Download className='mr-2 h-4 w-4' />
-            Export
-          </Button>
         </div>
       </div>
 

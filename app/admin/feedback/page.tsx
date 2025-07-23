@@ -431,8 +431,6 @@ export default function AdminFeedbackPage() {
                 ))
               )}
             </div>
-
-            {selectedFeedback && <FeedbackDetail feedback={selectedFeedback} />}
           </div>
         </SidebarInset>
       </SidebarProvider>

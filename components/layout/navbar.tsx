@@ -217,17 +217,16 @@ export function Navbar() {
     if (!token) return
 
     websocketService.connect(token, () => {
+      // Đăng ký nhận notification cá nhân
       websocketService.addSubscriber(
-        'notification',
+        'user-notification',
         (notification: NotificationDTO) => {
           setNotifications(prev => [notification, ...prev])
           setUnreadCount(prev => prev + 1)
+          console.log('Nhận được user-notification:', notification)
         }
       )
-      websocketService.subscribeTopic(
-        '/user/queue/notifications',
-        'notification'
-      )
+      websocketService.subscribeUserNotification()
 
       // Đăng ký nhận announcement theo role
       websocketService.addSubscriber(
@@ -253,7 +252,7 @@ export function Navbar() {
 
     // Cleanup
     return () => {
-      websocketService.removeSubscriber('notification')
+      websocketService.removeSubscriber('user-notification')
       websocketService.removeSubscriber('announcement-all')
       websocketService.removeSubscriber('announcement-learners')
       websocketService.removeSubscriber('announcement-managers')

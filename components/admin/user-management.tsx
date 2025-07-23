@@ -184,7 +184,25 @@ export function UserManagement() {
         'An email with login credentials has been sent to the manager.'
       )
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create manager')
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to create manager'
+      const detail =
+        error.response?.data?.detail || error.response?.data?.errors
+      if (detail) {
+        if (Array.isArray(detail)) {
+          detail.forEach((d: any) =>
+            toast.error(typeof d === 'string' ? d : JSON.stringify(d))
+          )
+        } else {
+          toast.error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+          )
+        }
+      } else {
+        toast.error(msg)
+      }
     }
   }
   const handleTabChange = (value: string) => {

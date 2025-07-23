@@ -3,7 +3,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
-import { AnnouncementDTO } from '@/types/announcement'
+import { Announcement } from '@/types/announcement'
 import { NotificationDTO } from '@/types/notification'
 import { X } from 'lucide-react'
 import Link from 'next/link'
@@ -28,7 +28,7 @@ export function notificationDropdown({
   function isNotification(item: any): item is NotificationDTO {
     return 'message' in item
   }
-  function isAnnouncement(item: any): item is AnnouncementDTO {
+  function isAnnouncement(item: any): item is Announcement {
     return 'title' in item && 'content' in item
   }
   const allRead = items.length > 0 && items.every(i => i.isRead === 1)

@@ -74,6 +74,8 @@ export function AnnouncementForm({
   const [scheduledMinute, setScheduledMinute] = useState<number>(
     new Date().getMinutes()
   )
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<any>(null)
 
   // Load current announcement status when editing
   useEffect(() => {
@@ -113,7 +115,6 @@ export function AnnouncementForm({
           { value: 'EMERGENCY', label: 'Emergency' },
         ])
       } catch (error) {
-        console.error('Failed to load enum values:', error)
         toast.error('Failed to load form data')
       } finally {
         setLoadingEnums(false)
@@ -151,6 +152,8 @@ export function AnnouncementForm({
 
   const handleSaveDraft = async () => {
     setLoading(true)
+    setErrorMessage(null)
+    setErrorDetail(null)
     try {
       if (announcementId) {
         // Update existing announcement
@@ -160,6 +163,7 @@ export function AnnouncementForm({
         })
         setCurrentStatus(AnnouncementStatus.DRAFT)
         toast.success('Announcement updated and saved as draft')
+        onSuccess()
       } else {
         await announcementApi.createAnnouncement({
           ...formData,
@@ -168,8 +172,25 @@ export function AnnouncementForm({
         toast.success('Announcement created and saved as draft')
         onSuccess()
       }
-    } catch (error) {
-      toast.error('Failed to save as draft')
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Failed to save as draft'
+      const detail =
+        error?.response?.data?.detail || error?.response?.data?.errors
+      setErrorMessage(msg)
+      setErrorDetail(detail)
+      if (detail) {
+        if (Array.isArray(detail)) {
+          detail.forEach((d: any) =>
+            toast.error(typeof d === 'string' ? d : JSON.stringify(d))
+          )
+        } else {
+          toast.error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+          )
+        }
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -177,6 +198,8 @@ export function AnnouncementForm({
 
   const handleSendNow = async () => {
     setLoading(true)
+    setErrorMessage(null)
+    setErrorDetail(null)
     try {
       if (announcementId) {
         await announcementApi.sendAnnouncement(announcementId)
@@ -190,8 +213,26 @@ export function AnnouncementForm({
         toast.success('Announcement created and sent')
         onSuccess()
       }
-    } catch (error) {
-      toast.error('Failed to send announcement')
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message || 'Failed to send announcement'
+      const detail =
+        error?.response?.data?.detail || error?.response?.data?.errors
+      setErrorMessage(msg)
+      setErrorDetail(detail)
+      if (detail) {
+        if (Array.isArray(detail)) {
+          detail.forEach((d: any) =>
+            toast.error(typeof d === 'string' ? d : JSON.stringify(d))
+          )
+        } else {
+          toast.error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+          )
+        }
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -203,6 +244,8 @@ export function AnnouncementForm({
       return
     }
     setLoading(true)
+    setErrorMessage(null)
+    setErrorDetail(null)
     try {
       if (announcementId) {
         await announcementApi.scheduleAnnouncement(
@@ -219,8 +262,26 @@ export function AnnouncementForm({
         toast.success('Announcement created and scheduled')
         onSuccess()
       }
-    } catch (error) {
-      toast.error('Failed to schedule announcement')
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message || 'Failed to schedule announcement'
+      const detail =
+        error?.response?.data?.detail || error?.response?.data?.errors
+      setErrorMessage(msg)
+      setErrorDetail(detail)
+      if (detail) {
+        if (Array.isArray(detail)) {
+          detail.forEach((d: any) =>
+            toast.error(typeof d === 'string' ? d : JSON.stringify(d))
+          )
+        } else {
+          toast.error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+          )
+        }
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -232,12 +293,32 @@ export function AnnouncementForm({
       return
     }
     setLoading(true)
+    setErrorMessage(null)
+    setErrorDetail(null)
     try {
       await announcementApi.cancelAnnouncement(announcementId)
       setCurrentStatus(AnnouncementStatus.CANCELLED)
       toast.success('Announcement cancelled')
-    } catch (error) {
-      toast.error('Failed to cancel announcement')
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message || 'Failed to cancel announcement'
+      const detail =
+        error?.response?.data?.detail || error?.response?.data?.errors
+      setErrorMessage(msg)
+      setErrorDetail(detail)
+      if (detail) {
+        if (Array.isArray(detail)) {
+          detail.forEach((d: any) =>
+            toast.error(typeof d === 'string' ? d : JSON.stringify(d))
+          )
+        } else {
+          toast.error(
+            typeof detail === 'string' ? detail : JSON.stringify(detail)
+          )
+        }
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -517,8 +598,8 @@ export function AnnouncementForm({
             Save as Draft
           </Button>
 
-          {/* Schedule hoặc Send Now */}
-          {formData.isScheduled ? (
+          {/* Schedule */}
+          {formData.isScheduled && (
             <Button
               type='button'
               variant='default'
@@ -535,7 +616,10 @@ export function AnnouncementForm({
               <CalendarIcon className='h-4 w-4' />
               Schedule
             </Button>
-          ) : (
+          )}
+
+          {/* Send Now chỉ khi tạo mới */}
+          {!announcementId && !formData.isScheduled && (
             <Button
               type='button'
               variant='outline'

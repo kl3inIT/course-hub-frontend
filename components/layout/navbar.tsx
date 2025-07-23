@@ -134,7 +134,9 @@ export function Navbar() {
     try {
       setLoadingAnnouncements(true)
       const response = await announcementApi.getUserAnnouncements()
+      console.log('API announcement response:', response.data?.data)
       setAnnouncements(response.data?.data || [])
+      console.log('Set announcements state:', response.data?.data || [])
     } catch (error) {
       setAnnouncements([])
     } finally {

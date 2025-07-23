@@ -27,15 +27,7 @@ import {
   TargetGroup,
 } from '@/types/announcement'
 import { format } from 'date-fns'
-import {
-  Archive,
-  ArchiveRestore,
-  Copy,
-  Edit,
-  Send,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { ArchiveRestore, Copy, Edit, Send, Trash2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -43,13 +35,17 @@ import { Pagination } from './Pagination'
 
 export function AnnouncementList({
   filters,
+  onStatsChange,
 }: {
   filters: {
     search: string
-    type: string
+    type: string // string để so sánh với 'ALL'
     status: string
     targetGroup?: string
+    startDate?: string
+    endDate?: string
   }
+  onStatsChange: () => void
 }) {
   const router = useRouter()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -60,7 +56,7 @@ export function AnnouncementList({
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [showDialog, setShowDialog] = useState<
-    'clone' | 'hide' | 'unhide' | 'delete' | null
+    'clone' | 'delete' | 'send' | null
   >(null)
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null)
@@ -85,32 +81,49 @@ export function AnnouncementList({
             ? (filters.targetGroup as TargetGroup)
             : undefined,
         search: filters.search || undefined,
-        isDeleted: 0, // Chỉ lấy những announcement chưa bị ẩn
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
         mode: 'list',
         sortBy: 'createdDate',
         direction: 'DESC',
       })
       .then(res => {
-        const data = res.data.data
+        const data: any = res.data.data
         setAnnouncements(data.content)
-        setTotalPages(data.totalPages)
-        setTotalElements(data.totalElements)
+        // Lấy phân trang từ data.page hoặc root
+        const totalPages =
+          typeof data.page?.totalPages === 'number'
+            ? data.page.totalPages
+            : typeof data.totalPages === 'number'
+              ? data.totalPages
+              : 1
+        const totalElements =
+          typeof data.page?.totalElements === 'number'
+            ? data.page.totalElements
+            : typeof data.totalElements === 'number'
+              ? data.totalElements
+              : 0
+        setTotalPages(totalPages > 0 ? totalPages : 1)
+        setTotalElements(totalElements)
       })
       .catch(() => setError('Failed to load announcements'))
       .finally(() => setLoading(false))
   }, [page, size, filters])
 
-  useEffect(() => {
-    console.log('DEBUG PAGINATION:', { page, totalPages })
-  }, [page, totalPages])
+  useEffect(() => {}, [page, totalPages])
 
-  const handleSendNow = async (id: string) => {
+  const handleSendNow = async () => {
+    if (!selectedAnnouncement) return
     try {
-      await announcementApi.sendAnnouncement(id)
+      await announcementApi.sendAnnouncement(selectedAnnouncement.id)
       toast.success('Announcement sent successfully')
+      onStatsChange()
       window.location.reload()
     } catch (error) {
       toast.error('Failed to send announcement')
+    } finally {
+      setShowDialog(null)
+      setSelectedAnnouncement(null)
     }
   }
 
@@ -118,6 +131,7 @@ export function AnnouncementList({
     try {
       await announcementApi.cancelAnnouncement(id)
       toast.success('Announcement cancelled')
+      onStatsChange()
       window.location.reload()
     } catch (error) {
       toast.error('Failed to cancel announcement')
@@ -127,16 +141,6 @@ export function AnnouncementList({
   const handleClone = async (announcement: Announcement) => {
     setSelectedAnnouncement(announcement)
     setShowDialog('clone')
-  }
-
-  const handleHide = async (announcement: Announcement) => {
-    setSelectedAnnouncement(announcement)
-    setShowDialog('hide')
-  }
-
-  const handleUnhide = async (announcement: Announcement) => {
-    setSelectedAnnouncement(announcement)
-    setShowDialog('unhide')
   }
 
   const handleDelete = async (announcement: Announcement) => {
@@ -149,37 +153,10 @@ export function AnnouncementList({
     try {
       await announcementApi.cloneAnnouncement(selectedAnnouncement.id)
       toast.success('Cloned to new draft!')
+      onStatsChange()
       window.location.reload()
     } catch (error) {
       toast.error('Failed to clone announcement')
-    } finally {
-      setShowDialog(null)
-      setSelectedAnnouncement(null)
-    }
-  }
-
-  const confirmHide = async () => {
-    if (!selectedAnnouncement) return
-    try {
-      await announcementApi.archiveAnnouncement(selectedAnnouncement.id)
-      toast.success('Announcement hidden!')
-      window.location.reload()
-    } catch (error) {
-      toast.error('Failed to hide announcement')
-    } finally {
-      setShowDialog(null)
-      setSelectedAnnouncement(null)
-    }
-  }
-
-  const confirmUnhide = async () => {
-    if (!selectedAnnouncement) return
-    try {
-      await announcementApi.unarchiveAnnouncement(selectedAnnouncement.id)
-      toast.success('Announcement unhidden!')
-      window.location.reload()
-    } catch (error) {
-      toast.error('Failed to unhide announcement')
     } finally {
       setShowDialog(null)
       setSelectedAnnouncement(null)
@@ -193,6 +170,7 @@ export function AnnouncementList({
         selectedAnnouncement.id
       )
       toast.success('Announcement deleted permanently!')
+      onStatsChange()
       window.location.reload()
     } catch (error) {
       toast.error('Failed to delete announcement')
@@ -214,6 +192,38 @@ export function AnnouncementList({
         return 'destructive'
       default:
         return 'secondary'
+    }
+  }
+
+  const getTargetGroupLabel = (group: string) => {
+    switch (group) {
+      case 'ALL_USERS':
+        return 'All Users'
+      case 'LEARNERS_ONLY':
+        return 'Learners Only'
+      case 'MANAGERS_ONLY':
+        return 'Managers Only'
+      case 'SPECIFIC_USERS':
+        return 'Specific Users'
+      default:
+        return group
+    }
+  }
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'GENERAL':
+        return 'General'
+      case 'COURSE_UPDATE':
+        return 'Course Update'
+      case 'SYSTEM_MAINTENANCE':
+        return 'System Maintenance'
+      case 'PROMOTION':
+        return 'Promotion'
+      case 'EMERGENCY':
+        return 'Emergency'
+      default:
+        return type
     }
   }
 
@@ -255,37 +265,6 @@ export function AnnouncementList({
         </Button>
       )
     }
-    // Hide cho SENT (chưa bị xóa)
-    if (
-      announcement.status === AnnouncementStatus.SENT &&
-      !announcement.isDeleted
-    ) {
-      buttons.push(
-        <Button
-          key='hide'
-          variant='destructive'
-          size='sm'
-          onClick={() => handleHide(announcement)}
-          className='mr-1'
-        >
-          <Archive className='h-4 w-4' />
-        </Button>
-      )
-    }
-    // Unhide nếu đã bị xóa (isDeleted)
-    if (announcement.isDeleted) {
-      buttons.push(
-        <Button
-          key='unhide'
-          variant='default'
-          size='sm'
-          onClick={() => handleUnhide(announcement)}
-          className='mr-1'
-        >
-          <ArchiveRestore className='h-4 w-4' />
-        </Button>
-      )
-    }
     // Cancel cho SCHEDULED
     if (announcement.status === AnnouncementStatus.SCHEDULED) {
       buttons.push(
@@ -294,12 +273,8 @@ export function AnnouncementList({
           variant='destructive'
           size='sm'
           onClick={() => {
-            if (
-              window.confirm(
-                'Are you sure you want to cancel this scheduled announcement?'
-              )
-            )
-              handleCancel(announcement.id)
+            setSelectedAnnouncement(announcement)
+            setShowDialog('delete')
           }}
           className='mr-1'
         >
@@ -315,8 +290,8 @@ export function AnnouncementList({
           variant='default'
           size='sm'
           onClick={() => {
-            if (window.confirm('Send this announcement now?'))
-              handleSendNow(announcement.id)
+            setSelectedAnnouncement(announcement)
+            setShowDialog('send')
           }}
           className='mr-1'
         >
@@ -406,8 +381,12 @@ export function AnnouncementList({
                 announcements.map(a => (
                   <TableRow key={a.id} className='border-b hover:bg-muted/50'>
                     <TableCell className='px-3 py-2'>{a.title}</TableCell>
-                    <TableCell className='px-3 py-2'>{a.type}</TableCell>
-                    <TableCell className='px-3 py-2'>{a.targetGroup}</TableCell>
+                    <TableCell className='px-3 py-2'>
+                      {getTypeLabel(a.type)}
+                    </TableCell>
+                    <TableCell className='px-3 py-2'>
+                      {getTargetGroupLabel(a.targetGroup)}
+                    </TableCell>
                     <TableCell className='px-3 py-2'>
                       <Badge variant={getStatusBadgeVariant(a.status)}>
                         {a.status}
@@ -463,52 +442,23 @@ export function AnnouncementList({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Hide Dialog */}
+      {/* Send Now Dialog */}
       <AlertDialog
-        open={showDialog === 'hide'}
+        open={showDialog === 'send'}
         onOpenChange={() => setShowDialog(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hide Announcement</AlertDialogTitle>
+            <AlertDialogTitle>Send Announcement Now</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to hide "{selectedAnnouncement?.title}"?
-              This will hide the announcement from users but you can restore it
-              later.
+              Are you sure you want to send "{selectedAnnouncement?.title}" now?
+              This will immediately send the announcement to all target users.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmHide}
-              className='bg-red-600 hover:bg-red-700'
-            >
-              Hide
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Unhide Dialog */}
-      <AlertDialog
-        open={showDialog === 'unhide'}
-        onOpenChange={() => setShowDialog(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Unhide Announcement</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to unhide "{selectedAnnouncement?.title}
-              "? This will make the announcement visible to users again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmUnhide}
-              className='bg-green-600 hover:bg-green-700'
-            >
-              Unhide
+            <AlertDialogAction onClick={handleSendNow}>
+              Send Now
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -582,8 +532,12 @@ export function HiddenAnnouncementList({
       .then(res => {
         const data = res.data.data
         setAnnouncements(data.content)
-        setTotalPages(data.totalPages)
-        setTotalElements(data.totalElements)
+        setTotalPages(
+          typeof data.totalPages === 'number' && data.totalPages > 0
+            ? data.totalPages
+            : 1
+        )
+        setTotalElements(data.totalElements || 0)
       })
       .catch(() => setError('Failed to load archived announcements'))
       .finally(() => setLoading(false))

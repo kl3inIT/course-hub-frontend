@@ -39,6 +39,7 @@ import {
   ThumbsUp,
   Trash2,
 } from 'lucide-react'
+import Link from 'next/link'
 import React, { memo, useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -158,7 +159,7 @@ const CommentComponentBase = ({
     )
   }
 
-  const isDescriptionRequired = reportReason === 'other'
+  const isDescriptionRequired = reportReason === 'Other'
   const isSubmitDisabled =
     !reportReason || (isDescriptionRequired && !reportDescription.trim())
 
@@ -167,19 +168,41 @@ const CommentComponentBase = ({
       className={`space-y-3 ${isReply ? 'ml-8 border-l-2 border-muted pl-4' : ''}`}
     >
       <div className='flex items-start gap-3'>
-        <div className='relative'>
-          <Avatar
-            className={`h-8 w-8 ${comment.isManager ? 'ring-2 ring-red-500/70 ring-offset-2 shadow-sm shadow-red-500/20' : ''}`}
+        {comment.userId ? (
+          <Link
+            href={`/profile/${comment.userId}`}
+            prefetch={false}
+            className='block'
           >
-            <AvatarImage
-              src={comment.avatar || '/assets/default-avatar.svg'}
-              alt={comment.author}
-            />
-          </Avatar>
-          {comment.isManager && (
-            <Crown className='h-3.5 w-3.5 text-yellow-500 absolute -top-1.5 -right-1 fill-yellow-500 transform rotate-45 drop-shadow-sm' />
-          )}
-        </div>
+            <span className='relative'>
+              <Avatar
+                className={`h-8 w-8 cursor-pointer ${comment.isManager ? 'ring-2 ring-red-500/70 ring-offset-2 shadow-sm shadow-red-500/20' : ''}`}
+              >
+                <AvatarImage
+                  src={comment.avatar || '/assets/default-avatar.svg'}
+                  alt={comment.author}
+                />
+              </Avatar>
+              {comment.isManager && (
+                <Crown className='h-3.5 w-3.5 text-yellow-500 absolute -top-1.5 -right-1 fill-yellow-500 transform rotate-45 drop-shadow-sm' />
+              )}
+            </span>
+          </Link>
+        ) : (
+          <span className='relative'>
+            <Avatar
+              className={`h-8 w-8 ${comment.isManager ? 'ring-2 ring-red-500/70 ring-offset-2 shadow-sm shadow-red-500/20' : ''}`}
+            >
+              <AvatarImage
+                src={comment.avatar || '/assets/default-avatar.svg'}
+                alt={comment.author}
+              />
+            </Avatar>
+            {comment.isManager && (
+              <Crown className='h-3.5 w-3.5 text-yellow-500 absolute -top-1.5 -right-1 fill-yellow-500 transform rotate-45 drop-shadow-sm' />
+            )}
+          </span>
+        )}
         <div className='flex-1 space-y-2'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-2'>

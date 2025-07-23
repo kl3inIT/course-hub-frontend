@@ -29,19 +29,23 @@ import {
 import { format } from 'date-fns'
 import { ArchiveRestore, Copy, Eye, EyeOff, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Pagination } from './Pagination'
 
 export function AnnouncementHistory({
   filters,
+  onStatsChange,
 }: {
   filters: {
     search: string
-    type: string
+    type: string // string để so sánh với 'ALL'
     status: string
     targetGroup?: string
+    startDate?: string
+    endDate?: string
   }
+  onStatsChange: () => void
 }) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [totalPages, setTotalPages] = useState(0)
@@ -78,12 +82,66 @@ export function AnnouncementHistory({
     setShowDialog('delete')
   }
 
+  const fetchHistory = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    announcementApi
+      .getAnnouncements({
+        page,
+        size,
+        type:
+          filters.type && filters.type !== 'ALL'
+            ? (filters.type as AnnouncementType)
+            : undefined,
+        status:
+          filters.status && filters.status !== 'ALL'
+            ? (filters.status as AnnouncementStatus)
+            : undefined,
+        targetGroup:
+          filters.targetGroup && filters.targetGroup !== 'ALL'
+            ? (filters.targetGroup as TargetGroup)
+            : undefined,
+        search: filters.search || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        mode: 'history',
+        sortBy: 'createdDate',
+        direction: 'DESC',
+      })
+      .then(res => {
+        const data: any = res.data.data
+        setAnnouncements(data.content)
+        // Lấy phân trang từ data.page hoặc root
+        const totalPages =
+          typeof data.page?.totalPages === 'number'
+            ? data.page.totalPages
+            : typeof data.totalPages === 'number'
+              ? data.totalPages
+              : 1
+        const totalElements =
+          typeof data.page?.totalElements === 'number'
+            ? data.page.totalElements
+            : typeof data.totalElements === 'number'
+              ? data.totalElements
+              : 0
+        setTotalPages(totalPages > 0 ? totalPages : 1)
+        setTotalElements(totalElements)
+      })
+      .catch(() => setError('Failed to load announcement history'))
+      .finally(() => setLoading(false))
+  }, [page, size, filters])
+
+  useEffect(() => {
+    fetchHistory()
+  }, [fetchHistory])
+
   const confirmClone = async () => {
     if (!selectedAnnouncement) return
     try {
       await announcementApi.cloneAnnouncement(selectedAnnouncement.id)
       toast.success('Cloned to new draft!')
-      window.location.reload()
+      onStatsChange()
+      fetchHistory()
     } catch (error) {
       toast.error('Failed to clone announcement')
     } finally {
@@ -97,7 +155,8 @@ export function AnnouncementHistory({
     try {
       await announcementApi.archiveAnnouncement(selectedAnnouncement.id)
       toast.success('Announcement archived!')
-      window.location.reload()
+      onStatsChange()
+      fetchHistory()
     } catch (error) {
       toast.error('Failed to archive announcement')
     } finally {
@@ -111,7 +170,8 @@ export function AnnouncementHistory({
     try {
       await announcementApi.unarchiveAnnouncement(selectedAnnouncement.id)
       toast.success('Announcement restored!')
-      window.location.reload()
+      onStatsChange()
+      fetchHistory()
     } catch (error) {
       toast.error('Failed to restore announcement')
     } finally {
@@ -127,7 +187,8 @@ export function AnnouncementHistory({
         selectedAnnouncement.id
       )
       toast.success('Announcement deleted permanently!')
-      window.location.reload()
+      onStatsChange()
+      fetchHistory()
     } catch (error) {
       toast.error('Failed to delete announcement')
     } finally {
@@ -216,40 +277,37 @@ export function AnnouncementHistory({
     return buttons
   }
 
-  useEffect(() => {
-    setLoading(true)
-    setError(null)
-    announcementApi
-      .getAnnouncements({
-        page,
-        size,
-        type:
-          filters.type && filters.type !== 'ALL'
-            ? (filters.type as AnnouncementType)
-            : undefined,
-        status:
-          filters.status && filters.status !== 'ALL'
-            ? (filters.status as AnnouncementStatus)
-            : undefined,
-        targetGroup:
-          filters.targetGroup && filters.targetGroup !== 'ALL'
-            ? (filters.targetGroup as TargetGroup)
-            : undefined,
-        search: filters.search || undefined,
-        isDeleted: 0, // Chỉ lấy những announcement chưa bị archive
-        mode: 'history',
-        sortBy: 'createdDate',
-        direction: 'DESC',
-      })
-      .then(res => {
-        const data = res.data.data
-        setAnnouncements(data.content)
-        setTotalPages(data.totalPages)
-        setTotalElements(data.totalElements)
-      })
-      .catch(() => setError('Failed to load announcement history'))
-      .finally(() => setLoading(false))
-  }, [page, size, filters])
+  const getTargetGroupLabel = (group: string) => {
+    switch (group) {
+      case 'ALL_USERS':
+        return 'All Users'
+      case 'LEARNERS_ONLY':
+        return 'Learners Only'
+      case 'MANAGERS_ONLY':
+        return 'Managers Only'
+      case 'SPECIFIC_USERS':
+        return 'Specific Users'
+      default:
+        return group
+    }
+  }
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'GENERAL':
+        return 'General'
+      case 'COURSE_UPDATE':
+        return 'Course Update'
+      case 'SYSTEM_MAINTENANCE':
+        return 'System Maintenance'
+      case 'PROMOTION':
+        return 'Promotion'
+      case 'EMERGENCY':
+        return 'Emergency'
+      default:
+        return type
+    }
+  }
 
   return (
     <>
@@ -313,8 +371,12 @@ export function AnnouncementHistory({
                 announcements.map(a => (
                   <TableRow key={a.id} className='border-b hover:bg-muted/50'>
                     <TableCell className='px-3 py-2'>{a.title}</TableCell>
-                    <TableCell className='px-3 py-2'>{a.type}</TableCell>
-                    <TableCell className='px-3 py-2'>{a.targetGroup}</TableCell>
+                    <TableCell className='px-3 py-2'>
+                      {getTypeLabel(a.type)}
+                    </TableCell>
+                    <TableCell className='px-3 py-2'>
+                      {getTargetGroupLabel(a.targetGroup)}
+                    </TableCell>
                     <TableCell className='px-3 py-2'>
                       <Badge>{a.status}</Badge>
                     </TableCell>

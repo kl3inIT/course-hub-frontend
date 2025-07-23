@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -40,6 +41,7 @@ import { format } from 'date-fns'
 import { ArrowUpDown, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
 
 // Safe date formatting function
@@ -59,11 +61,12 @@ interface ReportTableProps {
     severity: string | undefined
     search: string
   }
+  dateRange: DateRange | undefined
 }
 
 const severityOptions: ReportSeverity[] = ['LOW', 'MEDIUM', 'HIGH']
 
-function ReportTable({ type, status, filters }: ReportTableProps) {
+function ReportTable({ type, status, filters, dateRange }: ReportTableProps) {
   const router = useRouter()
   const [reports, setReports] = useState<AggregatedReportDTO[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,7 +83,7 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
       setLoading(true)
       setError(null)
 
-      const params = {
+      let params: any = {
         page,
         size: pageSize,
         sortBy,
@@ -90,6 +93,15 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
         severity: filters.severity,
         search: filters.search || undefined,
       }
+      if (dateRange?.from && dateRange?.to) {
+        const start = new Date(dateRange.from)
+        start.setHours(0, 0, 0, 0)
+        const end = new Date(dateRange.to)
+        end.setHours(23, 59, 59, 999)
+        params.startDate = format(start, "yyyy-MM-dd'T'HH:mm:ss")
+        params.endDate = format(end, "yyyy-MM-dd'T'HH:mm:ss")
+      }
+      // Gọi API với params là query string
       const response = await reportApi.getAggregatedReports(params)
       const data = response.data as AggregatedReportPage
       setReports(data.content)
@@ -103,7 +115,7 @@ function ReportTable({ type, status, filters }: ReportTableProps) {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, type, status, sortBy, sortDir, filters])
+  }, [page, pageSize, type, status, sortBy, sortDir, filters, dateRange])
 
   // Reset page to 0 when type or status changes
   useEffect(() => {
@@ -344,6 +356,23 @@ export function ReportManagement() {
     search: '',
   })
 
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+
+  // Set default date range to 7 days ago to today
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const from = params.get('from')
+    const to = params.get('to')
+    if (from && to) {
+      setDateRange({ from: new Date(from), to: new Date(to) })
+    } else {
+      const today = new Date()
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(today.getDate() - 6)
+      setDateRange({ from: sevenDaysAgo, to: today })
+    }
+  }, [])
+
   const handleFilterChange = (key: 'severity' | 'search', value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -356,6 +385,7 @@ export function ReportManagement() {
       severity: undefined,
       search: '',
     })
+    setDateRange(undefined)
   }
 
   return (
@@ -391,7 +421,13 @@ export function ReportManagement() {
               className='w-[300px]'
             />
 
-            {(filters.severity || filters.search) && (
+            {/* Date Range Filter */}
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+
+            {(filters.severity ||
+              filters.search ||
+              dateRange?.from ||
+              dateRange?.to) && (
               <Button variant='outline' onClick={clearFilters}>
                 Clear Filters
               </Button>
@@ -416,13 +452,19 @@ export function ReportManagement() {
               </TabsList>
 
               <TabsContent value='ALL'>
-                <ReportTable type='COMMENT' status='ALL' filters={filters} />
+                <ReportTable
+                  type='COMMENT'
+                  status='ALL'
+                  filters={filters}
+                  dateRange={dateRange}
+                />
               </TabsContent>
               <TabsContent value='PENDING'>
                 <ReportTable
                   type='COMMENT'
                   status='PENDING'
                   filters={filters}
+                  dateRange={dateRange}
                 />
               </TabsContent>
               <TabsContent value='APPROVED'>
@@ -430,6 +472,7 @@ export function ReportManagement() {
                   type='COMMENT'
                   status='APPROVED'
                   filters={filters}
+                  dateRange={dateRange}
                 />
               </TabsContent>
               <TabsContent value='REJECTED'>
@@ -437,6 +480,7 @@ export function ReportManagement() {
                   type='COMMENT'
                   status='REJECTED'
                   filters={filters}
+                  dateRange={dateRange}
                 />
               </TabsContent>
             </Tabs>
@@ -452,16 +496,27 @@ export function ReportManagement() {
               </TabsList>
 
               <TabsContent value='ALL'>
-                <ReportTable type='REVIEW' status='ALL' filters={filters} />
+                <ReportTable
+                  type='REVIEW'
+                  status='ALL'
+                  filters={filters}
+                  dateRange={dateRange}
+                />
               </TabsContent>
               <TabsContent value='PENDING'>
-                <ReportTable type='REVIEW' status='PENDING' filters={filters} />
+                <ReportTable
+                  type='REVIEW'
+                  status='PENDING'
+                  filters={filters}
+                  dateRange={dateRange}
+                />
               </TabsContent>
               <TabsContent value='APPROVED'>
                 <ReportTable
                   type='REVIEW'
                   status='APPROVED'
                   filters={filters}
+                  dateRange={dateRange}
                 />
               </TabsContent>
               <TabsContent value='REJECTED'>
@@ -469,6 +524,7 @@ export function ReportManagement() {
                   type='REVIEW'
                   status='REJECTED'
                   filters={filters}
+                  dateRange={dateRange}
                 />
               </TabsContent>
             </Tabs>

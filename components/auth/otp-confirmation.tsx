@@ -418,8 +418,6 @@ export function OTPConfirmation({
             </Button>
           </div>
         )}
-
-        
       </CardContent>
     </Card>
   )

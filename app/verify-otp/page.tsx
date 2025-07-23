@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { OTPConfirmation } from '@/components/auth/otp-confirmation'
-import { Navbar } from '@/components/layout/navbar'
 
 export default function VerifyOTPPage() {
   const searchParams = useSearchParams()
@@ -81,7 +80,6 @@ export default function VerifyOTPPage() {
   if (!otpData.destination) {
     return (
       <div className='min-h-screen bg-background'>
-        <Navbar />
         <div className='container mx-auto px-4 py-16'>
           <div className='text-center'>
             <h1 className='text-2xl font-bold mb-4'>
@@ -102,7 +100,6 @@ export default function VerifyOTPPage() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <Navbar />
       <div className='container mx-auto px-4 py-16'>
         <OTPConfirmation
           type={otpData.type}

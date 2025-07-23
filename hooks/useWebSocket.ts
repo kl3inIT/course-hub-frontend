@@ -13,17 +13,18 @@ interface UseWebSocketReturn {
   connectionState: string
   connect: () => void
   disconnect: () => void
-  subscribe: (destination: string, event: string, callback: (data: any) => void) => void
+  subscribe: (
+    destination: string,
+    event: string,
+    callback: (data: any) => void
+  ) => void
   unsubscribe: (event: string) => void
 }
 
-export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
-  const {
-    autoConnect = true,
-    onConnect,
-    onDisconnect,
-    onError
-  } = options
+export function useWebSocket(
+  options: UseWebSocketOptions = {}
+): UseWebSocketReturn {
+  const { autoConnect = true, onConnect, onDisconnect, onError } = options
 
   const [isConnected, setIsConnected] = useState(false)
   const [connectionState, setConnectionState] = useState('NOT_INITIALIZED')
@@ -33,7 +34,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     const checkConnection = () => {
       const connected = websocketService.isConnected()
       const state = websocketService.getConnectionState()
-      
+
       setIsConnected(connected)
       setConnectionState(state)
     }
@@ -65,10 +66,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     onDisconnect?.()
   }, [onDisconnect])
 
-  const subscribe = useCallback((destination: string, event: string, callback: (data: any) => void) => {
-    websocketService.addSubscriber(event, callback)
-    websocketService.subscribeTopic(destination, event)
-  }, [])
+  const subscribe = useCallback(
+    (destination: string, event: string, callback: (data: any) => void) => {
+      websocketService.addSubscriber(event, callback)
+      websocketService.subscribeTopic(destination, event)
+    },
+    []
+  )
 
   const unsubscribe = useCallback((event: string) => {
     websocketService.removeSubscriber(event)
@@ -79,7 +83,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     if (autoConnect) {
       const token = localStorage.getItem('accessToken')
       const user = localStorage.getItem('user')
-      
+
       if (token && user && !isConnected) {
         connect()
       }
@@ -101,7 +105,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
     connect,
     disconnect,
     subscribe,
-    unsubscribe
+    unsubscribe,
   }
 }
 
@@ -119,7 +123,11 @@ export function useNotifications(userId?: string | number) {
   useEffect(() => {
     if (isConnected && userId) {
       // Subscribe to user-specific notifications
-      subscribe(`/user/queue/notifications`, 'user-notifications', addNotification)
+      subscribe(
+        `/user/queue/notifications`,
+        'user-notifications',
+        addNotification
+      )
 
       return () => {
         unsubscribe('user-notifications')
@@ -128,11 +136,9 @@ export function useNotifications(userId?: string | number) {
   }, [isConnected, userId, subscribe, unsubscribe, addNotification])
 
   const markAsRead = useCallback((notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId 
-          ? { ...notif, isRead: true }
-          : notif
+    setNotifications(prev =>
+      prev.map(notif =>
+        notif.id === notificationId ? { ...notif, isRead: true } : notif
       )
     )
     setUnreadCount(prev => Math.max(0, prev - 1))
@@ -148,7 +154,7 @@ export function useNotifications(userId?: string | number) {
     unreadCount,
     addNotification,
     markAsRead,
-    clearAll
+    clearAll,
   }
 }
 
@@ -164,14 +170,26 @@ export function useAnnouncements(userRole?: string) {
   useEffect(() => {
     if (isConnected && userRole) {
       // Subscribe to role-based announcements
-      subscribe('/topic/announcements/ALL_USERS', 'announcements-all', addAnnouncement)
+      subscribe(
+        '/topic/announcements/ALL_USERS',
+        'announcements-all',
+        addAnnouncement
+      )
 
       if (userRole.toUpperCase() === 'LEARNER') {
-        subscribe('/topic/announcements/LEARNERS_ONLY', 'announcements-learners', addAnnouncement)
+        subscribe(
+          '/topic/announcements/LEARNERS_ONLY',
+          'announcements-learners',
+          addAnnouncement
+        )
       }
 
       if (userRole.toUpperCase() === 'MANAGER') {
-        subscribe('/topic/announcements/MANAGERS_ONLY', 'announcements-managers', addAnnouncement)
+        subscribe(
+          '/topic/announcements/MANAGERS_ONLY',
+          'announcements-managers',
+          addAnnouncement
+        )
       }
 
       return () => {
@@ -184,6 +202,6 @@ export function useAnnouncements(userRole?: string) {
 
   return {
     announcements,
-    addAnnouncement
+    addAnnouncement,
   }
-} 
+}

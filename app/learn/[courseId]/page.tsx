@@ -27,17 +27,19 @@ export default function CourseLearnPage({ params }: PageProps) {
       try {
         // Get course details to find first module
         const courseResponse = await courseApi.getCourseDetails(courseId)
-        
+
         if (!courseResponse.data?.modules?.[0]) {
           router.replace(`/courses/${courseId}`)
           return
         }
 
         const firstModuleId = courseResponse.data.modules[0].id
-        
+
         // Get lessons from first module
-        const lessonsResponse = await lessonApi.getLessonsByModuleId(firstModuleId.toString())
-        
+        const lessonsResponse = await lessonApi.getLessonsByModuleId(
+          firstModuleId.toString()
+        )
+
         if (!lessonsResponse.data?.[0]) {
           router.replace(`/courses/${courseId}`)
           return
@@ -45,7 +47,6 @@ export default function CourseLearnPage({ params }: PageProps) {
 
         const firstLessonId = lessonsResponse.data[0].id
         router.replace(`/learn/${courseId}/${firstLessonId}`)
-        
       } catch (error) {
         console.error('Error finding first lesson:', error)
         router.replace(`/courses/${courseId}`)

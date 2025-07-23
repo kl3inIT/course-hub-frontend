@@ -291,35 +291,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className='py-20 px-4 bg-primary text-primary-foreground'>
-        <div className='container mx-auto text-center space-y-8'>
-          <h2 className='text-3xl font-bold'>
-            Ready to Join Our Learning Community?
-          </h2>
-          <p className='text-xl opacity-90 max-w-2xl mx-auto'>
-            Become part of a global community of learners and start your journey
-            toward achieving your goals.
-          </p>
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-            <Link href='/courses'>
-              <Button size='lg' variant='secondary' className='text-lg px-8'>
-                Explore Courses
-              </Button>
-            </Link>
-            <Link href='/register'>
-              <Button
-                size='lg'
-                variant='outline'
-                className='text-lg px-8 border-white text-white hover:bg-white hover:text-primary'
-              >
-                Sign Up Free
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       <Footer />
     </div>
   )

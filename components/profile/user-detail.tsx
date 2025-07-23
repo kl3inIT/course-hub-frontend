@@ -664,7 +664,8 @@ export function UserDetail({ userId }: { userId: string }) {
   const { toast } = useToast()
   const { getToken } = useAuth()
   const pathname = usePathname()
-  const isManagementView = pathname?.startsWith('/admin') || pathname?.startsWith('/manager')
+  const isManagementView =
+    pathname?.startsWith('/admin') || pathname?.startsWith('/manager')
   const [activityTab, setActivityTab] = useState<string>('all')
   const [activityDateRange, setActivityDateRange] = useState<
     DateRange | undefined
@@ -862,7 +863,8 @@ export function UserDetail({ userId }: { userId: string }) {
               className='gap-2'
             >
               <ArrowLeft className='h-4 w-4' />
-              Back to {pathname?.startsWith('/admin') ? 'Users' : 'Course Management'}
+              Back to{' '}
+              {pathname?.startsWith('/admin') ? 'Users' : 'Course Management'}
             </Button>
             <Separator orientation='vertical' className='h-6' />
             <h2 className='text-2xl font-bold'>User Profile</h2>

@@ -23,6 +23,8 @@ export interface GetReportsParams {
   status?: string
   search?: string
   resourceId?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface ReportListResponse {

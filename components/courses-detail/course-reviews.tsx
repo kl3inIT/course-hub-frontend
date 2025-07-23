@@ -20,7 +20,12 @@ import { useToast } from '@/hooks/use-toast'
 import { reportApi } from '@/services/report-api'
 import { reviewApi } from '@/services/review-api'
 import { ReviewResponseDTO } from '@/types/review'
+<<<<<<< HEAD
 import { Edit, Flag, MoreVertical, Star, Trash2 } from 'lucide-react'
+=======
+import { Flag, Star } from 'lucide-react'
+import Link from 'next/link'
+>>>>>>> main
 import { useCallback, useEffect, useState } from 'react'
 import { WriteReview } from './write-review'
 
@@ -311,17 +316,37 @@ export function CourseReviews({
               <CardContent className='pt-4 pb-4'>
                 <div className='flex items-start justify-between mb-2'>
                   <div className='flex items-center gap-4'>
-                    <Avatar className='w-12 h-12'>
-                      <AvatarImage
-                        src={review.userAvatar || '/placeholder.svg'}
-                      />
-                      <AvatarFallback>
-                        {review.userName
-                          .split(' ')
-                          .map((n: string) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
+                    {review.userId ? (
+                      <Link
+                        href={`/profile/${review.userId}`}
+                        prefetch={false}
+                        className='block'
+                      >
+                        <Avatar className='w-12 h-12 cursor-pointer'>
+                          <AvatarImage
+                            src={review.userAvatar || '/placeholder.svg'}
+                          />
+                          <AvatarFallback>
+                            {review.userName
+                              .split(' ')
+                              .map((n: string) => n[0])
+                              .join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                    ) : (
+                      <Avatar className='w-12 h-12'>
+                        <AvatarImage
+                          src={review.userAvatar || '/placeholder.svg'}
+                        />
+                        <AvatarFallback>
+                          {review.userName
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                     <div>
                       <div className='font-semibold text-base'>
                         {review.userName}

@@ -247,7 +247,7 @@ export function ManagerDashboard() {
       value: statsData.totalStudents,
       change: `${statsData.studentGrowth > 0 ? '+' : ''}${statsData.studentGrowth}% from last month`,
       icon: Users,
-      onClick: () => router.push('/manager/students'),
+      onClick: undefined, // Đã tắt điều hướng
       trend: statsData.studentGrowth > 0 ? 'up' : 'down',
     },
     {
@@ -284,10 +284,10 @@ export function ManagerDashboard() {
       variant: 'outline' as const,
     },
     {
-      title: 'View Students',
-      description: 'Monitor student progress',
-      icon: Users,
-      onClick: () => router.push('/manager/students'),
+      title: 'View Coupons',
+      description: 'View and manage coupons',
+      icon: Tags, 
+      onClick: () => router.push('/manager/coupons'),
       variant: 'outline' as const,
     },
     {

@@ -10,6 +10,7 @@ export interface ReviewResponseDTO extends BaseResponse {
   userId: number
   userName: string
   userAvatar?: string
+  email: string
   courseId: number
   courseName: string
   categoryName: string

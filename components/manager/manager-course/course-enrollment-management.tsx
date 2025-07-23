@@ -533,10 +533,6 @@ export function CourseEnrollmentManagement({
                                 View Profile
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className='mr-2 h-4 w-4' />
-                              Send Message
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className='text-destructive'
                               onClick={() =>

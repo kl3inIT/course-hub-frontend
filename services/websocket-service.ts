@@ -138,14 +138,15 @@ class WebSocketService {
       }
     }
   }
-
   /**
    * Đăng ký nhận thông báo cá nhân (notification) cho user
-   * @param userId id của user (không bắt buộc nếu dùng queue cá nhân)
+   * Khi subscribe thành công sẽ log: 📡 Subscribed to: /user/queue/notifications
+   * Để nhận notification, hãy dùng:
+   *   websocketService.addSubscriber('user-notification', (data) => { ... })
    */
   subscribeUserNotification() {
     this.subscribeTopic('/user/queue/notifications', 'user-notification')
-    // Khi subscribeTopic thành công đã có log 📡 Subscribed to: ...
+    console.log('Đã gọi subscribeUserNotification, chờ log 📡 Subscribed to: /user/queue/notifications')
   }
 
   public subscribeTopic(destination: string, event: string) {

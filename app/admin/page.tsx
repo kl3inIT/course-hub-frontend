@@ -182,8 +182,8 @@ function RecentTransactions() {
         <div className="text-center py-8 text-gray-400">No transactions found.</div>
       ) : (
         <div className="space-y-4">
-          {transactions.map((txn: PaymentHistoryResponseDTO) => (
-            <div key={txn.transactionCode} className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg px-4 py-3 bg-gray-50 hover:bg-gray-100 transition">
+          {transactions.map((txn: PaymentHistoryResponseDTO, idx: number) => (
+            <div key={txn.transactionCode + '_' + idx} className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg px-4 py-3 bg-gray-50 hover:bg-gray-100 transition">
               <div className="flex-1 min-w-0">
                 <div className="font-semibold">Transaction ID: {txn.transactionCode}</div>
                 <div className="text-sm text-gray-500">Amount: ${txn.amount} • {formatTimeAgo((txn as any).createdDate || (txn as any).createdAt || (txn as any).date || (txn as any).paymentDate || '')}</div>

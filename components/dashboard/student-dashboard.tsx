@@ -1,13 +1,11 @@
 'use client'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from '@/components/ui/card'
 import {
   Dialog,
@@ -27,9 +25,8 @@ import {
   Calendar,
   Clock,
   Download,
-  Play,
   Share2,
-  Trophy,
+  Trophy
 } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -393,59 +390,6 @@ export function StudentDashboard() {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Recommended Courses Section */}
-      <div className='mt-12 space-y-6'>
-        <div>
-          <h2 className='text-2xl font-bold'>Recommended for You</h2>
-          <p className='text-muted-foreground'>
-            Courses we think you'll love based on your interests
-          </p>
-        </div>
-
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {recommendedCourses.map((course, index) => (
-            <Card
-              key={`recommended-${course.title}-${index}`}
-              className='overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col'
-            >
-              <div className='aspect-video bg-muted'>
-                <img
-                  src={course.thumbnailUrl || '/placeholder.svg'}
-                  alt={course.title}
-                  className='w-full h-full object-cover'
-                />
-              </div>
-              <div className='flex flex-col flex-1'>
-                <CardHeader>
-                  <CardTitle className='line-clamp-1'>{course.title}</CardTitle>
-                  <CardDescription>by {course.instructorName}</CardDescription>
-                </CardHeader>
-                <CardContent className='flex flex-col flex-1'>
-                  <div className='flex-1'>
-                    <p className='text-sm text-muted-foreground line-clamp-2 mb-4'>
-                      {course.description}
-                    </p>
-                  </div>
-                  <div className='flex items-center justify-between mb-4 w-full'>
-                    <Badge variant='secondary'>{course.category}</Badge>
-                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                      <Clock className='h-4 w-4' />
-                      {course.totalDuration}h • {course.totalLessons} lessons
-                    </div>
-                  </div>
-                  <Link href={`/courses/${course.id}`}>
-                    <Button className='w-full'>
-                      <Play className='h-4 w-4 mr-2' />
-                      View Course
-                    </Button>
-                  </Link>
-                </CardContent>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
 
       {/* Certificate Modal */}
       <Dialog

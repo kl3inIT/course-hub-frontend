@@ -1,6 +1,6 @@
 'use client'
 
-import { ProtectedRoute } from '@/components/auth/protected-route'
+import { RoleGuard } from '@/components/auth/role-guard'
 import FeedbackDetail from '@/components/feedback/FeedbackDetail'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { Badge } from '@/components/ui/badge'
@@ -43,15 +43,41 @@ export function useNotificationSocket(
   onNotification: (notification: any) => void
 ) {
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws')
+    const getWebSocketUrl = () => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+      // Development
+      if (
+        !apiUrl ||
+        apiUrl.includes('localhost') ||
+        apiUrl.includes('127.0.0.1')
+      ) {
+        return 'http://localhost:8080/ws'
+      }
+
+      // Production - SockJS needs HTTPS URLs (auto-upgrades to WSS)
+      if (apiUrl.startsWith('https://')) {
+        return apiUrl + '/ws' // Keep https:// for SockJS
+      }
+
+      // Fallback
+      return 'https://api.coursehub.io.vn/ws'
+    }
+
+    const wsUrl = getWebSocketUrl()
+    const socket = new SockJS(wsUrl)
     const client = new Client({
       webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
       onConnect: () => {
         client.subscribe(`/topic/notifications/user-${userId}`, message => {
           const notification = JSON.parse(message.body)
           onNotification(notification)
         })
       },
+      debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
     client.activate()
     return () => {
@@ -169,7 +195,7 @@ export default function AdminFeedbackPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['admin']} requireAuth={true}>
+    <RoleGuard allowedRoles={['admin']} redirectOnUnauthorized={true}>
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
@@ -410,6 +436,6 @@ export default function AdminFeedbackPage() {
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </ProtectedRoute>
+    </RoleGuard>
   )
 }

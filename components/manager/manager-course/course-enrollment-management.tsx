@@ -60,6 +60,7 @@ import {
 import { toast } from 'sonner'
 import { courseApi } from '@/services/course-api'
 import { CourseEnrollment, CourseEnrollmentStats } from '@/types/course'
+import Link from 'next/link'
 
 interface CourseEnrollmentManagementProps {
   courseId: string
@@ -79,6 +80,8 @@ export function CourseEnrollmentManagement({
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [selectedTab, setSelectedTab] = useState('overview')
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const pageSize = 10
 
   // Dialog states
   const [unenrollDialog, setUnenrollDialog] = useState<{
@@ -154,6 +157,14 @@ export function CourseEnrollmentManagement({
 
     return filtered
   }, [enrollments, searchTerm, statusFilter, sortBy, sortOrder])
+
+  const pagedEnrollments = useMemo(() => {
+    const start = page * pageSize
+    const end = start + pageSize
+    return filteredAndSortedEnrollments.slice(start, end)
+  }, [filteredAndSortedEnrollments, page, pageSize])
+
+  const totalPages = Math.ceil(filteredAndSortedEnrollments.length / pageSize)
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -264,10 +275,6 @@ export function CourseEnrollmentManagement({
               className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
             />
             Refresh
-          </Button>
-          <Button variant='outline'>
-            <Download className='mr-2 h-4 w-4' />
-            Export
           </Button>
         </div>
       </div>
@@ -455,7 +462,7 @@ export function CourseEnrollmentManagement({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAndSortedEnrollments.map(enrollment => (
+                  {pagedEnrollments.map(enrollment => (
                     <TableRow key={enrollment.id}>
                       <TableCell>
                         <div className='flex items-center space-x-3'>
@@ -520,13 +527,13 @@ export function CourseEnrollmentManagement({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align='end'>
-                            <DropdownMenuItem>
-                              <Eye className='mr-2 h-4 w-4' />
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className='mr-2 h-4 w-4' />
-                              Send Message
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/manager/users/${enrollment.studentId}/detail`}
+                              >
+                                <Eye className='mr-2 h-4 w-4' />
+                                View Profile
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className='text-destructive'
@@ -544,6 +551,26 @@ export function CourseEnrollmentManagement({
                   ))}
                 </TableBody>
               </Table>
+              {/* Pagination UI */}
+              <div className='flex items-center justify-between px-4 py-3 border-t'>
+                <Button
+                  variant='outline'
+                  disabled={page === 0}
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className='text-sm text-muted-foreground'>
+                  Page {page + 1} of {totalPages || 1}
+                </span>
+                <Button
+                  variant='outline'
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

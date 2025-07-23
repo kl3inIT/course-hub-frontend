@@ -1,5 +1,6 @@
 'use client'
 
+import { notificationDropdown } from '@/components/notifications/notification-dropdown'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,10 +20,11 @@ import {
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/context/auth-context'
-import { useFeedbackDetail } from '@/context/feedback-detail-context'
+import { announcementApi } from '@/services/announcement-api'
 import { categoryApi } from '@/services/category-api'
 import { notificationApi } from '@/services/notification-api'
 import { websocketService } from '@/services/websocket-service'
+import { Announcement } from '@/types/announcement'
 import { CategoryResponseDTO } from '@/types/category'
 import { NotificationDTO } from '@/types/notification'
 import {
@@ -34,21 +36,22 @@ import {
   Menu,
   Settings,
   Shield,
-  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export function Navbar() {
   const { user, logout } = useAuth()
-  const { showFeedback } = useFeedbackDetail()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [categories, setCategories] = useState<CategoryResponseDTO[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [notifications, setNotifications] = useState<NotificationDTO[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loadingNotifications, setLoadingNotifications] = useState(false)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
   const pathname = usePathname()
 
   // Fetch notifications
@@ -91,9 +94,7 @@ export function Navbar() {
         prevNotifications.map(n => ({ ...n, isRead: 1 }))
       )
       setUnreadCount(0)
-    } catch (error) {
-      console.error('Failed to mark all as read:', error)
-    }
+    } catch (error) {}
   }
 
   // Mark single notification as read
@@ -106,9 +107,7 @@ export function Navbar() {
         )
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch (error) {
-      console.error('Failed to mark as read:', error)
-    }
+    } catch (error) {}
   }
 
   // Delete single notification
@@ -129,13 +128,93 @@ export function Navbar() {
     } catch {}
   }
 
+  // Fetch announcements
+  const fetchAnnouncements = async () => {
+    if (!user) return
+    try {
+      setLoadingAnnouncements(true)
+      const response = await announcementApi.getUserAnnouncements()
+      setAnnouncements(response.data?.data || [])
+    } catch (error) {
+      setAnnouncements([])
+    } finally {
+      setLoadingAnnouncements(false)
+    }
+  }
+
+  // Gộp notification và announcement
+  const getAllNotiItems = () => {
+    const notiItems = notifications.map(n => ({
+      ...n,
+      type: 'notification',
+      createdAt: n.createdAt,
+    }))
+    const annItems = announcements.map(a => ({
+      ...a,
+      type: 'announcement',
+      createdAt: a.createdAt,
+    }))
+    return [...notiItems, ...annItems].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+  }
+
+  // Unread count
+  const unreadCountAll = getAllNotiItems().filter(i => i.isRead !== 1).length
+
+  // Mark as read
+  const handleMarkAsReadUnified = async (item: any) => {
+    if (item.isRead === 1) return
+    if (item.type === 'notification') {
+      await handleMarkAsRead(item.id)
+    } else if (item.type === 'announcement') {
+      await announcementApi.markAsRead(item.id)
+      setAnnouncements(prev =>
+        prev.map(a => (a.id === item.id ? { ...a, isRead: 1 } : a))
+      )
+    }
+  }
+
+  // Delete all notifications and announcements
+  const handleDeleteAllUnified = async () => {
+    await handleDeleteAllNotifications()
+    // Xóa tất cả announcement (gọi API xóa từng cái)
+    await Promise.all(
+      announcements.map(a => announcementApi.markAnnouncementAsDeleted(a.id))
+    )
+    setAnnouncements([])
+  }
+
+  // Delete
+  const handleDeleteUnified = async (item: any) => {
+    if (item.type === 'notification') {
+      await handleDeleteNotification(item.id)
+    } else if (item.type === 'announcement') {
+      await announcementApi.markAnnouncementAsDeleted(item.id)
+      setAnnouncements(prev => prev.filter(a => a.id !== item.id))
+    }
+  }
+
+  // Mark all as read
+  const handleMarkAllAsReadUnified = async () => {
+    // Mark all notifications as read
+    await handleMarkAllAsRead()
+    // Mark all announcements as read
+    const unreadAnnouncements = announcements.filter(a => a.isRead !== 1)
+    await Promise.all(
+      unreadAnnouncements.map(a => announcementApi.markAsRead(a.id))
+    )
+    setAnnouncements(prev => prev.map(a => ({ ...a, isRead: 1 })))
+  }
+
   // Connect to WebSocket
   useEffect(() => {
     if (!user) return
     const token = localStorage.getItem('accessToken')
     if (!token) return
 
-    websocketService.connect(user.id.toString(), token, () => {
+    websocketService.connect(token, () => {
       websocketService.addSubscriber(
         'notification',
         (notification: NotificationDTO) => {
@@ -143,21 +222,49 @@ export function Navbar() {
           setUnreadCount(prev => prev + 1)
         }
       )
-      websocketService.subscribe(`/user/queue/notifications`, 'notification')
+      websocketService.subscribeTopic(
+        '/user/queue/notifications',
+        'notification'
+      )
+
+      // Đăng ký nhận announcement theo role
+      websocketService.addSubscriber(
+        'announcement-all',
+        (announcement: Announcement) => {
+          setAnnouncements(prev => [announcement, ...prev])
+        }
+      )
+      websocketService.addSubscriber(
+        'announcement-learners',
+        (announcement: Announcement) => {
+          setAnnouncements(prev => [announcement, ...prev])
+        }
+      )
+      websocketService.addSubscriber(
+        'announcement-managers',
+        (announcement: Announcement) => {
+          setAnnouncements(prev => [announcement, ...prev])
+        }
+      )
+      websocketService.subscribeAnnouncements(user.role)
     })
 
     // Cleanup
     return () => {
       websocketService.removeSubscriber('notification')
+      websocketService.removeSubscriber('announcement-all')
+      websocketService.removeSubscriber('announcement-learners')
+      websocketService.removeSubscriber('announcement-managers')
       websocketService.disconnect()
     }
   }, [user])
 
-  // Fetch notifications when user is logged in
+  // Fetch both on login
   useEffect(() => {
     if (user) {
       fetchNotifications()
       fetchUnreadCount()
+      fetchAnnouncements()
     }
   }, [user])
 
@@ -175,7 +282,6 @@ export function Navbar() {
           .slice(0, 6)
         setCategories(sortedCategories)
       } catch (error) {
-        console.error('Failed to fetch categories:', error)
       } finally {
         setLoadingCategories(false)
       }
@@ -184,15 +290,9 @@ export function Navbar() {
     fetchCategories()
   }, [])
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      // Always redirect to login regardless of logout API result
-      window.location.href = '/login'
-    }
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/login'
   }
 
   const isActiveLink = (href: string) => {
@@ -381,6 +481,7 @@ export function Navbar() {
 
           {/* Right Side - Auth & Mobile Menu */}
           <div className='flex items-center gap-4'>
+            <ThemeToggle />
             {/* Desktop User Menu - Keep avatar dropdown with Course Management and Admin Panel */}
             {user ? (
               <div className='hidden lg:flex items-center gap-4'>
@@ -391,100 +492,21 @@ export function Navbar() {
                       className='relative h-8 w-8 rounded-full'
                     >
                       <Bell className='h-5 w-5' />
-                      {unreadCount > 0 && (
+                      {unreadCountAll > 0 && (
                         <span className='absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center'>
-                          {unreadCount}
+                          {unreadCountAll}
                         </span>
                       )}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className='w-80' align='end' forceMount>
-                    <div className='flex items-center justify-between p-2 border-b'>
-                      <h4 className='font-medium'>Notifications</h4>
-                      <div className='flex gap-2'>
-                        {notifications.length > 0 &&
-                          notifications.some(n => !n.isRead) && (
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className='h-7 text-xs'
-                              onClick={handleMarkAllAsRead}
-                            >
-                              Mark all as read
-                            </Button>
-                          )}
-                        {notifications.length > 0 &&
-                          notifications.every(n => n.isRead) && (
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className='h-7 text-xs text-destructive'
-                              onClick={handleDeleteAllNotifications}
-                            >
-                              Delete all
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                    <div className='max-h-[300px] overflow-y-auto'>
-                      {loadingNotifications ? (
-                        <div className='p-4 text-center text-sm text-muted-foreground'>
-                          Loading notifications...
-                        </div>
-                      ) : notifications.length === 0 ? (
-                        <div className='p-4 text-center text-sm text-muted-foreground'>
-                          No notifications
-                        </div>
-                      ) : (
-                        notifications.map(notification => (
-                          <DropdownMenuItem
-                            key={notification.id}
-                            className={`flex flex-col items-start p-3 gap-1 cursor-pointer hover:bg-muted ${!notification.isRead ? 'bg-slate-200' : ''}`}
-                            onClick={() => {
-                              if (
-                                notification.resourceType === 'FEEDBACK' &&
-                                typeof notification.resourceId === 'number'
-                              ) {
-                                if (!notification.isRead)
-                                  handleMarkAsRead(notification.id)
-                                showFeedback(notification.resourceId)
-                              } else {
-                                if (!notification.isRead)
-                                  handleMarkAsRead(notification.id)
-                                if (notification.link)
-                                  window.location.href = notification.link
-                              }
-                            }}
-                          >
-                            <div className='flex items-center justify-between w-full'>
-                              <div className='flex-1 min-w-0'>
-                                <span className='text-sm text-blue-600 cursor-pointer hover:underline'>
-                                  {notification.message}
-                                </span>
-                              </div>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='ml-2 h-5 w-5 text-destructive'
-                                onClick={e => {
-                                  e.stopPropagation()
-                                  handleDeleteNotification(notification.id)
-                                }}
-                                title='Delete notification'
-                              >
-                                <X className='h-4 w-4' />
-                              </Button>
-                            </div>
-                            <span className='text-xs text-muted-foreground'>
-                              {new Date(
-                                notification.createdAt
-                              ).toLocaleString()}
-                            </span>
-                          </DropdownMenuItem>
-                        ))
-                      )}
-                    </div>
-                  </DropdownMenuContent>
+                  {notificationDropdown({
+                    items: getAllNotiItems(),
+                    loading: loadingNotifications || loadingAnnouncements,
+                    onMarkAllAsRead: handleMarkAllAsReadUnified,
+                    onDeleteAll: handleDeleteAllUnified,
+                    onMarkAsRead: handleMarkAsReadUnified,
+                    onDelete: handleDeleteUnified,
+                  })}
                 </DropdownMenu>
 
                 <div className='text-sm'>
@@ -526,12 +548,14 @@ export function Navbar() {
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href='/dashboard'>
-                        <GraduationCap className='mr-2 h-4 w-4' />
-                        My Learning
-                      </Link>
-                    </DropdownMenuItem>
+                    {user.role === 'learner' && (
+                      <DropdownMenuItem asChild>
+                        <Link href='/dashboard'>
+                          <GraduationCap className='mr-2 h-4 w-4' />
+                          My Learning
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href='/profile'>
                         <Settings className='mr-2 h-4 w-4' />
@@ -656,6 +680,18 @@ export function Navbar() {
                         Contact
                       </Link>
 
+                      <Link
+                        href='/coupons'
+                        className={`text-lg font-medium transition-colors py-2 ${
+                          isActiveLink('/coupons')
+                            ? 'text-primary'
+                            : 'hover:text-primary'
+                        }`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Coupons
+                      </Link>
+
                       {/* Only show "My Learning" link for learners in mobile */}
                       {user && user.role === 'learner' && (
                         <Link
@@ -713,12 +749,12 @@ export function Navbar() {
                           {(user.role === 'manager' ||
                             user.role === 'admin') && (
                             <Link
-                              href='/course-management'
+                              href='/manager'
                               className='flex items-center gap-2 text-sm py-2 hover:text-primary'
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
                               <BookOpen className='h-4 w-4' />
-                              Course Management
+                              Manager Panel
                             </Link>
                           )}
 

@@ -1,6 +1,6 @@
 import { httpClient } from '@/services/http-client'
 import { ApiResponse, Page } from '@/types/common'
-import { NotificationDTO } from '@/types/notification'
+import { NotificationDTO, NotificationType } from '@/types/notification'
 
 export const notificationApi = {
   getNotifications: async (params: {
@@ -43,5 +43,17 @@ export const notificationApi = {
 
   deleteAllNotifications: async () => {
     return httpClient.delete(`/api/notifications/all`)
+  },
+
+  createNotification: async (data: {
+    type: NotificationType
+    message: string
+    recipientType: string
+  }) => {
+    const response = await httpClient.post<ApiResponse<NotificationDTO>>(
+      '/api/notifications',
+      data
+    )
+    return response
   },
 }

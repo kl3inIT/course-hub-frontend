@@ -22,6 +22,7 @@ export interface GetReportsParams {
   severity?: string
   status?: string
   search?: string
+  resourceId?: string
 }
 
 export interface ReportListResponse {
@@ -63,4 +64,42 @@ export interface ReportResponse {
   warningCount: number
   hidden: boolean
   createdAt: string
+}
+
+// Aggregated report types for new BE API
+export interface AggregatedReportDTO {
+  resourceId: number
+  resourceType: ReportType
+  resourceContent: string
+  resourceOwner: string
+  resourceOwnerId: number
+  resourceOwnerAvatar: string
+  resourceOwnerStatus: string
+  resourceOwnerMemberSince: string
+  hidden: boolean
+  totalReports: number | string
+  status: ReportStatus
+  severity: ReportSeverity
+  createdAt: string | Date
+  reports: ReportDetailDTO[]
+}
+
+export interface ReportDetailDTO {
+  reportId: number
+  reporterId: number
+  reporterName: string
+  reporterAvatar: string
+  reason: string
+  severity: ReportSeverity
+  createdAt: string
+}
+
+export interface AggregatedReportPage {
+  content: AggregatedReportDTO[]
+  page: {
+    size: number
+    number: number
+    totalElements: number
+    totalPages: number
+  }
 }

@@ -87,15 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('accessToken')
       if (token) {
         // Gọi API logout
+        // Xóa thông tin user và token
+        setUser(null)
+        localStorage.clear()
         await httpClient.post('/api/auth/logout', { token })
       }
     } catch (error) {
       console.error('Logout error:', error)
-    } finally {
-      // Xóa thông tin user và token
-      setUser(null)
-      localStorage.removeItem('user')
-      localStorage.removeItem('accessToken')
     }
   }
 

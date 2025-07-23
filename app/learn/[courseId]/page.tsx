@@ -5,13 +5,11 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/auth-context'
 import { courseApi } from '@/services/course-api'
 import { lessonApi } from '@/services/lesson-api'
-import { enrollmentApi } from '@/services/enrollment-api'
 import { Navbar } from '@/components/layout/navbar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, AlertCircle, Users, BookOpen } from 'lucide-react'
+import { Loader2, BookOpen } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ courseId: string }>
@@ -24,53 +22,38 @@ export default function CourseLearnPage({ params }: PageProps) {
 
   useEffect(() => {
     const redirectToFirstLesson = async () => {
-      if (!user) return
+      if (!user || !courseId) return
 
       try {
-        // Check if user can access this course (enrolled OR manager/admin)
-        const canAccess = await enrollmentApi.canAccessCourse(
-          courseId,
-          user.role
-        )
+        // Get course details to find first module
+        const courseResponse = await courseApi.getCourseDetails(courseId)
 
-        if (!canAccess) {
-          // Redirect to course detail page for enrollment
+        if (!courseResponse.data?.modules?.[0]) {
           router.replace(`/courses/${courseId}`)
           return
         }
 
-        // Get course details
-        const courseResponse = await courseApi.getCourseDetails(courseId)
-        if (!courseResponse.data) {
-          throw new Error('Course not found')
-        }
-
-        // Get first module
-        const firstModule = courseResponse.data.modules[0]
-        if (!firstModule) {
-          throw new Error('No modules found in this course')
-        }
+        const firstModuleId = courseResponse.data.modules[0].id
 
         // Get lessons from first module
         const lessonsResponse = await lessonApi.getLessonsByModuleId(
-          firstModule.id.toString()
+          firstModuleId.toString()
         )
-        const firstLesson = lessonsResponse.data[0]
-        if (!firstLesson) {
-          throw new Error('No lessons found in this module')
+
+        if (!lessonsResponse.data?.[0]) {
+          router.replace(`/courses/${courseId}`)
+          return
         }
 
-        // Redirect to first lesson
-        router.replace(`/learn/${courseId}/${firstLesson.id}`)
+        const firstLessonId = lessonsResponse.data[0].id
+        router.replace(`/learn/${courseId}/${firstLessonId}`)
       } catch (error) {
-        console.error('Error redirecting to first lesson:', error)
-        // Stay on current page and show error
+        console.error('Error finding first lesson:', error)
+        router.replace(`/courses/${courseId}`)
       }
     }
 
-    if (courseId) {
-      redirectToFirstLesson()
-    }
+    redirectToFirstLesson()
   }, [courseId, router, user])
 
   return (
@@ -82,32 +65,14 @@ export default function CourseLearnPage({ params }: PageProps) {
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>
                 <BookOpen className='h-5 w-5' />
-                Loading Course Content
+                Starting Course
               </CardTitle>
             </CardHeader>
             <CardContent className='flex flex-col items-center justify-center py-8 space-y-4'>
               <Loader2 className='h-8 w-8 animate-spin text-primary' />
               <p className='text-muted-foreground text-center'>
-                Checking access permissions and redirecting to first lesson...
+                Loading first lesson...
               </p>
-
-              {/* Show different messages based on user role */}
-              {user?.role === 'manager' || user?.role === 'admin' ? (
-                <Alert className='mt-4'>
-                  <Users className='h-4 w-4' />
-                  <AlertDescription>
-                    You have {user.role} access to all courses without
-                    enrollment.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert className='mt-4'>
-                  <AlertCircle className='h-4 w-4' />
-                  <AlertDescription>
-                    Verifying your enrollment status for this course...
-                  </AlertDescription>
-                </Alert>
-              )}
 
               <div className='flex gap-2 pt-4'>
                 <Button

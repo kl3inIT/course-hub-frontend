@@ -368,21 +368,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className='py-20 px-4 bg-primary text-primary-foreground'>
-        <div className='container mx-auto text-center space-y-8'>
-          <h2 className='text-3xl font-bold'>Ready to Start Learning?</h2>
-          <p className='text-xl opacity-90 max-w-2xl mx-auto'>
-            Join thousands of students already learning on LearnHub
-          </p>
-          <Link href='/register'>
-            <Button size='lg' variant='secondary' className='text-lg px-8'>
-              Get Started Today
-            </Button>
-          </Link>
-        </div>
-      </section>
-
       {/* Footer */}
       <Footer />
     </div>

@@ -272,11 +272,18 @@ export function CourseBasicInfoForm({
               </div>
               <Input
                 id='price'
-                type='number'
-                step='0.01'
-                min='0'
+                type='text'
+                inputMode='decimal'
+                pattern='^\\d*(\\.\\d{0,2})?$'
                 value={form.price}
-                onChange={e => handleChange('price', e.target.value)}
+                onChange={e => {
+                  let val = e.target.value
+                  // Loại bỏ số 0 ở đầu, trừ trường hợp chỉ là "0" hoặc "0.xxx"
+                  if (/^0\\d+/.test(val)) {
+                    val = val.replace(/^0+/, '')
+                  }
+                  handleChange('price', val)
+                }}
                 placeholder='0 for free, or 99.99'
                 className={errors.price ? 'border-red-500' : ''}
               />

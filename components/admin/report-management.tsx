@@ -1,6 +1,6 @@
 'use client'
 
-import { reportApi } from '@/services/report-api'
+import { Pagination } from '@/components/admin/user-management/user-pagination'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,13 +11,6 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-} from '@/components/ui/pagination'
 import {
   Select,
   SelectContent,
@@ -35,69 +28,92 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { reportApi } from '@/services/report-api'
 import {
-  ReportResponse,
+  AggregatedReportDTO,
+  AggregatedReportPage,
   ReportSeverity,
   ReportStatus,
   ReportType,
 } from '@/types/report'
 import { format } from 'date-fns'
-import {
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Loader2,
-} from 'lucide-react'
+import { ArrowUpDown, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+// Safe date formatting function
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return 'N/A'
+  try {
+    return format(new Date(dateString), 'MMM d, yyyy HH:mm')
+  } catch (error) {
+    return 'Invalid date'
+  }
+}
+
 interface ReportTableProps {
   type: ReportType
+  status: ReportStatus | 'ALL'
   filters: {
     severity: string | undefined
-    status: string | undefined
     search: string
   }
 }
 
 const severityOptions: ReportSeverity[] = ['LOW', 'MEDIUM', 'HIGH']
-const statusOptions: ReportStatus[] = ['PENDING', 'APPROVED', 'REJECTED']
 
-function ReportTable({ type, filters }: ReportTableProps) {
+function ReportTable({ type, status, filters }: ReportTableProps) {
   const router = useRouter()
-  const [reports, setReports] = useState<ReportResponse[]>([])
+  const [reports, setReports] = useState<AggregatedReportDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [sortBy, setSortBy] = useState('createdDate')
+  const [totalElements, setTotalElements] = useState(0)
+  const [pageSize, setPageSize] = useState(5)
+  const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const loadReports = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await reportApi.getReports({
+
+      const params = {
         page,
-        size: 10,
+        size: pageSize,
         sortBy,
         sortDir,
         type,
+        status: status === 'ALL' ? undefined : status,
         severity: filters.severity,
-        status: filters.status,
         search: filters.search || undefined,
-      })
-      setReports(response.data.content)
-      setTotalPages(response.data.totalPages)
+      }
+      const response = await reportApi.getAggregatedReports(params)
+      const data = response.data as AggregatedReportPage
+      setReports(data.content)
+      setTotalPages(data.page.totalPages)
+      setTotalElements(data.page.totalElements)
+      setPageSize(data.page.size)
+      setPage(data.page.number)
     } catch (error) {
       setError('Failed to load reports. Please try again later.')
       toast.error('Failed to load reports')
     } finally {
       setLoading(false)
     }
-  }, [page, type, sortBy, sortDir, filters])
+  }, [page, pageSize, type, status, sortBy, sortDir, filters])
+
+  // Reset page to 0 when type or status changes
+  useEffect(() => {
+    setPage(0)
+  }, [type, status])
+
+  // Reset page to 0 when pageSize changes
+  useEffect(() => {
+    setPage(0)
+  }, [pageSize])
 
   useEffect(() => {
     loadReports()
@@ -112,30 +128,7 @@ function ReportTable({ type, filters }: ReportTableProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className='flex items-center justify-center py-8'>
-        <Loader2 className='h-8 w-8 animate-spin text-muted-foreground' />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className='flex flex-col items-center justify-center gap-4 py-8'>
-        <p className='text-sm text-destructive'>{error}</p>
-        <Button onClick={() => loadReports()}>Try Again</Button>
-      </div>
-    )
-  }
-
-  if (!reports.length) {
-    return (
-      <div className='flex flex-col items-center justify-center gap-2 py-8'>
-        <p className='text-sm text-muted-foreground'>No reports found</p>
-      </div>
-    )
-  }
+  const hasData = reports.length > 0
 
   return (
     <div className='space-y-4'>
@@ -143,28 +136,27 @@ function ReportTable({ type, filters }: ReportTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Report ID</TableHead>
-              <TableHead>
+              <TableHead className='w-[200px]'>
                 <Button
                   variant='ghost'
-                  onClick={() => handleSort('reason')}
+                  onClick={() => handleSort('resourceContent')}
                   className='flex items-center gap-1'
                 >
-                  Reason
+                  Resource
                   <ArrowUpDown className='h-4 w-4' />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className='w-[150px]'>
                 <Button
                   variant='ghost'
-                  onClick={() => handleSort('severity')}
+                  onClick={() => handleSort('resourceOwner')}
                   className='flex items-center gap-1'
                 >
-                  Severity
+                  Owner
                   <ArrowUpDown className='h-4 w-4' />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className='w-[100px]'>
                 <Button
                   variant='ghost'
                   onClick={() => handleSort('status')}
@@ -174,158 +166,185 @@ function ReportTable({ type, filters }: ReportTableProps) {
                   <ArrowUpDown className='h-4 w-4' />
                 </Button>
               </TableHead>
-              <TableHead>
+              <TableHead className='w-[120px]'>
                 <Button
                   variant='ghost'
-                  onClick={() => handleSort('createdDate')}
+                  onClick={() => handleSort('totalReports')}
                   className='flex items-center gap-1'
                 >
-                  Timestamp
+                  Total Reports
                   <ArrowUpDown className='h-4 w-4' />
                 </Button>
               </TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className='w-[80px]'>
+                <Button
+                  variant='ghost'
+                  onClick={() => handleSort('hidden')}
+                  className='flex items-center gap-1'
+                >
+                  Hidden
+                  <ArrowUpDown className='h-4 w-4' />
+                </Button>
+              </TableHead>
+              <TableHead className='w-[120px]'>
+                <Button
+                  variant='ghost'
+                  onClick={() => handleSort('createdAt')}
+                  className='flex items-center gap-1'
+                >
+                  Created At
+                  <ArrowUpDown className='h-4 w-4' />
+                </Button>
+              </TableHead>
+              <TableHead className='w-[80px]'>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {reports.map(report => (
-              <TableRow key={report.reportId}>
-                <TableCell className='font-mono'>{report.reportId}</TableCell>
-                <TableCell className='max-w-[300px] truncate'>
-                  {report.reason}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      report.severity === 'HIGH' ? 'destructive' : 'default'
-                    }
-                    className={cn(
-                      report.severity === 'HIGH'
-                        ? 'bg-red-100 text-red-800 hover:bg-red-100/80 border-red-200'
-                        : report.severity === 'MEDIUM'
-                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-100/80 border-orange-200'
-                          : 'bg-blue-100 text-blue-800 hover:bg-blue-100/80 border-blue-200'
-                    )}
-                  >
-                    {report.severity}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      report.status === 'APPROVED'
-                        ? 'outline'
-                        : report.status === 'REJECTED'
-                          ? 'destructive'
-                          : 'outline'
-                    }
-                    className={cn(
-                      report.status === 'APPROVED'
-                        ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
-                        : report.status === 'PENDING'
-                          ? 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                          : 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100'
-                    )}
-                  >
-                    {report.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {format(new Date(report.createdAt), 'MMM d, yyyy HH:mm')}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() =>
-                      router.push(`/admin/reports/${report.reportId}`)
-                    }
-                  >
-                    <Eye className='h-4 w-4' />
-                  </Button>
+            {loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-muted-foreground'
+                >
+                  Loading...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : error ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-destructive'
+                >
+                  {error}
+                </TableCell>
+              </TableRow>
+            ) : !hasData ? (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className='text-center py-8 text-muted-foreground'
+                >
+                  No reports found
+                </TableCell>
+              </TableRow>
+            ) : (
+              reports.map(report => (
+                <TableRow key={report.resourceId}>
+                  <TableCell className='max-w-[200px]'>
+                    <div className='truncate' title={report.resourceContent}>
+                      {report.resourceContent}
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[150px]'>
+                    <div className='flex items-center gap-2'>
+                      <img
+                        src={report.resourceOwnerAvatar}
+                        alt={report.resourceOwner}
+                        className='w-6 h-6 rounded-full border flex-shrink-0'
+                      />
+                      <div className='min-w-0'>
+                        <div
+                          className='font-medium truncate'
+                          title={report.resourceOwner}
+                        >
+                          {report.resourceOwner}
+                        </div>
+                        <div className='text-xs text-muted-foreground truncate'>
+                          {report.resourceOwnerStatus}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[100px]'>
+                    <Badge
+                      variant={
+                        report.status === 'APPROVED'
+                          ? 'outline'
+                          : report.status === 'REJECTED'
+                            ? 'destructive'
+                            : 'outline'
+                      }
+                      className={cn(
+                        'text-xs',
+                        report.status === 'APPROVED'
+                          ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100'
+                          : report.status === 'PENDING'
+                            ? 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                            : 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100'
+                      )}
+                    >
+                      {report.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className='max-w-[120px] text-center'>
+                    {report.reports.length}
+                  </TableCell>
+                  <TableCell className='max-w-[80px]'>
+                    {report.hidden ? (
+                      <Badge className='bg-red-100 text-red-800 border-red-200 text-xs'>
+                        Hidden
+                      </Badge>
+                    ) : (
+                      <Badge className='bg-green-100 text-green-800 border-green-200 text-xs'>
+                        Visible
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className='max-w-[120px]'>
+                    <div className='text-xs'>
+                      {formatDate(report.createdAt.toString())}
+                    </div>
+                  </TableCell>
+                  <TableCell className='max-w-[80px]'>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() =>
+                        router.push(`/admin/reports/${report.resourceId}`)
+                      }
+                    >
+                      <Eye className='h-4 w-4' />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
-
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => page > 0 && setPage(p => p - 1)}
-                disabled={page === 0}
-                className='gap-1'
-              >
-                <ChevronLeft className='h-4 w-4' />
-                Previous
-              </Button>
-            </PaginationItem>
-            {[...Array(totalPages)].map((_, i) => {
-              if (
-                i === 0 ||
-                i === totalPages - 1 ||
-                (i >= page - 1 && i <= page + 1)
-              ) {
-                return (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      onClick={() => setPage(i)}
-                      isActive={page === i}
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              } else if (i === page - 2 || i === page + 2) {
-                return (
-                  <PaginationItem key={i}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                )
-              }
-              return null
-            })}
-            <PaginationItem>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => page < totalPages - 1 && setPage(p => p + 1)}
-                disabled={page >= totalPages - 1}
-                className='gap-1'
-              >
-                Next
-                <ChevronRight className='h-4 w-4' />
-              </Button>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+      {/* Chỉ render Pagination khi có nhiều hơn 1 trang */}
+      {hasData && totalPages > 1 && (
+        <Pagination
+          pagination={{
+            currentPage: page,
+            totalPages,
+            totalElements,
+            pageSize,
+          }}
+          activeTab={'report'}
+          onPageChange={setPage}
+          onPageSizeChange={size => {
+            setPageSize(size)
+            setPage(0)
+          }}
+        />
       )}
     </div>
   )
 }
 
-type FilterValue = 'ALL' | ReportSeverity | ReportStatus
+type FilterValue = 'ALL' | ReportSeverity
 
 export function ReportManagement() {
   const [filters, setFilters] = useState<{
     severity: FilterValue | undefined
-    status: FilterValue | undefined
     search: string
   }>({
     severity: undefined,
-    status: undefined,
     search: '',
   })
 
-  const handleFilterChange = (
-    key: 'severity' | 'status' | 'search',
-    value: string
-  ) => {
+  const handleFilterChange = (key: 'severity' | 'search', value: string) => {
     setFilters(prev => ({
       ...prev,
       [key]: value === 'ALL' ? undefined : value,
@@ -335,7 +354,6 @@ export function ReportManagement() {
   const clearFilters = () => {
     setFilters({
       severity: undefined,
-      status: undefined,
       search: '',
     })
   }
@@ -343,14 +361,12 @@ export function ReportManagement() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Report Management</CardTitle>
-        <CardDescription>
-          Manage and review reported content from the platform
-        </CardDescription>
+        <CardTitle>Report Overview</CardTitle>
+        <CardDescription>Overview of all reports in the system</CardDescription>
       </CardHeader>
       <CardContent>
         <div className='mb-6 flex flex-wrap items-center gap-4'>
-          <div className='flex flex-wrap items-center gap-4'>
+          <div className='flex items-center gap-4'>
             <Select
               value={filters.severity || 'ALL'}
               onValueChange={value => handleFilterChange('severity', value)}
@@ -368,31 +384,14 @@ export function ReportManagement() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={filters.status || 'ALL'}
-              onValueChange={value => handleFilterChange('status', value)}
-            >
-              <SelectTrigger className='w-[180px]'>
-                <SelectValue placeholder='Filter by Status' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='ALL'>All Statuses</SelectItem>
-                {statusOptions.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             <Input
               placeholder='Search reports...'
               value={filters.search || ''}
               onChange={e => handleFilterChange('search', e.target.value)}
-              className='max-w-xs'
+              className='w-[300px]'
             />
 
-            {(filters.severity || filters.status || filters.search) && (
+            {(filters.severity || filters.search) && (
               <Button variant='outline' onClick={clearFilters}>
                 Clear Filters
               </Button>
@@ -400,33 +399,79 @@ export function ReportManagement() {
           </div>
         </div>
 
-        {/* Tabs for Comment and Review Reports */}
+        {/* Tabs for Comment and Review Reports with Status sub-tabs */}
         <Tabs defaultValue='COMMENT' className='w-full'>
           <TabsList className='mb-4'>
             <TabsTrigger value='COMMENT'>Comment Reports</TabsTrigger>
             <TabsTrigger value='REVIEW'>Review Reports</TabsTrigger>
           </TabsList>
+
           <TabsContent value='COMMENT'>
-            <ReportTable
-              type='COMMENT'
-              filters={{
-                ...filters,
-                severity:
-                  filters.severity === 'ALL' ? undefined : filters.severity,
-                status: filters.status === 'ALL' ? undefined : filters.status,
-              }}
-            />
+            <Tabs defaultValue='ALL' className='w-full'>
+              <TabsList className='mb-4'>
+                <TabsTrigger value='ALL'>All</TabsTrigger>
+                <TabsTrigger value='PENDING'>Pending</TabsTrigger>
+                <TabsTrigger value='APPROVED'>Approved</TabsTrigger>
+                <TabsTrigger value='REJECTED'>Rejected</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value='ALL'>
+                <ReportTable type='COMMENT' status='ALL' filters={filters} />
+              </TabsContent>
+              <TabsContent value='PENDING'>
+                <ReportTable
+                  type='COMMENT'
+                  status='PENDING'
+                  filters={filters}
+                />
+              </TabsContent>
+              <TabsContent value='APPROVED'>
+                <ReportTable
+                  type='COMMENT'
+                  status='APPROVED'
+                  filters={filters}
+                />
+              </TabsContent>
+              <TabsContent value='REJECTED'>
+                <ReportTable
+                  type='COMMENT'
+                  status='REJECTED'
+                  filters={filters}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
+
           <TabsContent value='REVIEW'>
-            <ReportTable
-              type='REVIEW'
-              filters={{
-                ...filters,
-                severity:
-                  filters.severity === 'ALL' ? undefined : filters.severity,
-                status: filters.status === 'ALL' ? undefined : filters.status,
-              }}
-            />
+            <Tabs defaultValue='ALL' className='w-full'>
+              <TabsList className='mb-4'>
+                <TabsTrigger value='ALL'>All</TabsTrigger>
+                <TabsTrigger value='PENDING'>Pending</TabsTrigger>
+                <TabsTrigger value='APPROVED'>Approved</TabsTrigger>
+                <TabsTrigger value='REJECTED'>Rejected</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value='ALL'>
+                <ReportTable type='REVIEW' status='ALL' filters={filters} />
+              </TabsContent>
+              <TabsContent value='PENDING'>
+                <ReportTable type='REVIEW' status='PENDING' filters={filters} />
+              </TabsContent>
+              <TabsContent value='APPROVED'>
+                <ReportTable
+                  type='REVIEW'
+                  status='APPROVED'
+                  filters={filters}
+                />
+              </TabsContent>
+              <TabsContent value='REJECTED'>
+                <ReportTable
+                  type='REVIEW'
+                  status='REJECTED'
+                  filters={filters}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </CardContent>

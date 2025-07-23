@@ -2,9 +2,9 @@
 
 import type React from 'react'
 
-import { useState, useEffect, useRef } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -12,17 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { httpClient } from '@/services/http-client'
 import {
-  CheckCircle,
   AlertCircle,
+  ArrowLeft,
+  CheckCircle,
   Mail,
   MessageSquare,
   RefreshCw,
-  ArrowLeft,
 } from 'lucide-react'
-import { httpClient } from '@/services/http-client'
+import { useEffect, useRef, useState } from 'react'
 
 interface OTPConfirmationProps {
   type:
@@ -418,13 +418,6 @@ export function OTPConfirmation({
             </Button>
           </div>
         )}
-
-        <div className='text-xs text-muted-foreground bg-muted p-3 rounded-lg'>
-          <p className='font-medium mb-1'>Demo Instructions:</p>
-          <p>• Enter "123456" for successful verification</p>
-          <p>• Enter "000000" to simulate expired code</p>
-          <p>• Any other code will show invalid error</p>
-        </div>
       </CardContent>
     </Card>
   )

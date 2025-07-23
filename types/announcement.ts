@@ -120,4 +120,6 @@ export interface AnnouncementFilter {
   search?: string
   mode?: 'list' | 'history'
   isDeleted?: number
+  startDate?: string
+  endDate?: string
 }

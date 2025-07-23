@@ -1,7 +1,6 @@
 import { Pagination } from '@/components/admin/announcement/Pagination'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -78,7 +77,6 @@ export default function AnnouncementHidden({
   const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
-  const [search, setSearch] = useState('')
 
   const fetchHiddenAnnouncements = useCallback(async () => {
     setLoading(true)
@@ -87,23 +85,31 @@ export default function AnnouncementHidden({
       const params = {
         page,
         size: pageSize,
-        search: search || undefined,
+        search: filters?.search || undefined,
         status: AnnouncementStatus.HIDDEN, // filter đúng enum
+        startDate: filters?.startDate || undefined,
+        endDate: filters?.endDate || undefined,
       }
       const response = await announcementApi.getAnnouncements(params)
-      const data: any = response.data
-      const pageData = data.data // Lấy đúng object chứa content, page, ...
-      console.log('pageData:', pageData)
-      setAnnouncements(pageData.content || [])
-      setTotalPages(pageData.totalPages || pageData.page?.totalPages)
-      setTotalElements(pageData.totalElements || pageData.page?.totalElements)
+      const data: any = response.data.data
+      setAnnouncements(data.content || [])
+      setTotalPages(
+        typeof data.page?.totalPages === 'number' ? data.page.totalPages : 1
+      )
+      setTotalElements(
+        typeof data.page?.totalElements === 'number'
+          ? data.page.totalElements
+          : 0
+      )
+      setPageSize(typeof data.page?.size === 'number' ? data.page.size : 10)
+      setPage(typeof data.page?.number === 'number' ? data.page.number : 0)
     } catch (err) {
       setError('Failed to load hidden announcements')
       setAnnouncements([])
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search])
+  }, [page, pageSize, filters])
 
   useEffect(() => {
     fetchHiddenAnnouncements()
@@ -122,14 +128,6 @@ export default function AnnouncementHidden({
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center gap-4 mb-4'>
-        <Input
-          placeholder='Search hidden announcements...'
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className='w-[300px]'
-        />
-      </div>
       <div className='rounded-md border'>
         <Table>
           <TableHeader>
@@ -198,15 +196,16 @@ export default function AnnouncementHidden({
           </TableBody>
         </Table>
       </div>
-      {totalPages > 1 && (
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          size={pageSize}
-          onPageChange={setPage}
-          onSizeChange={setPageSize}
-        />
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        size={pageSize}
+        onPageChange={setPage}
+        onSizeChange={newSize => {
+          setPageSize(newSize)
+          setPage(0)
+        }}
+      />
     </div>
   )
 }

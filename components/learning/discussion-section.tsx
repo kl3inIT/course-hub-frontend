@@ -159,7 +159,7 @@ const CommentComponentBase = ({
     )
   }
 
-  const isDescriptionRequired = reportReason === 'other'
+  const isDescriptionRequired = reportReason === 'Other'
   const isSubmitDisabled =
     !reportReason || (isDescriptionRequired && !reportDescription.trim())
 

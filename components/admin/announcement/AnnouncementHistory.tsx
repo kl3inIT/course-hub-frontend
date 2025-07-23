@@ -39,9 +39,11 @@ export function AnnouncementHistory({
 }: {
   filters: {
     search: string
-    type: string
+    type: string // string để so sánh với 'ALL'
     status: string
     targetGroup?: string
+    startDate?: string
+    endDate?: string
   }
   onStatsChange: () => void
 }) {
@@ -100,6 +102,8 @@ export function AnnouncementHistory({
             ? (filters.targetGroup as TargetGroup)
             : undefined,
         search: filters.search || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
         mode: 'history',
         sortBy: 'createdDate',
         direction: 'DESC',

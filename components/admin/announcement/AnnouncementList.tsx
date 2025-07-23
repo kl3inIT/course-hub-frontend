@@ -39,9 +39,11 @@ export function AnnouncementList({
 }: {
   filters: {
     search: string
-    type: string
+    type: string // string để so sánh với 'ALL'
     status: string
     targetGroup?: string
+    startDate?: string
+    endDate?: string
   }
   onStatsChange: () => void
 }) {
@@ -79,6 +81,8 @@ export function AnnouncementList({
             ? (filters.targetGroup as TargetGroup)
             : undefined,
         search: filters.search || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
         mode: 'list',
         sortBy: 'createdDate',
         direction: 'DESC',

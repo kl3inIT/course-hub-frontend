@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ImageIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface CourseSummaryCardProps {
   course: {
@@ -11,7 +12,7 @@ interface CourseSummaryCardProps {
     price: number | string
     level: string
     category: string
-    thumbnailUrl?: string | null
+    thumbnailUrl?: string | File | null
   }
   className?: string
 }
@@ -20,6 +21,24 @@ export function CourseSummaryCard({
   course,
   className = '',
 }: CourseSummaryCardProps) {
+  const [thumbnailSrc, setThumbnailSrc] = useState<string | undefined>(
+    typeof course.thumbnailUrl === 'string' ? course.thumbnailUrl || undefined : undefined
+  )
+
+  useEffect(() => {
+    if (course.thumbnailUrl instanceof File) {
+      const objectUrl = URL.createObjectURL(course.thumbnailUrl)
+      setThumbnailSrc(objectUrl)
+      return () => {
+        URL.revokeObjectURL(objectUrl)
+      }
+    } else if (typeof course.thumbnailUrl === 'string') {
+      setThumbnailSrc(course.thumbnailUrl)
+    } else {
+      setThumbnailSrc(undefined)
+    }
+  }, [course.thumbnailUrl])
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -30,9 +49,9 @@ export function CourseSummaryCard({
       </CardHeader>
       <CardContent className='flex gap-4'>
         <div className='w-32 h-20 flex-shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center'>
-          {course.thumbnailUrl ? (
+          {thumbnailSrc ? (
             <img
-              src={course.thumbnailUrl}
+              src={thumbnailSrc}
               alt='Course thumbnail'
               className='object-cover w-full h-full'
             />

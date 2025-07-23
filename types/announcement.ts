@@ -15,6 +15,7 @@ export enum AnnouncementStatus {
   SCHEDULED = 'SCHEDULED',
   SENT = 'SENT',
   CANCELLED = 'CANCELLED',
+  HIDDEN = 'HIDDEN',
 }
 
 // Target Groups for announcement recipients
@@ -103,7 +104,8 @@ export interface AnnouncementStats {
   sent: number
   draft: number
   scheduled: number
-  cancelled?: number
+  hidden: number
+  cancelled: number
   total?: number
   readRate?: number
 }

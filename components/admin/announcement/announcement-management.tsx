@@ -9,8 +9,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import AnnouncementHidden from './AnnouncementHidden'
 import { AnnouncementHistory } from './AnnouncementHistory'
-import { AnnouncementList, HiddenAnnouncementList } from './AnnouncementList'
+import { AnnouncementList } from './AnnouncementList'
 import { AnnouncementStats } from './AnnouncementStats'
 
 export function AnnouncementManagement() {
@@ -33,6 +34,7 @@ export function AnnouncementManagement() {
     type: 'ALL',
   })
   const [tab, setTab] = useState('list')
+  const [statsReloadKey, setStatsReloadKey] = useState(0)
 
   // Handler cho từng tab
   const handleListFilterChange = (key: string, value: string) => {
@@ -62,7 +64,7 @@ export function AnnouncementManagement() {
         {/* Stats - stretch horizontally */}
         <div className='flex gap-4 mb-4'>
           <div className='flex-1'>
-            <AnnouncementStats />
+            <AnnouncementStats reloadKey={statsReloadKey} />
           </div>
         </div>
         {/* Create Button */}
@@ -74,7 +76,7 @@ export function AnnouncementManagement() {
         {/* Tabs for List, History & Hidden */}
         <Tabs value={tab} onValueChange={setTab} className='w-full'>
           <TabsList className='mb-4'>
-            <TabsTrigger value='list'>All Announcements</TabsTrigger>
+            <TabsTrigger value='list'>Draft and Scheduled</TabsTrigger>
             <TabsTrigger value='history'>History</TabsTrigger>
             <TabsTrigger value='hidden'>Hidden</TabsTrigger>
           </TabsList>
@@ -116,7 +118,10 @@ export function AnnouncementManagement() {
                 </Button>
               )}
             </div>
-            <AnnouncementList filters={listFilters} />
+            <AnnouncementList
+              filters={listFilters}
+              onStatsChange={() => setStatsReloadKey(k => k + 1)}
+            />
           </TabsContent>
           <TabsContent value='history'>
             {/* Filters */}
@@ -162,38 +167,16 @@ export function AnnouncementManagement() {
                 </Button>
               )}
             </div>
-            <AnnouncementHistory filters={historyFilters} />
+            <AnnouncementHistory
+              filters={historyFilters}
+              onStatsChange={() => setStatsReloadKey(k => k + 1)}
+            />
           </TabsContent>
           <TabsContent value='hidden'>
-            {/* Filters */}
-            <div className='mb-4 flex flex-wrap items-center gap-4'>
-              <input
-                className='border rounded px-3 py-2'
-                placeholder='Search hidden announcements...'
-                value={hiddenFilters.search}
-                onChange={e =>
-                  handleHiddenFilterChange('search', e.target.value)
-                }
-              />
-              <select
-                className='border rounded px-3 py-2'
-                value={hiddenFilters.type}
-                onChange={e => handleHiddenFilterChange('type', e.target.value)}
-              >
-                <option value='ALL'>All Types</option>
-                <option value='GENERAL'>General</option>
-                <option value='COURSE_UPDATE'>Course Update</option>
-                <option value='SYSTEM_MAINTENANCE'>System Maintenance</option>
-                <option value='PROMOTION'>Promotion</option>
-                <option value='EMERGENCY'>Emergency</option>
-              </select>
-              {(hiddenFilters.search || hiddenFilters.type !== 'ALL') && (
-                <Button variant='outline' onClick={clearHiddenFilters}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            <HiddenAnnouncementList filters={hiddenFilters} />
+            <AnnouncementHidden
+              filters={hiddenFilters}
+              onStatsChange={() => setStatsReloadKey(k => k + 1)}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

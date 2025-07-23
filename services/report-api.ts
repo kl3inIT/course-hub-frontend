@@ -116,6 +116,8 @@ export const reportApi = {
     if (status) queryParams.append('status', status)
     if (search) queryParams.append('search', search)
     if (params.resourceId) queryParams.append('resourceId', params.resourceId)
+    if (params.startDate) queryParams.append('startDate', params.startDate)
+    if (params.endDate) queryParams.append('endDate', params.endDate)
 
     try {
       const response = await httpClient.get(

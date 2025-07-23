@@ -117,4 +117,16 @@ export const paymentApi = {
     const response = await httpClient.get('/api/payments/count')
     return response.data.data
   },
+
+  getRevenueByMonth: async () => {
+    const response = await httpClient.get('/api/payments/revenue-by-month')
+    const d = response.data.data
+    return { labels: d.labels, data: d.dates }
+  },
+  getTopCoursesByRevenue: async () => {
+    const response = await httpClient.get('/api/payments/top-revenue')
+    const d = response.data.data
+    // Nếu backend trả về { labels, dates } thì dùng d.dates, nếu là d.data thì giữ nguyên
+    return { labels: d.labels, data: d.dates || d.data }
+  },
 }

@@ -72,10 +72,15 @@ interface PaymentOverallStats {
 
 export function PaymentManagement() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | string>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | string>('Completed')
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 6)
+    return { from: start, to: end }
+  })
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv')
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -104,6 +109,8 @@ export function PaymentManagement() {
     failedPayments: '0.0'
   })
   const [pageSizePending, setPageSizePending] = useState(pageSize)
+  // Đánh dấu đã khởi tạo filter mặc định
+  const [initialized, setInitialized] = useState(false)
 
   const fetchPayments = async () => {
     try {
@@ -141,8 +148,27 @@ export function PaymentManagement() {
   }
 
   useEffect(() => {
+    if (!initialized) return
     fetchPayments()
-  }, [currentPage, pageSize, appliedFilters])
+  }, [currentPage, pageSize, appliedFilters, initialized])
+
+  // Fetch với filter mặc định khi mount
+  useEffect(() => {
+    setStatusFilter('Completed')
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 6)
+    setDateRange({ from: start, to: end })
+    setAppliedFilters({
+      status: 'Completed',
+      startDate: start.toISOString().split('T')[0] + 'T00:00:00',
+      endDate: end.toISOString().split('T')[0] + 'T23:59:59',
+      nameSearch: undefined
+    })
+    setCurrentPage(1)
+    setInitialized(true)
+    // fetchPayments sẽ chạy khi initialized=true và appliedFilters đã set
+  }, [])
 
   // Calculate total revenue
   const totalRevenue = payments

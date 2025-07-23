@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Balsamiq Prototype - Register Form</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
+    }
+    .balsamiq-card {
+      background: #fff;
+      border: 2px solid #222;
+      border-radius: 8px;
+      box-shadow: 2px 2px 0 #bbb;
+      width: 420px;
+      margin: 40px auto;
+      padding: 24px 32px 16px 32px;
+      box-sizing: border-box;
+    }
+    .balsamiq-title {
+      font-size: 2em;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+    .balsamiq-desc {
+      text-align: center;
+      color: #888;
+      font-size: 1em;
+      margin-bottom: 18px;
+    }
+    .balsamiq-alert {
+      border: 2px dashed #d9534f;
+      background: #fff0f0;
+      color: #d9534f;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      font-size: 0.95em;
+    }
+    .balsamiq-alert-icon {
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .balsamiq-label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+    .balsamiq-input {
+      width: 100%;
+      padding: 7px 10px;
+      border: 2px solid #222;
+      border-radius: 4px;
+      font-size: 1em;
+      background: #fafafa;
+      margin-bottom: 6px;
+      box-sizing: border-box;
+    }
+    .balsamiq-password-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .balsamiq-eye-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #eee;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+    }
+    .balsamiq-btn {
+      width: 100%;
+      padding: 10px 0;
+      background: #eee;
+      border: 2px solid #222;
+      border-radius: 4px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      margin-top: 8px;
+    }
+    .balsamiq-separator {
+      display: flex;
+      align-items: center;
+      margin: 18px 0 10px 0;
+    }
+    .balsamiq-separator-line {
+      flex: 1;
+      height: 2px;
+      background: #ccc;
+      border: none;
+    }
+    .balsamiq-separator-text {
+      margin: 0 10px;
+      color: #888;
+      font-size: 0.95em;
+      background: #fff;
+      padding: 0 6px;
+    }
+    .balsamiq-google-btn {
+      width: 100%;
+      padding: 8px 0;
+      background: #fff;
+      border: 2px dashed #222;
+      border-radius: 4px;
+      font-size: 1em;
+      color: #222;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .balsamiq-footer {
+      text-align: center;
+      color: #888;
+      font-size: 0.95em;
+      margin-top: 10px;
+    }
+    .balsamiq-link {
+      color: #0074d9;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .balsamiq-password-reqs {
+      background: #f7f7f7;
+      border: 1.5px dashed #aaa;
+      border-radius: 4px;
+      padding: 8px 10px;
+      margin: 8px 0 0 0;
+      font-size: 0.95em;
+    }
+    .balsamiq-password-reqs-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #888;
+      font-size: 0.97em;
+    }
+    .balsamiq-password-req-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 10px;
+      margin-top: 2px;
+    }
+    .balsamiq-password-req-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #888;
+      font-size: 0.97em;
+    }
+    .balsamiq-sep-bottom {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="balsamiq-card">
+    <div class="balsamiq-title">Create Your Account</div>
+    <div class="balsamiq-desc">Join thousands of learners and start your journey today</div>
+    <button class="balsamiq-google-btn" type="button" disabled>
+      <span style="font-size:1.2em;">&#x1F5A5;</span> Google
+    </button>
+    <div class="balsamiq-separator balsamiq-sep-bottom">
+      <div class="balsamiq-separator-line"></div>
+      <div class="balsamiq-separator-text">Or create account with email</div>
+      <div class="balsamiq-separator-line"></div>
+    </div>
+    <form>
+      <div class="balsamiq-alert" style="display:none">
+        <span class="balsamiq-alert-icon">&#9888;</span>
+        <span>Error message here</span>
+      </div>
+      <label class="balsamiq-label" for="name">Full Name</label>
+      <input class="balsamiq-input" id="name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" disabled>
+      <label class="balsamiq-label" for="email">Email Address</label>
+      <input class="balsamiq-input" id="email" name="email" type="email" placeholder="Enter your email" autocomplete="email" disabled>
+      <label class="balsamiq-label" for="password">Password</label>
+      <div class="balsamiq-password-row">
+        <input class="balsamiq-input" id="password" name="password" type="password" placeholder="Create a strong password" autocomplete="new-password" disabled>
+        <button type="button" class="balsamiq-eye-btn" tabindex="-1">👁</button>
+      </div>
+      <div class="balsamiq-password-reqs">
+        <div class="balsamiq-password-reqs-title">Password must contain:</div>
+        <div class="balsamiq-password-req-list">
+          <div class="balsamiq-password-req-item">&#x2714; 8+ characters</div>
+          <div class="balsamiq-password-req-item">&#x2714; Uppercase letter</div>
+          <div class="balsamiq-password-req-item">&#x2714; Lowercase letter</div>
+          <div class="balsamiq-password-req-item">&#x2714; Number</div>
+        </div>
+      </div>
+      <label class="balsamiq-label" for="confirmPassword">Confirm Password</label>
+      <div class="balsamiq-password-row">
+        <input class="balsamiq-input" id="confirmPassword" name="confirmPassword" type="password" placeholder="Confirm your password" autocomplete="new-password" disabled>
+        <button type="button" class="balsamiq-eye-btn" tabindex="-1">👁</button>
+      </div>
+      <button class="balsamiq-btn" type="submit" disabled>Create Account</button>
+    </form>
+    <div class="balsamiq-footer">
+      Already have an account? <span class="balsamiq-link">Sign in here</span>
+    </div>
+  </div>
+</body>
+</html> 

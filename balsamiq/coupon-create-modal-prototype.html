@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Balsamiq Prototype - Create Coupon Modal</title>
+  <style>
+    body { background: #f4f4f4; font-family: 'Comic Sans MS', cursive, sans-serif; }
+    .modal-bg { background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .modal { background: #fff; border: 2px solid #222; border-radius: 8px; width: 540px; padding: 32px 36px; box-shadow: 2px 2px 0 #bbb; }
+    .modal-title { font-size: 1.3em; font-weight: bold; margin-bottom: 8px; }
+    .modal-desc { color: #888; font-size: 1em; margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
+    .label { display: block; font-weight: bold; margin-bottom: 4px; }
+    .input, .select { width: 100%; padding: 7px 10px; border: 2px solid #222; border-radius: 4px; font-size: 1em; background: #fafafa; margin-bottom: 6px; box-sizing: border-box; }
+    .checkbox-list { border: 1.5px dashed #aaa; border-radius: 6px; padding: 8px 10px; background: #fafafa; max-height: 80px; overflow-y: auto; margin-bottom: 6px; }
+    .checkbox-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .switch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 18px; }
+    .btn { padding: 8px 24px; background: #eee; border: 2px solid #222; border-radius: 4px; font-size: 1em; font-weight: bold; cursor: pointer; }
+    .btn:disabled { color: #aaa; border-color: #aaa; background: #f7f7f7; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="modal-bg">
+    <div class="modal">
+      <div class="modal-title">Create New Coupon</div>
+      <div class="modal-desc">Create a new discount coupon for your courses</div>
+      <div class="form-group">
+        <label class="label">Percentage (%) *</label>
+        <input class="input" type="number" min="1" max="100" placeholder="e.g., 10" disabled>
+      </div>
+      <div class="form-group">
+        <label class="label">Description</label>
+        <textarea class="input" rows="2" placeholder="Describe your coupon..." disabled></textarea>
+      </div>
+      <div class="form-group">
+        <label class="label">Application Scope</label>
+        <select class="select" disabled>
+          <option>Select scope</option>
+          <option>All Items</option>
+          <option>Specific Items</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="label">Select Categories</label>
+        <div class="checkbox-list">
+          <div class="checkbox-item"><input type="checkbox" disabled> Frontend</div>
+          <div class="checkbox-item"><input type="checkbox" disabled> Backend</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Select Courses</label>
+        <div class="checkbox-list">
+          <div class="checkbox-item"><input type="checkbox" disabled> React Basics</div>
+          <div class="checkbox-item"><input type="checkbox" disabled> Node.js Mastery</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Start Date *</label>
+        <input class="input" type="datetime-local" disabled>
+      </div>
+      <div class="form-group">
+        <label class="label">End Date *</label>
+        <input class="input" type="datetime-local" disabled>
+      </div>
+      <div class="form-group">
+        <label class="label">Quantity *</label>
+        <input class="input" type="number" min="1" step="1" placeholder="e.g., 100" disabled>
+      </div>
+      <div class="switch-row">
+        <input type="checkbox" disabled> <span>Active</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" disabled>Cancel</button>
+        <button class="btn" disabled>Create Coupon</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html> 

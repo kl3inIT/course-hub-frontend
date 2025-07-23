@@ -50,9 +50,16 @@ type SortConfig = {
 
 export function PaymentHistory() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | string>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | string>('Completed')
   const [sortConfig, setSortConfig] = useState<SortConfig>(null)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 6)
+    return { from: start, to: end }
+  })
+  // Đánh dấu đã khởi tạo filter mặc định
+  const [initialized, setInitialized] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(5)
   const [payments, setPayments] = useState<PaymentHistoryResponseDTO[]>([])
@@ -99,8 +106,27 @@ export function PaymentHistory() {
   }
 
   useEffect(() => {
+    if (!initialized) return
     fetchPayments()
-  }, [currentPage, pageSize, appliedFilters])
+  }, [currentPage, pageSize, appliedFilters, initialized])
+
+  // Fetch với filter mặc định khi mount
+  useEffect(() => {
+    setStatusFilter('Completed')
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 6)
+    setDateRange({ from: start, to: end })
+    setAppliedFilters({
+      status: 'Completed',
+      startDate: start.toISOString().split('T')[0] + 'T00:00:00',
+      endDate: end.toISOString().split('T')[0] + 'T23:59:59',
+      nameSearch: undefined
+    })
+    setCurrentPage(1)
+    setInitialized(true)
+    // fetchPayments sẽ chạy khi initialized=true và appliedFilters đã set
+  }, [])
 
   const handleSort = (key: SortKey) => {
     setSortConfig(current => {

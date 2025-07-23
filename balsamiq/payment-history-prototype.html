@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Balsamiq Prototype - Payment History</title>
+  <style>
+    body { background: #f4f4f4; font-family: 'Comic Sans MS', cursive, sans-serif; }
+    .balsamiq-card { background: #fff; border: 2px solid #222; border-radius: 8px; width: 900px; margin: 40px auto; padding: 28px 32px 20px 32px; box-shadow: 2px 2px 0 #bbb; }
+    .balsamiq-title { font-size: 1.7em; font-weight: bold; margin-bottom: 2px; }
+    .balsamiq-desc { color: #888; font-size: 1em; margin-bottom: 18px; }
+    .balsamiq-filters { display: flex; gap: 12px; margin-bottom: 18px; }
+    .balsamiq-input { padding: 7px 10px; border: 2px solid #222; border-radius: 4px; font-size: 1em; background: #fafafa; min-width: 180px; }
+    .balsamiq-select { padding: 7px 10px; border: 2px solid #222; border-radius: 4px; font-size: 1em; background: #fafafa; min-width: 120px; }
+    .balsamiq-btn { padding: 8px 18px; background: #eee; border: 2px solid #222; border-radius: 4px; font-size: 1em; font-weight: bold; cursor: pointer; }
+    .balsamiq-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+    .balsamiq-table th, .balsamiq-table td { border: 2px solid #222; padding: 8px 10px; text-align: left; font-size: 1em; }
+    .balsamiq-table th { background: #f7f7f7; font-weight: bold; cursor: pointer; }
+    .balsamiq-table tr:nth-child(even) { background: #fafafa; }
+    .balsamiq-status { padding: 2px 10px; border-radius: 12px; font-size: 0.95em; display: inline-block; }
+    .balsamiq-status.completed { background: #d4f7d4; color: #217a21; }
+    .balsamiq-status.pending { background: #fff7cc; color: #b59d00; }
+    .balsamiq-status.failed { background: #ffd6d6; color: #b80000; }
+    .balsamiq-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+    .balsamiq-page-btn { border: 2px solid #222; background: #eee; border-radius: 4px; padding: 4px 10px; font-size: 1em; cursor: pointer; }
+    .balsamiq-page-btn.active { background: #bbb; font-weight: bold; }
+    .balsamiq-page-btn:disabled { color: #aaa; border-color: #aaa; background: #f7f7f7; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="balsamiq-card">
+    <div class="balsamiq-title">Payment History</div>
+    <div class="balsamiq-desc">View your payment transactions</div>
+    <div class="balsamiq-filters">
+      <input class="balsamiq-input" placeholder="Search by course or code..." disabled>
+      <input class="balsamiq-input" placeholder="Date range" disabled>
+      <select class="balsamiq-select" disabled>
+        <option>All Status</option>
+        <option>Completed</option>
+        <option>Pending</option>
+        <option>Failed</option>
+      </select>
+      <button class="balsamiq-btn" disabled>Apply Filter</button>
+    </div>
+    <table class="balsamiq-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Transaction Code</th>
+          <th>Course</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>123</td>
+          <td>TXN001</td>
+          <td>React Basics</td>
+          <td>$49.99</td>
+          <td><span class="balsamiq-status completed">Completed</span></td>
+          <td>2024-06-01</td>
+        </tr>
+        <tr>
+          <td>124</td>
+          <td>TXN002</td>
+          <td>Node.js Mastery</td>
+          <td>$59.99</td>
+          <td><span class="balsamiq-status pending">Pending</span></td>
+          <td>2024-06-02</td>
+        </tr>
+        <tr>
+          <td>125</td>
+          <td>TXN003</td>
+          <td>Python Pro</td>
+          <td>$39.99</td>
+          <td><span class="balsamiq-status failed">Failed</span></td>
+          <td>2024-06-03</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="balsamiq-pagination">
+      <button class="balsamiq-page-btn" disabled>&lt;</button>
+      <button class="balsamiq-page-btn active">1</button>
+      <button class="balsamiq-page-btn">2</button>
+      <button class="balsamiq-page-btn">3</button>
+      <span>...</span>
+      <button class="balsamiq-page-btn">10</button>
+      <button class="balsamiq-page-btn">&gt;</button>
+    </div>
+  </div>
+</body>
+</html> 

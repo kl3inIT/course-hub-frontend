@@ -109,7 +109,7 @@ export function CourseReviews({
   const [showDelete, setShowDelete] = useState(false)
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null)
   const [writeReviewKey, setWriteReviewKey] = useState(0)
-  const canReview = user && (user.role === 'manager' || user.role === 'learner')
+  const canReview = user && (user.role === 'learner')
 
   // State cho hiển thị review trang hiện tại
   const [displayedReviews, setDisplayedReviews] = useState<ReviewResponseDTO[]>([])

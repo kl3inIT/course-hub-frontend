@@ -117,15 +117,6 @@ export default function HomePage() {
                   Start Learning Now
                 </Button>
               </Link>
-              <Link href='/register'>
-                <Button
-                  size='lg'
-                  variant='outline'
-                  className='text-lg px-8 py-6 border-white text-black hover:bg-white hover:text-black'
-                >
-                  Sign Up Free
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

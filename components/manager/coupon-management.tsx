@@ -75,7 +75,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export function CouponManagement() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
@@ -84,7 +84,7 @@ export function CouponManagement() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingCourses, setLoadingCourses] = useState(false)
-  const [_visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
+  const [visibleCodes, setVisibleCodes] = useState<{ [key: string]: boolean }>(
     {}
   )
 
@@ -580,7 +580,7 @@ export function CouponManagement() {
   }
 
   // Toggle coupon status
-  const _toggleStatus = (couponId: string) => {
+  const toggleStatus = (couponId: string) => {
     setCoupons(prev =>
       prev.map(coupon =>
         coupon.id === couponId
@@ -665,7 +665,7 @@ export function CouponManagement() {
   }
 
   // Get selected courses display
-  const _getSelectedCoursesDisplay = () => {
+  const getSelectedCoursesDisplay = () => {
     const selectedCourses = courses.filter(course =>
       formData.courseIds?.includes(Number(course.id))
     )
@@ -714,7 +714,7 @@ export function CouponManagement() {
   }
 
   // Get applicable items display
-  const _getApplicableItemsDisplay = (coupon: Coupon) => {
+  const getApplicableItemsDisplay = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -735,7 +735,7 @@ export function CouponManagement() {
   }
 
   // Get detailed tooltip content for applicable items
-  const _getApplicableItemsTooltip = (coupon: Coupon) => {
+  const getApplicableItemsTooltip = (coupon: Coupon) => {
     const totalCategories = coupon.categoryIds?.length || 0
     const totalCourses = coupon.courseIds?.length || 0
     if (totalCategories === 0 && totalCourses === 0) {
@@ -778,7 +778,7 @@ export function CouponManagement() {
   }
 
   // Format currency
-  const _formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -841,7 +841,7 @@ export function CouponManagement() {
   }
 
   // Add toggle code visibility function
-  const _toggleCodeVisibility = (couponId: string) => {
+  const toggleCodeVisibility = (couponId: string) => {
     setVisibleCodes(prev => ({
       ...prev,
       [couponId]: !prev[couponId],

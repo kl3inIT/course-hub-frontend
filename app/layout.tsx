@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Course Hub Online Traning SystemSystem',
+  title: 'Course Hub Online Traning System',
   description: 'Transform your career with expert-led courses',
 }
 
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel='icon' type='image/png' href='/favicon.png' />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute='class' defaultTheme='light' enableSystem>

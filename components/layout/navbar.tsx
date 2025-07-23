@@ -680,6 +680,18 @@ export function Navbar() {
                         Contact
                       </Link>
 
+                      <Link
+                        href='/coupons'
+                        className={`text-lg font-medium transition-colors py-2 ${
+                          isActiveLink('/coupons')
+                            ? 'text-primary'
+                            : 'hover:text-primary'
+                        }`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Coupons
+                      </Link>
+
                       {/* Only show "My Learning" link for learners in mobile */}
                       {user && user.role === 'learner' && (
                         <Link

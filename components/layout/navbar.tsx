@@ -40,6 +40,7 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export function Navbar() {
   const { user, logout } = useAuth()
@@ -482,6 +483,7 @@ export function Navbar() {
 
           {/* Right Side - Auth & Mobile Menu */}
           <div className='flex items-center gap-4'>
+            <ThemeToggle />
             {/* Desktop User Menu - Keep avatar dropdown with Course Management and Admin Panel */}
             {user ? (
               <div className='hidden lg:flex items-center gap-4'>
@@ -678,6 +680,18 @@ export function Navbar() {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Contact
+                      </Link>
+
+                      <Link
+                        href='/coupons'
+                        className={`text-lg font-medium transition-colors py-2 ${
+                          isActiveLink('/coupons')
+                            ? 'text-primary'
+                            : 'hover:text-primary'
+                        }`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Coupons
                       </Link>
 
                       {/* Only show "My Learning" link for learners in mobile */}

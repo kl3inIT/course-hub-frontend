@@ -24,7 +24,6 @@ import {
   X,
 } from 'lucide-react'
 import Link from 'next/link'
-import { Navbar } from '@/components/layout/navbar'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface PasswordStrength {
@@ -194,7 +193,6 @@ export default function ResetPasswordPage() {
   if (isSuccess) {
     return (
       <div className='min-h-screen bg-background'>
-        <Navbar />
         <div className='container mx-auto px-4 py-16'>
           <Card className='w-full max-w-md mx-auto'>
             <CardContent className='text-center space-y-6 p-8'>
@@ -233,7 +231,6 @@ export default function ResetPasswordPage() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <Navbar />
       <div className='container mx-auto px-4 py-16'>
         <Card className='w-full max-w-md mx-auto'>
           <CardHeader>

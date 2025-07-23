@@ -99,4 +99,22 @@ export const paymentApi = {
     const response = await httpClient.get('/api/payments/my', { params })
     return response.data
   },
+
+  // Get all payment history (not paginated)
+  getAllPaymentHistory: async (): Promise<PaymentHistoryResponseDTO[]> => {
+    const response = await httpClient.get('/api/payments/list')
+    return response.data.data
+  },
+
+  // Get total platform revenue
+  getTotalRevenue: async (): Promise<number> => {
+    const response = await httpClient.get('/api/payments/revenue')
+    return response.data.data
+  },
+
+  // Get total payment count
+  getTotalPaymentCount: async (): Promise<number> => {
+    const response = await httpClient.get('/api/payments/count')
+    return response.data.data
+  },
 }

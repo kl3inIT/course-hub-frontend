@@ -38,6 +38,7 @@ const sortOptions = [
 export function CourseCatalog() {
   const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedLevels, setSelectedLevels] = useState<string[]>([])
   const [priceFilter, setPriceFilter] = useState<string>('all')
@@ -405,9 +406,22 @@ export function CourseCatalog() {
           <Input
             placeholder='Search courses, instructors, or keywords...'
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => {
+              const value = e.target.value
+              if (value.length > 100) {
+                setSearchError('Maximum 100 characters allowed')
+                setSearchTerm(value.slice(0, 100))
+              } else {
+                setSearchError(null)
+                setSearchTerm(value)
+              }
+            }}
             className='pl-10'
+            maxLength={100}
           />
+          {searchError && (
+            <div className='text-xs text-red-500 mt-1'>{searchError}</div>
+          )}
         </div>
         <div className='flex gap-2'>
           <Select value={sortBy} onValueChange={setSortBy}>

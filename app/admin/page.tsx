@@ -1,6 +1,6 @@
-import { OverviewDashboard } from '@/components/admin/overview/overview-dashboard'
+import { AdminDashboard } from '@/components/admin/admin-dashboard'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 
 import { ProtectedRoute } from '@/components/auth/protected-route'
 export default function AdminPage() {
@@ -10,7 +10,7 @@ export default function AdminPage() {
         <AdminSidebar />
         <SidebarInset>
           <div className='flex-1 space-y-4 p-8 pt-6'>
-            <OverviewDashboard />
+            <AdminDashboard />
           </div>
         </SidebarInset>
       </SidebarProvider>

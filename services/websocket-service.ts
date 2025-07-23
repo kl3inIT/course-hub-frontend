@@ -42,10 +42,8 @@ class WebSocketService {
       onConnect && onConnect()
       return
     }
-
     this.currentToken = token
-    const wsUrl = this.getWebSocketUrl()
-    console.log('🔌 Connecting to WebSocket:', wsUrl)
+    const wsUrl = this.getWebSocketUrl() + `?token=${token}`
 
     this.client = new Client({
       webSocketFactory: () =>
@@ -53,17 +51,13 @@ class WebSocketService {
           transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
           timeout: 20000,
         }),
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
+      // Không cần connectHeaders!
       reconnectDelay: this.reconnectInterval,
       onConnect: frame => {
-        console.log('✅ WebSocket Connected:', frame)
         this.reconnectAttempts = 0
         onConnect && onConnect()
       },
       onDisconnect: () => {
-        console.log('🔌 WebSocket Disconnected')
         this.subscriptions.forEach(sub => sub.unsubscribe())
         this.subscriptions.clear()
         this.handleReconnect()
@@ -76,7 +70,6 @@ class WebSocketService {
         console.error('❌ WebSocket Error:', error)
         this.handleReconnect()
       },
-      // Disable debug in production
       debug: process.env.NODE_ENV === 'development' ? console.log : () => {},
     })
 
@@ -89,7 +82,6 @@ class WebSocketService {
       this.currentToken
     ) {
       this.reconnectAttempts++
-      console.log(`🔄 Reconnecting... Attempt ${this.reconnectAttempts}`)
 
       setTimeout(() => {
         if (!this.client?.connected && this.currentToken) {
@@ -112,21 +104,15 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Đăng ký nhận thông báo từ topic theo vai trò user
-   * @param userRole Vai trò của user: 'ALL', 'LEARNER', 'MANAGER', ...
-   */
   subscribeAnnouncements(userRole: string) {
     if (userRole && userRole.toUpperCase() !== 'ADMIN') {
       this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
-      console.log('userRole:', userRole)
 
       if (userRole.toUpperCase() === 'LEARNER') {
         this.subscribeTopic(
           '/topic/announcements/LEARNERS_ONLY',
           'announcement-learners'
         )
-        console.log('subscribeTopic:', '/topic/announcements/LEARNERS_ONLY')
       }
 
       if (userRole.toUpperCase() === 'MANAGER') {
@@ -134,13 +120,11 @@ class WebSocketService {
           '/topic/announcements/MANAGERS_ONLY',
           'announcement-managers'
         )
-        console.log('subscribeTopic:', '/topic/announcements/MANAGERS_ONLY')
       }
     }
   }
   subscribeUserNotification() {
     this.subscribeTopic('/user/queue/notifications', 'user-notification')
-    console.log('Đã gọi subscribeUserNotification, chờ log 📡 Subscribed to: /user/queue/notifications')
   }
 
   public subscribeTopic(destination: string, event: string) {
@@ -170,7 +154,6 @@ class WebSocketService {
         }
       )
       this.subscriptions.set(event, subscription)
-      console.log(`📡 Subscribed to: ${destination}`)
     } catch (error) {
       console.error(`❌ Failed to subscribe to ${destination}:`, error)
     }

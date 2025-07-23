@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/navigation-menu'
 import { RoleBadge } from '@/components/ui/role-badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useAuth } from '@/context/auth-context'
 import { announcementApi } from '@/services/announcement-api'
 import { categoryApi } from '@/services/category-api'
@@ -40,7 +41,6 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export function Navbar() {
   const { user, logout } = useAuth()
@@ -134,9 +134,7 @@ export function Navbar() {
     try {
       setLoadingAnnouncements(true)
       const response = await announcementApi.getUserAnnouncements()
-      console.log('API announcement response:', response.data?.data)
       setAnnouncements(response.data?.data || [])
-      console.log('Set announcements state:', response.data?.data || [])
     } catch (error) {
       setAnnouncements([])
     } finally {
@@ -223,7 +221,6 @@ export function Navbar() {
         (notification: NotificationDTO) => {
           setNotifications(prev => [notification, ...prev])
           setUnreadCount(prev => prev + 1)
-          console.log('Nhận được user-notification:', notification)
         }
       )
       websocketService.subscribeUserNotification()

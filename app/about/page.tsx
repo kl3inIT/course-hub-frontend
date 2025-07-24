@@ -14,12 +14,13 @@ import {
 
 export default function AboutPage() {
   const teamMembers = [
+    
     {
-      name: 'Nguyen Duc Anh',
-      role: 'CEO & Founder',
-      image: '/assets/ourteam/DucAnh.jpg',
+      name: 'Pham Nhat Anh',
+      role: 'Lead Designer',
+      image: '/assets/ourteam/NhatAnh.jpg',
       description:
-        'Former tech executive with 15+ years in education technology.',
+        'UX/UI designer focused on making learning accessible and engaging.',
     },
     {
       name: 'Nhu Dinh Nhat',
@@ -36,18 +37,18 @@ export default function AboutPage() {
         'Educational expert with a background in curriculum development.',
     },
     {
-      name: 'Pham Nhat Anh',
-      role: 'Lead Designer',
-      image: '/assets/ourteam/NhatAnh.jpg',
-      description:
-        'UX/UI designer focused on making learning accessible and engaging.',
-    },
-    {
       name: 'Phan Hong Dat',
       role: 'Community Manager',
       image: '/assets/ourteam/HongDat.jpg',
       description:
         'Dedicated to building a vibrant and supportive learning community.',
+    },
+    {
+      name: 'Nguyen Duc Anh',
+      role: 'CEO & Founder',
+      image: '/assets/ourteam/DucAnh.jpg',
+      description:
+        'Former tech executive with 15+ years in education technology.',
     },
   ]
 

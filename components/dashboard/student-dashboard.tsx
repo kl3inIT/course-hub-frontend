@@ -96,7 +96,6 @@ export function StudentDashboard() {
     }
 
     fetchDashboardCourses()
-    fetchRecommendedCourses()
     calculateLearningStreak()
   }, [])
 
@@ -107,19 +106,8 @@ export function StudentDashboard() {
       setDashboardCourses(response.data)
     } catch (error) {
       console.error('Error fetching dashboard courses:', error)
-      toast.error('Failed to load dashboard courses')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const fetchRecommendedCourses = async () => {
-    try {
-      const response = await courseApi.getRecommendedCourses()
-      setRecommendedCourses(response.data)
-    } catch (error) {
-      console.error('Error fetching recommended courses:', error)
-      toast.error('Failed to load recommended courses')
     }
   }
 

@@ -17,35 +17,35 @@ export default function AboutPage() {
     {
       name: 'Nguyen Duc Anh',
       role: 'CEO & Founder',
-      image: '/placeholder.svg?height=200&width=200',
+      image: '/assets/ourteam/DucAnh.jpg',
       description:
         'Former tech executive with 15+ years in education technology.',
     },
     {
       name: 'Nhu Dinh Nhat',
       role: 'CTO',
-      image: '/placeholder.svg?height=200&width=200',
+      image: '/assets/ourteam/NhatNhu.jpg',
       description:
         'Full-stack developer passionate about creating seamless learning experiences.',
     },
     {
       name: 'Nhu Xuan Viet',
       role: 'Head of Content',
-      image: '/placeholder.svg?height=200&width=200',
+      image: '/assets/ourteam/XuanViet.jpg',
       description:
         'Educational expert with a background in curriculum development.',
     },
     {
       name: 'Pham Nhat Anh',
       role: 'Lead Designer',
-      image: '/placeholder.svg?height=200&width=200',
+      image: '/assets/ourteam/NhatAnh.jpg',
       description:
         'UX/UI designer focused on making learning accessible and engaging.',
     },
     {
       name: 'Phan Hong Dat',
       role: 'Community Manager',
-      image: '/placeholder.svg?height=200&width=200',
+      image: '/assets/ourteam/HongDat.jpg',
       description:
         'Dedicated to building a vibrant and supportive learning community.',
     },

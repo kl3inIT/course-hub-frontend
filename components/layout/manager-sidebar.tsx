@@ -155,57 +155,14 @@ export function ManagerSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size='lg'
-                  className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
-                >
-                  <Avatar className='h-8 w-8 rounded-lg'>
-                    <AvatarImage src='/placeholder.svg?height=32&width=32' />
-                    <AvatarFallback className='rounded-lg'>
-                      {user?.name
-                        ? user.name
-                            .split(' ')
-                            .map((n: string) => n[0])
-                            .join('')
-                        : user?.email[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className='grid flex-1 text-left text-sm leading-tight'>
-                    <span className='truncate font-semibold'>
-                      {user?.name || user?.email}
-                    </span>
-                    <span className='truncate text-xs'>{user?.email}</span>
-                  </div>
-                  <div className='ml-auto'>
-                    <RoleBadge role={user?.role || 'manager'} size='sm' />
-                  </div>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className='w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg'
-                side='bottom'
-                align='end'
-                sideOffset={4}
-              >
-                <DropdownMenuItem asChild>
-                  <Link href='/profile'>
-                    <Settings className='mr-2 h-4 w-4' />
-                    Profile Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className='mr-2 h-4 w-4' />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Button
+          variant='ghost'
+          className='w-full justify-start'
+          onClick={handleLogout}
+        >
+          <LogOut className='mr-2 h-4 w-4' />
+          Đăng xuất
+        </Button>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

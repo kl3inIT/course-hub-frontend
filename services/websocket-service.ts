@@ -97,7 +97,7 @@ class WebSocketService {
         }
       }, this.reconnectInterval * this.reconnectAttempts)
     } else {
-      console.error('❌ Max reconnection attempts reached')
+
     }
   }
 

@@ -474,7 +474,7 @@ export function CourseModulesEditor({
                                                   </Button>
                                                 )}
                                                 {/* Nút set preview */}
-                                                {isEditing && (
+                                                {isEditing && !lesson.isPreview && (
                                                   <Button
                                                     variant={lesson.isPreview ? 'default' : 'outline'}
                                                     size='sm'

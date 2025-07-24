@@ -9,11 +9,11 @@ class WebSocketService {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectInterval = 3000
+  private currentRole: string | null = null // <== lưu lại role để dùng lại khi reconnect
 
   private getWebSocketUrl(): string {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
 
-    // Development
     if (
       !apiUrl ||
       apiUrl.includes('localhost') ||
@@ -22,27 +22,23 @@ class WebSocketService {
       return 'http://localhost:8080/ws'
     }
 
-    // Production - SockJS needs HTTP/HTTPS URLs, not WS/WSS
-    // It will auto-upgrade to WebSocket (WSS) if available
-    if (apiUrl.startsWith('https://')) {
-      return apiUrl + '/ws' // Keep https:// for SockJS
+    if (apiUrl.startsWith('https://') || apiUrl.startsWith('http://')) {
+      return apiUrl + '/ws'
     }
 
-    // Fallback for HTTP
-    if (apiUrl.startsWith('http://')) {
-      return apiUrl + '/ws' // Keep http:// for SockJS
-    }
-
-    // Default fallback - use HTTPS for production
     return 'https://api.coursehub.io.vn/ws'
   }
 
-  connect(token: string, onConnect?: () => void) {
+  connect(token: string, userRole: string, onConnect?: () => void) {
     if (this.client?.connected) {
+      this.subscribeAnnouncements(userRole)
+      this.subscribeUserNotification()
       onConnect && onConnect()
       return
     }
+
     this.currentToken = token
+    this.currentRole = userRole
     const wsUrl = this.getWebSocketUrl() + `?token=${token}`
 
     this.client = new Client({
@@ -51,10 +47,11 @@ class WebSocketService {
           transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
           timeout: 20000,
         }),
-      // Không cần connectHeaders!
       reconnectDelay: this.reconnectInterval,
       onConnect: frame => {
         this.reconnectAttempts = 0
+        this.subscribeAnnouncements(userRole)
+        this.subscribeUserNotification()
         onConnect && onConnect()
       },
       onDisconnect: () => {
@@ -79,13 +76,14 @@ class WebSocketService {
   private handleReconnect() {
     if (
       this.reconnectAttempts < this.maxReconnectAttempts &&
-      this.currentToken
+      this.currentToken &&
+      this.currentRole
     ) {
       this.reconnectAttempts++
 
       setTimeout(() => {
-        if (!this.client?.connected && this.currentToken) {
-          this.connect(this.currentToken)
+        if (!this.client?.connected && this.currentToken && this.currentRole) {
+          this.connect(this.currentToken, this.currentRole)
         }
       }, this.reconnectInterval * this.reconnectAttempts)
     } else {
@@ -100,11 +98,14 @@ class WebSocketService {
       this.subscribers.clear()
       this.subscriptions.clear()
       this.currentToken = null
+      this.currentRole = null
       this.reconnectAttempts = 0
     }
   }
 
   subscribeAnnouncements(userRole: string) {
+    console.log('[WS] Subscribing announcements for role:', userRole)
+
     if (userRole && userRole.toUpperCase() !== 'ADMIN') {
       this.subscribeTopic('/topic/announcements/ALL_USERS', 'announcement-all')
 
@@ -123,6 +124,7 @@ class WebSocketService {
       }
     }
   }
+
   subscribeUserNotification() {
     this.subscribeTopic('/user/queue/notifications', 'user-notification')
   }
@@ -136,7 +138,6 @@ class WebSocketService {
       return
     }
 
-    // Hủy đăng ký cũ nếu có
     this.subscriptions.get(event)?.unsubscribe()
     this.subscriptions.delete(event)
 
@@ -174,7 +175,6 @@ class WebSocketService {
     callback && callback(data)
   }
 
-  // Utility methods
   isConnected(): boolean {
     return this.client?.connected || false
   }

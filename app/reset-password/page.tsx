@@ -25,7 +25,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Footer } from '@/components/layout/footer'
 
 interface PasswordStrength {
   length: boolean

@@ -438,6 +438,7 @@ export function ReportDetail() {
                       )}
                     </span>
                   </div>
+                  {aggregated.status !== 'REJECTED' && (
                   <div className='flex items-center gap-2 mt-3'>
                     <Button
                       variant='outline'
@@ -491,6 +492,7 @@ export function ReportDetail() {
                       </Button>
                     )}
                   </div>
+                  )}
                   {aggregated.status === 'PENDING' && (
                     <p className='text-xs text-muted-foreground mt-2'>
                       ⚠️ User actions are available after approving or rejecting
@@ -570,6 +572,18 @@ export function ReportDetail() {
                             Description: {detail.reason}
                           </p>
                         </div>
+                        {aggregated.status === 'REJECTED' && (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => handleWarnUser(detail.reporterId)}
+                            disabled={isProcessing}
+                            title='Warn this reporter'
+                          >
+                            <AlertTriangle className='h-3 w-3 mr-1' />
+                            Warn Reporter
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

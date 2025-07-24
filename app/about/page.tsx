@@ -1,6 +1,5 @@
 import { Footer } from '@/components/layout/footer'
 import { Navbar } from '@/components/layout/navbar'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Award,
@@ -12,7 +11,6 @@ import {
   Target,
   Users,
 } from 'lucide-react'
-import Link from 'next/link'
 
 export default function AboutPage() {
   const teamMembers = [
@@ -87,7 +85,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className='py-20 px-4 bg-gradient-to-br from-primary/5 to-secondary/5'>
         <div className='container mx-auto text-center space-y-6'>
-          <h1 className='text-4xl md:text-5xl font-bold'>About LearnHub</h1>
+          <h1 className='text-4xl md:text-5xl font-bold'>About CourseHub Online Traning System</h1>
           <p className='text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed'>
             We're on a mission to democratize education and empower learners
             worldwide with the skills they need to succeed in the digital age.
@@ -103,7 +101,7 @@ export default function AboutPage() {
               <h2 className='text-3xl font-bold'>Our Story</h2>
               <div className='space-y-4 text-muted-foreground leading-relaxed'>
                 <p>
-                  Founded in 2020, LearnHub was born from a simple belief: that
+                  Founded in 2020, CourseHub Online Training System was born from a simple belief: that
                   quality education should be accessible to everyone,
                   everywhere. Our founders, a team of educators and
                   technologists, recognized the growing gap between traditional
@@ -119,7 +117,7 @@ export default function AboutPage() {
                   transformational.
                 </p>
                 <p>
-                  Today, LearnHub continues to innovate in the online education
+                  Today, CourseHub Online Trainning System continues to innovate in the online education
                   space, leveraging cutting-edge technology to create
                   personalized, engaging, and effective learning experiences.
                 </p>
@@ -127,7 +125,7 @@ export default function AboutPage() {
             </div>
             <div className='relative'>
               <img
-                src='/placeholder.svg?height=400&width=600'
+                src='/about-2.png?height=400&width=600'
                 alt='LearnHub team working together'
                 className='w-full h-auto rounded-lg shadow-lg'
               />

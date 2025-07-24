@@ -85,6 +85,9 @@ export default function EditCategoryPage() {
     if (!form.name.trim()) {
       setNameError('Please enter a category name')
       hasError = true
+    } else if (form.name.length < 5) {
+      setNameError('Category name must be at least 5 characters')
+      hasError = true
     } else if (form.name.length > 30) {
       setNameError('Category name must not exceed 30 characters')
       hasError = true
@@ -93,6 +96,9 @@ export default function EditCategoryPage() {
     }
     if (!form.description.trim()) {
       setDescriptionError('Please enter a category description')
+      hasError = true
+    } else if (form.description.length < 5) {
+      setDescriptionError('Description must be at least 5 characters')
       hasError = true
     } else if (form.description.length > 200) {
       setDescriptionError('Description must not exceed 200 characters')
@@ -234,7 +240,15 @@ export default function EditCategoryPage() {
                         <Button
                           type='button'
                           onClick={handleEditCategory}
-                          disabled={!form.name.trim() || !form.description.trim() || loading}
+                          disabled={
+                            !form.name.trim() ||
+                            !form.description.trim() ||
+                            form.name.length < 5 ||
+                            form.name.length > 30 ||
+                            form.description.length < 5 ||
+                            form.description.length > 200 ||
+                            loading
+                          }
                         >
                           {loading ? 'Updating...' : 'Update'}
                         </Button>

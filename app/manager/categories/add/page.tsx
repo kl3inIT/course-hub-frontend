@@ -56,6 +56,9 @@ export default function AddCategoryPage() {
     if (!newCategory.name.trim()) {
       setNameError('Please enter a category name')
       hasError = true
+    } else if (newCategory.name.length < 5) {
+      setNameError('Category name must be at least 5 characters')
+      hasError = true
     } else if (newCategory.name.length > 30) {
       setNameError('Category name must not exceed 30 characters')
       hasError = true
@@ -64,6 +67,9 @@ export default function AddCategoryPage() {
     }
     if (!newCategory.description.trim()) {
       setDescriptionError('Please enter a category description')
+      hasError = true
+    } else if (newCategory.description.length < 5) {
+      setDescriptionError('Description must be at least 5 characters')
       hasError = true
     } else if (newCategory.description.length > 200) {
       setDescriptionError('Description must not exceed 200 characters')
@@ -207,7 +213,15 @@ export default function AddCategoryPage() {
                         <Button
                           type='button'
                           onClick={handleCreateCategory}
-                          disabled={!newCategory.name.trim() || !newCategory.description.trim() || loading}
+                          disabled={
+                            !newCategory.name.trim() ||
+                            !newCategory.description.trim() ||
+                            newCategory.name.length < 5 ||
+                            newCategory.name.length > 30 ||
+                            newCategory.description.length < 5 ||
+                            newCategory.description.length > 200 ||
+                            loading
+                          }
                         >
                           {loading ? 'Creating...' : 'Create Category'}
                         </Button>

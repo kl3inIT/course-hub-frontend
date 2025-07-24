@@ -30,6 +30,8 @@ import {
   Users,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { UserStatus } from '@/types/user'
+import { AnnouncementStatus } from '@/types/announcement'
 
 interface DashboardStats {
   totalUsers: number
@@ -86,7 +88,7 @@ export function OverviewDashboard() {
     draft: 0,
     scheduled: 0,
   })
-  const [topCourses, setTopCourses] = useState([])
+  const [topCourses, setTopCourses] = useState<any[]>([])
   const [systemPerformance, setSystemPerformance] = useState<
     SystemPerformance[]
   >([])
@@ -107,7 +109,7 @@ export function OverviewDashboard() {
       // Fetch user statistics
       const [allUsers, activeUsers] = await Promise.all([
         adminApi.getAllUsers({ pageSize: 1, pageNo: 0 }),
-        adminApi.getAllUsers({ pageSize: 1, pageNo: 0, status: 'ACTIVE' }),
+        adminApi.getAllUsers({ pageSize: 1, pageNo: 0, status: UserStatus.ACTIVE }),
       ])
 
       const totalUsers = allUsers.data?.page?.totalElements || 0
@@ -152,10 +154,9 @@ export function OverviewDashboard() {
       try {
         const revenueResponse = await analyticsApi.getRevenueAnalyticsDetails({
           range: '30d',
-          pageSize: 100,
-          pageNo: 0,
+          size: 100,
+          page: 0,
         })
-
         totalRevenue =
           revenueResponse.data?.content?.reduce(
             (sum: number, item: any) => sum + (item.revenue || 0),
@@ -171,7 +172,7 @@ export function OverviewDashboard() {
         const announcementResponse =
           await announcementApi.getAnnouncementStats()
         setAnnouncementStats(
-          announcementResponse.data || { sent: 0, draft: 0, scheduled: 0 }
+          announcementResponse.data as any || { sent: 0, draft: 0, scheduled: 0 }
         )
       } catch (error) {
         console.error('Error fetching announcement stats:', error)
@@ -187,7 +188,7 @@ export function OverviewDashboard() {
             sortBy: 'sentTime',
             direction: 'DESC',
             mode: 'history', // This will get SENT and CANCELLED announcements
-            status: 'SENT', // Only get sent announcements
+            status: AnnouncementStatus.SENT, // Only get sent announcements
           })
         setRecentAnnouncements(
           recentAnnouncementsResponse.data?.data?.content || []
@@ -202,8 +203,8 @@ export function OverviewDashboard() {
         const topCoursesResponse = await analyticsApi.getCourseAnalyticsDetails(
           {
             range: '30d',
-            pageSize: 5,
-            pageNo: 0,
+            page: 0,
+            size: 5,
           }
         )
         setTopCourses(topCoursesResponse.data?.content || [])
@@ -308,13 +309,13 @@ export function OverviewDashboard() {
 
       // Get recent users
       const recentUsers = await adminApi.getAllUsers({ pageSize: 3, pageNo: 0 })
-      recentUsers.data?.content?.forEach((user: any, index: number) => {
+      recentUsers.data?.content?.forEach((user: any) => {
         activities.push({
           id: `user-${user.id}`,
           type: 'user',
           title: 'New user registration',
           description: `${user.name} joined the platform`,
-          time: `${index + 1} minutes ago`,
+          time: formatTimeAgo(user.createdAt),
           status: 'success',
         })
       })
@@ -324,13 +325,13 @@ export function OverviewDashboard() {
         page: 0,
         size: 3,
       })
-      recentCourses.data?.forEach((course: any, index: number) => {
+      recentCourses.data?.forEach((course: any) => {
         activities.push({
           id: `course-${course.id}`,
           type: 'course',
           title: 'New course published',
           description: `${course.title} is now live`,
-          time: `${index + 2} minutes ago`,
+          time: formatTimeAgo(course.createdAt),
           status: 'info',
         })
       })
@@ -340,13 +341,13 @@ export function OverviewDashboard() {
         page: 0,
         size: 3,
       })
-      recentPayments.data?.content?.forEach((payment: any, index: number) => {
+      recentPayments.data?.content?.forEach((payment: any) => {
         activities.push({
           id: `payment-${payment.id}`,
           type: 'payment',
           title: 'Payment received',
           description: `$${payment.amount} payment processed`,
-          time: `${index + 3} minutes ago`,
+          time: formatTimeAgo(payment.createdAt),
           status: 'success',
         })
       })
@@ -547,10 +548,6 @@ export function OverviewDashboard() {
               className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
             />
             Refresh
-          </Button>
-          <Button>
-            <Eye className='mr-2 h-4 w-4' />
-            View Reports
           </Button>
         </div>
       </div>

@@ -166,14 +166,19 @@ export function CourseCatalog() {
               ? categories.find(cat => cat.name === selectedCategories[0])?.id
               : undefined,
           level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          // Fix price filter logic - Only apply price filters when explicitly set
+          // Sửa: luôn truyền minPrice/maxPrice khi là 'all'
           minPrice:
             priceFilter === 'free'
               ? 0
               : priceFilter === 'paid'
                 ? Math.max(1, priceRange[0])
-                : undefined, // Don't filter by minPrice when 'all'
-          maxPrice: priceFilter === 'free' ? 0 : undefined, // Don't filter by maxPrice when 'all'
+                : priceRange[0],
+          maxPrice:
+            priceFilter === 'free'
+              ? 0
+              : priceFilter === 'paid'
+                ? priceRange[1]
+                : priceRange[1],
           isFree: priceFilter === 'free' ? true : isFree,
           isDiscounted: isDiscounted,
           sortBy:

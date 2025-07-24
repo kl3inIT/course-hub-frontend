@@ -430,6 +430,8 @@ const getActivityIcon = (type: string) => {
       return PlusCircle
     case 'lesson_update':
       return Edit
+    case 'review':
+      return MessageSquare
     default:
       return Clock
   }
@@ -452,6 +454,8 @@ const getActivityColor = (type: string) => {
       return 'text-green-600'
     case 'quiz_attempt':
       return 'text-yellow-600'
+    case 'review':
+      return 'text-pink-600'
     default:
       return 'text-gray-600'
   }
@@ -478,6 +482,8 @@ const getActivityText = (activity: UserActivity) => {
       return `Created lesson "${activity.lessonTitle}" in course "${activity.courseTitle}"`
     case 'lesson_update':
       return `Updated lesson "${activity.lessonTitle}" in course "${activity.courseTitle}"`
+    case 'review':
+      return `Reviewed course "${activity.courseTitle}"`
     default:
       return 'Activity'
   }
@@ -520,6 +526,10 @@ const getActivityTypeBadge = (type: string) => {
     lesson_update: {
       label: 'Lesson Updated',
       className: 'bg-indigo-100 text-indigo-700',
+    },
+    review: {
+      label: 'Review',
+      className: 'bg-pink-100 text-pink-700',
     },
   }
 

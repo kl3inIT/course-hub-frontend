@@ -99,4 +99,10 @@ export const lessonApi = {
       return await lessonApi.getLessonVideoUrl(lessonId)
     }
   },
+
+  setLessonPreview: async (lessonId: string, isPreview: boolean): Promise<void> => {
+    await httpClient.patch(`/api/lessons/${lessonId}/set-preview`, null, {
+      params: { isPreview }
+    })
+  },
 }

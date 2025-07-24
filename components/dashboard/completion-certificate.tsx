@@ -93,7 +93,7 @@ export function CompletionCertificate({
             <div className='absolute left-1/2 -translate-x-1/2 top-10 z-10 flex flex-col items-center justify-center'>
               <div className='w-44 h-44 bg-white border-4 border-green-600 rounded-full flex flex-col items-center justify-center shadow-2xl relative'>
                 <span className='absolute inset-0 flex items-center justify-center text-green-700 font-extrabold text-2xl text-center leading-tight drop-shadow-sm z-10'>
-                  iT4Beginner
+                  IT4Beginner
                 </span>
                 <svg
                   width='176'
@@ -158,7 +158,7 @@ export function CompletionCertificate({
         {/* Left Content Area */}
         <div className='absolute top-0 left-0 w-2/3 h-full p-16 flex flex-col'>
           <header className='mb-10'>
-            <div className='text-green-700 font-bold text-2xl'>iT4Beginner</div>
+            <div className='text-green-700 font-bold text-2xl'>IT4Beginner</div>
             <p className='text-[10px] text-gray-500 tracking-[0.2em] ml-1'>
               EDUCATION &amp; TRAINING
             </p>
@@ -193,7 +193,7 @@ export function CompletionCertificate({
         <div className='absolute bottom-8 left-20'>
           <div className='text-left'>
             <div className="font-['Ms_Madi',_cursive] text-green-700 text-4xl -mb-1">
-              iT4Begginer
+             IT4Beginner
             </div>
             <div className='border-t border-gray-300 pt-1'>
               <p className='text-[10px] text-gray-500 tracking-[0.2em] ml-1'>

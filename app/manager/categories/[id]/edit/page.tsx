@@ -127,155 +127,123 @@ export default function EditCategoryPage() {
       <SidebarProvider>
         <ManagerSidebar />
         <SidebarInset>
-          <div className='flex-1 space-y-6 min-h-screen'>
-            {/* Header Section */}
-            <div className='px-6'>
+          <div className='space-y-6 min-h-screen'>
+            {/* Header Section + Statistics giống manage */}
+            <div className='flex items-center justify-between px-6 pt-6'>
               <div>
                 <h1 className='text-3xl font-bold'>Category Management</h1>
                 <p className='text-muted-foreground mt-2'>
-                  Organize and manage course categories for better navigation
-                  and discovery.
+                  Organize and manage course categories for better navigation and discovery.
                 </p>
               </div>
-              {/* Statistics Cards */}
-              <div className='grid gap-4 grid-cols-2'>
-                <Card className='w-full'>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Total Categories
-                    </CardTitle>
-                    <Tags className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>
-                      {allCategories.length}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className='w-full'>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Total Courses
-                    </CardTitle>
-                    <BookOpen className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>{totalCourses}</div>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
-            {/* Categories Card with Form */}
-            <Card className='w-full'>
-              <CardHeader className='pb-2'>
-                <div className='flex flex-col gap-1'>
-                  <h2 className='text-xl font-bold'>Edit Category</h2>
-                  <CardDescription>
-                    Manage all categories used to organize your courses.
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className='pt-0'>
-                <div className='max-w-xl mx-auto px-4'>
-                  <form className='space-y-4'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='edit-category-name'>Category Name</Label>
-                      <Input
-                        id='edit-category-name'
-                        placeholder='Enter category name'
-                        value={form.name}
-                        maxLength={30}
-                        onChange={e => {
-                          setForm({ ...form, name: e.target.value })
-                          if (e.target.value.length > 30) {
-                            setNameError(
-                              'Category name must not exceed 30 characters'
-                            )
-                          } else if (!e.target.value.trim()) {
-                            setNameError('Please enter a category name')
-                          } else {
-                            setNameError('')
-                          }
-                        }}
-                        onBlur={() => {
-                          setNameTouched(true)
-                          if (!form.name.trim())
-                            setNameError('Please enter a category name')
-                        }}
-                      />
-                      <p className='text-xs text-muted-foreground text-right'>
-                        {form.name.length}/30
-                      </p>
-                      {nameTouched && nameError && (
-                        <p className='text-red-500 text-xs mt-1'>{nameError}</p>
-                      )}
-                    </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='edit-category-description'>
-                        Description
-                      </Label>
-                      <Textarea
-                        id='edit-category-description'
-                        placeholder='Enter category description'
-                        value={form.description}
-                        maxLength={200}
-                        onChange={e => {
-                          setForm({ ...form, description: e.target.value })
-                          if (e.target.value.length > 200) {
-                            setDescriptionError(
-                              'Description must not exceed 200 characters'
-                            )
-                          } else if (!e.target.value.trim()) {
-                            setDescriptionError(
-                              'Please enter a category description'
-                            )
-                          } else {
-                            setDescriptionError('')
-                          }
-                        }}
-                        onBlur={() => {
-                          setDescriptionTouched(true)
-                          if (!form.description.trim())
-                            setDescriptionError(
-                              'Please enter a category description'
-                            )
-                        }}
-                        rows={3}
-                      />
-                      <p className='text-xs text-muted-foreground text-right'>
-                        {form.description.length}/200
-                      </p>
-                      {descriptionTouched && descriptionError && (
-                        <p className='text-red-500 text-xs mt-1'>
-                          {descriptionError}
-                        </p>
-                      )}
-                    </div>
-                    <div className='flex justify-end gap-2 mt-6'>
-                      <Button
-                        variant='outline'
-                        type='button'
-                        onClick={() => router.back()}
-                        disabled={loading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type='button'
-                        onClick={handleEditCategory}
-                        disabled={
-                          !form.name.trim() ||
-                          !form.description.trim() ||
-                          loading
-                        }
-                      >
-                        {loading ? 'Updating...' : 'Update'}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              </CardContent>
-            </Card>
+            <div className='grid gap-4 grid-cols-2 px-6'>
+              <Card className='w-full'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                  <CardTitle className='text-sm font-medium'>Total Categories</CardTitle>
+                  <Tags className='h-4 w-4 text-muted-foreground' />
+                </CardHeader>
+                <CardContent>
+                  <div className='text-2xl font-bold'>{allCategories.length}</div>
+                </CardContent>
+              </Card>
+              <Card className='w-full'>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                  <CardTitle className='text-sm font-medium'>Total Courses</CardTitle>
+                  <BookOpen className='h-4 w-4 text-muted-foreground' />
+                </CardHeader>
+                <CardContent>
+                  <div className='text-2xl font-bold'>{totalCourses}</div>
+                </CardContent>
+              </Card>
+              {/* Form Edit Category */}
+              <Card className='w-full col-span-2 mt-2'>
+                <CardHeader className='pb-2'>
+                  <div className='flex flex-col gap-1'>
+                    <h2 className='text-xl font-bold'>Edit Category</h2>
+                    <CardDescription>Manage all categories used to organize your courses.</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className='pt-0'>
+                  <div className='w-full max-w-lg mx-auto space-y-6'>
+                    <form className='space-y-4'>
+                      <div className='space-y-2'>
+                        <Label htmlFor='edit-category-name'>Category Name</Label>
+                        <Input
+                          id='edit-category-name'
+                          placeholder='Enter category name'
+                          value={form.name}
+                          maxLength={30}
+                          onChange={e => {
+                            setForm({ ...form, name: e.target.value })
+                            if (e.target.value.length > 30) {
+                              setNameError('Category name must not exceed 30 characters')
+                            } else if (!e.target.value.trim()) {
+                              setNameError('Please enter a category name')
+                            } else {
+                              setNameError('')
+                            }
+                          }}
+                          onBlur={() => {
+                            setNameTouched(true)
+                            if (!form.name.trim()) setNameError('Please enter a category name')
+                          }}
+                        />
+                        <p className='text-xs text-muted-foreground text-right'>{form.name.length}/30</p>
+                        {nameTouched && nameError && (
+                          <p className='text-red-500 text-xs mt-1'>{nameError}</p>
+                        )}
+                      </div>
+                      <div className='space-y-2'>
+                        <Label htmlFor='edit-category-description'>Description</Label>
+                        <Textarea
+                          id='edit-category-description'
+                          placeholder='Enter category description'
+                          value={form.description}
+                          maxLength={200}
+                          onChange={e => {
+                            setForm({ ...form, description: e.target.value })
+                            if (e.target.value.length > 200) {
+                              setDescriptionError('Description must not exceed 200 characters')
+                            } else if (!e.target.value.trim()) {
+                              setDescriptionError('Please enter a category description')
+                            } else {
+                              setDescriptionError('')
+                            }
+                          }}
+                          onBlur={() => {
+                            setDescriptionTouched(true)
+                            if (!form.description.trim()) setDescriptionError('Please enter a category description')
+                          }}
+                          rows={3}
+                        />
+                        <p className='text-xs text-muted-foreground text-right'>{form.description.length}/200</p>
+                        {descriptionTouched && descriptionError && (
+                          <p className='text-red-500 text-xs mt-1'>{descriptionError}</p>
+                        )}
+                      </div>
+                      <div className='flex justify-end gap-2 mt-6'>
+                        <Button
+                          variant='outline'
+                          type='button'
+                          onClick={() => router.back()}
+                          disabled={loading}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type='button'
+                          onClick={handleEditCategory}
+                          disabled={!form.name.trim() || !form.description.trim() || loading}
+                        >
+                          {loading ? 'Updating...' : 'Update'}
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </SidebarInset>
       </SidebarProvider>

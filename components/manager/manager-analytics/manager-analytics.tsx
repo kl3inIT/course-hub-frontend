@@ -25,6 +25,7 @@ import {
   Star,
   Users,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
@@ -153,6 +154,7 @@ const renderCustomizedLabel = ({
 }
 
 export function ManagerAnalytics() {
+  const router = useRouter();
   const COLORS = [
     '#8884d8',
     '#82ca9d',
@@ -213,8 +215,9 @@ export function ManagerAnalytics() {
   const hasMountedRef = useRef(false)
 
   const handleRefresh = () => {
-    setIsRefreshing(true)
-    setTimeout(() => setIsRefreshing(false), 1000)
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => setIsRefreshing(false), 1000);
   }
 
   const handleExportClick = useCallback((e: React.MouseEvent) => {

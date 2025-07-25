@@ -56,7 +56,7 @@ export function AnnouncementList({
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [showDialog, setShowDialog] = useState<
-    'clone' | 'delete' | 'send' | null
+    'clone' | 'delete' | 'send' | 'cancel' | null
   >(null)
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null)
@@ -229,11 +229,26 @@ export function AnnouncementList({
 
   const renderActionButtons = (announcement: Announcement) => {
     const buttons = []
-    // Edit chỉ cho DRAFT/SCHEDULED
-    if (
-      announcement.status === AnnouncementStatus.DRAFT ||
-      announcement.status === AnnouncementStatus.SCHEDULED
-    ) {
+    // Nếu là SCHEDULED chỉ cho phép Cancel
+    if (announcement.status === AnnouncementStatus.SCHEDULED) {
+      buttons.push(
+        <Button
+          key='cancel'
+          variant='destructive'
+          size='sm'
+          onClick={() => {
+            setSelectedAnnouncement(announcement)
+            setShowDialog('cancel')
+          }}
+          className='mr-1'
+        >
+          <X className='h-4 w-4' />
+        </Button>
+      )
+      return buttons
+    }
+    // Edit chỉ cho DRAFT
+    if (announcement.status === AnnouncementStatus.DRAFT) {
       buttons.push(
         <Button
           key='edit'
@@ -265,23 +280,6 @@ export function AnnouncementList({
         </Button>
       )
     }
-    // Cancel cho SCHEDULED
-    if (announcement.status === AnnouncementStatus.SCHEDULED) {
-      buttons.push(
-        <Button
-          key='cancel'
-          variant='destructive'
-          size='sm'
-          onClick={() => {
-            setSelectedAnnouncement(announcement)
-            setShowDialog('delete')
-          }}
-          className='mr-1'
-        >
-          <X className='h-4 w-4' />
-        </Button>
-      )
-    }
     // Send cho DRAFT
     if (announcement.status === AnnouncementStatus.DRAFT) {
       buttons.push(
@@ -299,11 +297,8 @@ export function AnnouncementList({
         </Button>
       )
     }
-    // Delete permanently (chỉ cho DRAFT, SCHEDULED - không cho SENT, CANCELLED)
-    if (
-      announcement.status === 'DRAFT' ||
-      announcement.status === 'SCHEDULED'
-    ) {
+    // Delete permanently (chỉ cho DRAFT - không cho SCHEDULED, SENT, CANCELLED)
+    if (announcement.status === 'DRAFT') {
       buttons.push(
         <Button
           key='delete'
@@ -485,6 +480,33 @@ export function AnnouncementList({
               className='bg-red-600 hover:bg-red-700'
             >
               Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Dialog */}
+      <AlertDialog
+        open={showDialog === 'cancel'}
+        onOpenChange={() => setShowDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Scheduled Announcement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel "{selectedAnnouncement?.title}"?
+              This will stop the scheduled announcement from being sent.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                selectedAnnouncement && handleCancel(selectedAnnouncement.id)
+              }
+              disabled={!selectedAnnouncement}
+            >
+              Confirm Cancel
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

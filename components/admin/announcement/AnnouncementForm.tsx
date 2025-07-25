@@ -177,7 +177,7 @@ export function AnnouncementForm({
         })
         setCurrentStatus(AnnouncementStatus.DRAFT)
         toast.success('Announcement updated and saved as draft')
-        onSuccess()
+        onSuccess() // Thoát ra ngoài tab sau khi lưu
       } else {
         await announcementApi.createAnnouncement({
           ...formData,
@@ -268,6 +268,7 @@ export function AnnouncementForm({
         )
         setCurrentStatus(AnnouncementStatus.SCHEDULED)
         toast.success('Announcement scheduled successfully')
+        onSuccess() // Thoát ra ngoài tab sau khi schedule
       } else {
         await announcementApi.createAnnouncement({
           ...formData,
@@ -600,17 +601,19 @@ export function AnnouncementForm({
 
         {/* Action Buttons */}
         <div className='flex flex-wrap gap-3 pt-4'>
-          {/* Save as Draft */}
-          <Button
-            type='button'
-            variant='outline'
-            onClick={handleSaveDraft}
-            disabled={loading || !isFormValid || readOnly}
-            className='flex items-center gap-2'
-          >
-            <Save className='h-4 w-4' />
-            Save as Draft
-          </Button>
+          {/* Save as Draft hoặc Save - chỉ hiện khi KHÔNG chọn schedule */}
+          {!formData.isScheduled && (
+            <Button
+              type='button'
+              variant='outline'
+              onClick={handleSaveDraft}
+              disabled={loading || !isFormValid || readOnly}
+              className='flex items-center gap-2'
+            >
+              <Save className='h-4 w-4' />
+              {announcementId ? 'Save' : 'Save as Draft'}
+            </Button>
+          )}
 
           {/* Schedule */}
           {formData.isScheduled && (

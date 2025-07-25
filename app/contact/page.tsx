@@ -28,6 +28,8 @@ import {
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { ProtectedRoute } from '@/components/auth/protected-route'
 
 // Danh sách các câu hỏi thường gặp
 const faqs = [
@@ -81,9 +83,9 @@ export default function ContactPage() {
         category: '',
         message: '',
       })
-      alert("Thank you for your message! We'll get back to you soon.")
+      toast.success("Thank you for your message! We'll get back to you soon.")
     } catch (error) {
-      alert('Failed to send message. Please try again later.')
+      toast.error('Failed to send message. Please try again later.')
     } finally {
       setLoading(false)
     }
@@ -167,110 +169,112 @@ export default function ContactPage() {
         <div className='container mx-auto'>
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-12'>
             {/* Contact Form */}
-            <Card className='border-2'>
-              <CardHeader>
-                <CardTitle className='text-2xl'>Send us a Message</CardTitle>
-                <p className='text-muted-foreground'>
-                  Fill out the form below and we'll get back to you within 24
-                  hours.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className='space-y-6'>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='name'>Full Name</Label>
-                      <Input
-                        id='name'
-                        placeholder='Your full name'
-                        value={formData.fullName}
-                        onChange={e =>
-                          handleInputChange('fullName', e.target.value)
-                        }
-                        required
-                      />
+            <ProtectedRoute requireAuth={true}>
+              <Card className='border-2'>
+                <CardHeader>
+                  <CardTitle className='text-2xl'>Send us a Message</CardTitle>
+                  <p className='text-muted-foreground'>
+                    Fill out the form below and we'll get back to you within 24
+                    hours.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className='space-y-6'>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                      <div className='space-y-2'>
+                        <Label htmlFor='name'>Full Name</Label>
+                        <Input
+                          id='name'
+                          placeholder='Your full name'
+                          value={formData.fullName}
+                          onChange={e =>
+                            handleInputChange('fullName', e.target.value)
+                          }
+                          required
+                        />
+                      </div>
+                      <div className='space-y-2'>
+                        <Label htmlFor='email'>Email Address</Label>
+                        <Input
+                          id='email'
+                          type='email'
+                          placeholder='your.email@example.com'
+                          value={formData.email}
+                          onChange={e =>
+                            handleInputChange('email', e.target.value)
+                          }
+                          required
+                        />
+                      </div>
                     </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='email'>Email Address</Label>
-                      <Input
-                        id='email'
-                        type='email'
-                        placeholder='your.email@example.com'
-                        value={formData.email}
-                        onChange={e =>
-                          handleInputChange('email', e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='category'>Category</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={value =>
-                        handleInputChange('category', value)
-                      }
+                    <div className='space-y-2'>
+                      <Label htmlFor='category'>Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={value =>
+                          handleInputChange('category', value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select a category' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='general'>General Support</SelectItem>
+                          <SelectItem value='technical'>
+                            Technical Issue
+                          </SelectItem>
+                          <SelectItem value='billing'>
+                            Billing Question
+                          </SelectItem>
+                          <SelectItem value='course'>Course Related</SelectItem>
+                          <SelectItem value='business'>
+                            Business Inquiry
+                          </SelectItem>
+                          <SelectItem value='feedback'>Feedback</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor='subject'>Subject</Label>
+                      <Input
+                        id='subject'
+                        placeholder='Brief description of your inquiry'
+                        value={formData.subject}
+                        onChange={e =>
+                          handleInputChange('subject', e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+
+                    <div className='space-y-2'>
+                      <Label htmlFor='message'>Message</Label>
+                      <Textarea
+                        id='message'
+                        placeholder='Please provide details about your inquiry...'
+                        rows={6}
+                        value={formData.message}
+                        onChange={e =>
+                          handleInputChange('message', e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type='submit'
+                      className='w-full'
+                      size='lg'
+                      disabled={loading}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select a category' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='general'>General Support</SelectItem>
-                        <SelectItem value='technical'>
-                          Technical Issue
-                        </SelectItem>
-                        <SelectItem value='billing'>
-                          Billing Question
-                        </SelectItem>
-                        <SelectItem value='course'>Course Related</SelectItem>
-                        <SelectItem value='business'>
-                          Business Inquiry
-                        </SelectItem>
-                        <SelectItem value='feedback'>Feedback</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className='space-y-2'>
-                    <Label htmlFor='subject'>Subject</Label>
-                    <Input
-                      id='subject'
-                      placeholder='Brief description of your inquiry'
-                      value={formData.subject}
-                      onChange={e =>
-                        handleInputChange('subject', e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className='space-y-2'>
-                    <Label htmlFor='message'>Message</Label>
-                    <Textarea
-                      id='message'
-                      placeholder='Please provide details about your inquiry...'
-                      rows={6}
-                      value={formData.message}
-                      onChange={e =>
-                        handleInputChange('message', e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type='submit'
-                    className='w-full'
-                    size='lg'
-                    disabled={loading}
-                  >
-                    {loading ? 'Sending...' : 'Send Message'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                      {loading ? 'Sending...' : 'Send Message'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </ProtectedRoute>
 
             {/* Contact Information */}
             <div className='space-y-8'>

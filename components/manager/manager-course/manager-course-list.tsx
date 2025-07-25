@@ -521,36 +521,40 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected restore error:', err)
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected restore error:', err)
+                                }
+
+                                let errorMessage =
+                                  'An error occurred while restoring the course'
+
+                                // Parse backend error message
+                                if (err?.response?.data) {
+                                  const backendMessage =
+                                    err.response.data.detail ||
+                                    err.response.data.message ||
+                                    err.response.data.error ||
+                                    err.message
+                                  errorMessage = backendMessage
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                // Add prefix if needed
+                                if (
+                                  !errorMessage.toLowerCase().includes('cannot')
+                                ) {
+                                  errorMessage = `Cannot restore: ${errorMessage}`
+                                }
+
+                                toast.error(
+                                  `Cannot Restore Course: ${errorMessage}`
+                                )
                               }
-
-                              let errorMessage =
-                                'An error occurred while restoring the course'
-
-                              // Parse backend error message
-                              if (err?.response?.data) {
-                                const backendMessage =
-                                  err.response.data.detail ||
-                                  err.response.data.message ||
-                                  err.response.data.error ||
-                                  err.message
-                                errorMessage = backendMessage
-                              } else if (err?.message) {
-                                errorMessage = err.message
-                              }
-
-                              // Add prefix if needed
-                              if (
-                                !errorMessage.toLowerCase().includes('cannot')
-                              ) {
-                                errorMessage = `Cannot restore: ${errorMessage}`
-                              }
-
-                              toast.error(
-                                `Cannot Restore Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >
@@ -569,42 +573,46 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected publish error:', err)
-                              }
-
-                              // Parse error message from backend API response
-                              let errorMessage =
-                                'An error occurred while publishing the course'
-
-                              // Check if it's an Axios error with response data
-                              if (err?.response?.data) {
-                                const responseData = err.response.data
-
-                                // Backend sends structured error response via ResponseGeneral
-                                const backendMessage =
-                                  responseData.detail ||
-                                  responseData.message ||
-                                  responseData.error
-
-                                if (backendMessage) {
-                                  errorMessage = backendMessage
-                                } else {
-                                  errorMessage = err.message || errorMessage
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected publish error:', err)
                                 }
-                              } else if (err?.message) {
-                                errorMessage = err.message
+
+                                // Parse error message from backend API response
+                                let errorMessage =
+                                  'An error occurred while publishing the course'
+
+                                // Check if it's an Axios error with response data
+                                if (err?.response?.data) {
+                                  const responseData = err.response.data
+
+                                  // Backend sends structured error response via ResponseGeneral
+                                  const backendMessage =
+                                    responseData.detail ||
+                                    responseData.message ||
+                                    responseData.error
+
+                                  if (backendMessage) {
+                                    errorMessage = backendMessage
+                                  } else {
+                                    errorMessage = err.message || errorMessage
+                                  }
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                console.log(
+                                  'Showing toast with message:',
+                                  errorMessage
+                                )
+
+                                toast.error(
+                                  `Cannot Publish Course: ${errorMessage}`
+                                )
                               }
-
-                              console.log(
-                                'Showing toast with message:',
-                                errorMessage
-                              )
-
-                              toast.error(
-                                `Cannot Publish Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >
@@ -625,36 +633,40 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected archive error:', err)
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected archive error:', err)
+                                }
+
+                                let errorMessage =
+                                  'An error occurred while archiving the course'
+
+                                // Parse backend error message
+                                if (err?.response?.data) {
+                                  const backendMessage =
+                                    err.response.data.detail ||
+                                    err.response.data.message ||
+                                    err.response.data.error ||
+                                    err.message
+                                  errorMessage = backendMessage
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                // Add prefix if needed
+                                if (
+                                  !errorMessage.toLowerCase().includes('cannot')
+                                ) {
+                                  errorMessage = `Cannot archive: ${errorMessage}`
+                                }
+
+                                toast.error(
+                                  `Cannot Archive Course: ${errorMessage}`
+                                )
                               }
-
-                              let errorMessage =
-                                'An error occurred while archiving the course'
-
-                              // Parse backend error message
-                              if (err?.response?.data) {
-                                const backendMessage =
-                                  err.response.data.detail ||
-                                  err.response.data.message ||
-                                  err.response.data.error ||
-                                  err.message
-                                errorMessage = backendMessage
-                              } else if (err?.message) {
-                                errorMessage = err.message
-                              }
-
-                              // Add prefix if needed
-                              if (
-                                !errorMessage.toLowerCase().includes('cannot')
-                              ) {
-                                errorMessage = `Cannot archive: ${errorMessage}`
-                              }
-
-                              toast.error(
-                                `Cannot Archive Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >

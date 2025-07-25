@@ -27,9 +27,6 @@ import { CourseFilterSidebar } from './course-filter-sidebar'
 
 const levels = ['Beginner', 'Intermediate', 'Advanced']
 const sortOptions = [
-  { value: 'relevance', label: 'Relevance' },
-  { value: 'popularity', label: 'Popularity' },
-  { value: 'rating', label: 'Highest Rated' },
   { value: 'price-low', label: 'Price: Low to High' },
   { value: 'price-high', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest' },
@@ -191,11 +188,7 @@ export function CourseCatalog() {
                 ? 'price'
                 : sortBy === 'newest'
                   ? 'createdDate'
-                  : sortBy === 'relevance'
-                    ? 'title'
-                    : sortBy === 'rating'
-                      ? 'createdDate'
-                      : undefined,
+                  : undefined,
           sortDirection:
             sortBy === 'price-low'
               ? 'asc'
@@ -203,11 +196,7 @@ export function CourseCatalog() {
                 ? 'desc'
                 : sortBy === 'newest'
                   ? 'desc'
-                  : sortBy === 'rating'
-                    ? 'desc'
-                    : sortBy === 'relevance'
-                      ? 'asc'
-                      : undefined,
+                  : undefined,
         }
 
         // Client-side validation before sending request

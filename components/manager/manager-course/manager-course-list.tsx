@@ -1,6 +1,5 @@
 'use client'
 
-import { courseApi } from '@/services/course-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,30 +36,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { courseApi } from '@/services/course-api'
+import { reviewApi } from '@/services/review-api'
 import { ManagerCourseResponseDTO } from '@/types/course'
 import {
-  Archive,
-  BookOpen,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Download,
-  Edit,
-  Eye,
   Loader2,
   MoreVertical,
-  Plus,
-  RefreshCw,
-  Search,
-  Star,
-  Trash2,
-  Users,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export function ManagerCourseList() {
   const [courses, setCourses] = useState<ManagerCourseResponseDTO[]>([])
@@ -85,6 +73,7 @@ export function ManagerCourseList() {
   const [statusFilter, setStatusFilter] = useState<string>('PUBLISHED')
   const [page, setPage] = useState(0)
   const [pageSize] = useState(10)
+  const [averageRating, setAverageRating] = useState<number>(0)
 
   // Lấy danh sách status động từ backend
   useEffect(() => {
@@ -188,11 +177,18 @@ export function ManagerCourseList() {
   const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
   const draftCourses = courses.filter(c => c.status === 'DRAFT').length
   const archivedCourses = courses.filter(c => c.status === 'ARCHIVED').length
-  const averageRating =
-    courses
-      .filter(c => (c.rating || 0) > 0)
-      .reduce((sum, course) => sum + (course.rating || 0), 0) /
-    (courses.filter(c => (c.rating || 0) > 0).length || 1)
+
+  useEffect(() => {
+    const fetchAverageRating = async () => {
+      try {
+        const res = await reviewApi.getOverallAverageRating()
+        setAverageRating(res.data)
+      } catch (e) {
+        setAverageRating(0)
+      }
+    }
+    fetchAverageRating()
+  }, [])
 
   const handleRefresh = async () => {
     try {
@@ -317,7 +313,7 @@ export function ManagerCourseList() {
           </Button>
         </div>
       </div>
-      <div className='grid gap-4 md:grid-cols-4 mb-6'>
+      <div className='grid gap-4 md:grid-cols-3 mb-6'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Courses</CardTitle>

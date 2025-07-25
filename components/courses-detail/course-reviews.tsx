@@ -1,6 +1,15 @@
 'use client'
 
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -11,7 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
@@ -43,7 +57,13 @@ const formatDateTime = (dateString: string) => {
   return `${time} ${date}`
 }
 
-function WriteReviewWrapper({ courseId, onReviewSubmitted }: { courseId: string, onReviewSubmitted: () => void }) {
+function WriteReviewWrapper({
+  courseId,
+  onReviewSubmitted,
+}: {
+  courseId: string
+  onReviewSubmitted: () => void
+}) {
   const [hasReviewed, setHasReviewed] = useState<boolean | null>(null)
   const [refreshCheck, setRefreshCheck] = useState(0)
 
@@ -58,7 +78,9 @@ function WriteReviewWrapper({ courseId, onReviewSubmitted }: { courseId: string,
       }
     }
     check()
-    return () => { isMounted = false }
+    return () => {
+      isMounted = false
+    }
   }, [courseId, refreshCheck])
 
   // Khi add hoặc delete xong, gọi hàm này để refresh lại trạng thái
@@ -70,12 +92,14 @@ function WriteReviewWrapper({ courseId, onReviewSubmitted }: { courseId: string,
   if (hasReviewed === null) return null // loading
   if (hasReviewed) {
     return (
-      <div className="text-yellow-600 font-medium mt-4">
+      <div className='text-yellow-600 font-medium mt-4'>
         You have already reviewed this course.
       </div>
     )
   }
-  return <WriteReview courseId={courseId} onReviewSubmitted={handleReviewChange} />
+  return (
+    <WriteReview courseId={courseId} onReviewSubmitted={handleReviewChange} />
+  )
 }
 
 export function CourseReviews({
@@ -102,17 +126,26 @@ export function CourseReviews({
   const [reportDescription, setReportDescription] = useState('')
   const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null)
   const { user } = useAuth()
-  const userEmail = user?.email || (typeof window !== 'undefined' ? localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')!).email : '')
-  const [reviewOwnership, setReviewOwnership] = useState<{ [reviewId: number]: boolean }>({})
+  const userEmail =
+    user?.email ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('user') &&
+        JSON.parse(localStorage.getItem('user')!).email
+      : '')
+  const [reviewOwnership, setReviewOwnership] = useState<{
+    [reviewId: number]: boolean
+  }>({})
   const [showEdit, setShowEdit] = useState(false)
   const [editReview, setEditReview] = useState<ReviewResponseDTO | null>(null)
   const [showDelete, setShowDelete] = useState(false)
   const [deleteReviewId, setDeleteReviewId] = useState<number | null>(null)
   const [writeReviewKey, setWriteReviewKey] = useState(0)
-  const canReview = user && (user.role === 'learner')
+  const canReview = user && user.role === 'learner'
 
   // State cho hiển thị review trang hiện tại
-  const [displayedReviews, setDisplayedReviews] = useState<ReviewResponseDTO[]>([])
+  const [displayedReviews, setDisplayedReviews] = useState<ReviewResponseDTO[]>(
+    []
+  )
 
   const reportReasons = [
     { id: 'Spam', label: 'Spam or advertising' },
@@ -124,7 +157,11 @@ export function CourseReviews({
   // Fetch toàn bộ review 1 lần đầu
   const fetchAllReviews = async () => {
     try {
-      const res = await reviewApi.getAllReviews({ courseId: Number(courseId), page: 0, size: 1000 })
+      const res = await reviewApi.getAllReviews({
+        courseId: Number(courseId),
+        page: 0,
+        size: 1000,
+      })
       const allData = res.data.content || []
       setAllReviews(allData)
       updatePagination(allData, 0, pageSize)
@@ -135,7 +172,11 @@ export function CourseReviews({
   }
 
   // Hàm cập nhật phân trang và slice data
-  const updatePagination = (data: ReviewResponseDTO[], page: number, size: number) => {
+  const updatePagination = (
+    data: ReviewResponseDTO[],
+    page: number,
+    size: number
+  ) => {
     const totalPages = Math.ceil(data.length / size)
     const paginatedData = data.slice(page * size, (page + 1) * size)
     setDisplayedReviews(paginatedData)
@@ -178,7 +219,7 @@ export function CourseReviews({
     const checkOwnership = async () => {
       const results: { [reviewId: number]: boolean } = {}
       await Promise.all(
-        displayedReviews.map(async (review) => {
+        displayedReviews.map(async review => {
           if (reviewOwnership[review.id] !== undefined) {
             results[review.id] = reviewOwnership[review.id]
             return
@@ -191,7 +232,7 @@ export function CourseReviews({
           }
         })
       )
-      setReviewOwnership((prev) => ({ ...prev, ...results }))
+      setReviewOwnership(prev => ({ ...prev, ...results }))
     }
     if (displayedReviews.length > 0) checkOwnership()
   }, [displayedReviews, user])
@@ -304,7 +345,7 @@ export function CourseReviews({
         {displayedReviews.length === 0 && (
           <div className='text-gray-500 text-center'>No reviews yet.</div>
         )}
-        {displayedReviews.map((review) => {
+        {displayedReviews.map(review => {
           const isExpanded = expandedComments[review.id]
           const isMine = reviewOwnership[review.id]
           return (
@@ -359,28 +400,38 @@ export function CourseReviews({
                     {user && review.isHidden !== 1 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='icon' className='p-1 h-8 w-8'>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='p-1 h-8 w-8'
+                          >
                             <MoreVertical className='h-5 w-5' />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
                           {review.email === userEmail ? (
                             <>
-                              <DropdownMenuItem onClick={() => {
-                                setEditReview(review)
-                                setShowEdit(true)
-                              }}>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditReview(review)
+                                  setShowEdit(true)
+                                }}
+                              >
                                 <Edit className='mr-2 h-4 w-4' /> Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                setDeleteReviewId(review.id)
-                                setShowDelete(true)
-                              }}>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setDeleteReviewId(review.id)
+                                  setShowDelete(true)
+                                }}
+                              >
                                 <Trash2 className='mr-2 h-4 w-4' /> Delete
                               </DropdownMenuItem>
                             </>
                           ) : (
-                            <DropdownMenuItem onClick={() => handleOpenReport(review.id)}>
+                            <DropdownMenuItem
+                              onClick={() => handleOpenReport(review.id)}
+                            >
                               <Flag className='mr-2 h-4 w-4' /> Report
                             </DropdownMenuItem>
                           )}
@@ -392,7 +443,8 @@ export function CourseReviews({
                 <div className='mt-2'>
                   {review.isHidden === 1 ? (
                     <p className='text-sm text-muted-foreground italic bg-gray-50 rounded px-3 py-2'>
-                      This review has been hidden due to violation of community guidelines.
+                      This review has been hidden due to violation of community
+                      guidelines.
                     </p>
                   ) : (
                     <p
@@ -522,11 +574,17 @@ export function CourseReviews({
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this review?</AlertDialogTitle>
-            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle>
+              Are you sure you want to delete this review?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDelete(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowDelete(false)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
                 if (deleteReviewId) {

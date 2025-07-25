@@ -438,59 +438,63 @@ export function ReportDetail() {
                       )}
                     </span>
                   </div>
-                  <div className='flex items-center gap-2 mt-3'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => setShowDialog('warn')}
-                      disabled={isProcessing || aggregated.status === 'PENDING'}
-                      title={
-                        aggregated.status === 'PENDING'
-                          ? 'Please approve or reject the report first'
-                          : 'Warn user about this content'
-                      }
-                    >
-                      <AlertTriangle className='h-3 w-3 mr-1' />
-                      Warn User
-                    </Button>
-                    {aggregated.resourceOwnerStatus === 'ACTIVE' ? (
+                  {aggregated.status !== 'REJECTED' && (
+                    <div className='flex items-center gap-2 mt-3'>
                       <Button
                         variant='outline'
                         size='sm'
-                        onClick={() => setShowDialog('ban')}
+                        onClick={() => setShowDialog('warn')}
                         disabled={
                           isProcessing || aggregated.status === 'PENDING'
                         }
-                        className='text-red-600 hover:text-red-700'
                         title={
                           aggregated.status === 'PENDING'
                             ? 'Please approve or reject the report first'
-                            : 'Ban user from the platform'
+                            : 'Warn user about this content'
                         }
                       >
-                        <Ban className='h-3 w-3 mr-1' />
-                        Ban User
+                        <AlertTriangle className='h-3 w-3 mr-1' />
+                        Warn User
                       </Button>
-                    ) : (
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={() => setShowDialog('unban')}
-                        disabled={
-                          isProcessing || aggregated.status === 'PENDING'
-                        }
-                        className='text-green-600 hover:text-green-700'
-                        title={
-                          aggregated.status === 'PENDING'
-                            ? 'Please approve or reject the report first'
-                            : 'Unban user from the platform'
-                        }
-                      >
-                        <CheckCircle className='h-3 w-3 mr-1' />
-                        Unban User
-                      </Button>
-                    )}
-                  </div>
+                      {aggregated.resourceOwnerStatus === 'ACTIVE' ? (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setShowDialog('ban')}
+                          disabled={
+                            isProcessing || aggregated.status === 'PENDING'
+                          }
+                          className='text-red-600 hover:text-red-700'
+                          title={
+                            aggregated.status === 'PENDING'
+                              ? 'Please approve or reject the report first'
+                              : 'Ban user from the platform'
+                          }
+                        >
+                          <Ban className='h-3 w-3 mr-1' />
+                          Ban User
+                        </Button>
+                      ) : (
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => setShowDialog('unban')}
+                          disabled={
+                            isProcessing || aggregated.status === 'PENDING'
+                          }
+                          className='text-green-600 hover:text-green-700'
+                          title={
+                            aggregated.status === 'PENDING'
+                              ? 'Please approve or reject the report first'
+                              : 'Unban user from the platform'
+                          }
+                        >
+                          <CheckCircle className='h-3 w-3 mr-1' />
+                          Unban User
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   {aggregated.status === 'PENDING' && (
                     <p className='text-xs text-muted-foreground mt-2'>
                       ⚠️ User actions are available after approving or rejecting
@@ -570,6 +574,18 @@ export function ReportDetail() {
                             Description: {detail.reason}
                           </p>
                         </div>
+                        {aggregated.status === 'REJECTED' && (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => handleWarnUser(detail.reporterId)}
+                            disabled={isProcessing}
+                            title='Warn this reporter'
+                          >
+                            <AlertTriangle className='h-3 w-3 mr-1' />
+                            Warn Reporter
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

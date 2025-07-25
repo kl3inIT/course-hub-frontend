@@ -90,8 +90,8 @@ export interface CourseSearchParams {
 
   // Search fields - match backend exactly
   searchTerm?: string // Backend: String searchTerm
-  categoryId?: number // Backend: Long categoryId -> number
-  level?: string // Backend: String level
+  categoryIds?: number[] // Backend: List<Long> categoryIds
+  levels?: string[] // Backend: List<String> levels
   minPrice?: number // Backend: Double minPrice -> number
   maxPrice?: number // Backend: Double maxPrice -> number
   isFree?: boolean // Backend: Boolean isFree

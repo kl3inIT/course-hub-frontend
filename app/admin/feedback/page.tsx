@@ -1,27 +1,26 @@
 'use client'
 
 import { RoleGuard } from '@/components/auth/role-guard'
-import FeedbackDetail from '@/components/feedback/FeedbackDetail'
 import { AdminSidebar } from '@/components/layout/admin-sidebar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { feedbackApi, type Feedback } from '@/services/feedback-api'
@@ -410,18 +409,6 @@ export default function AdminFeedbackPage() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
-                              <Button
-                                variant='outline'
-                                onClick={() => alert('Marked as resolved!')}
-                              >
-                                Mark as Resolved
-                              </Button>
-                              <Button
-                                variant='ghost'
-                                onClick={() => alert('Forwarded!')}
-                              >
-                                Forward
-                              </Button>
                             </div>
                           </DialogContent>
                         </Dialog>

@@ -1,12 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -26,7 +21,7 @@ import {
   Clock,
   Download,
   Share2,
-  Trophy
+  Trophy,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -96,7 +91,6 @@ export function StudentDashboard() {
     }
 
     fetchDashboardCourses()
-    fetchRecommendedCourses()
     calculateLearningStreak()
   }, [])
 
@@ -107,19 +101,8 @@ export function StudentDashboard() {
       setDashboardCourses(response.data)
     } catch (error) {
       console.error('Error fetching dashboard courses:', error)
-      toast.error('Failed to load dashboard courses')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const fetchRecommendedCourses = async () => {
-    try {
-      const response = await courseApi.getRecommendedCourses()
-      setRecommendedCourses(response.data)
-    } catch (error) {
-      console.error('Error fetching recommended courses:', error)
-      toast.error('Failed to load recommended courses')
     }
   }
 

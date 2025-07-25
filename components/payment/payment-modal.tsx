@@ -243,7 +243,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
           <div className='col-span-3 p-6 bg-gray-50'>
             <div className='flex items-center gap-2 mb-8'>
               <Image
-                src='/logo.png'
+                src='/favicon.png'
                 alt='Logo'
                 width={32}
                 height={32}
@@ -260,7 +260,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
                   <Clock className='w-5 h-5 text-blue-500' />
                   <div>
                     <p className='text-sm text-gray-600'>Duration</p>
-                    <p className='font-medium'>{course.duration || 0} hours</p>
+                    <p className='font-medium'>{course.duration ? (course.duration / 3600).toFixed(1) : '0.0'} hours</p>
                   </div>
                 </div>
 

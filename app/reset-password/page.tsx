@@ -192,217 +192,213 @@ export default function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className='min-h-screen bg-background'>
-        <div className='container mx-auto px-4 py-16'>
-          <Card className='w-full max-w-md mx-auto'>
-            <CardContent className='text-center space-y-6 p-8'>
-              <div className='flex justify-center'>
-                <div className='rounded-full bg-green-100 p-3'>
-                  <CheckCircle className='h-8 w-8 text-green-600' />
-                </div>
+      <div className='container mx-auto px-4 py-16'>
+        <Card className='w-full max-w-md mx-auto'>
+          <CardContent className='text-center space-y-6 p-8'>
+            <div className='flex justify-center'>
+              <div className='rounded-full bg-green-100 p-3'>
+                <CheckCircle className='h-8 w-8 text-green-600' />
               </div>
-              <div>
-                <CardTitle className='text-xl mb-2'>
-                  Password Reset Successful
-                </CardTitle>
-                <CardDescription>
-                  Your password has been successfully updated. You can now sign
-                  in with your new password.
-                </CardDescription>
-              </div>
-              <div className='space-y-2'>
-                <Link href='/login'>
-                  <Button className='w-full'>Sign In with New Password</Button>
-                </Link>
-                <Alert>
-                  <Shield className='h-4 w-4' />
-                  <AlertDescription className='text-xs'>
-                    For security, you've been logged out of all devices. Please
-                    sign in again.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            <div>
+              <CardTitle className='text-xl mb-2'>
+                Password Reset Successful
+              </CardTitle>
+              <CardDescription>
+                Your password has been successfully updated. You can now sign in
+                with your new password.
+              </CardDescription>
+            </div>
+            <div className='space-y-2'>
+              <Link href='/login'>
+                <Button className='w-full'>Sign In with New Password</Button>
+              </Link>
+              <Alert>
+                <Shield className='h-4 w-4' />
+                <AlertDescription className='text-xs'>
+                  For security, you've been logged out of all devices. Please
+                  sign in again.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className='min-h-screen bg-background'>
-      <div className='container mx-auto px-4 py-16'>
-        <Card className='w-full max-w-md mx-auto'>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Shield className='h-5 w-5' />
-              Reset Your Password
-            </CardTitle>
-            <CardDescription className='card-description'>
-              {email
-                ? `Reset password for ${email}`
-                : 'Create a new secure password for your account'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-4'>
-              {error && (
-                <Alert variant='destructive'>
-                  <AlertCircle className='h-4 w-4' />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+    <div className='container mx-auto px-4 py-16'>
+      <Card className='w-full max-w-md mx-auto'>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Shield className='h-5 w-5' />
+            Reset Your Password
+          </CardTitle>
+          <CardDescription className='card-description'>
+            {email
+              ? `Reset password for ${email}`
+              : 'Create a new secure password for your account'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            {error && (
+              <Alert variant='destructive'>
+                <AlertCircle className='h-4 w-4' />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className='space-y-2'>
+              <Label htmlFor='password'>New Password</Label>
+              <div className='relative'>
+                <Input
+                  id='password'
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => handlePasswordChange(e.target.value)}
+                  placeholder='Enter your new password'
+                  required
+                  className='pr-10'
+                />
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent'
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className='h-4 w-4' />
+                  ) : (
+                    <Eye className='h-4 w-4' />
+                  )}
+                </Button>
+              </div>
+
+              {/* Password Strength Indicator */}
+              {password && (
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between text-xs'>
+                    <span>Password Strength:</span>
+                    <span
+                      className={`font-medium ${
+                        passwordStrength.score <= 2
+                          ? 'text-red-600'
+                          : passwordStrength.score <= 3
+                            ? 'text-yellow-600'
+                            : passwordStrength.score <= 4
+                              ? 'text-blue-600'
+                              : 'text-green-600'
+                      }`}
+                    >
+                      {getPasswordStrengthText(passwordStrength.score)}
+                    </span>
+                  </div>
+                  <Progress
+                    value={(passwordStrength.score / 5) * 100}
+                    className='h-2'
+                  />
+                </div>
               )}
 
-              <div className='space-y-2'>
-                <Label htmlFor='password'>New Password</Label>
-                <div className='relative'>
-                  <Input
-                    id='password'
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => handlePasswordChange(e.target.value)}
-                    placeholder='Enter your new password'
-                    required
-                    className='pr-10'
-                  />
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent'
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className='h-4 w-4' />
-                    ) : (
-                      <Eye className='h-4 w-4' />
-                    )}
-                  </Button>
-                </div>
-
-                {/* Password Strength Indicator */}
-                {password && (
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between text-xs'>
-                      <span>Password Strength:</span>
-                      <span
-                        className={`font-medium ${
-                          passwordStrength.score <= 2
-                            ? 'text-red-600'
-                            : passwordStrength.score <= 3
-                              ? 'text-yellow-600'
-                              : passwordStrength.score <= 4
-                                ? 'text-blue-600'
-                                : 'text-green-600'
-                        }`}
-                      >
-                        {getPasswordStrengthText(passwordStrength.score)}
-                      </span>
+              {/* Password Requirements */}
+              {password && (
+                <div className='space-y-2 text-xs'>
+                  <p className='text-muted-foreground'>
+                    Password must contain:
+                  </p>
+                  <div className='grid grid-cols-1 gap-1'>
+                    <div
+                      className={`flex items-center gap-1 ${passwordStrength.length ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
+                      <CheckCircle className='h-3 w-3' />
+                      <span>At least 8 characters</span>
                     </div>
-                    <Progress
-                      value={(passwordStrength.score / 5) * 100}
-                      className='h-2'
-                    />
-                  </div>
-                )}
-
-                {/* Password Requirements */}
-                {password && (
-                  <div className='space-y-2 text-xs'>
-                    <p className='text-muted-foreground'>
-                      Password must contain:
-                    </p>
-                    <div className='grid grid-cols-1 gap-1'>
-                      <div
-                        className={`flex items-center gap-1 ${passwordStrength.length ? 'text-green-600' : 'text-muted-foreground'}`}
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        <span>At least 8 characters</span>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 ${passwordStrength.uppercase ? 'text-green-600' : 'text-muted-foreground'}`}
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        <span>One uppercase letter</span>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 ${passwordStrength.lowercase ? 'text-green-600' : 'text-muted-foreground'}`}
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        <span>One lowercase letter</span>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 ${passwordStrength.number ? 'text-green-600' : 'text-muted-foreground'}`}
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        <span>One number</span>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 ${passwordStrength.special ? 'text-green-600' : 'text-muted-foreground'}`}
-                      >
-                        <CheckCircle className='h-3 w-3' />
-                        <span>One special character</span>
-                      </div>
+                    <div
+                      className={`flex items-center gap-1 ${passwordStrength.uppercase ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
+                      <CheckCircle className='h-3 w-3' />
+                      <span>One uppercase letter</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 ${passwordStrength.lowercase ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
+                      <CheckCircle className='h-3 w-3' />
+                      <span>One lowercase letter</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 ${passwordStrength.number ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
+                      <CheckCircle className='h-3 w-3' />
+                      <span>One number</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 ${passwordStrength.special ? 'text-green-600' : 'text-muted-foreground'}`}
+                    >
+                      <CheckCircle className='h-3 w-3' />
+                      <span>One special character</span>
                     </div>
                   </div>
-                )}
-              </div>
-
-              <div className='space-y-2'>
-                <Label htmlFor='confirmPassword'>Confirm New Password</Label>
-                <div className='relative'>
-                  <Input
-                    id='confirmPassword'
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder='Confirm your new password'
-                    required
-                    className='pr-10'
-                  />
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    className='absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent'
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className='h-4 w-4' />
-                    ) : (
-                      <Eye className='h-4 w-4' />
-                    )}
-                  </Button>
                 </div>
-                {confirmPassword && password !== confirmPassword && (
-                  <p className='text-xs text-red-600'>Passwords do not match</p>
-                )}
-              </div>
-
-              <Button
-                type='submit'
-                className='w-full'
-                disabled={
-                  isLoading ||
-                  passwordStrength.score < 4 ||
-                  password !== confirmPassword
-                }
-              >
-                {isLoading ? 'Updating Password...' : 'Update Password'}
-              </Button>
-            </form>
-
-            <div className='text-center mt-4'>
-              <Link
-                href='/login'
-                className='text-sm text-muted-foreground hover:text-primary'
-              >
-                Back to Sign In
-              </Link>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='confirmPassword'>Confirm New Password</Label>
+              <div className='relative'>
+                <Input
+                  id='confirmPassword'
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder='Confirm your new password'
+                  required
+                  className='pr-10'
+                />
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent'
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className='h-4 w-4' />
+                  ) : (
+                    <Eye className='h-4 w-4' />
+                  )}
+                </Button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className='text-xs text-red-600'>Passwords do not match</p>
+              )}
+            </div>
+
+            <Button
+              type='submit'
+              className='w-full'
+              disabled={
+                isLoading ||
+                passwordStrength.score < 4 ||
+                password !== confirmPassword
+              }
+            >
+              {isLoading ? 'Updating Password...' : 'Update Password'}
+            </Button>
+          </form>
+
+          <div className='text-center mt-4'>
+            <Link
+              href='/login'
+              className='text-sm text-muted-foreground hover:text-primary'
+            >
+              Back to Sign In
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

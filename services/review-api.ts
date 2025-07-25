@@ -102,7 +102,8 @@ export const reviewApi = {
   },
 
   checkUserReview: async (courseId: number): Promise<ApiResponse<boolean>> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
     const response = await httpClient.get('/api/reviews/check', {
       params: { courseId },
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -110,8 +111,11 @@ export const reviewApi = {
     return response.data
   },
 
-  checkReviewOwnership: async (reviewId: number): Promise<ApiResponse<boolean>> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  checkReviewOwnership: async (
+    reviewId: number
+  ): Promise<ApiResponse<boolean>> => {
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
     const response = await httpClient.get(`/api/reviews/${reviewId}/is-mine`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })

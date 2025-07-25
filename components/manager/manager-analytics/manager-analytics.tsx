@@ -25,6 +25,7 @@ import {
   Star,
   Users,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'react-hot-toast'
@@ -153,6 +154,7 @@ const renderCustomizedLabel = ({
 }
 
 export function ManagerAnalytics() {
+  const router = useRouter()
   const COLORS = [
     '#8884d8',
     '#82ca9d',
@@ -214,6 +216,7 @@ export function ManagerAnalytics() {
 
   const handleRefresh = () => {
     setIsRefreshing(true)
+    router.refresh()
     setTimeout(() => setIsRefreshing(false), 1000)
   }
 
@@ -692,7 +695,7 @@ export function ManagerAnalytics() {
                                     : coursePage * courseRowsPerPage +
                                       (idx + 1)}
                                 </td>
-                                <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900'>
+                                <td className='px-6 py-3 whitespace-nowrap text-sm text-left text-gray-900 max-w-xs truncate' title={course.courseName}>
                                   {course.courseName}
                                 </td>
                                 <td className='px-6 py-3 whitespace-nowrap text-sm text-center text-gray-900'>
@@ -777,7 +780,7 @@ export function ManagerAnalytics() {
                                     : studentPage * studentRowsPerPage +
                                       (index + 1)}
                                 </td>
-                                <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900'>
+                                <td className='px-6 py-4 whitespace-nowrap text-sm text-left text-gray-900 max-w-xs truncate' title={data.courseName}>
                                   {data.courseName}
                                 </td>
                                 <td className='px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900'>

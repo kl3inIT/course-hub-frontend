@@ -1,6 +1,5 @@
 'use client'
 
-import { courseApi } from '@/services/course-api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,30 +36,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { toast } from 'sonner'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { courseApi } from '@/services/course-api'
+import { reviewApi } from '@/services/review-api'
 import { ManagerCourseResponseDTO } from '@/types/course'
 import {
-  Archive,
-  BookOpen,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Download,
-  Edit,
-  Eye,
   Loader2,
   MoreVertical,
-  Plus,
-  RefreshCw,
-  Search,
-  Star,
-  Trash2,
-  Users,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export function ManagerCourseList() {
   const [courses, setCourses] = useState<ManagerCourseResponseDTO[]>([])
@@ -85,6 +73,7 @@ export function ManagerCourseList() {
   const [statusFilter, setStatusFilter] = useState<string>('PUBLISHED')
   const [page, setPage] = useState(0)
   const [pageSize] = useState(10)
+  const [averageRating, setAverageRating] = useState<number>(0)
 
   // Lấy danh sách status động từ backend
   useEffect(() => {
@@ -103,14 +92,14 @@ export function ManagerCourseList() {
     fetchStatuses()
   }, [])
 
-  // Lấy courses theo status, category, page
+  // Lấy courses theo status, page (KHÔNG filter category ở backend nữa)
   useEffect(() => {
     const loadCourses = async () => {
       try {
         setLoading(true)
         setError(null)
         const params: any = { status: statusFilter }
-        if (categoryFilter !== 'all') params.category = categoryFilter
+        // KHÔNG truyền categoryFilter lên backend nữa
         const courses = await courseApi.getAllCoursesByStatus(params)
         setCourses(Array.isArray(courses) ? courses : [])
       } catch (err) {
@@ -120,7 +109,7 @@ export function ManagerCourseList() {
       }
     }
     loadCourses()
-  }, [statusFilter, categoryFilter])
+  }, [statusFilter]) // Bỏ categoryFilter khỏi deps
 
   // Reset page về 0 khi filter/search/sort thay đổi
   useEffect(() => {
@@ -132,13 +121,15 @@ export function ManagerCourseList() {
     return Array.from(new Set(courses.map(course => course.category)))
   }, [courses])
 
-  // Filter + sort + search (chỉ search ở client)
+  // Filter + sort + search (chỉ search ở client, filter category ở client)
   const filteredAndSortedCourses = useMemo(() => {
     const filtered = courses.filter(course => {
       const matchesSearch =
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description.toLowerCase().includes(searchTerm.toLowerCase())
-      return matchesSearch
+      const matchesCategory =
+        categoryFilter === 'all' || course.category === categoryFilter
+      return matchesSearch && matchesCategory
     })
     filtered.sort((a, b) => {
       let comparison = 0
@@ -166,7 +157,7 @@ export function ManagerCourseList() {
       return sortOrder === 'asc' ? comparison : -comparison
     })
     return filtered
-  }, [courses, searchTerm, sortBy, sortOrder])
+  }, [courses, searchTerm, sortBy, sortOrder, categoryFilter])
 
   // Phân trang ở frontend
   const pagedCourses = useMemo(() => {
@@ -186,11 +177,18 @@ export function ManagerCourseList() {
   const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
   const draftCourses = courses.filter(c => c.status === 'DRAFT').length
   const archivedCourses = courses.filter(c => c.status === 'ARCHIVED').length
-  const averageRating =
-    courses
-      .filter(c => (c.rating || 0) > 0)
-      .reduce((sum, course) => sum + (course.rating || 0), 0) /
-    (courses.filter(c => (c.rating || 0) > 0).length || 1)
+
+  useEffect(() => {
+    const fetchAverageRating = async () => {
+      try {
+        const res = await reviewApi.getOverallAverageRating()
+        setAverageRating(res.data)
+      } catch (e) {
+        setAverageRating(0)
+      }
+    }
+    fetchAverageRating()
+  }, [])
 
   const handleRefresh = async () => {
     try {
@@ -315,7 +313,7 @@ export function ManagerCourseList() {
           </Button>
         </div>
       </div>
-      <div className='grid gap-4 md:grid-cols-4 mb-6'>
+      <div className='grid gap-4 md:grid-cols-3 mb-6'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Courses</CardTitle>
@@ -519,36 +517,40 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected restore error:', err)
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected restore error:', err)
+                                }
+
+                                let errorMessage =
+                                  'An error occurred while restoring the course'
+
+                                // Parse backend error message
+                                if (err?.response?.data) {
+                                  const backendMessage =
+                                    err.response.data.detail ||
+                                    err.response.data.message ||
+                                    err.response.data.error ||
+                                    err.message
+                                  errorMessage = backendMessage
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                // Add prefix if needed
+                                if (
+                                  !errorMessage.toLowerCase().includes('cannot')
+                                ) {
+                                  errorMessage = `Cannot restore: ${errorMessage}`
+                                }
+
+                                toast.error(
+                                  `Cannot Restore Course: ${errorMessage}`
+                                )
                               }
-
-                              let errorMessage =
-                                'An error occurred while restoring the course'
-
-                              // Parse backend error message
-                              if (err?.response?.data) {
-                                const backendMessage =
-                                  err.response.data.detail ||
-                                  err.response.data.message ||
-                                  err.response.data.error ||
-                                  err.message
-                                errorMessage = backendMessage
-                              } else if (err?.message) {
-                                errorMessage = err.message
-                              }
-
-                              // Add prefix if needed
-                              if (
-                                !errorMessage.toLowerCase().includes('cannot')
-                              ) {
-                                errorMessage = `Cannot restore: ${errorMessage}`
-                              }
-
-                              toast.error(
-                                `Cannot Restore Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >
@@ -567,42 +569,46 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected publish error:', err)
-                              }
-
-                              // Parse error message from backend API response
-                              let errorMessage =
-                                'An error occurred while publishing the course'
-
-                              // Check if it's an Axios error with response data
-                              if (err?.response?.data) {
-                                const responseData = err.response.data
-
-                                // Backend sends structured error response via ResponseGeneral
-                                const backendMessage =
-                                  responseData.detail ||
-                                  responseData.message ||
-                                  responseData.error
-
-                                if (backendMessage) {
-                                  errorMessage = backendMessage
-                                } else {
-                                  errorMessage = err.message || errorMessage
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected publish error:', err)
                                 }
-                              } else if (err?.message) {
-                                errorMessage = err.message
+
+                                // Parse error message from backend API response
+                                let errorMessage =
+                                  'An error occurred while publishing the course'
+
+                                // Check if it's an Axios error with response data
+                                if (err?.response?.data) {
+                                  const responseData = err.response.data
+
+                                  // Backend sends structured error response via ResponseGeneral
+                                  const backendMessage =
+                                    responseData.detail ||
+                                    responseData.message ||
+                                    responseData.error
+
+                                  if (backendMessage) {
+                                    errorMessage = backendMessage
+                                  } else {
+                                    errorMessage = err.message || errorMessage
+                                  }
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                console.log(
+                                  'Showing toast with message:',
+                                  errorMessage
+                                )
+
+                                toast.error(
+                                  `Cannot Publish Course: ${errorMessage}`
+                                )
                               }
-
-                              console.log(
-                                'Showing toast with message:',
-                                errorMessage
-                              )
-
-                              toast.error(
-                                `Cannot Publish Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >
@@ -623,36 +629,40 @@ export function ManagerCourseList() {
                               )
                               await handleRefresh()
                             } catch (err: any) {
-                              // Don't log expected business logic errors to console
-                              if (err?.response?.status !== 400) {
-                                console.error('Unexpected archive error:', err)
+                              if (err?.response?.status === 401 || err?.response?.status === 403) {
+                                toast.error('You do not have permission to perform this action!')
+                              } else {
+                                // Don't log expected business logic errors to console
+                                if (err?.response?.status !== 400) {
+                                  console.error('Unexpected archive error:', err)
+                                }
+
+                                let errorMessage =
+                                  'An error occurred while archiving the course'
+
+                                // Parse backend error message
+                                if (err?.response?.data) {
+                                  const backendMessage =
+                                    err.response.data.detail ||
+                                    err.response.data.message ||
+                                    err.response.data.error ||
+                                    err.message
+                                  errorMessage = backendMessage
+                                } else if (err?.message) {
+                                  errorMessage = err.message
+                                }
+
+                                // Add prefix if needed
+                                if (
+                                  !errorMessage.toLowerCase().includes('cannot')
+                                ) {
+                                  errorMessage = `Cannot archive: ${errorMessage}`
+                                }
+
+                                toast.error(
+                                  `Cannot Archive Course: ${errorMessage}`
+                                )
                               }
-
-                              let errorMessage =
-                                'An error occurred while archiving the course'
-
-                              // Parse backend error message
-                              if (err?.response?.data) {
-                                const backendMessage =
-                                  err.response.data.detail ||
-                                  err.response.data.message ||
-                                  err.response.data.error ||
-                                  err.message
-                                errorMessage = backendMessage
-                              } else if (err?.message) {
-                                errorMessage = err.message
-                              }
-
-                              // Add prefix if needed
-                              if (
-                                !errorMessage.toLowerCase().includes('cannot')
-                              ) {
-                                errorMessage = `Cannot archive: ${errorMessage}`
-                              }
-
-                              toast.error(
-                                `Cannot Archive Course: ${errorMessage}`
-                              )
                             }
                           }}
                         >

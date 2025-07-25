@@ -1,4 +1,5 @@
 import axios from 'axios'
+import qs from 'qs'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -37,6 +38,7 @@ export const httpClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' }),
 })
 
 // Add request interceptor for authentication
@@ -48,7 +50,10 @@ httpClient.interceptors.request.use(
         return config.url === endpoint
       } else {
         // So khớp chính xác url và method
-        return config.url === endpoint.url && config.method?.toUpperCase() === endpoint.method
+        return (
+          config.url === endpoint.url &&
+          config.method?.toUpperCase() === endpoint.method
+        )
       }
     })
 

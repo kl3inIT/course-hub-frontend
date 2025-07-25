@@ -85,17 +85,16 @@ export const courseApi = {
         sort: params?.sort,
         search: params?.search,
         category: params?.category,
-        level: params?.level,
+        searchTerm: params?.searchTerm,
         minPrice: params?.minPrice,
         maxPrice: params?.maxPrice,
-        searchTerm: params?.searchTerm,
-        categoryId: params?.categoryId,
-
         isFree: params?.isFree,
         isDiscounted: params?.isDiscounted,
         status: params?.status,
         sortBy: params?.sortBy,
         sortDirection: params?.sortDirection,
+        ...(params?.categoryIds ? { categoryIds: params.categoryIds } : {}),
+        ...(params?.levels ? { levels: params.levels } : {}),
       },
     })
     return response.data

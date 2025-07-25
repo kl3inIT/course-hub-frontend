@@ -5,6 +5,7 @@ export interface UseVideoPlayerProps {
   onTimeUpdate?: (currentTime: number, progress: number) => void
   onVideoEnded?: () => void
   onError?: (error: string) => void
+  onSeek?: (newTime: number) => void // thêm prop này
 }
 
 export interface UseVideoPlayerReturn {
@@ -48,6 +49,7 @@ export function useVideoPlayer({
   onTimeUpdate,
   onVideoEnded,
   onError,
+  onSeek, // thêm prop này
 }: UseVideoPlayerProps): UseVideoPlayerReturn {
   // Video refs
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -118,8 +120,9 @@ export function useVideoPlayer({
   const seekVideo = useCallback((seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime += seconds
+      if (onSeek) onSeek(videoRef.current.currentTime)
     }
-  }, [])
+  }, [onSeek])
 
   const handleProgressClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -130,9 +133,10 @@ export function useVideoPlayer({
         const percentage = clickX / width
         const newTime = percentage * duration
         videoRef.current.currentTime = newTime
+        if (onSeek) onSeek(newTime)
       }
     },
-    [duration]
+    [duration, onSeek]
   )
 
   const toggleMute = useCallback(() => {

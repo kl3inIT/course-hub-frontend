@@ -2,40 +2,43 @@
 
 import { Button } from '@/components/ui/button'
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Input } from '@/components/ui/input'
 import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 } from '@/components/ui/pagination'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table'
 import { paymentApi } from '@/services/payment-api'
-import { PaymentHistoryRequestDTO, PaymentHistoryResponseDTO } from '@/types/payment'
+import {
+  PaymentHistoryRequestDTO,
+  PaymentHistoryResponseDTO,
+} from '@/types/payment'
 import { format } from 'date-fns'
 import { ArrowUpDown, Filter } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -67,15 +70,15 @@ export function PaymentHistory() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<{
-    status: string | undefined;
-    startDate: string | undefined;
-    endDate: string | undefined;
-    nameSearch: string | undefined;
+    status: string | undefined
+    startDate: string | undefined
+    endDate: string | undefined
+    nameSearch: string | undefined
   }>({
     status: undefined,
     startDate: undefined,
     endDate: undefined,
-    nameSearch: undefined
+    nameSearch: undefined,
   })
 
   const fetchPayments = async () => {
@@ -121,7 +124,7 @@ export function PaymentHistory() {
       status: 'Completed',
       startDate: start.toISOString().split('T')[0] + 'T00:00:00',
       endDate: end.toISOString().split('T')[0] + 'T23:59:59',
-      nameSearch: undefined
+      nameSearch: undefined,
     })
     setCurrentPage(1)
     setInitialized(true)
@@ -156,8 +159,12 @@ export function PaymentHistory() {
   const handleApplyFilters = () => {
     setAppliedFilters({
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      startDate: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd'T'00:00:00") : undefined,
-      endDate: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd'T'23:59:59") : undefined,
+      startDate: dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd'T'00:00:00")
+        : undefined,
+      endDate: dateRange?.to
+        ? format(dateRange.to, "yyyy-MM-dd'T'23:59:59")
+        : undefined,
       nameSearch: searchTerm.trim() !== '' ? searchTerm : undefined,
     })
     setCurrentPage(1)
@@ -247,18 +254,18 @@ export function PaymentHistory() {
               <SelectItem value='Failed'>Failed</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleApplyFilters} className='md:w-auto w-full'>Apply Filter</Button>
+          <Button onClick={handleApplyFilters} className='md:w-auto w-full'>
+            Apply Filter
+          </Button>
         </div>
       </div>
 
       {/* Payments Table */}
-    <Card>
+      <Card>
         <CardHeader className='flex flex-row items-center justify-between'>
           <div>
             <CardTitle>Payment History</CardTitle>
-            <CardDescription>
-              View your payment transactions
-            </CardDescription>
+            <CardDescription>View your payment transactions</CardDescription>
           </div>
           <div className='flex items-center gap-2'>
             <Select
@@ -281,9 +288,9 @@ export function PaymentHistory() {
           </div>
         </CardHeader>
         <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
+          <Table>
+            <TableHeader>
+              <TableRow>
                 <TableHead
                   className='w-[100px] cursor-pointer'
                   onClick={() => handleSort('id')}
@@ -338,18 +345,18 @@ export function PaymentHistory() {
                     <ArrowUpDown className='ml-2 h-4 w-4 inline' />
                   )}
                 </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={6} className='text-center'>
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : payments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={6} className='text-center'>
                     No payments found
                   </TableCell>
                 </TableRow>
@@ -373,14 +380,15 @@ export function PaymentHistory() {
                   </TableRow>
                 ))
               )}
-              </TableBody>
-            </Table>
+            </TableBody>
+          </Table>
 
           {/* Pagination - Chỉ hiển thị khi có dữ liệu */}
           {totalElements > 0 && (
             <div className='mt-4 flex items-center justify-between'>
               <div className='text-sm text-muted-foreground'>
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalElements)} of{' '}
+                Showing {(currentPage - 1) * pageSize + 1} to{' '}
+                {Math.min(currentPage * pageSize, totalElements)} of{' '}
                 {totalElements} entries
               </div>
               <Pagination>
@@ -390,7 +398,9 @@ export function PaymentHistory() {
                       onClick={() =>
                         setCurrentPage(prev => Math.max(1, prev - 1))
                       }
-                      disabled={currentPage === 1 || loading || totalElements === 0}
+                      disabled={
+                        currentPage === 1 || loading || totalElements === 0
+                      }
                     />
                   </PaginationItem>
 
@@ -413,17 +423,23 @@ export function PaymentHistory() {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() =>
-                        setCurrentPage(prev => Math.min(totalPages || 1, prev + 1))
+                        setCurrentPage(prev =>
+                          Math.min(totalPages || 1, prev + 1)
+                        )
                       }
-                      disabled={currentPage === totalPages || loading || totalElements === 0}
+                      disabled={
+                        currentPage === totalPages ||
+                        loading ||
+                        totalElements === 0
+                      }
                     />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
             </div>
           )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
     </div>
   )
 }

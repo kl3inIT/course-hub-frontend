@@ -33,6 +33,7 @@ export interface UseLessonProgressReturn {
   markLessonComplete: (lessonId: number) => void
   updateOverallProgress: () => Promise<void>
   checkLessonAccess: (lessonId: number) => Promise<boolean>
+  resetLastCurrentTime: (newTime: number) => void
 
   // Utility functions
   formatDuration: (seconds: number) => string
@@ -60,6 +61,7 @@ export function useLessonProgress({
   )
 
   const lastProgressUpdate = useRef<number>(0)
+  const lastCurrentTime = useRef<number | null>(null)
   const progressUpdateInterval = 10000 // Update progress every 10 seconds
 
   // Load lesson progress when lesson changes
@@ -72,6 +74,15 @@ export function useLessonProgress({
         const response = await progressApi.getLessonProgress(currentLesson.id)
         setLessonProgress(response.data)
         onProgressUpdate?.(response.data)
+        lastCurrentTime.current = response.data.currentTime || 0 // Reset lastCurrentTime khi đổi lesson
+        // Nếu lesson đã hoàn thành thì thêm vào completedLessons ngay
+        if (response.data.isCompleted === 1) {
+          setCompletedLessons(prev => {
+            const newSet = new Set(prev)
+            newSet.add(currentLesson.id)
+            return newSet
+          })
+        }
       } catch (error) {
         console.error('Failed to load lesson progress:', error)
         // Initialize with default values if progress doesn't exist
@@ -83,6 +94,7 @@ export function useLessonProgress({
         }
         setLessonProgress(defaultProgress)
         onProgressUpdate?.(defaultProgress)
+        lastCurrentTime.current = 0 // Reset lastCurrentTime khi đổi lesson
       } finally {
         setIsProgressLoading(false)
       }
@@ -122,11 +134,18 @@ export function useLessonProgress({
 
   // Update lesson progress
   const updateLessonProgress = useCallback(
-    async (currentTime: number, watchedDelta: number) => {
+    async (currentTime: number, _progress: number) => {
       if (!currentLesson || isProgressLoading) return
 
       const now = Date.now()
       if (now - lastProgressUpdate.current < progressUpdateInterval) return
+
+      // Tính watchedDelta là số giây đã xem tăng thêm
+      let watchedDelta = 0
+      if (lastCurrentTime.current !== null && currentTime > lastCurrentTime.current) {
+        watchedDelta = currentTime - lastCurrentTime.current
+      }
+      lastCurrentTime.current = currentTime
 
       try {
         if (watchedDelta > 0) {
@@ -142,6 +161,14 @@ export function useLessonProgress({
           setLessonProgress(response.data)
           onProgressUpdate?.(response.data)
           lastProgressUpdate.current = now
+          // Nếu lesson vừa hoàn thành thì thêm vào completedLessons ngay
+          if (response.data.isCompleted === 1) {
+            setCompletedLessons(prev => {
+              const newSet = new Set(prev)
+              newSet.add(currentLesson.id)
+              return newSet
+            })
+          }
         }
       } catch (error) {
         console.error('Failed to update progress:', error)
@@ -246,6 +273,11 @@ export function useLessonProgress({
     return `${s}s`
   }, [])
 
+  // Hàm reset lastCurrentTime khi tua video
+  const resetLastCurrentTime = useCallback((newTime: number) => {
+    lastCurrentTime.current = newTime
+  }, [])
+
   return {
     // Progress state
     lessonProgress,
@@ -261,6 +293,7 @@ export function useLessonProgress({
     markLessonComplete,
     updateOverallProgress,
     checkLessonAccess,
+    resetLastCurrentTime, // expose hàm này
 
     // Utility functions
     formatDuration,

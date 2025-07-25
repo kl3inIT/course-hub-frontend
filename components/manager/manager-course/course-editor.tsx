@@ -584,14 +584,6 @@ export function CourseEditor({ courseId }: CourseEditorProps) {
                   </>
                 )}
               </Button>
-
-              <Button
-                variant='outline'
-                onClick={() => router.push(`/manager/courses/${courseId}`)}
-                disabled={saving}
-              >
-                View Course Details
-              </Button>
             </div>
           </TabsContent>
 

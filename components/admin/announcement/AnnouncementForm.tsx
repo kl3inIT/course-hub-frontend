@@ -129,9 +129,23 @@ export function AnnouncementForm({
       const date = new Date(formData.scheduledTime)
       date.setHours(scheduledHour)
       date.setMinutes(scheduledMinute)
-      setFormData(prev => ({ ...prev, scheduledTime: date.toISOString() }))
+      date.setSeconds(0)
+      date.setMilliseconds(0)
+
+      // Convert to 'yyyy-MM-ddTHH:mm' format WITHOUT timezone
+      const localDateTime =
+        date.getFullYear() +
+        '-' +
+        String(date.getMonth() + 1).padStart(2, '0') +
+        '-' +
+        String(date.getDate()).padStart(2, '0') +
+        'T' +
+        String(date.getHours()).padStart(2, '0') +
+        ':' +
+        String(date.getMinutes()).padStart(2, '0')
+
+      setFormData(prev => ({ ...prev, scheduledTime: localDateTime }))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scheduledHour, scheduledMinute])
 
   const handleCourseSelection = (courseId: number, checked: boolean) => {

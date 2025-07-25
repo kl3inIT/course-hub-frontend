@@ -365,8 +365,9 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
+            {/* Sửa: link về lesson đầu tiên của module */}
             <BreadcrumbLink
-              href={`/courses/${courseData.course.id}/modules/${courseData.currentModule.id}`}
+              href={`/learn/${courseData.course.id}/${courseData.moduleLessons[courseData.currentModule.id]?.[0]?.id || courseData.currentLesson.id}`}
             >
               {courseData.currentModule.title}
             </BreadcrumbLink>
@@ -456,6 +457,7 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                     lessonProgress.updateLessonProgress(currentTime, progress)
                   }
                 }}
+                onSeek={lessonProgress.resetLastCurrentTime}
                 onPreviousLesson={() =>
                   previousLesson &&
                   navigateToLesson(

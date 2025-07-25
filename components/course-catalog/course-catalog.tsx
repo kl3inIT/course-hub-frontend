@@ -27,9 +27,6 @@ import { CourseFilterSidebar } from './course-filter-sidebar'
 
 const levels = ['Beginner', 'Intermediate', 'Advanced']
 const sortOptions = [
-  { value: 'relevance', label: 'Relevance' },
-  { value: 'popularity', label: 'Popularity' },
-  { value: 'rating', label: 'Highest Rated' },
   { value: 'price-low', label: 'Price: Low to High' },
   { value: 'price-high', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest' },
@@ -45,7 +42,7 @@ export function CourseCatalog() {
   const [priceRange, setPriceRange] = useState([0, 200])
   const [isFree, setIsFree] = useState<boolean | undefined>()
   const [isDiscounted, setIsDiscounted] = useState<boolean | undefined>()
-  const [sortBy, setSortBy] = useState('relevance')
+  const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
 
   const [courses, setCourses] = useState<CourseResponseDTO[]>([])
@@ -161,19 +158,27 @@ export function CourseCatalog() {
           page: currentPage,
           size: pageSize,
           searchTerm: debouncedSearchTerm || undefined,
-          categoryId:
+          categoryIds:
             selectedCategories.length > 0
-              ? categories.find(cat => cat.name === selectedCategories[0])?.id
+              ? selectedCategories
+                  .map(
+                    catName => categories.find(cat => cat.name === catName)?.id
+                  )
+                  .filter(Boolean)
               : undefined,
-          level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          // Fix price filter logic - Only apply price filters when explicitly set
+          levels: selectedLevels.length > 0 ? selectedLevels : undefined,
           minPrice:
             priceFilter === 'free'
               ? 0
               : priceFilter === 'paid'
                 ? Math.max(1, priceRange[0])
-                : undefined, // Don't filter by minPrice when 'all'
-          maxPrice: priceFilter === 'free' ? 0 : undefined, // Don't filter by maxPrice when 'all'
+                : priceRange[0],
+          maxPrice:
+            priceFilter === 'free'
+              ? 0
+              : priceFilter === 'paid'
+                ? priceRange[1]
+                : priceRange[1],
           isFree: priceFilter === 'free' ? true : isFree,
           isDiscounted: isDiscounted,
           sortBy:
@@ -183,11 +188,7 @@ export function CourseCatalog() {
                 ? 'price'
                 : sortBy === 'newest'
                   ? 'createdDate'
-                  : sortBy === 'relevance'
-                    ? 'title' // Use title for relevance sort instead of averageRating
-                    : sortBy === 'rating'
-                      ? 'createdDate' // Fallback to createdDate since averageRating is calculated
-                      : undefined,
+                  : undefined,
           sortDirection:
             sortBy === 'price-low'
               ? 'asc'
@@ -195,11 +196,7 @@ export function CourseCatalog() {
                 ? 'desc'
                 : sortBy === 'newest'
                   ? 'desc'
-                  : sortBy === 'rating'
-                    ? 'desc'
-                    : sortBy === 'relevance'
-                      ? 'asc'
-                      : undefined,
+                  : undefined,
         }
 
         // Client-side validation before sending request
@@ -274,7 +271,7 @@ export function CourseCatalog() {
     setPriceRange([0, 200])
     setIsFree(undefined)
     setIsDiscounted(undefined)
-    setSortBy('relevance')
+    setSortBy('newest')
     setCurrentPage(0)
   }, [])
 

@@ -30,6 +30,7 @@ interface VideoPlayerProps {
   onNextLesson?: () => void
   hasPreviousLesson?: boolean
   hasNextLesson?: boolean
+  onSeek?: (newTime: number) => void // thêm prop này
 }
 
 export function VideoPlayer({
@@ -42,12 +43,14 @@ export function VideoPlayer({
   onNextLesson,
   hasPreviousLesson = false,
   hasNextLesson = false,
+  onSeek, // thêm prop này
 }: VideoPlayerProps) {
   const videoPlayer = useVideoPlayer({
     videoUrl,
     onTimeUpdate: onProgressUpdate,
     onVideoEnded,
     onError: error => console.error('Video error:', error),
+    onSeek, // truyền xuống useVideoPlayer
   })
 
   const formatDuration = (seconds: number): string => {

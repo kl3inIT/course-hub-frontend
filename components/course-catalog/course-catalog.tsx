@@ -161,12 +161,13 @@ export function CourseCatalog() {
           page: currentPage,
           size: pageSize,
           searchTerm: debouncedSearchTerm || undefined,
-          categoryId:
+          categoryIds:
             selectedCategories.length > 0
-              ? categories.find(cat => cat.name === selectedCategories[0])?.id
+              ? selectedCategories
+                  .map(catName => categories.find(cat => cat.name === catName)?.id)
+                  .filter(Boolean)
               : undefined,
-          level: selectedLevels.length > 0 ? selectedLevels[0] : undefined,
-          // Sửa: luôn truyền minPrice/maxPrice khi là 'all'
+          levels: selectedLevels.length > 0 ? selectedLevels : undefined,
           minPrice:
             priceFilter === 'free'
               ? 0
@@ -189,9 +190,9 @@ export function CourseCatalog() {
                 : sortBy === 'newest'
                   ? 'createdDate'
                   : sortBy === 'relevance'
-                    ? 'title' // Use title for relevance sort instead of averageRating
+                    ? 'title'
                     : sortBy === 'rating'
-                      ? 'createdDate' // Fallback to createdDate since averageRating is calculated
+                      ? 'createdDate'
                       : undefined,
           sortDirection:
             sortBy === 'price-low'

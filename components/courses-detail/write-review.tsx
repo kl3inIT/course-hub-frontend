@@ -30,7 +30,14 @@ interface WriteReviewProps {
   disabled?: boolean
 }
 
-export function WriteReview({ courseId, onReviewSubmitted, initialData, isEdit, onCancel, disabled }: WriteReviewProps) {
+export function WriteReview({
+  courseId,
+  onReviewSubmitted,
+  initialData,
+  isEdit,
+  onCancel,
+  disabled,
+}: WriteReviewProps) {
   if (disabled) return null
   const { user } = useAuth()
   const { toast } = useToast()
@@ -171,13 +178,18 @@ export function WriteReview({ courseId, onReviewSubmitted, initialData, isEdit, 
         </CardContent>
       </Card>
 
-      <Dialog open={showDialog} onOpenChange={v => {
-        setShowDialog(v)
-        if (!v && isEdit) onCancel?.()
-      }}>
+      <Dialog
+        open={showDialog}
+        onOpenChange={v => {
+          setShowDialog(v)
+          if (!v && isEdit) onCancel?.()
+        }}
+      >
         <DialogContent className='max-w-md'>
           <DialogHeader>
-            <DialogTitle>{isEdit ? 'Edit Your Review' : 'Write Your Review'}</DialogTitle>
+            <DialogTitle>
+              {isEdit ? 'Edit Your Review' : 'Write Your Review'}
+            </DialogTitle>
             <DialogDescription>
               {isEdit
                 ? 'Update your review for this course.'
@@ -242,8 +254,12 @@ export function WriteReview({ courseId, onReviewSubmitted, initialData, isEdit, 
               }
             >
               {isSubmitting
-                ? (isEdit ? 'Saving...' : 'Submitting...')
-                : (isEdit ? 'Save' : 'Submit Review')}
+                ? isEdit
+                  ? 'Saving...'
+                  : 'Submitting...'
+                : isEdit
+                  ? 'Save'
+                  : 'Submit Review'}
             </Button>
           </div>
         </DialogContent>

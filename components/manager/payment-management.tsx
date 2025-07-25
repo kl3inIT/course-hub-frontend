@@ -37,12 +37,7 @@ import {
 import { paymentApi } from '@/services/payment-api'
 import { PaymentHistoryRequestDTO } from '@/types/payment'
 import { format } from 'date-fns'
-import {
-  ArrowUpDown,
-  DollarSign,
-  Download,
-  Filter
-} from 'lucide-react'
+import { ArrowUpDown, DollarSign, Download, Filter } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { toast } from 'sonner'
@@ -90,15 +85,15 @@ export function PaymentManagement() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<{
-    status: string | undefined;
-    startDate: string | undefined;
-    endDate: string | undefined;
-    nameSearch: string | undefined;
+    status: string | undefined
+    startDate: string | undefined
+    endDate: string | undefined
+    nameSearch: string | undefined
   }>({
     status: undefined,
     startDate: undefined,
     endDate: undefined,
-    nameSearch: undefined
+    nameSearch: undefined,
   })
   const [nameSearch, setNameSearch] = useState('')
   const [isExporting, setIsExporting] = useState(false)
@@ -106,7 +101,7 @@ export function PaymentManagement() {
     totalAmount: '0.0',
     successfulPayments: '0.0',
     pendingPayments: '0.0',
-    failedPayments: '0.0'
+    failedPayments: '0.0',
   })
   const [pageSizePending, setPageSizePending] = useState(pageSize)
   // Đánh dấu đã khởi tạo filter mặc định
@@ -127,7 +122,7 @@ export function PaymentManagement() {
       // Gọi cả 2 API cùng lúc
       const [paymentsResponse, overallResponse] = await Promise.all([
         paymentApi.getPaymentHistory(params),
-        paymentApi.getPaymentOverall(params)
+        paymentApi.getPaymentOverall(params),
       ])
 
       if (paymentsResponse.data) {
@@ -163,7 +158,7 @@ export function PaymentManagement() {
       status: 'Completed',
       startDate: start.toISOString().split('T')[0] + 'T00:00:00',
       endDate: end.toISOString().split('T')[0] + 'T23:59:59',
-      nameSearch: undefined
+      nameSearch: undefined,
     })
     setCurrentPage(1)
     setInitialized(true)
@@ -178,7 +173,8 @@ export function PaymentManagement() {
   // Filter payments based on search term
   const filteredPayments = payments.filter(payment => {
     const matchesSearch =
-      (payment.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (payment.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        false) ||
       payment.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.transactionCode.toLowerCase().includes(searchTerm.toLowerCase())
 
@@ -316,8 +312,12 @@ export function PaymentManagement() {
   const handleApplyFilters = () => {
     setAppliedFilters({
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      startDate: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd'T'00:00:00") : undefined,
-      endDate: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd'T'23:59:59") : undefined,
+      startDate: dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd'T'00:00:00")
+        : undefined,
+      endDate: dateRange?.to
+        ? format(dateRange.to, "yyyy-MM-dd'T'23:59:59")
+        : undefined,
       nameSearch: nameSearch.trim() !== '' ? nameSearch : undefined,
     })
     setPageSize(pageSizePending)
@@ -335,39 +335,37 @@ export function PaymentManagement() {
         endDate: appliedFilters.endDate,
         nameSearch: appliedFilters.nameSearch,
       }
-  
+
       const blob = await paymentApi.exportToExcel(params)
-  
+
       // Tạo URL từ blob
       const url = window.URL.createObjectURL(blob)
-  
+
       // Tạo link tải xuống
       const link = document.createElement('a')
       link.href = url
       link.download = 'payment_report.xlsx'
       document.body.appendChild(link)
-  
+
       // Trigger download
       link.click()
-  
+
       // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-  
+
       toast.success('Export successful', {
-        description: 'Your Excel file has been downloaded.'
+        description: 'Your Excel file has been downloaded.',
       })
     } catch (error) {
       console.error('Error exporting to Excel:', error)
       toast.error('Export failed', {
-        description: 'Failed to export payment data. Please try again.'
+        description: 'Failed to export payment data. Please try again.',
       })
     } finally {
       setIsExporting(false)
     }
   }
-  
-  
 
   return (
     <div className='space-y-6'>
@@ -379,8 +377,8 @@ export function PaymentManagement() {
             Manage and track all course payments
           </p>
         </div>
-        <Button 
-          className='gap-2' 
+        <Button
+          className='gap-2'
           onClick={handleExportToExcel}
           disabled={isExporting}
         >
@@ -397,7 +395,9 @@ export function PaymentManagement() {
             <DollarSign className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>${parseFloat(overallStats.totalAmount).toFixed(2)}</div>
+            <div className='text-2xl font-bold'>
+              ${parseFloat(overallStats.totalAmount).toFixed(2)}
+            </div>
             <p className='text-xs text-muted-foreground'>
               Total completed payments
             </p>
@@ -510,7 +510,12 @@ export function PaymentManagement() {
         </div>
         {/* Apply Filter button */}
         <div className='flex-1 flex items-end'>
-          <Button onClick={handleApplyFilters} className='w-full bg-blue-600 hover:bg-blue-700'>Apply Filter</Button>
+          <Button
+            onClick={handleApplyFilters}
+            className='w-full bg-blue-600 hover:bg-blue-700'
+          >
+            Apply Filter
+          </Button>
         </div>
       </div>
 
@@ -596,13 +601,13 @@ export function PaymentManagement() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={7} className='text-center'>
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={7} className='text-center'>
                     No payments found
                   </TableCell>
                 </TableRow>
@@ -634,7 +639,8 @@ export function PaymentManagement() {
           {totalElements > 0 && (
             <div className='mt-4 flex items-center justify-between'>
               <div className='text-sm text-muted-foreground'>
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalElements)} of{' '}
+                Showing {(currentPage - 1) * pageSize + 1} to{' '}
+                {Math.min(currentPage * pageSize, totalElements)} of{' '}
                 {totalElements} entries
               </div>
               <Pagination>
@@ -644,7 +650,9 @@ export function PaymentManagement() {
                       onClick={() =>
                         setCurrentPage(prev => Math.max(1, prev - 1))
                       }
-                      disabled={currentPage === 1 || loading || totalElements === 0}
+                      disabled={
+                        currentPage === 1 || loading || totalElements === 0
+                      }
                     />
                   </PaginationItem>
 
@@ -667,9 +675,15 @@ export function PaymentManagement() {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() =>
-                        setCurrentPage(prev => Math.min(totalPages || 1, prev + 1))
+                        setCurrentPage(prev =>
+                          Math.min(totalPages || 1, prev + 1)
+                        )
                       }
-                      disabled={currentPage === totalPages || loading || totalElements === 0}
+                      disabled={
+                        currentPage === totalPages ||
+                        loading ||
+                        totalElements === 0
+                      }
                     />
                   </PaginationItem>
                 </PaginationContent>

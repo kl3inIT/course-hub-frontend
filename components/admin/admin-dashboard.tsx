@@ -109,7 +109,11 @@ export function OverviewDashboard() {
       // Fetch user statistics
       const [allUsers, activeUsers] = await Promise.all([
         adminApi.getAllUsers({ pageSize: 1, pageNo: 0 }),
-        adminApi.getAllUsers({ pageSize: 1, pageNo: 0, status: UserStatus.ACTIVE }),
+        adminApi.getAllUsers({
+          pageSize: 1,
+          pageNo: 0,
+          status: UserStatus.ACTIVE,
+        }),
       ])
 
       const totalUsers = allUsers.data?.page?.totalElements || 0
@@ -172,7 +176,11 @@ export function OverviewDashboard() {
         const announcementResponse =
           await announcementApi.getAnnouncementStats()
         setAnnouncementStats(
-          announcementResponse.data as any || { sent: 0, draft: 0, scheduled: 0 }
+          (announcementResponse.data as any) || {
+            sent: 0,
+            draft: 0,
+            scheduled: 0,
+          }
         )
       } catch (error) {
         console.error('Error fetching announcement stats:', error)
@@ -920,4 +928,4 @@ export function OverviewDashboard() {
   )
 }
 
-export default OverviewDashboard;
+export default OverviewDashboard

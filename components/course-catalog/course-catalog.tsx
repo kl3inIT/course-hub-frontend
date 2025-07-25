@@ -164,7 +164,9 @@ export function CourseCatalog() {
           categoryIds:
             selectedCategories.length > 0
               ? selectedCategories
-                  .map(catName => categories.find(cat => cat.name === catName)?.id)
+                  .map(
+                    catName => categories.find(cat => cat.name === catName)?.id
+                  )
                   .filter(Boolean)
               : undefined,
           levels: selectedLevels.length > 0 ? selectedLevels : undefined,

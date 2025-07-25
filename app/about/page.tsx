@@ -14,7 +14,6 @@ import {
 
 export default function AboutPage() {
   const teamMembers = [
-    
     {
       name: 'Pham Nhat Anh',
       role: 'Lead Designer',
@@ -86,7 +85,9 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className='py-20 px-4 bg-gradient-to-br from-primary/5 to-secondary/5'>
         <div className='container mx-auto text-center space-y-6'>
-          <h1 className='text-4xl md:text-5xl font-bold'>About CourseHub Online Traning System</h1>
+          <h1 className='text-4xl md:text-5xl font-bold'>
+            About CourseHub Online Traning System
+          </h1>
           <p className='text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed'>
             We're on a mission to democratize education and empower learners
             worldwide with the skills they need to succeed in the digital age.
@@ -102,12 +103,12 @@ export default function AboutPage() {
               <h2 className='text-3xl font-bold'>Our Story</h2>
               <div className='space-y-4 text-muted-foreground leading-relaxed'>
                 <p>
-                  Founded in 2020, CourseHub Online Training System was born from a simple belief: that
-                  quality education should be accessible to everyone,
-                  everywhere. Our founders, a team of educators and
-                  technologists, recognized the growing gap between traditional
-                  education and the rapidly evolving demands of the modern
-                  workforce.
+                  Founded in 2020, CourseHub Online Training System was born
+                  from a simple belief: that quality education should be
+                  accessible to everyone, everywhere. Our founders, a team of
+                  educators and technologists, recognized the growing gap
+                  between traditional education and the rapidly evolving demands
+                  of the modern workforce.
                 </p>
                 <p>
                   What started as a small platform with just 10 courses has
@@ -118,9 +119,10 @@ export default function AboutPage() {
                   transformational.
                 </p>
                 <p>
-                  Today, CourseHub Online Trainning System continues to innovate in the online education
-                  space, leveraging cutting-edge technology to create
-                  personalized, engaging, and effective learning experiences.
+                  Today, CourseHub Online Trainning System continues to innovate
+                  in the online education space, leveraging cutting-edge
+                  technology to create personalized, engaging, and effective
+                  learning experiences.
                 </p>
               </div>
             </div>

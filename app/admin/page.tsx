@@ -11,7 +11,7 @@ export default function AdminPage() {
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
-          <div className="flex-1 space-y-6 p-8 pt-6 bg-gray-50 min-h-screen">
+          <div className='flex-1 space-y-6 p-8 pt-6 bg-gray-50 min-h-screen'>
             <OverviewDashboard />
           </div>
         </SidebarInset>

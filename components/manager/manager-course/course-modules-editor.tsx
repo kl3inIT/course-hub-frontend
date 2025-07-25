@@ -474,83 +474,164 @@ export function CourseModulesEditor({
                                                   </Button>
                                                 )}
                                                 {/* Nút set preview */}
-                                                {isEditing && !lesson.isPreview && (
-                                                  <Button
-                                                    variant={lesson.isPreview ? 'default' : 'outline'}
-                                                    size='sm'
-                                                    className='h-4 w-4 p-0 text-yellow-600 border-yellow-400'
-                                                    title='Set as preview lesson'
-                                                    onClick={async e => {
-                                                      e.stopPropagation()
-                                                      try {
-                                                        await lessonApi.setLessonPreview(lesson.lessonId || lesson.id, true)
-                                                        toast.success('Set as preview lesson successfully!')
-                                                        // Reload lessons from backend
-                                                        if (module.moduleId) {
-                                                          const res = await lessonApi.getLessonsByModuleId(module.moduleId)
-                                                          const newLessons = (res.data || []).map(l => ({
-                                                            ...l,
-                                                            id: l.id?.toString(),
-                                                            lessonId: l.id?.toString(),
-                                                            duration: Number(l.duration),
-                                                            isPreview: l.isPreview === 1, // convert number to boolean
-                                                            // copy các trường khác nếu cần
-                                                          }))
-                                                          const newModules = modules.map(m =>
-                                                            m.id === module.id ? { ...m, lessons: newLessons } : m
-                                                          )
-                                                          onModulesChange(newModules, 'update', {
-                                                            type: 'lesson',
-                                                            lessonId: lesson.lessonId || lesson.id,
-                                                            isPreview: true,
-                                                          })
-                                                        }
-                                                      } catch (err) {
-                                                        toast.error('Failed to set preview lesson!')
+                                                {isEditing &&
+                                                  !lesson.isPreview && (
+                                                    <Button
+                                                      variant={
+                                                        lesson.isPreview
+                                                          ? 'default'
+                                                          : 'outline'
                                                       }
-                                                    }}
-                                                  >
-                                                    <span role='img' aria-label='preview'>👁️</span>
-                                                  </Button>
-                                                )}
-                                                {isEditing && lesson.isPreview && (
-                                                  <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-4 w-4 p-0 text-gray-600 border-gray-400"
-                                                    title="Unset preview lesson"
-                                                    onClick={async e => {
-                                                      e.stopPropagation()
-                                                      try {
-                                                        await lessonApi.setLessonPreview(lesson.lessonId || lesson.id, false)
-                                                        toast.success('Unset preview lesson successfully!')
-                                                        // Reload lessons from backend
-                                                        if (module.moduleId) {
-                                                          const res = await lessonApi.getLessonsByModuleId(module.moduleId)
-                                                          const newLessons = (res.data || []).map(l => ({
-                                                            ...l,
-                                                            id: l.id?.toString(),
-                                                            lessonId: l.id?.toString(),
-                                                            duration: Number(l.duration),
-                                                            isPreview: l.isPreview === 1,
-                                                          }))
-                                                          const newModules = modules.map(m =>
-                                                            m.id === module.id ? { ...m, lessons: newLessons } : m
+                                                      size='sm'
+                                                      className='h-4 w-4 p-0 text-yellow-600 border-yellow-400'
+                                                      title='Set as preview lesson'
+                                                      onClick={async e => {
+                                                        e.stopPropagation()
+                                                        try {
+                                                          await lessonApi.setLessonPreview(
+                                                            lesson.lessonId ||
+                                                              lesson.id,
+                                                            true
                                                           )
-                                                          onModulesChange(newModules, 'update', {
-                                                            type: 'lesson',
-                                                            lessonId: lesson.lessonId || lesson.id,
-                                                            isPreview: false,
-                                                          })
+                                                          toast.success(
+                                                            'Set as preview lesson successfully!'
+                                                          )
+                                                          // Reload lessons from backend
+                                                          if (module.moduleId) {
+                                                            const res =
+                                                              await lessonApi.getLessonsByModuleId(
+                                                                module.moduleId
+                                                              )
+                                                            const newLessons = (
+                                                              res.data || []
+                                                            ).map(l => ({
+                                                              ...l,
+                                                              id: l.id?.toString(),
+                                                              lessonId:
+                                                                l.id?.toString(),
+                                                              duration: Number(
+                                                                l.duration
+                                                              ),
+                                                              isPreview:
+                                                                l.isPreview ===
+                                                                1, // convert number to boolean
+                                                              // copy các trường khác nếu cần
+                                                            }))
+                                                            const newModules =
+                                                              modules.map(m =>
+                                                                m.id ===
+                                                                module.id
+                                                                  ? {
+                                                                      ...m,
+                                                                      lessons:
+                                                                        newLessons,
+                                                                    }
+                                                                  : m
+                                                              )
+                                                            onModulesChange(
+                                                              newModules,
+                                                              'update',
+                                                              {
+                                                                type: 'lesson',
+                                                                lessonId:
+                                                                  lesson.lessonId ||
+                                                                  lesson.id,
+                                                                isPreview: true,
+                                                              }
+                                                            )
+                                                          }
+                                                        } catch (err) {
+                                                          toast.error(
+                                                            'Failed to set preview lesson!'
+                                                          )
                                                         }
-                                                      } catch (err) {
-                                                        toast.error('Failed to unset preview lesson!')
-                                                      }
-                                                    }}
-                                                  >
-                                                    <span role="img" aria-label="unset-preview">🚫</span>
-                                                  </Button>
-                                                )}
+                                                      }}
+                                                    >
+                                                      <span
+                                                        role='img'
+                                                        aria-label='preview'
+                                                      >
+                                                        👁️
+                                                      </span>
+                                                    </Button>
+                                                  )}
+                                                {isEditing &&
+                                                  lesson.isPreview && (
+                                                    <Button
+                                                      variant='outline'
+                                                      size='sm'
+                                                      className='h-4 w-4 p-0 text-gray-600 border-gray-400'
+                                                      title='Unset preview lesson'
+                                                      onClick={async e => {
+                                                        e.stopPropagation()
+                                                        try {
+                                                          await lessonApi.setLessonPreview(
+                                                            lesson.lessonId ||
+                                                              lesson.id,
+                                                            false
+                                                          )
+                                                          toast.success(
+                                                            'Unset preview lesson successfully!'
+                                                          )
+                                                          // Reload lessons from backend
+                                                          if (module.moduleId) {
+                                                            const res =
+                                                              await lessonApi.getLessonsByModuleId(
+                                                                module.moduleId
+                                                              )
+                                                            const newLessons = (
+                                                              res.data || []
+                                                            ).map(l => ({
+                                                              ...l,
+                                                              id: l.id?.toString(),
+                                                              lessonId:
+                                                                l.id?.toString(),
+                                                              duration: Number(
+                                                                l.duration
+                                                              ),
+                                                              isPreview:
+                                                                l.isPreview ===
+                                                                1,
+                                                            }))
+                                                            const newModules =
+                                                              modules.map(m =>
+                                                                m.id ===
+                                                                module.id
+                                                                  ? {
+                                                                      ...m,
+                                                                      lessons:
+                                                                        newLessons,
+                                                                    }
+                                                                  : m
+                                                              )
+                                                            onModulesChange(
+                                                              newModules,
+                                                              'update',
+                                                              {
+                                                                type: 'lesson',
+                                                                lessonId:
+                                                                  lesson.lessonId ||
+                                                                  lesson.id,
+                                                                isPreview:
+                                                                  false,
+                                                              }
+                                                            )
+                                                          }
+                                                        } catch (err) {
+                                                          toast.error(
+                                                            'Failed to unset preview lesson!'
+                                                          )
+                                                        }
+                                                      }}
+                                                    >
+                                                      <span
+                                                        role='img'
+                                                        aria-label='unset-preview'
+                                                      >
+                                                        🚫
+                                                      </span>
+                                                    </Button>
+                                                  )}
                                                 <Button
                                                   variant='ghost'
                                                   size='sm'

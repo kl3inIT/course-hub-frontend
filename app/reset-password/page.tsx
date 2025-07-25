@@ -205,8 +205,8 @@ export default function ResetPasswordPage() {
                 Password Reset Successful
               </CardTitle>
               <CardDescription>
-                Your password has been successfully updated. You can now sign
-                in with your new password.
+                Your password has been successfully updated. You can now sign in
+                with your new password.
               </CardDescription>
             </div>
             <div className='space-y-2'>

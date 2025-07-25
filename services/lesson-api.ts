@@ -100,9 +100,12 @@ export const lessonApi = {
     }
   },
 
-  setLessonPreview: async (lessonId: string, isPreview: boolean): Promise<void> => {
+  setLessonPreview: async (
+    lessonId: string,
+    isPreview: boolean
+  ): Promise<void> => {
     await httpClient.patch(`/api/lessons/${lessonId}/set-preview`, null, {
-      params: { isPreview }
+      params: { isPreview },
     })
   },
 }

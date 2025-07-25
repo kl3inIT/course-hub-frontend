@@ -193,7 +193,7 @@ export function CompletionCertificate({
         <div className='absolute bottom-8 left-20'>
           <div className='text-left'>
             <div className="font-['Ms_Madi',_cursive] text-green-700 text-4xl -mb-1">
-             IT4Beginner
+              IT4Beginner
             </div>
             <div className='border-t border-gray-300 pt-1'>
               <p className='text-[10px] text-gray-500 tracking-[0.2em] ml-1'>

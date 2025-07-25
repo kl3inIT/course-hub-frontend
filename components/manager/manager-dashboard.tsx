@@ -286,7 +286,7 @@ export function ManagerDashboard() {
     {
       title: 'View Coupons',
       description: 'View and manage coupons',
-      icon: Tags, 
+      icon: Tags,
       onClick: () => router.push('/manager/coupons'),
       variant: 'outline' as const,
     },

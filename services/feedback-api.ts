@@ -70,7 +70,7 @@ export const feedbackApi = {
   },
 }
 
-export const submitFeedback = feedbackApi.submitFeedback;
-export const getFeedbackById = feedbackApi.getFeedbackById;
+export const submitFeedback = feedbackApi.submitFeedback
+export const getFeedbackById = feedbackApi.getFeedbackById
 
 export default feedbackApi

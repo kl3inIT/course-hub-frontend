@@ -139,23 +139,30 @@ export default function EditCategoryPage() {
               <div>
                 <h1 className='text-3xl font-bold'>Category Management</h1>
                 <p className='text-muted-foreground mt-2'>
-                  Organize and manage course categories for better navigation and discovery.
+                  Organize and manage course categories for better navigation
+                  and discovery.
                 </p>
               </div>
             </div>
             <div className='grid gap-4 grid-cols-2 px-6'>
               <Card className='w-full'>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Total Categories</CardTitle>
+                  <CardTitle className='text-sm font-medium'>
+                    Total Categories
+                  </CardTitle>
                   <Tags className='h-4 w-4 text-muted-foreground' />
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>{allCategories.length}</div>
+                  <div className='text-2xl font-bold'>
+                    {allCategories.length}
+                  </div>
                 </CardContent>
               </Card>
               <Card className='w-full'>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Total Courses</CardTitle>
+                  <CardTitle className='text-sm font-medium'>
+                    Total Courses
+                  </CardTitle>
                   <BookOpen className='h-4 w-4 text-muted-foreground' />
                 </CardHeader>
                 <CardContent>
@@ -167,14 +174,18 @@ export default function EditCategoryPage() {
                 <CardHeader className='pb-2'>
                   <div className='flex flex-col gap-1'>
                     <h2 className='text-xl font-bold'>Edit Category</h2>
-                    <CardDescription>Manage all categories used to organize your courses.</CardDescription>
+                    <CardDescription>
+                      Manage all categories used to organize your courses.
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className='pt-0'>
                   <div className='w-full max-w-lg mx-auto space-y-6'>
                     <form className='space-y-4'>
                       <div className='space-y-2'>
-                        <Label htmlFor='edit-category-name'>Category Name</Label>
+                        <Label htmlFor='edit-category-name'>
+                          Category Name
+                        </Label>
                         <Input
                           id='edit-category-name'
                           placeholder='Enter category name'
@@ -183,7 +194,9 @@ export default function EditCategoryPage() {
                           onChange={e => {
                             setForm({ ...form, name: e.target.value })
                             if (e.target.value.length > 30) {
-                              setNameError('Category name must not exceed 30 characters')
+                              setNameError(
+                                'Category name must not exceed 30 characters'
+                              )
                             } else if (!e.target.value.trim()) {
                               setNameError('Please enter a category name')
                             } else {
@@ -192,16 +205,23 @@ export default function EditCategoryPage() {
                           }}
                           onBlur={() => {
                             setNameTouched(true)
-                            if (!form.name.trim()) setNameError('Please enter a category name')
+                            if (!form.name.trim())
+                              setNameError('Please enter a category name')
                           }}
                         />
-                        <p className='text-xs text-muted-foreground text-right'>{form.name.length}/30</p>
+                        <p className='text-xs text-muted-foreground text-right'>
+                          {form.name.length}/30
+                        </p>
                         {nameTouched && nameError && (
-                          <p className='text-red-500 text-xs mt-1'>{nameError}</p>
+                          <p className='text-red-500 text-xs mt-1'>
+                            {nameError}
+                          </p>
                         )}
                       </div>
                       <div className='space-y-2'>
-                        <Label htmlFor='edit-category-description'>Description</Label>
+                        <Label htmlFor='edit-category-description'>
+                          Description
+                        </Label>
                         <Textarea
                           id='edit-category-description'
                           placeholder='Enter category description'
@@ -210,22 +230,33 @@ export default function EditCategoryPage() {
                           onChange={e => {
                             setForm({ ...form, description: e.target.value })
                             if (e.target.value.length > 200) {
-                              setDescriptionError('Description must not exceed 200 characters')
+                              setDescriptionError(
+                                'Description must not exceed 200 characters'
+                              )
                             } else if (!e.target.value.trim()) {
-                              setDescriptionError('Please enter a category description')
+                              setDescriptionError(
+                                'Please enter a category description'
+                              )
                             } else {
                               setDescriptionError('')
                             }
                           }}
                           onBlur={() => {
                             setDescriptionTouched(true)
-                            if (!form.description.trim()) setDescriptionError('Please enter a category description')
+                            if (!form.description.trim())
+                              setDescriptionError(
+                                'Please enter a category description'
+                              )
                           }}
                           rows={3}
                         />
-                        <p className='text-xs text-muted-foreground text-right'>{form.description.length}/200</p>
+                        <p className='text-xs text-muted-foreground text-right'>
+                          {form.description.length}/200
+                        </p>
                         {descriptionTouched && descriptionError && (
-                          <p className='text-red-500 text-xs mt-1'>{descriptionError}</p>
+                          <p className='text-red-500 text-xs mt-1'>
+                            {descriptionError}
+                          </p>
                         )}
                       </div>
                       <div className='flex justify-end gap-2 mt-6'>

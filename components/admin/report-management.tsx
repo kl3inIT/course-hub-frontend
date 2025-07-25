@@ -83,7 +83,7 @@ function ReportTable({ type, status, filters, dateRange }: ReportTableProps) {
       setLoading(true)
       setError(null)
 
-      let params: any = {
+      const params: any = {
         page,
         size: pageSize,
         sortBy,

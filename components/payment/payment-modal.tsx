@@ -243,7 +243,7 @@ export function PaymentModal({ isOpen, onClose, course }: PaymentModalProps) {
           <div className='col-span-3 p-6 bg-gray-50'>
             <div className='flex items-center gap-2 mb-8'>
               <Image
-                src='/assets/favicon.png'
+                src='favicon.png'
                 alt='Logo'
                 width={32}
                 height={32}

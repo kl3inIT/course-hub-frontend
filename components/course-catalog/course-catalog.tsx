@@ -42,7 +42,7 @@ export function CourseCatalog() {
   const [priceRange, setPriceRange] = useState([0, 200])
   const [isFree, setIsFree] = useState<boolean | undefined>()
   const [isDiscounted, setIsDiscounted] = useState<boolean | undefined>()
-  const [sortBy, setSortBy] = useState('relevance')
+  const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
 
   const [courses, setCourses] = useState<CourseResponseDTO[]>([])
@@ -271,7 +271,7 @@ export function CourseCatalog() {
     setPriceRange([0, 200])
     setIsFree(undefined)
     setIsDiscounted(undefined)
-    setSortBy('relevance')
+    setSortBy('newest')
     setCurrentPage(0)
   }, [])
 

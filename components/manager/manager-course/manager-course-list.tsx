@@ -103,14 +103,14 @@ export function ManagerCourseList() {
     fetchStatuses()
   }, [])
 
-  // Lấy courses theo status, category, page
+  // Lấy courses theo status, page (KHÔNG filter category ở backend nữa)
   useEffect(() => {
     const loadCourses = async () => {
       try {
         setLoading(true)
         setError(null)
         const params: any = { status: statusFilter }
-        if (categoryFilter !== 'all') params.category = categoryFilter
+        // KHÔNG truyền categoryFilter lên backend nữa
         const courses = await courseApi.getAllCoursesByStatus(params)
         setCourses(Array.isArray(courses) ? courses : [])
       } catch (err) {
@@ -120,7 +120,7 @@ export function ManagerCourseList() {
       }
     }
     loadCourses()
-  }, [statusFilter, categoryFilter])
+  }, [statusFilter]) // Bỏ categoryFilter khỏi deps
 
   // Reset page về 0 khi filter/search/sort thay đổi
   useEffect(() => {
@@ -132,13 +132,15 @@ export function ManagerCourseList() {
     return Array.from(new Set(courses.map(course => course.category)))
   }, [courses])
 
-  // Filter + sort + search (chỉ search ở client)
+  // Filter + sort + search (chỉ search ở client, filter category ở client)
   const filteredAndSortedCourses = useMemo(() => {
     const filtered = courses.filter(course => {
       const matchesSearch =
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description.toLowerCase().includes(searchTerm.toLowerCase())
-      return matchesSearch
+      const matchesCategory =
+        categoryFilter === 'all' || course.category === categoryFilter
+      return matchesSearch && matchesCategory
     })
     filtered.sort((a, b) => {
       let comparison = 0
@@ -166,7 +168,7 @@ export function ManagerCourseList() {
       return sortOrder === 'asc' ? comparison : -comparison
     })
     return filtered
-  }, [courses, searchTerm, sortBy, sortOrder])
+  }, [courses, searchTerm, sortBy, sortOrder, categoryFilter])
 
   // Phân trang ở frontend
   const pagedCourses = useMemo(() => {

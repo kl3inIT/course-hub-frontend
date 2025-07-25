@@ -457,6 +457,7 @@ function LessonViewer({ courseId, lessonId }: LessonViewerProps) {
                     lessonProgress.updateLessonProgress(currentTime, progress)
                   }
                 }}
+                onSeek={lessonProgress.resetLastCurrentTime}
                 onPreviousLesson={() =>
                   previousLesson &&
                   navigateToLesson(

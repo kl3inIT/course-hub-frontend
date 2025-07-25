@@ -33,6 +33,7 @@ export interface UseLessonProgressReturn {
   markLessonComplete: (lessonId: number) => void
   updateOverallProgress: () => Promise<void>
   checkLessonAccess: (lessonId: number) => Promise<boolean>
+  resetLastCurrentTime: (newTime: number) => void
 
   // Utility functions
   formatDuration: (seconds: number) => string
@@ -74,6 +75,14 @@ export function useLessonProgress({
         setLessonProgress(response.data)
         onProgressUpdate?.(response.data)
         lastCurrentTime.current = response.data.currentTime || 0 // Reset lastCurrentTime khi đổi lesson
+        // Nếu lesson đã hoàn thành thì thêm vào completedLessons ngay
+        if (response.data.isCompleted === 1) {
+          setCompletedLessons(prev => {
+            const newSet = new Set(prev)
+            newSet.add(currentLesson.id)
+            return newSet
+          })
+        }
       } catch (error) {
         console.error('Failed to load lesson progress:', error)
         // Initialize with default values if progress doesn't exist
@@ -152,6 +161,14 @@ export function useLessonProgress({
           setLessonProgress(response.data)
           onProgressUpdate?.(response.data)
           lastProgressUpdate.current = now
+          // Nếu lesson vừa hoàn thành thì thêm vào completedLessons ngay
+          if (response.data.isCompleted === 1) {
+            setCompletedLessons(prev => {
+              const newSet = new Set(prev)
+              newSet.add(currentLesson.id)
+              return newSet
+            })
+          }
         }
       } catch (error) {
         console.error('Failed to update progress:', error)
@@ -256,6 +273,11 @@ export function useLessonProgress({
     return `${s}s`
   }, [])
 
+  // Hàm reset lastCurrentTime khi tua video
+  const resetLastCurrentTime = useCallback((newTime: number) => {
+    lastCurrentTime.current = newTime
+  }, [])
+
   return {
     // Progress state
     lessonProgress,
@@ -271,6 +293,7 @@ export function useLessonProgress({
     markLessonComplete,
     updateOverallProgress,
     checkLessonAccess,
+    resetLastCurrentTime, // expose hàm này
 
     // Utility functions
     formatDuration,

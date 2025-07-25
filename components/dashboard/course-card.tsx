@@ -117,7 +117,7 @@ export function CourseCard({
               <Award className='h-4 w-4' />
               View Certificate
             </Button>
-            <Link href={`/courses/${course.title}`}>
+            <Link href={`/courses/${course.id}`}>
               <Button variant='ghost' size='sm'>
                 <Eye className='h-4 w-4 mr-2' />
                 Review

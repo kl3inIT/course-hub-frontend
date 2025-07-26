@@ -178,6 +178,21 @@ export function ManagerCourseList() {
   const draftCourses = courses.filter(c => c.status === 'DRAFT').length
   const archivedCourses = courses.filter(c => c.status === 'ARCHIVED').length
 
+  // Tính Average Rating theo status hiện tại (chỉ cho DRAFT và ARCHIVED)
+  const calculateAverageRatingByStatus = useMemo(() => {
+    if (statusFilter === 'PUBLISHED') return averageRating // Giữ nguyên overall rating cho Published
+    
+    // Sử dụng filteredAndSortedCourses để tính trung bình từ các khóa học hiện có trong bảng
+    const coursesInTable = filteredAndSortedCourses.filter(course => course.status === statusFilter)
+    if (coursesInTable.length === 0) return 0
+    
+    const totalRating = coursesInTable.reduce((sum, course) => {
+      return sum + (course.rating || 0)
+    }, 0)
+    
+    return totalRating / coursesInTable.length
+  }, [filteredAndSortedCourses, statusFilter, averageRating])
+
   useEffect(() => {
     const fetchAverageRating = async () => {
       try {
@@ -342,9 +357,15 @@ export function ManagerCourseList() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{averageRating.toFixed(1)}</div>
+            <div className='flex items-center gap-2'>
+              <div className='text-2xl font-bold'>{calculateAverageRatingByStatus.toFixed(1)}</div>
+              <Star className='h-5 w-5 text-yellow-500 fill-current' />
+            </div>
             <p className='text-xs text-muted-foreground'>
-              From student reviews
+              {statusFilter === 'PUBLISHED' 
+                ? 'From student reviews' 
+                : `From ${statusFilter.toLowerCase()} courses`
+              }
             </p>
           </CardContent>
         </Card>

@@ -750,7 +750,7 @@ export function ManagerDashboard() {
                   </div>
                   <div className='flex items-center justify-between'>
                     <div>
-                      <p className='font-medium'>3 Months Ago</p>
+                      <p className='font-medium'>2 Months Ago</p>
                       <p className='text-sm text-muted-foreground'>
                         {revenueInsightsData?.threeMonthsAgoRevenueGrowth ??
                           data?.threeMonthsAgoRevenueGrowth}
